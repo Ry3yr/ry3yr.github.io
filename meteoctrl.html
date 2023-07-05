@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,8 +12,8 @@
   <input type="text" id="searchBox" placeholder="Search...">
   <input type="text" id="keyword" placeholder="Count element">
   <div id="count"></div>
-  <ul id="fileList"></ul>
   <button id="countTodayButton">Done today</button>
+  <ul id="fileList"></ul>
 
   <script>
     var dropzone = document.getElementById('dropzone');
@@ -63,7 +64,7 @@
         }
       }
 
-      countDiv.textContent = 'Elements done today and yesterday: ' + (timestamps.today.length + timestamps.yesterday.length);
+      countDiv.textContent = 'Elements done today: ' + (timestamps.today.length);
     });
 
     function traverseFileTree(item, callback) {
