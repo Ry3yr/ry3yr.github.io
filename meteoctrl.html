@@ -12,12 +12,15 @@
   <input type="text" id="keyword" placeholder="Count element">
   <div id="count"></div>
   <ul id="fileList"></ul>
-  <button id="countTodayButton">Done today</button> <!-- new button element -->
+  <button id="countTodayButton">Done today</button>
 
   <script>
     var dropzone = document.getElementById('dropzone');
     var fileList = document.getElementById('fileList');
-    var timestamps = [];
+    var timestamps = {
+      today: [],
+      yesterday: []
+    };
     var elementsDoneToday = 0;
 
     dropzone.addEventListener('dragover', function(event) {
@@ -33,37 +36,62 @@
 
         if (item.kind === 'file' && item.webkitGetAsEntry().isDirectory) {
           traverseFileTree(item.webkitGetAsEntry(), function(file) {
-            timestamps.push(file.lastModified);
-            timestamps.sort();
-            var li = document.createElement('li');
             var timestamp = new Date(file.lastModified);
-            li.textContent = file.name + " (" + timestamp.toLocaleString() + ")";
-            fileList.appendChild(li);
-            fileList.insertBefore(li, fileList.childNodes[timestamps.indexOf(file.lastModified)]);
-
             var today = new Date();
             today.setHours(0,0,0,0);
-            if (file.lastModified >= today.getTime()) {
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            if (timestamp >= today) {
+              timestamps.today.push(file.lastModified);
+            } else if (timestamp >= yesterday) {
+              timestamps.yesterday.push(file.lastModified);
+            }
+            var li = document.createElement('li');
+            li.textContent = file.name + " (" + timestamp.toLocaleString() + ")";
+            fileList.appendChild(li);
+
+            var index = timestamps.today.indexOf(file.lastModified);
+            if (index === -1) {
+              index = timestamps.yesterday.indexOf(file.lastModified) + timestamps.today.length;
+            }
+            fileList.insertBefore(li, fileList.childNodes[index]);
+
+            if (timestamp >= today) {
               elementsDoneToday++;
             }
           });
         }
       }
 
-      countDiv.textContent = 'Elements done today: ' + elementsDoneToday;
+      countDiv.textContent = 'Elements done today and yesterday: ' + (timestamps.today.length + timestamps.yesterday.length);
     });
 
     function traverseFileTree(item, callback) {
-      if (item.isFile) {
-        item.file(callback);
-      } else if (item.isDirectory) {
-        var reader = item.createReader();
-        reader.readEntries(function(entries) {
-          for (var i = 0; i < entries.length; i++) {
-            traverseFileTree(entries[i], callback);
+      var dirReader = item.createReader();
+      var entries = [];
+
+      function readEntries() {
+        dirReader.readEntries(function(results) {
+          if (!results.length) {
+            // All entries have been read
+            entries.forEach(function(entry) {
+              if (entry.isFile) {
+                entry.file(function(file) {
+                  callback(file);
+                });
+              } else if (entry.isDirectory) {
+                traverseFileTree(entry, callback);
+              }
+            });
+          } else {
+            // Read next set of entries
+            entries = entries.concat(Array.from(results));
+            readEntries();
           }
         });
       }
+
+      readEntries();
     }
 
     var searchBox = document.getElementById('searchBox');
@@ -106,18 +134,16 @@
       today.setHours(0,0,0,0);
       elementsDoneToday = 0;
 
-      for (var i = 0; i < timestamps.length; i++) {
-        if (timestamps[i] >= today.getTime()) {
+      for (var i = 0; i < timestamps.today.length; i++) {
+        if (timestamps.today[i] >=today) {
           elementsDoneToday++;
         }
       }
 
       countDiv.textContent = 'Elements done today: ' + elementsDoneToday;
     });
-
   </script>
-
-  <style>
+<style>
     #dropzone {
       width: 500px;
       height: 100px;
