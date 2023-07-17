@@ -14,6 +14,7 @@
   <input type="text" id="keyword" placeholder="Count element">
   <div id="count"></div>
   <button id="countTodayButton">Done today</button>
+  <button id="repeatButton">Clear</button>
   <ul id="fileList"></ul>
 
   <script>
@@ -31,6 +32,10 @@
 
     dropzone.addEventListener('drop', function(event) {
       event.preventDefault();
+      // Clear file list on new drop
+      while (fileList.firstChild) {
+        fileList.removeChild(fileList.firstChild);
+      }
 
       var items = event.dataTransfer.items;
       for (var i = 0; i < items.length; i++) {
@@ -128,6 +133,21 @@
       }
 
       countDiv.textContent = 'Number of files containing "' + keyword + '": ' + keywordCount;
+    });
+
+    varrepeatButton = document.getElementById('repeatButton');
+    repeatButton.addEventListener('click', function() {
+      // Clear timestamps and elementsDoneToday
+      timestamps.today = [];
+      timestamps.yesterday = [];
+      elementsDoneToday = 0;
+
+      // Clear file list
+      while (fileList.firstChild) {
+        fileList.removeChild(fileList.firstChild);
+      }
+
+      countDiv.textContent = '';
     });
 
     var countTodayButton = document.getElementById('countTodayButton');
