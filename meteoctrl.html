@@ -1,4 +1,4 @@
-<meta http-equiv="refresh" content="455" >
+<!--<meta http-equiv="refresh" content="455" >-->
 
 <!DOCTYPE html>
 <html>
@@ -7,14 +7,13 @@
   <title>Drag and Drop Folder</title>
 </head>
 <body>
-  <a target="_blank" href="http://meteoctrllist.calabriapsg.repl.co/"><img src="https://www.solar-fox.de/files/oneo/img/soledos/logos/meteocontrol_neu.png" width="30%"></a><br>
+<img src="https://www.solar-fox.de/files/oneo/img/soledos/logos/meteocontrol_neu.png" width="30%"><br>
   <input type="file" id="folder-selector" webkitdirectory directory="C:\Konfi-Data\Export"><br><br>
   <div id="dropzone">Drop a folder here</div>
   <input type="text" id="searchBox" placeholder="Search...">
   <input type="text" id="keyword" placeholder="Count element">
   <div id="count"></div>
   <button id="countTodayButton">Done today</button>
-  <button id="repeatButton">Clear</button>
   <ul id="fileList"></ul>
 
   <script>
@@ -32,10 +31,9 @@
 
     dropzone.addEventListener('drop', function(event) {
       event.preventDefault();
-      // Clear file list on new drop
-      while (fileList.firstChild) {
-        fileList.removeChild(fileList.firstChild);
-      }
+
+  // Clear the list
+  fileList.innerHTML = '';
 
       var items = event.dataTransfer.items;
       for (var i = 0; i < items.length; i++) {
@@ -135,21 +133,6 @@
       countDiv.textContent = 'Number of files containing "' + keyword + '": ' + keywordCount;
     });
 
-    varrepeatButton = document.getElementById('repeatButton');
-    repeatButton.addEventListener('click', function() {
-      // Clear timestamps and elementsDoneToday
-      timestamps.today = [];
-      timestamps.yesterday = [];
-      elementsDoneToday = 0;
-
-      // Clear file list
-      while (fileList.firstChild) {
-        fileList.removeChild(fileList.firstChild);
-      }
-
-      countDiv.textContent = '';
-    });
-
     var countTodayButton = document.getElementById('countTodayButton');
     countTodayButton.addEventListener('click', function() {
       var today = new Date();
@@ -158,14 +141,48 @@
 
       for (var i = 0; i < timestamps.today.length; i++) {
         if (timestamps.today[i] >=today) {
-          elementsDoneToday++;
+          elementsDoneToday+= 1;
         }
       }
 
       countDiv.textContent = 'Elements done today: ' + elementsDoneToday;
     });
+
+    var checkbox = document.createElement('input');
+    checkbox.type = "checkbox";
+    checkbox.id = "sort-checkbox";
+    checkbox.checked = true;
+    checkbox.addEventListener('change', function() {
+      sortList();
+    });
+
+    var label = document.createElement('label');
+    label.htmlFor = "sort-checkbox";
+    label.appendChild(document.createTextNode("Sort from newest to oldest"));
+
+    document.body.insertBefore(label, fileList);
+    document.body.insertBefore(checkbox, fileList);
+
+    function sortList() {
+      var items = Array.from(fileList.getElementsByTagName('li'));
+
+      if (checkbox.checked) {
+        items.sort(function(a, b) {
+          var dateA = new Date(a.textContent.match(/\(([^)]+)\)/)[1]);
+          var dateB = new Date(b.textContent.match(/\(([^)]+)\)/)[1]);
+          return dateB - dateA;
+        });
+      } else {
+        items.reverse();
+      }
+
+      items.forEach(function(item) {
+        fileList.appendChild(item);
+      });
+    }
   </script>
-<style>
+
+  <style>
     #dropzone {
       width: 500px;
       height: 100px;
