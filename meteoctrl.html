@@ -1,4 +1,6 @@
+
 <!--<meta http-equiv="refresh" content="455" >-->
+<!---<iframe id="json" style="height: 50px; width: 100%; border: none;"></iframe>-->
 
 <!DOCTYPE html>
 <html>
@@ -51,9 +53,19 @@
             } else if (timestamp >= yesterday) {
               timestamps.yesterday.push(file.lastModified);
             }
-            var li = document.createElement('li');
-            li.textContent = file.name + " (" + timestamp.toLocaleString() + ")";
-            fileList.appendChild(li);
+var li = document.createElement('li');
+var a = document.createElement('a');
+var fileName = encodeURIComponent(file.name);
+var fileUrl = 'file:///' + 'C:/Konfi-Data/Export/json/' + fileName;
+if (fileUrl.indexOf('file:///') === 0) {
+  fileUrl = 'https://' + fileUrl.substring(8);
+}
+fileUrl = fileUrl.replace(/^file:\/\/\//, 'http://localhost/');
+a.href = fileUrl; // set the href attribute to the fileUrl
+a.target = '_blank'; // set target to _blank
+a.textContent = file.name + " (" + timestamp.toLocaleString() + ")";
+li.appendChild(a);
+fileList.appendChild(li);
 
             var index = timestamps.today.indexOf(file.lastModified);
             if (index === -1) {
@@ -114,24 +126,40 @@
       }
     });
 
-    var keywordInput = document.getElementById('keyword');
-    var countDiv = document.getElementById('count');
-    var keywordCount = 0;
+var keywordInput = document.getElementById('keyword');
+var keyword = '';
 
-    keywordInput.addEventListener('input', function(event) {
-      var keyword = event.target.value.toLowerCase();
-      var fileItems = fileList.getElementsByTagName('li');
-      keywordCount = 0;
+var searchBox = document.getElementById('searchBox');
+searchBox.addEventListener('input', function(event) {
+  keyword = event.target.value;
+  keywordInput.value = keyword;
+  updateSearchResults();
+});
 
-      for (var i = 0; i < fileItems.length; i++) {
-        var fileName = fileItems[i].textContent.toLowerCase();
-        if (fileName.indexOf(keyword) !== -1) {
-          keywordCount++;
-        }
-      }
+keywordInput.addEventListener('input', function(event) {
+  keyword = event.target.value;
+  updateSearchResults();
+});
 
-      countDiv.textContent = 'Number of files containing "' + keyword + '": ' + keywordCount;
-    });
+var countDiv = document.getElementById('count');
+var keywordCount = 0;
+
+function updateSearchResults() {
+  var fileItems = fileList.getElementsByTagName('li');
+  keywordCount = 0;
+
+  for (var i = 0; i < fileItems.length; i++) {
+    var fileName = fileItems[i].textContent.toLowerCase();
+    if (fileName.indexOf(keyword) !== -1) {
+      keywordCount++;
+      fileItems[i].classList.remove('hidden');
+    } else {
+      fileItems[i].classList.add('hidden');
+    }
+  }
+
+  countDiv.textContent = 'Number of files containing "' + keyword + '": ' + keywordCount;
+}
 
     var countTodayButton = document.getElementById('countTodayButton');
     countTodayButton.addEventListener('click', function() {
