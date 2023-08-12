@@ -1,0 +1,83 @@
+<html>
+  <head>
+    <title>DeviantArt Image Upload</title>
+  </head>
+  <body>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" id="fileInput"><br><br>
+      <label for="titleInput">Title: </label>
+      <input type="text" id="titleInput"><br><br>
+      <label for="descriptionInput">Description: </label>
+      <textarea id="descriptionInput" rows="5"></textarea><br><br>
+      <label for="clientIdInput">Client ID: </label>
+      <input type="text" id="clientIdInput" style="border: none;"><br><br>
+      <label for="clientSecretInput">Client Secret: </label>
+      <input type="text" id="clientSecretInput" style="border: none;"><br><br>
+      <button type="button" id="uploadButton">Upload Image</button>
+    </form>
+
+    <div id="output"></div>
+
+    <script>
+      document.getElementById('uploadButton').addEventListener('click', function() {
+        var fileInput = document.getElementById('fileInput');
+        var titleInput = document.getElementById('titleInput');
+        var descriptionInput = document.getElementById('descriptionInput');
+        var clientIdInput = document.getElementById('clientIdInput');
+        var clientSecretInput = document.getElementById('clientSecretInput');
+
+        var file = fileInput.files[0];
+        var title = titleInput.value;
+        var description = descriptionInput.value;
+        var clientId = clientIdInput.value;
+        var clientSecret = clientSecretInput.value;
+
+        var formData = new FormData();
+        formData.append('image', file);
+        formData.append('title', title);
+        formData.append('description', description);
+
+        fetch('https://www.deviantart.com/oauth2/token', {
+          method: 'POST',
+          body: new URLSearchParams({
+            'grant_type': 'client_credentials',
+            'client_id': clientId,
+            'client_secret': clientSecret
+          })
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('Error getting access token');
+          }
+          return response.json();
+        })
+        .then(function(data) {
+          var accessToken = data.access_token;
+
+          fetch('https://www.deviantart.com/api/v1/oauth2/stash/submit', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + accessToken
+            },
+            body: formData
+          })
+          .then(function(response) {
+            if (!response.ok) {
+              throw new Error('Error uploading image');
+            }
+            return response.json();
+          })
+          .then(function(data) {
+            document.getElementById('output').textContent = 'Response: ' + JSON.stringify(data);
+          })
+          .catch(function(error) {
+            document.getElementById('output').textContent = 'Error: ' + error.message;
+          });
+        })
+        .catch(function(error) {
+          document.getElementById('output').textContent = 'Error: ' + error.message;
+        });
+      });
+    </script>
+  </body>
+</html>
