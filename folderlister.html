@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Drag and Drop Folder</title>
+</head>
+<body>
+ <button id="downloadButton">Download List</button>
+  <div id="dropzone">Drop a folder here</div>
+  <ul id="fileList"></ul>
+  <input type="text" id="prependText" placeholder="Enter text to prepend" value="http://10.10.10.254/data/UsbDisk1/Volume1/">
+  <label>
+    <input type="checkbox" id="wrapLinesCheckbox"> Wrap lines as links
+  </label>
+  <label>
+    <input type="checkbox" id="convertToUrlCheckbox" checked> Convert paths to URL-conforming characters
+  </label>
+
+
+  <script>
+    var dropzone = document.getElementById('dropzone');
+    var fileList = document.getElementById('fileList');
+    var prependText = document.getElementById('prependText');
+    var wrapLinesCheckbox = document.getElementById('wrapLinesCheckbox');
+    var convertToUrlCheckbox = document.getElementById('convertToUrlCheckbox');
+    var downloadButton = document.getElementById('downloadButton');
+
+    dropzone.addEventListener('dragover', function(event) {
+      event.preventDefault();
+    });
+
+    dropzone.addEventListener('drop', function(event) {
+      event.preventDefault();
+
+      // Clear the file list
+      fileList.innerHTML = '';
+
+      var items = event.dataTransfer.items;
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+
+        if (item.kind === 'file') {
+          var entry = item.webkitGetAsEntry();
+          if (entry) {
+            if (entry.isDirectory) {
+              traverseDirectory(entry, '');
+            } else if (entry.isFile) {
+              addFileToList(entry.fullPath);
+            }
+          }
+        }
+      }
+    });
+
+    function traverseDirectory(directory, parentPath) {
+      var directoryReader = directory.createReader();
+      directoryReader.readEntries(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var entry = entries[i];
+          if (entry.isFile) {
+            addFileToList(parentPath + entry.name);
+          } else if (entry.isDirectory) {
+            traverseDirectory(entry, parentPath + entry.name + '/');
+          }
+        }
+      }, function(error) {
+        console.error('Error reading directory:', error);
+      });
+    }
+
+    function addFileToList(filePath) {
+      var li = document.createElement('li');
+      var lineContent = prependText.value + filePath;
+      
+      if (convertToUrlCheckbox.checked) {
+        lineContent = encodeURI(lineContent);
+      }
+      
+      if (wrapLinesCheckbox.checked) {
+        var link = document.createElement('a');
+        link.href = lineContent;
+        link.textContent = lineContent;
+        li.appendChild(link);
+      } else {
+        li.textContent = lineContent;
+      }
+      
+      fileList.appendChild(li);
+    }
+
+    downloadButton.addEventListener('click', function() {
+      var content = fileList.innerHTML;
+      var filename = 'extHDD.html';
+
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/html;charset=UTF-8,' + encodeURIComponent(content));
+      element.setAttribute('download', filename);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    });
+  </script>
+
+  <style>
+    #dropzone {
+      width: 500px;
+      height: 100px;
+      border: 2px dashed black;
+      text-align: center;
+      padding-top: 80px;
+      font-size: 24px;
+    }
+  </style>
+</body>
+</html>
