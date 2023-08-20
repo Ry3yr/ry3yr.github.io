@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -52,21 +53,38 @@
       }
     });
 
-    function traverseDirectory(directory, parentPath) {
-      var directoryReader = directory.createReader();
-      directoryReader.readEntries(function(entries) {
-        for (var i = 0; i < entries.length; i++) {
-          var entry = entries[i];
-          if (entry.isFile) {
-            addFileToList(parentPath + entry.name);
-          } else if (entry.isDirectory) {
-            traverseDirectory(entry, parentPath + entry.name + '/');
-          }
+function traverseDirectory(directory, parentPath) {
+  return new Promise(function(resolve, reject) {
+    var reader = directory.createReader();
+    var entries = [];
+
+    var readEntries = function() {
+      reader.readEntries(function(result) {
+        if (result.length) {
+          entries = entries.concat(result);
+          readEntries();
+        } else {
+          var promises = [];
+          entries.forEach(function(entry) {
+            if (entry.isFile) {
+              promises.push(addFileToList(parentPath + entry.name));
+            } else if (entry.isDirectory) {
+              promises.push(traverseDirectory(entry, parentPath + entry.name + '/'));
+            }
+          });
+          Promise.all(promises)
+            .then(resolve)
+            .catch(reject);
         }
       }, function(error) {
         console.error('Error reading directory:', error);
+        reject(error);
       });
-    }
+    };
+
+    readEntries();
+  });
+}
 
     function addFileToList(filePath) {
       var li = document.createElement('li');
