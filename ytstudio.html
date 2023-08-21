@@ -1,0 +1,164 @@
+
+<a target="_blank" href="https://ry3yr.github.io/ytsearch">YT General Search</a><br>
+<a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/ytchannelsearch-dkpr.html">YTChannel Search</a><br>
+<a target="_blank" href="https://ry3yr.github.io/ytstudio">YTStudio Overview</a><br>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Channel Videos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+        }
+
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        select,
+        input[type="text"],
+        button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        input[type="checkbox"],
+        label[for="show_thumbnail"] {
+            display: inline;
+            margin-right: 5px;
+        }
+
+        button[type="submit"] {
+            background-color: #4CAF50;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- HTML form -->
+    <form method="POST" action="">
+        <label for="channel_id">Channel ID:</label>
+        <select id="channel_id" name="channel_id" required>
+            <option value="UCrltGih11A_Nayz6hG5XtIw">Diarykeeper</option>
+            <option value="UCmIpOnd5BVx5Si2hp0WNKZw">Repeekyraid_Cero</option>
+        </select>
+        <label for="api_key">API Key:</label>
+        <input type="text" id="api_key" name="api_key" required>
+        <input type="checkbox" id="show_thumbnail" name="show_thumbnail">
+        <label for="show_thumbnail">Show Thumbnail</label><br>
+        <button type="submit">Get Channel Videos</button>
+    </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.querySelector('form');
+
+  form.addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    var channelId = document.getElementById('channel_id').value;
+    var apiKey = document.getElementById('api_key').value;
+
+    var url = `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${apiKey}`;
+
+    fetch(url)
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Error: cURL request failed');
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        var uploadsPlaylistId = data.items[0].contentDetails.relatedPlaylists.uploads;
+        var playlistUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${uploadsPlaylistId}&key=${apiKey}`;
+
+        return fetch(playlistUrl);
+      })
+      .then(function(playlistResponse) {
+        if (!playlistResponse.ok) {
+          throw new Error('Error: cURL playlist request failed');
+        }
+        return playlistResponse.json();
+      })
+      .then(function(playlistData) {
+        var items = playlistData.items;
+
+        items.forEach(function(item) {
+          var videoId = item.snippet.resourceId.videoId;
+          var videoTitle = item.snippet.title;
+          var videoThumbnail = item.snippet.thumbnails.default.url;
+          var videoPublishedAt = item.snippet.publishedAt;
+
+          var videoContainer = document.createElement('div');
+
+          if (document.getElementById('show_thumbnail').checked) {
+            var thumbnailImg = document.createElement('img');
+            thumbnailImg.src = videoThumbnail;
+            thumbnailImg.alt = 'Thumbnail';
+            videoContainer.appendChild(thumbnailImg);
+          }
+
+          var videoLink = document.createElement('a');
+          videoLink.href = `https://www.youtube.com/watch?v=${videoId}`;
+          videoLink.textContent = videoTitle;
+          videoContainer.appendChild(videoLink);
+
+          var videoIdText = document.createElement('p');
+          videoIdText.textContent = 'Video ID: ' + videoId;
+          videoContainer.appendChild(videoIdText);
+
+          var uploadDateText = document.createElement('p');
+          uploadDateText.textContent = 'Upload Date: ' + videoPublishedAt;
+          videoContainer.appendChild(uploadDateText);
+
+          var commentsUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=5&videoId=${videoId}&key=${apiKey}`;
+
+          fetch(commentsUrl)
+            .then(function(commentsResponse) {
+              if (!commentsResponse.ok) {
+                throw new Error('Error: cURL comments request failed');
+              }
+              return commentsResponse.json();
+            })
+            .then(function(commentsData) {
+              var comments = commentsData.items;
+
+              comments.forEach(function(comment) {
+                var commentText = document.createElement('p');
+                commentText.textContent = 'Comment: ' + comment.snippet.topLevelComment.snippet.textDisplay;
+                videoContainer.appendChild(commentText);
+              });
+            })
+            .catch(function(error) {
+              console.error(error);
+            });
+
+          document.body.appendChild(videoContainer);
+        });
+      })
+      .catch(function(error) {
+        console.error(error);
+      });
+  });
+});
+</script>
+
