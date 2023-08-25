@@ -1,8 +1,3 @@
-
-<a target="_blank" href="https://ry3yr.github.io/ytsearch">YT General Search</a><br>
-<a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/ytchannelsearch-dkpr.html">YTChannel Search</a><br>
-<a target="_blank" href="https://ry3yr.github.io/ytstudio">YTStudio Overview</a><br>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -85,6 +80,17 @@
                     console.log('Error:', error);
                 });
         }
+
+        // Prefill API Key if present in the URL
+        window.onload = function() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var apiKey = urlParams.get('apikey');
+            var apiKeyField = document.getElementById('api_key');
+
+            if (apiKey) {
+                apiKeyField.value = apiKey;
+            }
+        };
     </script>
 </body>
 </html>
