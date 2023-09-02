@@ -1,4 +1,18 @@
-
+    <script>
+        // Get the query parameter value from the URL
+        function getQueryParameter(name) {
+            const urlSearchParams = new URLSearchParams(window.location.search);
+            return urlSearchParams.get(name);
+        }
+        // Prefill the input field with the query parameter value
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiKeyInput = document.getElementById('api_key');
+            const apiKeyValue = getQueryParameter('apikey');
+            if (apiKeyValue) {
+                apiKeyInput.value = apiKeyValue;
+            }
+        });
+    </script>
 
 <a target="_blank" href="https://ry3yr.github.io/ytsearch">YT General Search</a>&nbsp;
 <a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/ytchannelsearch-dkpr.html">YTChannel Search</a>&nbsp;
