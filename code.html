@@ -1,0 +1,101 @@
+
+
+<style>
+body{font-family:Arial,sans-serif;line-height:1.5;margin:20px}a{text-decoration:none;color:#007bff}a:hover{text-decoration:underline}.commands-list{margin-bottom:10px}.commands-list a{margin-right:10px;border-radius:9px;padding:4px 8px;border:1px solid transparent}.commands-list a:last-child{margin-right:0}.commands-list span{margin-right:5px}.commands-list a[href$=".txt"]{border-color:#007bff}
+</style>
+<!-- HTML content -->
+<div class="commands-list">
+  <a target="_blank" href="https://ry3yr.github.io/code">CMDS</a>
+  <a target="_blank" href="https://github.com/Ry3yr/OSTR/tree/main/release/other/Computerstuff/Commands">(↑)</a>
+</div>
+<div class="commands-list">
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Autohotkey/Commands.txt">Autohotkey</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/DOS/Commands.txt">DOS</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/FFMPEG%20Commands.txt">FFMPEG</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Commands_ImageMagick.txt">Imagemagick</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Sox_CMDS.txt">Sox</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/HTML_Codes.txt">HTML</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/PHP.txt">PHP</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Python.txt">Python</a>
+  <a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Android-Keyevents.txt">AndroidCMDS</a>
+</div>
+<br>
+<br>
+
+
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.8;
+    }
+    plaintext {
+      display: block;
+      white-space: pre-wrap;
+      font-family: monospace;
+      background-color: #f5f5f5;
+      margin-bottom: 20px;
+    }
+  </style>
+<script>
+const txtUrls = [
+  'https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Autohotkey/Commands.txt',
+  'https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/HTML_Codes.txt',
+  'https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/DOS/Commands.txt',
+  'https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/FFMPEG%20Commands.txt',
+  'https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Commands_ImageMagick.txt',
+  'https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/PHP.txt',
+  'https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Python.txt',
+];
+function getRandomTxtUrl() {
+  const randomIndex = Math.floor(Math.random() * txtUrls.length);
+  return txtUrls[randomIndex];
+}
+function fetchRandomTxt() {
+  const randomTxtUrl = getRandomTxtUrl();
+  fetch(randomTxtUrl)
+    .then(response => response.text())
+    .then(fileContents => {
+      const pattern = /------(.*?)_____/gs;
+      const matches = fileContents.match(pattern).slice(1);
+      const randomIndex = Math.floor(Math.random() * matches.length);
+      const randomMatch = matches[randomIndex];
+      const numLines = randomMatch.split('\n').length;
+      if (numLines >= 3) {
+        const plaintext = document.createElement('plaintext');
+        plaintext.textContent = randomMatch;
+        document.body.appendChild(plaintext);
+      } else {
+        // Retry fetching if plaintext is empty or doesn't have enough lines
+        fetchRandomTxt();
+      }
+    })
+    .catch(error => {
+      // Retry fetching if there was an error
+      fetchRandomTxt();
+    });
+}
+fetchRandomTxt();
+const fetchButton = document.createElement('button');
+fetchButton.textContent = 'Fetch Random Code';
+fetchButton.onclick = () => {
+  document.querySelectorAll('plaintext').forEach(e => e.remove());
+  fetchRandomTxt();
+};
+</script>
+<button onclick='document.querySelectorAll("plaintext").forEach(e => e.textContent = "");fetchRandomTxt();'>Fetch Random Code</button>
