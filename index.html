@@ -1,25 +1,49 @@
-<!DOCTYPE HTML>
-<html lang="en-US">
-    <head>
-   <a rel="me" href="https://mastodon.social/@ryedai"></a>
-   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-   <link rel="manifest" href="/OSTR/Diarykeepers_Homepage/site.webmanifest">
-   <link rel="mask-icon" href="safari-pinned-tab.svg" color="#5bbad5">
-   <link rel="shortcut icon" href="favicon.ico">
-   <meta name="msapplication-TileColor" content="#da532c">
-   <meta name="msapplication-config" content="browserconfig.xml">
-   <meta name="theme-color" content="#ffffff">
-        <meta charset="UTF-8">
-        <meta http-equiv="refresh" content="0; url=https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/index.html">
-        <script type="text/javascript">
-            window.location.href = "https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/index.html"
-        </script>
-        <title>Homepage</title>
-    </head>
-    <body>
-        <!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->
-        If you are not redirected automatically, follow this <a href='https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/index.html'>-</a>.
-    </body>
+
+
+
+<script>
+var time = 5 * 1;
+setInterval(function() {
+  //var seconds = time % 60;
+  //var minutes = (time - seconds) / 60;
+  var seconds = time;
+  var minutes = 0;
+  if (seconds.toString().length == 1) {
+    seconds = "0" + seconds;
+  }
+  if (minutes.toString().length == 1) {
+    minutes = "0" + minutes;
+  }
+  document.getElementById("time").innerHTML = minutes + ":" + seconds;
+  time--;
+  if (time == 0) {
+    window.location.href = "https://alceawis.de";
+  }
+}, 1000);
+</script>
+<div class="timer" onload="timer(1800)">
+<div class="time"><strong>Redirecting in <span id="time"> x seconds</span></strong></div></div>
+
+
+
+
+    <style>
+#right-button:hover,.button{transition:background-color .3s ease-in-out}body{margin:0;padding:0}.button{display:flex;align-items:center;justify-content:center;height:100vh;width:50%;background-color:#ff0000;color:#fff;font-size:3rem;font-weight:700;text-transform:uppercase;cursor:pointer}.button:hover{background-color:#0056b3}.button img{max-height:50%;max-width:70%}#left-button{float:left}#right-button{float:right;background-color:blue}#right-button:hover{background-color:#333}#right-button:hover img{animation:1s bounce}@keyframes bounce{0%,100%,50%{transform:translateY(0)}25%{transform:translateY(-20px)}75%{transform:translateY(-10px)}}
+    </style>
+  </head>
+  <body>
+    <a href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/index.html" >
+      <div class="button" id="left-button">
+        Diary
+        <img src="https://raw.githubusercontent.com/Ry3yr/ry3yr.github.io/main/android-chrome-384x384.png" alt="Center Image">
+       <br><br>keeper
+      </div>
+    </a>
+    <a href="https://alceawis.de/" >
+      <div class="button" id="right-button">
+        Alceawis
+        <img src="https://files.mastodon.social/cache/accounts/avatars/109/864/007/248/224/654/original/ff09fe24bfece34f.png" alt="Logo">
+      </div>
+    </a>
+  </body>
 </html>
