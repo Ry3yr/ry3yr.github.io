@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .green {
+      color: green;
+    }
+    .red {
+      color: red;
+    }
+    .column {
+      float: left;
+      width: 50%;
+    }
+  </style>
+</head>
+<body>
+  <label for="userId">User ID:</label>
+  <input type="text" id="userId" name="userId" value="109629985010224381"><br><br>
+  <label for="instance">Instance:</label>
+  <input type="text" id="instance" name="instance" value="pb.todon.de"><br><br>
+  <button onclick="displayFollowersAndFollowings()">Display Followers and Followings</button><br><br>
+  <div class="column">
+    <h2>Followers</h2>
+    <div id="followers"></div>
+  </div>
+  <div class="column">
+    <h2>Followings</h2>
+    <div id="followings"></div>
+  </div>
+  <script>
+    // Function to make API requests
+    async function mastodonRequest(url, accessToken) {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      const data = await response.json();
+      return data;
+    }
+    // Function to resolve user's username
+    async function resolveUser(id, instance, accessToken) {
+      const userUrl = `https://${instance}/api/v1/accounts/${id}`;
+      const user = await mastodonRequest(userUrl, accessToken);
+      return user.acct;
+    }
+    // Function to display followers and followings
+    async function displayFollowersAndFollowings() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const instanceParam = urlParams.get('instance');
+      const userIdsParam = urlParams.get('userids');
+      const userIdTextbox = document.getElementById('userId');
+      const instanceTextbox = document.getElementById('instance');
+      if (instanceParam && userIdsParam) {
+        instanceTextbox.value = instanceParam;
+        userIdTextbox.value = userIdsParam;
+      }
+      const userId = userIdTextbox.value;
+      const instance = instanceTextbox.value;
+      const accessToken = 'YOUR_ACCESS_TOKEN';
+      const followerUrl = `https://${instance}/api/v1/accounts/${userId}/followers?limit=100`;
+      const followingUrl = `https://${instance}/api/v1/accounts/${userId}/following?limit=100`;
+      try {
+        const [followers, followings] = await Promise.all([
+          mastodonRequest(followerUrl, accessToken),
+          mastodonRequest(followingUrl, accessToken)
+        ]);
+        const followerIds = followers.map(follower => follower.id);
+        const followingIds = followings.map(following => following.id);
+        const inBothLists = followerIds.filter(id => followingIds.includes(id));
+        const followersDiv = document.getElementById('followers');
+        const followingsDiv = document.getElementById('followings');
+        followersDiv.innerHTML = '';
+        followingsDiv.innerHTML = '';
+        for (const follower of followers) {
+          const followerId = follower.id;
+          const followerUsername = await resolveUser(followerId, instance, accessToken);
+          const followerElement = document.createElement('span');
+          if (inBothLists.includes(followerId)) {
+            followerElement.textContent = followerUsername;
+            followerElement.classList.add('green');
+          } else {
+            followerElement.textContent = followerUsername;
+            followerElement.classList.add('red');
+          }
+          followersDiv.appendChild(followerElement);
+          followersDiv.appendChild(document.createElement('br'));
+        }
+        for (const following of followings) {
+          const followingId = following.id;
+          const followingUsername = await resolveUser(followingId, instance, accessToken);
+          const followingElement = document.createElement('span');
+          if (inBothLists.includes(followingId)) {
+            followingElement.textContent = followingUsername;
+            followingElement.classList.add('green');
+          } else {
+            followingElement.textContent = followingUsername;
+            followingElement.classList.add('red');
+          }
+          followingsDiv.appendChild(followingElement);
+          followingsDiv.appendChild(document.createElement('br'));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+ // Check if query strings are present in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const instanceParam = urlParams.get('instance');
+    const userIdsParam = urlParams.get('userid');
+    if (instanceParam && userIdsParam) {
+      const instanceTextbox = document.getElementById('instance');
+      const userIdTextbox = document.getElementById('userId');
+      instanceTextbox.value = instanceParam;
+      userIdTextbox.value = userIdsParam;
+      displayFollowersAndFollowings();
+    }
+  </script>
+</body>
+</html>
+
+
+
+<!--<!DOCTYPE html>
+<html>
+<head>
+  <title>Display Mastodon Followers</title>
+  <style>
+    .green {
+      color: green;
+    }
+    .red {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <label for="userId">User ID:</label>
+  <input type="text" id="userId" name="userId" value="109629985010224381"><br><br>
+  
+  <label for="instance">Instance:</label>
+  <input type="text" id="instance" name="instance" value="pb.todon.de"><br><br>
+
+  <button onclick="displayFollowers()">Display Followers</button><br><br>
+
+  <div id="followers"></div>
+
+  <script>
+    // Function to make API requests
+    async function mastodonRequest(url, accessToken) {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      const data = await response.json();
+      return data;
+    }
+
+    // Function to resolve user's username
+    async function resolveUser(id, instance, accessToken) {
+      const userUrl = `https://${instance}/api/v1/accounts/${id}`;
+      const user = await mastodonRequest(userUrl, accessToken);
+      return user.acct;
+    }
+
+    // Function to display followers
+    async function displayFollowers() {
+      const userId = document.getElementById('userId').value;
+      const instance = document.getElementById('instance').value;
+      const accessToken = 'YOUR_ACCESS_TOKEN';
+
+      const followerUrl = `https://${instance}/api/v1/accounts/${userId}/followers?limit=100`;
+      const followingUrl = `https://${instance}/api/v1/accounts/${userId}/following?limit=100`;
+
+      try {
+        const [followers, followings] = await Promise.all([
+          mastodonRequest(followerUrl, accessToken),
+          mastodonRequest(followingUrl, accessToken)
+        ]);
+
+        const followerIds = followers.map(follower => follower.id);
+        const followingIds = followings.map(following => following.id);
+        const inBothLists = followerIds.filter(id => followingIds.includes(id));
+
+        const followersDiv = document.getElementById('followers');
+        followersDiv.innerHTML = '';
+
+        for (const follower of followers) {
+          const followerId = follower.id;
+          const followerUsername = await resolveUser(followerId, instance, accessToken);
+          const followerElement = document.createElement('span');
+          if (inBothLists.includes(followerId)) {
+            followerElement.textContent = followerUsername;
+            followerElement.classList.add('green');
+          } else {
+            followerElement.textContent = followerUsername;
+            followerElement.classList.add('red');
+          }
+          followersDiv.appendChild(followerElement);
+          followersDiv.appendChild(document.createElement('br'));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    // Check if query strings are present in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const instanceParam = urlParams.get('instance');
+    const userIdsParam = urlParams.get('userid');
+
+    if (instanceParam && userIdsParam) {
+      const instanceTextbox = document.getElementById('instance');
+      const userIdTextbox = document.getElementById('userId');
+
+      instanceTextbox.value = instanceParam;
+      userIdTextbox.value = userIdsParam;
+
+      displayFollowers();
+    }
+  </script>
+</body>
+</html>
+-->
