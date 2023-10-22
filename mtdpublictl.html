@@ -1,0 +1,219 @@
+<a href="?homeurl=https://pb.todon.de&apikey=apikey">Fill</a><br>
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <select id="instanceDropdown">
+    <option value="https://pb.todon.de">pb.todon.de</option>
+    <option value="https://mastodon.social">mastodon.social</option>
+    <option value="https://kopimi.space">kopimi.space</option>
+    <option value="https://sunny.garden">Sunny.Garden</option>
+  </select>
+
+  <label for="localCheckbox">
+    <input type="checkbox" id="localCheckbox"> Local
+  </label>
+  <input type="text" id="textboxUrl" placeholder="Enter home instance URL">
+  <input type="password" id="apikey" placeholder="API key">
+  <div id="statuses"></div>
+
+  <script>
+    // Function to fetch Mastodon statuses based on the selected instance and local checkbox state
+    function fetchMastodonStatuses(instanceUrl) {
+      const localCheckbox = $('#localCheckbox').prop('checked');
+      const url = `${instanceUrl}/api/v1/timelines/public?limit=50${localCheckbox ? '&local=true' : ''}`;
+
+      $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'json',
+        headers: {
+          'Authorization': `Bearer ${$('#apikey').val()}`
+        },
+        success: function(data) {
+          const statuses = data;
+          parseMastodonStatuses(statuses);
+        },
+        error: function(error) {
+          console.error('Error fetching Mastodon statuses:', error);
+        }
+      });
+    }
+
+    // Function to handle shortcode
+    function handleShortcode(shortcode) {
+      // Your shortcode handling logic here
+      console.log(`Handling shortcode: ${shortcode}`);
+    }
+
+    // Function to parse Mastodon statuses
+    function parseMastodonStatuses(statuses) {
+      $('#statuses').empty(); // Clear existing statuses
+
+      const textboxUrl = $('#textboxUrl').val();
+
+      statuses.forEach((status) => {
+        // Check if the status has a shortcode
+        if (status.shortcode) {
+          handleShortcode(status.shortcode);
+        }
+        // Process other status data as needed
+        console.log(`Processing status: ${status.content}`);
+
+        // Create a link to the status
+        const statusLink = `${status.content}`;
+        const apikey = $('#apikey').val();
+        // Check if the textbox URL is already part of the status URL
+        const url = textboxUrl && !status.url.includes(textboxUrl) && !status.url.includes('notes' || 'plasmatrap') ? `https://alcea-wisteria.de/PHP/0demo/2023-10-22-MastodonTootSearch/searchmastourl.php?search=${status.url}&pbUrl=${textboxUrl}&apikey=${apikey}` : status.url;
+
+        // Render the status and link on the page
+        $('#statuses').append(`${status.content} <a href="${url}" target="_blank">${status.account.display_name}</a></p><hr>`);
+      });
+    }
+
+    // Function to handle dropdown change event
+    function handleDropdownChange() {
+      // Get the selected instance URL
+      const selectedInstance = $('#instanceDropdown').val();
+      // Fetch Mastodon statuses for the selected instance
+      fetchMastodonStatuses(selectedInstance);
+    }
+    // Add event listener to the dropdown
+    $('#instanceDropdown').on('change', handleDropdownChange);
+    // Add event listeners to the URL and API key textboxes
+    $('#textboxUrl, #apikey').on('input', function() {
+      // Call the fetchMastodonStatuses function to refetch the current state
+      const selectedInstance = $('#instanceDropdown').val();
+      fetchMastodonStatuses(selectedInstance);
+    });
+    // Initial fetch for the default instance
+    const defaultInstance = 'https://pb.todon.de';
+    fetchMastodonStatuses(defaultInstance);
+  </script>
+</body>
+</html>
+<script>
+window.onload = function() {
+  const homeUrlParam = new URLSearchParams(window.location.search).get('homeurl');
+  const apiKeyParam = new URLSearchParams(window.location.search).get('apikey');
+  const homeUrlInput = document.getElementById('textboxUrl');
+  const apiKeyInput = document.getElementById('apikey');
+  if (homeUrlParam && apiKeyParam) {
+    homeUrlInput.value = homeUrlParam;
+    apiKeyInput.value = apiKeyParam;
+  }
+};
+</script>
+
+
+
+<!--<a href="?search=https://sunny.garden/@Iva852/109293246960188756&pbUrl=https://pb.todon.de&apikey=apikey">test</a><br>
+<?php
+// Check if the API key is submitted
+if (isset($_POST['apikey'])) {
+    $apiKey = $_POST['apikey'];
+    $pbUrl = $_POST['pbUrl'];
+    $search = $_POST['url'];
+
+    $url = $pbUrl . '/api/v2/search/?q=' . urlencode($search) . '&limit=1&resolve=true';
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $apiKey
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    // Execute the request
+    $response = curl_exec($ch);
+    if (curl_errno($ch)) {
+        echo 'Error: ' . curl_error($ch);
+    }
+    curl_close($ch);
+    $data = json_decode($response, true);
+    if (isset($data['statuses'][0]['id'])) {
+        $id = $data['statuses'][0]['id'];
+        $urlParts = parse_url($search);
+        $pathParts = explode('/', trim($urlParts['path'], '/'));
+        $username = $pathParts[0];
+        $domain = $urlParts['host'];
+
+        //echo 'Search URL: ' . $search . '<br>';
+        //echo 'Username: ' . $username . '<br>';
+        //echo 'Domain: ' . $domain . '<br>';
+        //echo 'ID: ' . $id . '<br>';
+
+        $newUrl = $pbUrl . '/' . $username . '@' . $domain . '/' . $id;
+        //echo 'New URL: ' . $newUrl;
+        echo 'New URL: <a id="newUrlLink" href="' . $newUrl . '">' . $newUrl . '</a>';
+echo '<script>';
+echo 'document.getElementById("newUrlLink").click();';
+echo '</script>';
+    } else {
+        echo 'ID not found in the response.';
+    }
+}
+?>
+<form method="POST" action="">
+    <label for="apikey">API Key:</label>
+    <input type="text" id="apikey" name="apikey" required>
+    <br>
+    <label for="pbUrl">pbUrl:</label>
+    <input type="text" id="pbUrl" name="pbUrl" required>
+    <br>
+    <label for="url">URL:</label>
+    <input type="text" id="url" name="url" required>
+    <input type="submit" value="Submit">
+</form>
+<script>
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stop = urlParams.get('stop');
+    if (stop) {
+        return; // Stop the script right at the beginning
+    }
+    const search = urlParams.get('search');
+    const pbUrl = urlParams.get('pbUrl');
+    const apiKey = urlParams.get('apikey');
+    if (search && pbUrl && apiKey) {
+        document.getElementById('apikey').value = apiKey;
+        document.getElementById('pbUrl').value = pbUrl;
+        document.getElementById('url').value = search;
+        document.forms[0].submit();
+        // Add the 'stop' query parameter to the URL
+        const currentUrl = window.location.href;
+        const updatedUrl = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'stop=true';
+        window.history.replaceState({}, '', updatedUrl);
+        return; // Break off the script here
+    }
+    // Continue with other code if needed
+
+    // Press the nearby "Submit" button
+    const submitButton = document.querySelector('input[type="submit"]');
+    submitButton.click();
+
+    // Wait for the text "New URL:" to appear
+    const observer = new MutationObserver(function(mutationsList) {
+        for (let mutation of mutationsList) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                const newUrlElements = document.querySelectorAll('body :not(script):not(style):not(link):not(meta):not(base):not(title):contains("New URL:")');
+                for (let element of newUrlElements) {
+                    const linkElement = element.nextElementSibling;
+                    if (linkElement.tagName === 'A') {
+                        linkElement.addEventListener('click', function(event) {
+                            event.preventDefault(); // Prevent the default link behavior
+                            // Your code to handle the link click event
+                            // ...
+                            // Example: Open the link in a new tab
+                            window.open(linkElement.href, '_blank');
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+};
+</script>-->
