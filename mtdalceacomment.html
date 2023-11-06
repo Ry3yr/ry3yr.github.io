@@ -1,4 +1,5 @@
 
+
 <script type="module">
 const styles = `
 :root {
@@ -107,7 +108,7 @@ class MastodonComments extends HTMLElement {
           Please enable JavaScript to view the comments powered by the Fediverse.
         </div>
       </noscript>
-      <p>You can use your Fediverse (i.e. Mastodon, among many others) account to reply to this <a class="link"
+      <p>You can use your Fediverse (i.e. Mastodon, among many others) account to reply to this <a target=_blank class="link"
           href="https://${this.host}/@${this.user}/${this.tootId}">post</a>.
       </p>
       <p id="mastodon-comments-list"></p>
@@ -167,14 +168,14 @@ class MastodonComments extends HTMLElement {
             )}" height=60 width=60 alt="">
           </div>
           <div class="details">
-            <a class="name" href="${toot.account.url}" rel="nofollow">${
+            <a target=_blank class="name" href="${toot.account.url}" rel="nofollow">${
               toot.account.display_name
             }</a>
-            <a class="user" href="${
+            <a target=_blank class="user" href="${
               toot.account.url
             }" rel="nofollow">${this.user_account(toot.account)}</a>
           </div>
-          <a class="date" href="${
+          <a target=_blank class="date" href="${
             toot.url
           }" rel="nofollow">${toot.created_at.substr(
             0,
