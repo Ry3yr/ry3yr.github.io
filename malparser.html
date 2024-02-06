@@ -1,0 +1,109 @@
+<script>
+fetch("https://ry3yr.github.io/mal.xml")
+  .then(response => response.text())
+  .then(xmlString => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+    const table = document.createElement("table");
+
+    const animeList = xmlDoc.getElementsByTagName("anime");
+    const animeData = [];
+
+    for (let i = 0; i < animeList.length; i++) {
+      const anime = animeList[i];
+
+      const seriesTitle = anime.getElementsByTagName("series_title")[0].textContent;
+      const seriesType = anime.getElementsByTagName("series_type")[0].textContent;
+      const seriesEpisodes = parseInt(anime.getElementsByTagName("series_episodes")[0].textContent);
+      const myScore = parseFloat(anime.getElementsByTagName("my_score")[0].textContent);
+      const myStatus = anime.getElementsByTagName("my_status")[0].textContent;
+
+      animeData.push({
+        seriesTitle,
+        seriesType,
+        seriesEpisodes,
+        myScore,
+        myStatus
+      });
+    }
+
+    const createTable = () => {
+      table.innerHTML = "";
+
+      const headerRow = document.createElement("tr");
+
+      const headers = [
+        { label: "Title", key: "seriesTitle" },
+        { label: "Type", key: "seriesType" },
+        { label: "Episodes", key: "seriesEpisodes" },
+        { label: "Score", key: "myScore" },
+        { label: "Status", key: "myStatus" }
+      ];
+
+      headers.forEach(header => {
+        const headerCell = document.createElement("th");
+        headerCell.textContent = header.label;
+        headerCell.addEventListener("click", () => sortTable(header.key));
+        headerRow.appendChild(headerCell);
+      });
+
+      table.appendChild(headerRow);
+
+      animeData.forEach(data => {
+        const row = document.createElement("tr");
+
+        headers.forEach(header => {
+          const cell = document.createElement("td");
+          if (header.key === "seriesTitle") {
+            const link = document.createElement("a");
+            link.href = `https://myanimelist.net/search/all?q=${encodeURIComponent(data[header.key])}`;
+            link.target = "_blank";
+            link.textContent = data[header.key];
+            cell.appendChild(link);
+          } else {
+            cell.textContent = data[header.key];
+          }
+          row.appendChild(cell);
+        });
+
+        table.appendChild(row);
+      });
+
+      document.body.appendChild(table);
+    };
+
+    let sortKey = "";
+    let sortAscending = true;
+
+    const sortTable = key => {
+      if (sortKey === key) {
+        sortAscending = !sortAscending;
+      } else {
+        sortKey = key;
+        sortAscending = true;
+      }
+
+      animeData.sort((a, b) => {
+        const valueA = a[key];
+        const valueB = b[key];
+
+        let comparison = 0;
+        if (valueA > valueB) {
+          comparison = 1;
+        } else if (valueA < valueB) {
+          comparison = -1;
+        }
+
+        return sortAscending ? comparison : -comparison;
+      });
+
+      createTable();
+    };
+
+    createTable();
+  })
+  .catch(error => {
+    console.error("Error loading mal.xml:", error);
+  });
+</script>
