@@ -1,62 +1,65 @@
-<a target="_blank" href="?v=0SQ-TJKPPIg&time=1m02s" style=color:blue>Xmple</a><br><br>
+<a target="_blank" href="?v=0SQ-TJKPPIg&t=1m02s" style="color:blue">Xmple</a><br><br>
 
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-const videoId = urlParams.get('v');
-const timestamp = urlParams.get('time') || '0m0s';
+  const urlParams = new URLSearchParams(window.location.search);
+  const videoId = urlParams.get('v');
+  const timestamp = urlParams.get('t') || '0m0s';
 
-if (videoId) {
-  const youtubeLink = `https://www.youtube.com/watch?v=${videoId}&t=${timestamp}`;
-  // window.open(youtubeLink);
-  window.location.href = youtubeLink;
-} else {
-  // Handle the case when the video ID is empty
-  console.log("Video ID is empty. Redirecting stopped.");
-}
+  if (videoId) {
+    const youtubeLink = `https://www.youtube.com/watch?v=${videoId}&t=${timestamp}`;
+    // window.open(youtubeLink);
+    window.location.href = youtubeLink;
+  } else {
+    // Handle the case when the video ID is empty
+    console.log("Video ID is empty. Redirecting stopped.");
+  }
 </script>
 
 <details>
-<u>Parameters:</u><br>
-<b>v</b>: VideoId<br>
-<b>time</b>: 00m00s
-<br>
-<br>Example:<br>
-?v=0SQ-TJKPPIg&time=1m02s
+  <u>Parameters:</u><br>
+  <b>v</b>: VideoId<br>
+  <b>t</b>: 00m00s
+  <br>
+  <br>Example:<br>
+  ?v=0SQ-TJKPPIg&t=1m02s
 </details>
 
 <hr>
-    <script>
-        function generateLink() {
-            var url = document.getElementById("youtube-url").value;
-            var videoId = extractVideoId(url);
-            var link = window.location.origin + "/yt?v=" + videoId;
-            var minutes = document.getElementById("minutes").value;
-            var seconds = document.getElementById("seconds").value;
-            if (minutes && seconds) {
-                var timeQuery = "&time=" + minutes + "m" + seconds + "s";
-                link += timeQuery;
-            }
-            document.getElementById("generated-link").textContent = link;
-        }
-        function extractVideoId(url) {
-            var videoId = "";
-            var regex = /[?&]v=([^&#]*)/i;
-            var match = regex.exec(url);
-            if (match && match[1]) {
-                videoId = match[1];
-            }
-            return videoId;
-        }
-    </script>
+<script>
+  function generateLink() {
+    var url = document.getElementById("youtube-url").value;
+    var videoId = extractVideoId(url);
+    var link = window.location.origin + "/yt?v=" + videoId;
+    var minutes = document.getElementById("minutes").value;
+    var seconds = document.getElementById("seconds").value;
+    if (minutes && seconds) {
+      var timeQuery = "&t=" + minutes + "m" + seconds + "s";
+      link += timeQuery;
+      var ytlink = "https://m.youtube.com/watch?v=" + videoId + timeQuery;
+    }
+    document.getElementById("generated-link").textContent = link;
+    document.getElementById("generated-ytlink").textContent = ytlink;
+  }
+  function extractVideoId(url) {
+    var videoId = "";
+    var regex = /[?&]v=([^&#]*)/i;
+    var match = regex.exec(url);
+    if (match && match[1]) {
+      videoId = match[1];
+    }
+    return videoId;
+  }
+</script>
 </head>
 <body>
-    <label for="youtube-url">Enter YouTube URL:</label>
-    <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=...">
-    <br><br>
-    <label for="minutes">Minutes:</label>
-    <input type="text" id="minutes">
-    <label for="seconds">Seconds:</label>
-    <input type="text" id="seconds">
-    <br><br>
-    <button onclick="generateLink()">Generate Link</button>
-    <p id="generated-link"></p>
+  <label for="youtube-url">Enter YouTube URL:</label>
+  <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=...">
+  <br><br>
+  <label for="minutes">Minutes:</label>
+  <input type="text" id="minutes">
+  <label for="seconds">Seconds:</label>
+  <input type="text" id="seconds">
+  <br><br>
+  <button onclick="generateLink()">Generate Link</button>
+  <p id="generated-link"></p>
+  <p>YouTube Link: <span id="generated-ytlink"></span></p>
