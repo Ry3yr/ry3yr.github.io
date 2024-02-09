@@ -1,0 +1,39 @@
+r#cd /storage/emulated/0/DCIM/USBCamera&#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -vf "scale=1000:600:force_original_aspect_ratio=decrease,pad=1000:600:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; &#160;done
+r#cd /storage/emulated/0/DCIM/Rec/2conv&#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -vf "scale=1000:600:force_original_aspect_ratio=decrease,pad=1000:600:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; &#160;done
+r#cd /storage/emulated/0/Download  &#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:22 -t 00:05:18 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download  &#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:022 -t 00:05:18 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/DCIM/USBCamera&#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -vf "scale=2000:1200:force_original_aspect_ratio=decrease,pad=2000:1200:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; &#160;done
+r#cd /storage/emulated/0/Download  &#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:51 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download &#160;for file in *.mp4; do ffmpeg -i "$file" -vf "scale=2000:1200:force_original_aspect_ratio=decrease,pad=2000:1200:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; done
+r#cd /storage/emulated/0/Download &#160;for file in *.mp4; do ffmpeg -i "$file" -vf "scale=1000:600:force_original_aspect_ratio=decrease,pad=2000:1200:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; done
+r#cd /storage/emulated/0/Download for file in *.mp4; do ffmpeg -i "$file" -vf "scale=1000:600:force_original_aspect_ratio=decrease,pad=2000:1200:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; done
+r#cd /storage/emulated/0/Download  &#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:08 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download  &#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:07 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download  &#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:03 -t 00:00:06 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download &#160;for file in *.mp4; do ffmpeg -i "$file" -vf "scale=1000:600:force_original_aspect_ratio=decrease,pad=1000:600:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; done
+r#cd /storage/emulated/0/Download for file in *.mp4; do ffmpeg -i "$file" -vf "scale=2000:1200:force_original_aspect_ratio=decrease,pad=2000:1200:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; done
+r#cd /storage/emulated/0/Download &#160; for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:32 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download &#160; for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:29 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download &#160; for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:30 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download &#160; for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:31 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download &#160; for file in *.mp4; &#160;do ffmpeg -i "$file" -ss 00:00:04 -t 00:00:32 -async 1 "${file%.*}_cutoutput.mp4" &#160;done
+r#cd /storage/emulated/0/Download &#160;ffmpeg -i *.mp4 -i *.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output.mp4
+r#cd /storage/emulated/0/Download  &#160;files="" &#160;for f in *.mp4; do &#160;files+="file '$PWD/$f'\n" &#160;done &#160;echo -e "$files" > input.txt &#160;ffmpeg -f concat -safe 0 -i input.txt -c copy output.mp4
+r#cd /storage/emulated/0/Download  &#160;files="" &#160;for f in *.mp4; do &#160;files+="file '$PWD/$f'\n" done &#160;echo -e "$files" > input.txt &#160;ffmpeg -f concat -safe 0 -i input.txt -c copy output.mp4
+r#cd /storage/emulated/0/Download  &#160;files="" &#160;for f in *.mp4; do files+="file '$PWD/$f'\n" done &#160;echo -e "&#160;$files" > input.txt &#160;ffmpeg -f concat -safe 0 -i input.txt -c copy output.mp4
+r#cd /storage/emulated/0/Download  &#160;files="" for f in *.mp4; &#160;do   files+="file '$PWD/$f'\n" done &#160;echo -e "$files" > input.txt ffmpeg -f concat -safe 0 -i input.txt -c copy output.mp4
+r#cd /storage/emulated/0/Download  &#160;files="" for f in *.mp4; do   files+="file '$PWD/$f'\n" done &#160;echo -e "$files" > input.txt ffmpeg -f concat -safe 0 -i input.txt -c copy output.mp4
+f#Concat mp4s||cd /storage/emulated/0/Download &#160;files=""&#160;for f in *.mp4; do&#160;  files+="file '$PWD/$f'\n"&#160;done&#160;echo -e "$files" > input.txt&#160;ffmpeg -f concat -safe 0 -i input.txt -c copy output.mp4
+f#Cut xx:xx:xx -xx:xx:xx part||cd /storage/emulated/0/Download &#160;for file in *.mp4; do ffmpeg -i "$file" -ss 00:00:00 -t 00:00:30 -async 1 "${file%.*}_cutoutput.mp4"&#160;done
+f#Frame(png)->mp4||cd /storage/emulated/0/Pictures&#160;cat *.png | ffmpeg -framerate 4 -f image2pipe -i - output.mp4
+f#Frame(png)->mp4(%03)||cd /storage/emulated/0/Pictures&#160;x=1; for i in *png; do counter=$(printf %03d $x); mv "$i" "$counter".png; x=$(($x+1)); done&#160;ffmpeg -r 5 -f image2 -i %03d.png -f mp4 -q:v 0 -vcodec mpeg4 -r 24 myVideo.mp4
+f#GenkiShadowCast downscale (USBCamera)||cd /storage/emulated/0/DCIM/USBCamera&#160;for file in *.mp4; &#160;do ffmpeg -i "$file" -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; &#160;done
+f#MKV -> mp4||cd /storage/emulated/0/Download&#160;ffmpeg -i *.mkv -codec copy LostInTranslation.mp4
+f#Mp4 2 animgif||cd /storage/emulated/0/Download &#160;ffmpeg -i *.mp4 -vf "fps=10,scale=320:-1:flags=lanczos" -c:v pam -f image2pipe - | convert -delay 10 - -loop 0 -layers optimize output.gif
+f#Reenc 200:1200 (batch)||cd /storage/emulated/0/Download&#160;for file in *.mp4; do ffmpeg -i "$file" -vf "scale=2000:1200:force_original_aspect_ratio=decrease,pad=2000:1200:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k "${file%.*}_output.mp4"; done
+f#[png] -> mp4||cd /storage/emulated/0/Download &#160;ffmpeg -r 4 -f image2 -i frame_%05d.png -f mp4 -q:v 0 -vcodec mpeg4 -r 24 myVieo.mp4
+f#mp3 + mp4 => new mp4||cd /storage/emulated/0/Download&#160;ffmpeg -i *.mp4 -i *.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output.mp4
+f#mp3+jpg---> mp4||cd /storage/emulated/0/Download&#160;ffmpeg -loop 1 -i *.jpg -i *.mp3 -c:a copy -c:v libx264 -shortest /storage/emulated/0/Download/out.mp4
+f#mp4 -> frames||cd /storage/emulated/0/Download &#160;ffmpeg -i *.mp4 "%03d.png"
+f#png over vid||ffmpeg -i /storage/emulated/0/Download/mp4.mp4 -i /storage/emulated/0/Download/png.png -filter_complex "[1][0]scale2ref[img][vid];[vid][img]overlay=enable='between(t,0,17)'" -c:a copy /storage/emulated/0/Download/outz.mp4
+f#reencode 1280:960||cd /storage/emulated/0/Download&#160;ffmpeg -i *.mp4 -vf "scale=1280:960:force_original_aspect_ratio=decrease,pad=1280:960:(ow-iw)/2:(oh-ih)/2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k output_video.mp4
