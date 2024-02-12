@@ -1,10 +1,7 @@
 
-
-<a target="_blank" href="https://ry3yr.github.io/yt" style=color:gray>YT Link Relay</a><br>
 <a target="_blank" href="https://ry3yr.github.io/ytsearch">YT General Search</a><br>
 <a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/ytchannelsearch-dkpr.html">YTChannel Search</a><br>
 <a target="_blank" href="https://ry3yr.github.io/ytstudio">YTStudio Overview</a><br>
-<a target="_blank" href="ytplaylists.html" style=color:blue>ytplaylists</a><br>
 
 <!DOCTYPE html>
 <html>
@@ -78,25 +75,8 @@
                             linkElement.textContent = 'Link';
                             linkElement.target = '_blank'; // Add target="_blank" attribute
 
-                            // Create copy button
-                            var copyButton = document.createElement('button');
-                            copyButton.textContent = 'Copy';
-                            copyButton.style.backgroundColor = 'transparent'; // Set background color to transparent
-                            copyButton.style.border = 'none'; // Remove button border
-                            copyButton.addEventListener('click', function() {
-                            var textToCopy = '#CurrListeningAlcea\n' + title + '\n' + link;
-                            navigator.clipboard.writeText(textToCopy)
-                                    .then(function() {
-                                        console.log('Text copied to clipboard:', textToCopy);
-                                    })
-                                    .catch(function(error) {
-                                        console.log('Error copying text:', error);
-                                    });
-                            });
-
                             resultsDiv.appendChild(titleElement);
                             resultsDiv.appendChild(linkElement);
-                            resultsDiv.appendChild(copyButton);
                             resultsDiv.appendChild(document.createElement('br'));
                         }
                     });
@@ -106,16 +86,16 @@
                 });
         }
 
-       // Prefill API Key if present in the URL
-window.onload = function() {
-    var urlParams = new URLSearchParams(window.location.search);
-    var apiKey = urlParams.get('apikey');
-    var apiKeyField = document.getElementById('api_key');
+        // Prefill API Key if present in the URL
+        window.onload = function() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var apiKey = urlParams.get('apikey');
+            var apiKeyField = document.getElementById('api_key');
 
-    if (apiKey) {
-        apiKeyField.value = apiKey;
-    }
-};
-</script>
+            if (apiKey) {
+                apiKeyField.value = apiKey;
+            }
+        };
+    </script>
 </body>
 </html>
