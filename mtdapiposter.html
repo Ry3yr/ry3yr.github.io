@@ -1,0 +1,31 @@
+<script>
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const instanceurl = urlParams.get('instanceurl');
+const user = urlParams.get('user');
+const apikey = urlParams.get('apikey');
+const encodedValue = urlParams.get('value');
+const decodedValue = atob(encodedValue);
+const apiUrl = `${instanceurl}`;
+//const apiUrl = `${instanceurl}/api/v1/statuses`;
+const userId = user;
+const apiKey = apikey;
+const postData = {
+  status: decodedValue,
+};
+fetch(apiUrl, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`,
+  },
+  body: JSON.stringify(postData),
+})
+  .then(response => response.json())
+  .then(data => {
+    console.log('Post created successfully:', data);
+  })
+  .catch(error => {
+    console.error('Error creating post:', error);
+  });
+</script>
