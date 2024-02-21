@@ -1,36 +1,50 @@
-  <div id="postInfo"></div>
-
-  <script>
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    const instanceurl = urlParams.get('instanceurl');
-    const user = urlParams.get('user');
-    const apikey = urlParams.get('apikey');
-    const encodedValue = urlParams.get('value');
-    const decodedValue = atob(encodedValue);
-    const apiUrl = `${instanceurl}`;
-    //const apiUrl = `${instanceurl}/api/v1/statuses`;
-    const userId = user;
-    const apiKey = apikey;
-    const postData = {
-      status: decodedValue,
-    };
-
-    fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(postData),
+<div id="postInfo"></div>
+<script>
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const instanceurl = urlParams.get('instanceurl');
+  const user = urlParams.get('user');
+  const apikey = urlParams.get('apikey');
+  const encodedValue = urlParams.get('value');
+  const encoding = urlParams.get('encoding') || 'base64'; // Retrieve the encoding value or use 'base64' as default
+  let decodedValue;
+  if (encoding === 'base64') {
+    decodedValue = atob(encodedValue); // Use base64 decoding if encoding is 'base64'
+  } else {
+    decodedValue = decodeURIComponent(encodedValue); // Use URI decoding for other encoding schemes
+  }
+  const apiUrl = `${instanceurl}`;
+  //const apiUrl = `${instanceurl}/api/v1/statuses`;
+  const userId = user;
+  const apiKey = apikey;
+  const postData = {
+    status: decodedValue,
+  };
+  const postInfoDiv = document.getElementById('postInfo');
+  fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(postData),
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Error creating post: ' + response.status);
+      }
+      return response.json();
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Post created successfully:', data);
-        const postInfoDiv = document.getElementById('postInfo');
-        postInfoDiv.innerText = JSON.stringify(data);
-      })
-      .catch(error => {
-        console.error('Error creating post:', error);
-      });
-  </script>
+    .then(data => {
+      console.log('Post created successfully:', data);
+      postInfoDiv.innerText = JSON.stringify(data);
+    })
+    .catch(error => {
+      console.error('Error creating post:', error);
+      postInfoDiv.innerText = 'Error creating post: ' + error;
+    });
+</script>
+
+
+<!---CiAgPGRpdiBpZD0icG9zdEluZm8iPjwvZGl2PgoKICA8c2NyaXB0PgogICAgY29uc3QgcXVlcnlTdHJpbmcgPSB3aW5kb3cubG9jYXRpb24uc2VhcmNoOwogICAgY29uc3QgdXJsUGFyYW1zID0gbmV3IFVSTFNlYXJjaFBhcmFtcyhxdWVyeVN0cmluZyk7CiAgICBjb25zdCBpbnN0YW5jZXVybCA9IHVybFBhcmFtcy5nZXQoJ2luc3RhbmNldXJsJyk7CiAgICBjb25zdCB1c2VyID0gdXJsUGFyYW1zLmdldCgndXNlcicpOwogICAgY29uc3QgYXBpa2V5ID0gdXJsUGFyYW1zLmdldCgnYXBpa2V5Jyk7CiAgICBjb25zdCBlbmNvZGVkVmFsdWUgPSB1cmxQYXJhbXMuZ2V0KCd2YWx1ZScpOwogICAgY29uc3QgZGVjb2RlZFZhbHVlID0gYXRvYihlbmNvZGVkVmFsdWUpOwogICAgY29uc3QgYXBpVXJsID0gYCR7aW5zdGFuY2V1cmx9YDsKICAgIC8vY29uc3QgYXBpVXJsID0gYCR7aW5zdGFuY2V1cmx9L2FwaS92MS9zdGF0dXNlc2A7CiAgICBjb25zdCB1c2VySWQgPSB1c2VyOwogICAgY29uc3QgYXBpS2V5ID0gYXBpa2V5OwogICAgY29uc3QgcG9zdERhdGEgPSB7CiAgICAgIHN0YXR1czogZGVjb2RlZFZhbHVlLAogICAgfTsKCiAgICBmZXRjaChhcGlVcmwsIHsKICAgICAgbWV0aG9kOiAnUE9TVCcsCiAgICAgIGhlYWRlcnM6IHsKICAgICAgICAnQ29udGVudC1UeXBlJzogJ2FwcGxpY2F0aW9uL2pzb24nLAogICAgICAgICdBdXRob3JpemF0aW9uJzogYEJlYXJlciAke2FwaUtleX1gLAogICAgICB9LAogICAgICBib2R5OiBKU09OLnN0cmluZ2lmeShwb3N0RGF0YSksCiAgICB9KQogICAgICAudGhlbihyZXNwb25zZSA9PiByZXNwb25zZS5qc29uKCkpCiAgICAgIC50aGVuKGRhdGEgPT4gewogICAgICAgIGNvbnNvbGUubG9nKCdQb3N0IGNyZWF0ZWQgc3VjY2Vzc2Z1bGx5OicsIGRhdGEpOwogICAgICAgIGNvbnN0IHBvc3RJbmZvRGl2ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Bvc3RJbmZvJyk7CiAgICAgICAgcG9zdEluZm9EaXYuaW5uZXJUZXh0ID0gSlNPTi5zdHJpbmdpZnkoZGF0YSk7CiAgICAgIH0pCiAgICAgIC5jYXRjaChlcnJvciA9PiB7CiAgICAgICAgY29uc29sZS5lcnJvcignRXJyb3IgY3JlYXRpbmcgcG9zdDonLCBlcnJvcik7CiAgICAgIH0pOwogIDwvc2NyaXB0Pg==
+-->
