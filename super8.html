@@ -1,0 +1,27 @@
+<meta http-equiv="refresh" content="0; https://super8.absturztau.be">
+    <script type="text/javascript">
+        window.location.href = "https://super8.absturztau.be"
+    </script>
+    <title>Homepage</title>
+</head>
+<body>
+    <!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->
+    If you are not redirected automatically, follow this <a href='https://super8.absturztau.be'>-</a>.
+</body>
+</html>
+
+Bookmarklet
+<plaintext>
+
+javascript:(function() {
+  var currentUrl = window.location.href;
+  var desktopRegex = /youtube\.com\/watch\?app=desktop/;
+  var mobileRegex = /m\.youtube\.com\//;
+  var youtuRegex = /youtu\.be\/([\w-]+)/;
+  var replacementUrl = "https://super8.absturztau.be/watch?v=";
+  if (desktopRegex.test(currentUrl) || mobileRegex.test(currentUrl) || youtuRegex.test(currentUrl)) {
+    var videoId = currentUrl.match(/[?&]v=([\w-]+)/)[1];
+    var newUrl = replacementUrl + videoId;
+    window.location.href = newUrl;
+  }
+})();
