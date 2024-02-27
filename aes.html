@@ -1,0 +1,390 @@
+<meta http-equiv="refresh" content="3; https://alcea-wisteria.de/PHP/0demo/2023-08-15-JSFiddle-Clone/htmls/2024-02-17-AES-EnDecrypt.html">
+   <!--- <script type="text/javascript">
+        window.location.href = "https://alcea-wisteria.de/PHP/0demo/2023-08-15-JSFiddle-Clone/htmls/2024-02-17-AES-EnDecrypt.html"
+    </script>
+    <title>Homepage</title>
+</head>
+<body>
+    <!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->
+     <a href='https://alcea-wisteria.de/PHP/0demo/2023-08-15-JSFiddle-Clone/htmls/2024-02-17-AES-EnDecrypt.html'>-</a>.
+</body>
+</html>-->
+
+
+
+
+
+SourceCode:
+<plaintext>
+<a target="_blank" href="https://www.javascriptobfuscator.com/Javascript-Obfuscator.aspx" style=color:blue>Obfuscator</a><hr>
+
+<a target="_blank" href="https://codepen.io/ryedai1/pen/dyLbYEB" style=color:blue>AES Dec</a><br>
+<title>Encryption Tool</title>
+    <script>
+        function stringToArrayBuffer(str) {
+            var encoder = new TextEncoder();
+            return encoder.encode(str);
+        }
+
+        function arrayBufferToString(buffer) {
+            var decoder = new TextDecoder();
+            return decoder.decode(buffer);
+        }
+
+        async function generateAESKey() {
+            var key = await crypto.subtle.generateKey(
+                {
+                    name: "AES-CBC",
+                    length: 256
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            return key;
+        }
+
+        async function encryptAES(data, key) {
+            var iv = crypto.getRandomValues(new Uint8Array(16));
+            var encrypted = await crypto.subtle.encrypt(
+                {
+                    name: "AES-CBC",
+                    iv: iv
+                },
+                key,
+                data
+            );
+            return {
+                iv: iv,
+                ciphertext: new Uint8Array(encrypted)
+            };
+        }
+
+        async function decryptAES(ciphertext, key, iv) {
+            var decrypted = await crypto.subtle.decrypt(
+                {
+                    name: "AES-CBC",
+                    iv: iv
+                },
+                key,
+                ciphertext
+            );
+            return new Uint8Array(decrypted);
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            var password = document.getElementById("password").value;
+            var htmlText = document.getElementById("htmlText").value;
+            var passwordBuffer = stringToArrayBuffer(password);
+            var keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                passwordBuffer,
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+            var aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: new Uint8Array(16), // Use a random salt
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-CBC", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            var htmlBuffer = stringToArrayBuffer(htmlText);
+            var encryptedData = await encryptAES(htmlBuffer, aesKey);
+            var ivHex = Array.prototype.map
+                .call(encryptedData.iv, (x) => ("00" + x.toString(16)).slice(-2))
+                .join("");
+            var ciphertextHex = Array.prototype.map
+                .call(encryptedData.ciphertext, (x) => ("00" + x.toString(16)).slice(-2))
+                .join("");
+            var encryptedOutput = ivHex + ciphertextHex;
+            document.getElementById("encryptedOutput").textContent = encryptedOutput;
+
+            // Calculate SHA-256 hash of the encrypted output
+            var encoder = new TextEncoder();
+            var data = encoder.encode(encryptedOutput);
+            var hashBuffer = await crypto.subtle.digest("SHA-256", data);
+            var hashArray = Array.from(new Uint8Array(hashBuffer));
+            var hashHex = hashArray.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+            document.getElementById("sha256Output").textContent = hashHex;
+        }
+
+        async function handleDecrypt(event) {
+            event.preventDefault();
+            var password = document.getElementById("password").value;
+            var encryptedHex = document.getElementById("encryptedOutput").textContent;
+            var passwordBuffer = stringToArrayBuffer(password);
+            var keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                passwordBuffer,
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+            var aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: new Uint8Array(16), // Use a random salt for real-world scenarios
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-CBC", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            var ivHex = encryptedHex.substr(0, 32);
+            var ciphertextHex = encryptedHex.substr(32);
+            var ivBytes = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+            var ciphertextBytes = new Uint8Array(ciphertextHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+            var decryptedBytes = await decryptAES(ciphertextBytes, aesKey, ivBytes);
+            var decryptedHTML = arrayBufferToString(decryptedBytes);
+            document.getElementById("decryptedOutput").innerHTML = decryptedHTML;
+        }
+    </script>
+</head>
+<body>
+    <h1>Encryption Tool</h1>
+    <form onsubmit="handleSubmit(event)">
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" required>
+        <br>
+        <label for="htmlText">HTML Text:</label>
+        <br>
+        <textarea id="htmlText" rows="10" cols="50"></textarea>
+        <br>
+        <input type="submit" value="Encrypt">
+    </form>
+    <div>
+        <h3>Encrypted Output:</h3>
+        <textarea id="encryptedOutput" rows="10" cols="50"></textarea>
+    </div>
+    <div>
+        <details><summary>Sha</summary><h3>SHA-256 Output:</h3>
+        <textarea id="sha256Output"></textarea></details>
+    </div>
+    <form onsubmit="handleDecrypt(event)">
+        <!--<h3>Decryptiona</h3>
+        <input type="submit" value="Decrypt">
+    </form>
+    <div>
+        <h3>Decrypted Output:</h3>
+        <textarea id="decryptedOutput"></textarea>
+    </div>-->
+<hr>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Decryption Tool</title>
+You need to trigger encrypt first
+  <script>
+        function stringToArrayBuffer(str) {
+            var encoder = new TextEncoder();
+            return encoder.encode(str);
+        }
+
+        function arrayBufferToString(buffer) {
+            var decoder = new TextDecoder();
+            return decoder.decode(buffer);
+        }
+
+        async function decryptAES(ciphertext, key, iv) {
+            var decrypted = await crypto.subtle.decrypt(
+                {
+                    name: "AES-CBC",
+                    iv: iv
+                },
+                key,
+                ciphertext
+            );
+            return new Uint8Array(decrypted);
+        }
+
+        async function handleDecrypt(event) {
+            event.preventDefault();
+            var password = document.getElementById("password").value;
+            var encryptedHex = document.getElementById("encryptedOutput").value;
+            var passwordBuffer = stringToArrayBuffer(password);
+            var keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                passwordBuffer,
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+            var aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: new Uint8Array(16), // Use a random salt for real-world scenarios
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-CBC", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            var ivHex = encryptedHex.substr(0, 32);
+            var ciphertextHex = encryptedHex.substr(32);
+            var ivBytes = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+            var ciphertextBytes = new Uint8Array(ciphertextHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+            var decryptedBytes = await decryptAES(ciphertextBytes, aesKey, ivBytes);
+            var decryptedHTML = arrayBufferToString(decryptedBytes);
+            document.getElementById("decryptedOutput").innerText = decryptedHTML;
+        }
+    </script>
+  
+
+  
+
+<h1>Decrypt</h1>
+<script>
+  function stringToArrayBuffer2(str) {
+    var encoder = new TextEncoder();
+    return encoder.encode(str);
+  }
+
+  function arrayBufferToString2(buffer) {
+    var decoder = new TextDecoder();
+    return decoder.decode(buffer);
+  }
+
+  async function decryptAES2(ciphertext, key, iv) {
+    var decrypted = await crypto.subtle.decrypt(
+      {
+        name: "AES-CBC",
+        iv: iv,
+      },
+      key,
+      ciphertext
+    );
+    return new Uint8Array(decrypted);
+  }
+
+  async function handleDecrypt2(event) {
+    event.preventDefault();
+    var password = document.getElementById("password").value;
+    var encryptedHex = document.getElementById("encryptedOutput").value;
+    var passwordBuffer = stringToArrayBuffer2(password);
+    var keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      passwordBuffer,
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+    var aesKey = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: new Uint8Array(16), // Use a random salt for real-world scenarios
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      keyMaterial,
+      { name: "AES-CBC", length: 256 },
+      true,
+      ["encrypt", "decrypt"]
+    );
+    var ivHex = encryptedHex.substr(0, 32);
+    var ciphertextHex = encryptedHex.substr(32);
+    var ivBytes = new Uint8Array(
+      ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
+    );
+    var ciphertextBytes = new Uint8Array(
+      ciphertextHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
+    );
+    var decryptedBytes = await decryptAES2(ciphertextBytes, aesKey, ivBytes);
+    var decryptedHTML = arrayBufferToString2(decryptedBytes);
+    document.getElementById("decryptedOutput").innerHTML = decryptedHTML;
+  }
+</script>
+<form onsubmit="handleDecrypt2(event)">
+  <input type="password" id="password" required>
+  <input type="submit" value="Decrypt">
+</form>
+<div>
+  <div id="decryptedOutput"></div>
+</div>
+
+
+
+
+
+
+ 
+
+
+<hr><hr><br>
+DEcryptionBoilerplate<br>
+<plaintext>
+   <script>
+        function stringToArrayBuffer(str) {
+            var encoder = new TextEncoder();
+            return encoder.encode(str);
+        }
+        function arrayBufferToString(buffer) {
+            var decoder = new TextDecoder();
+            return decoder.decode(buffer);
+        }
+        async function decryptAES(ciphertext, key, iv) {
+            var decrypted = await crypto.subtle.decrypt(
+                {
+                    name: "AES-CBC",
+                    iv: iv
+                },
+                key,
+                ciphertext
+            );
+            return new Uint8Array(decrypted);
+        }
+        async function handleDecrypt(event) {
+            event.preventDefault();
+            var password = document.getElementById("password").value;
+            var encryptedHex = document.getElementById("encryptedOutput").value;
+            var passwordBuffer = stringToArrayBuffer(password);
+            var keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                passwordBuffer,
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+            var aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: new Uint8Array(16), // Use a random salt for real-world scenarios
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-CBC", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            var ivHex = encryptedHex.substr(0, 32);
+            var ciphertextHex = encryptedHex.substr(32);
+            var ivBytes = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+            var ciphertextBytes = new Uint8Array(ciphertextHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+            var decryptedBytes = await decryptAES(ciphertextBytes, aesKey, ivBytes);
+            var decryptedHTML = arrayBufferToString(decryptedBytes);
+            document.getElementById("decryptedOutput").innerHTML = decryptedHTML;
+        }
+    </script>
+    <form onsubmit="handleDecrypt(event)">
+        <input type="password" id="password" required>
+        <textarea id="encryptedOutput" rows="10" cols="50" style="display: none;">3a89c921bc7d3a731fa1b499823724084e388e770e8f2099ad179ef843c99cabd27e52077aa5b7875f790e6a3af6496e4149d436ac6424c10ccc2b8b78383e78
+</textarea>
+        <input type="submit" value="Decrypt">
+</form><div><div id="decryptedOutput"></div></div>
+  
+  Old TRASH>
+  <!--
+ICAgIDx0aXRsZT5EZWNyeXB0aW9uIFRvb2w8L3RpdGxlPgogICAgPHNjcmlwdD4KICAgICAgICBmdW5jdGlvbiBzdHJpbmdUb0FycmF5QnVmZmVyKHN0cikgewogICAgICAgICAgICB2YXIgZW5jb2RlciA9IG5ldyBUZXh0RW5jb2RlcigpOwogICAgICAgICAgICByZXR1cm4gZW5jb2Rlci5lbmNvZGUoc3RyKTsKICAgICAgICB9CgogICAgICAgIGZ1bmN0aW9uIGFycmF5QnVmZmVyVG9TdHJpbmcoYnVmZmVyKSB7CiAgICAgICAgICAgIHZhciBkZWNvZGVyID0gbmV3IFRleHREZWNvZGVyKCk7CiAgICAgICAgICAgIHJldHVybiBkZWNvZGVyLmRlY29kZShidWZmZXIpOwogICAgICAgIH0KCiAgICAgICAgYXN5bmMgZnVuY3Rpb24gZGVjcnlwdEFFUyhjaXBoZXJ0ZXh0LCBrZXksIGl2KSB7CiAgICAgICAgICAgIHZhciBkZWNyeXB0ZWQgPSBhd2FpdCBjcnlwdG8uc3VidGxlLmRlY3J5cHQoCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgbmFtZTogIkFFUy1DQkMiLAogICAgICAgICAgICAgICAgICAgIGl2OiBpdgogICAgICAgICAgICAgICAgfSwKICAgICAgICAgICAgICAgIGtleSwKICAgICAgICAgICAgICAgIGNpcGhlcnRleHQKICAgICAgICAgICAgKTsKICAgICAgICAgICAgcmV0dXJuIG5ldyBVaW50OEFycmF5KGRlY3J5cHRlZCk7CiAgICAgICAgfQoKICAgICAgICBhc3luYyBmdW5jdGlvbiBoYW5kbGVEZWNyeXB0KGV2ZW50KSB7CiAgICAgICAgICAgIGV2ZW50LnByZXZlbnREZWZhdWx0KCk7CiAgICAgICAgICAgIHZhciBwYXNzd29yZCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJwYXNzd29yZCIpLnZhbHVlOwogICAgICAgICAgICB2YXIgZW5jcnlwdGVkSGV4ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImVuY3J5cHRlZE91dHB1dCIpLnZhbHVlOwogICAgICAgICAgICB2YXIgcGFzc3dvcmRCdWZmZXIgPSBzdHJpbmdUb0FycmF5QnVmZmVyKHBhc3N3b3JkKTsKICAgICAgICAgICAgdmFyIGtleU1hdGVyaWFsID0gYXdhaXQgY3J5cHRvLnN1YnRsZS5pbXBvcnRLZXkoCiAgICAgICAgICAgICAgICAicmF3IiwKICAgICAgICAgICAgICAgIHBhc3N3b3JkQnVmZmVyLAogICAgICAgICAgICAgICAgeyBuYW1lOiAiUEJLREYyIiB9LAogICAgICAgICAgICAgICAgZmFsc2UsCiAgICAgICAgICAgICAgICBbImRlcml2ZUtleSJdCiAgICAgICAgICAgICk7CiAgICAgICAgICAgIHZhciBhZXNLZXkgPSBhd2FpdCBjcnlwdG8uc3VidGxlLmRlcml2ZUtleSgKICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICBuYW1lOiAiUEJLREYyIiwKICAgICAgICAgICAgICAgICAgICBzYWx0OiBuZXcgVWludDhBcnJheSgxNiksIC8vIFVzZSBhIHJhbmRvbSBzYWx0IGZvciByZWFsLXdvcmxkIHNjZW5hcmlvcwogICAgICAgICAgICAgICAgICAgIGl0ZXJhdGlvbnM6IDEwMDAwMCwKICAgICAgICAgICAgICAgICAgICBoYXNoOiAiU0hBLTI1NiIKICAgICAgICAgICAgICAgIH0sCiAgICAgICAgICAgICAgICBrZXlNYXRlcmlhbCwKICAgICAgICAgICAgICAgIHsgbmFtZTogIkFFUy1DQkMiLCBsZW5ndGg6IDI1NiB9LAogICAgICAgICAgICAgICAgdHJ1ZSwKICAgICAgICAgICAgICAgIFsiZW5jcnlwdCIsICJkZWNyeXB0Il0KICAgICAgICAgICAgKTsKICAgICAgICAgICAgdmFyIGl2SGV4ID0gZW5jcnlwdGVkSGV4LnN1YnN0cigwLCAzMik7CiAgICAgICAgICAgIHZhciBjaXBoZXJ0ZXh0SGV4ID0gZW5jcnlwdGVkSGV4LnN1YnN0cigzMik7CiAgICAgICAgICAgIHZhciBpdkJ5dGVzID0gbmV3IFVpbnQ4QXJyYXkoaXZIZXgubWF0Y2goLy57MSwyfS9nKS5tYXAoKGJ5dGUpID0+IHBhcnNlSW50KGJ5dGUsIDE2KSkpOwogICAgICAgICAgICB2YXIgY2lwaGVydGV4dEJ5dGVzID0gbmV3IFVpbnQ4QXJyYXkoY2lwaGVydGV4dEhleC5tYXRjaCgvLnsxLDJ9L2cpLm1hcCgoYnl0ZSkgPT4gcGFyc2VJbnQoYnl0ZSwgMTYpKSk7CiAgICAgICAgICAgIHZhciBkZWNyeXB0ZWRCeXRlcyA9IGF3YWl0IGRlY3J5cHRBRVMoY2lwaGVydGV4dEJ5dGVzLCBhZXNLZXksIGl2Qnl0ZXMpOwogICAgICAgICAgICB2YXIgZGVjcnlwdGVkSFRNTCA9IGFycmF5QnVmZmVyVG9TdHJpbmcoZGVjcnlwdGVkQnl0ZXMpOwogICAgICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiZGVjcnlwdGVkT3V0cHV0IikuaW5uZXJIVE1MID0gZGVjcnlwdGVkSFRNTDsKICAgICAgICB9CiAgICA8L3NjcmlwdD4KPC9oZWFkPgo8Ym9keT4KICAgIDxoMT5EZWNyeXB0aW9uIFRvb2w8L2gxPgogICAgPGZvcm0gb25zdWJtaXQ9ImhhbmRsZURlY3J5cHQoZXZlbnQpIj4KICAgICAgICA8bGFiZWwgZm9yPSJwYXNzd29yZCI+UGFzc3dvcmQ6PC9sYWJlbD4KICAgICAgICA8aW5wdXQgdHlwZT0icGFzc3dvcmQiIGlkPSJwYXNzd29yZCIgcmVxdWlyZWQ+CiAgICAgICAgPGJyPgogICAgICAgIDxsYWJlbCBmb3I9ImVuY3J5cHRlZE91dHB1dCI+Q2lwaGVydGV4dDo8L2xhYmVsPgogICAgICAgIDxicj4KICAgICAgICA8dGV4dGFyZWEgaWQ9ImVuY3J5cHRlZE91dHB1dCIgcm93cz0iMTAiIGNvbHM9IjUwIj48L3RleHRhcmVhPgogICAgICAgIDxicj4KICAgICAgICA8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iRGVjcnlwdCI+CjwvZm9ybT4KICAgIDxkaXY+CiAgICAgICAgPGgzPkRlY3J5cHRlZCBPdXRwdXQ6PC9oMz4KICAgICAgICA8IS0tPHRleHRhcmVhIGlkPSJkZWNyeXB0ZWRPdXRwdXQiPjwvdGV4dGFyZWE+LS0+CiAgICAgICAgPGRpdiBpZD0iZGVjcnlwdGVkT3V0cHV0Ij48L2Rpdj4KICAgIDwvZGl2Pgo8L2JvZHk+CjwvaHRtbD4=
+--->
