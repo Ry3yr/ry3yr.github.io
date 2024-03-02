@@ -1,0 +1,122 @@
+<a rel="me" href="https://pb.todon.de/@admin"> </a><br>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Ping a server in javascript</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="googlebot" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <script
+    type="text/javascript"
+    src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.2.1/knockout-min.js"
+    
+  ></script>
+
+    <link rel="stylesheet" type="text/css" href="/css/result-light.css">
+
+
+  <style id="compiled-css" type="text/css">
+    .responded {
+    color:green;
+}
+.checking,.unchecked {
+    color:#FF8C00;
+}
+.timeout {
+    color:red;
+}
+}
+
+    /* EOS */
+  </style>
+
+  <script id="insert"></script>
+
+</head>
+<body>
+    <ul data-bind="foreach:servers">
+    <li> <a href="#" data-bind="text:name,attr:{href: 'http://'+name}">tester</a> <span data-bind="text:status,css:status"></span>
+
+    </li>
+</ul>
+
+    <script type="text/javascript">//<![CDATA[
+
+
+function ping(ip, callback) {
+
+    if (!this.inUse) {
+        this.status = 'unchecked';
+        this.inUse = true;
+        this.callback = callback;
+        this.ip = ip;
+        var _that = this;
+        this.img = new Image();
+        this.img.onload = function () {
+            _that.inUse = false;
+            _that.callback('responded');
+
+        };
+        this.img.onerror = function (e) {
+            if (_that.inUse) {
+                _that.inUse = false;
+                _that.callback('responded', e);
+            }
+
+        };
+        this.start = new Date().getTime();
+        this.img.src = "http://" + ip;"/?cachebreaker="+new Date().getTime();
+        this.timer = setTimeout(function () {
+            if (_that.inUse) {
+                _that.inUse = false;
+                _that.callback('timeout');
+            }
+        }, 1500);
+    }
+}
+var PingModel = function (servers) {
+    var self = this;
+    var myServers = [];
+    ko.utils.arrayForEach(servers, function (location) {
+        myServers.push({
+            name: location,
+            status: ko.observable('unchecked')
+        });
+    });
+    self.servers = ko.observableArray(myServers);
+    ko.utils.arrayForEach(self.servers(), function (s) {
+        s.status('checking');
+        new ping(s.name, function (status, e) {
+            s.status(status);
+        });
+    });
+};
+var komodel = new PingModel(['localhost',
+    'pb.todon.de',
+    'ry3yr.github.io',
+    'unknown'
+    ]);
+ko.applyBindings(komodel);
+  //]]></script>
+
+  <script>
+    // tell the embed parent frame the height of the content
+    if (window.parent && window.parent.parent){
+      window.parent.parent.postMessage(["resultsFrame", {
+        height: document.body.getBoundingClientRect().height,
+        slug: "GSSCD"
+      }], "*")
+    }
+
+    // always overwrite window.name, in case users try to set it manually
+    window.name = "result"
+  </script>
+
+
+</body>
+</html>
