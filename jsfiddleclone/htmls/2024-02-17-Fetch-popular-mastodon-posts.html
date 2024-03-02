@@ -1,0 +1,124 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+.container {
+display: flex;
+}
+.post-box {
+border: 1px solid #ccc;
+padding: 10px;
+margin-right: 10px;
+display: flex;
+align-items: center;
+width: 500px;
+height: 250px;
+}
+.post-avatar {
+width: 80px;
+height: 80px;
+margin-right: 10px;
+border-radius: 50%;
+object-fit: cover;
+}
+.post-content {
+font-size: 14px;
+margin-bottom: 5px;
+overflow: hidden;
+text-overflow: ellipsis;
+max-height: 200px;
+max-width: 100%;
+white-space: normal;
+}
+
+.post-link {
+font-size: 12px;
+color: blue;
+}
+</style>
+<div class="container"></div>
+<script>
+$(document).ready(function() {
+var instances = ['kopimi.space', 'phpc.social', 'urusai.social', 'mastodon.social'];
+var totalPostsPerInstance = 10;
+var container = $('.container');
+instances.forEach(function(instance) {
+var apiUrl = 'https://' + instance + '/api/v1/timelines/public';
+var params = {
+'local': true,
+'only_media': false,
+'limit': totalPostsPerInstance,
+'max_id': null
+};
+var sortedPosts = [];
+while (sortedPosts.length < totalPostsPerInstance) {
+var queryString = $.param(params);
+var requestUrl = apiUrl + '?' + queryString;
+$.ajax({
+url: requestUrl,
+async: false,
+dataType: 'json',
+success: function(response) {
+var posts = response;
+if (posts) {
+posts.forEach(function(post) {
+var content = post.content;
+var favouritesCount = post.favourites_count;
+var boostsCount = post.reblogs_count;
+var url = post.url;
+if (!post.account.bot) {
+if (favouritesCount >= 2 || boostsCount >= 2) {
+var replyCount = post.replies_count;
+sortedPosts.push({
+'content': content,
+'favouritesCount': favouritesCount,
+'boostsCount': boostsCount,
+'replyCount': replyCount,
+'url': url,
+'avatar': post.account.avatar_static
+});
+}
+}
+if (sortedPosts.length >= totalPostsPerInstance) {
+return false;
+}
+});
+} else {
+console.error('Error retrieving posts from ' + instance + '.');
+return false;
+}
+var lastPost = posts[posts.length - 1];
+params.max_id = lastPost.id;
+},
+error: function() {
+console.error('Error retrieving posts from ' + instance + '.');
+return false;
+}
+});
+}
+sortedPosts.sort(function(a, b) {
+var aCount = Math.max(a.favouritesCount, a.boostsCount);
+var bCount = Math.max(b.favouritesCount, b.boostsCount);
+return bCount - aCount;
+});
+sortedPosts.forEach(function(post) {
+var content = post.content;
+var favouritesCount = post.favouritesCount;
+var boostsCount = post.boostsCount;
+var replyCount = post.replyCount;
+var postUrl = post.url;
+var avatarUrl = post.avatar;
+var postBox = $('<div class="post-box"></div>');
+var postAvatar = $('<img class="post-avatar" src="' + avatarUrl + '" alt="User Avatar"><br>');
+var postContent = $('<div class="post-content">' + content + '</div>');
+var counts = $('<div class="counts"></div>');
+var favouritesSpan = $('<span>F: ' + favouritesCount + '</span><br>');
+var boostsSpan = $('<span>B: ' + boostsCount + '</span><br>');
+var repliesSpan = $('<span>R: ' + replyCount + '</span><br>');
+var postLink = $('<div class="post-link"><a target="_blank" href="' + postUrl + '">View Post</a> <a target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2023-10-22-MastodonTootSearch/searchmastourl.php?search=' + postUrl + '&pbUrl=https://urusai.social&apikey=lsgJo4S423LwtffLKzO78EFu-LYHzLd1ZbFHWrgafpM">Home</a></div>');
+
+counts.append(favouritesSpan, boostsSpan, repliesSpan);
+postBox.append(postAvatar, postContent, counts, postLink);
+container.append(postBox);
+});
+});
+});
+</script>

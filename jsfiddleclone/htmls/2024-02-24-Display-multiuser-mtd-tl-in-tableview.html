@@ -1,0 +1,127 @@
+<a target="_blank" href="?limit=15" style=color:blue>tmore...</a><br>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 2px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Posts</th>
+      </tr>
+    </thead>
+    <tbody id="results"></tbody>
+  </table>
+
+  <script>
+    fetch('https://ry3yr.github.io/mtdusers.txt')
+      .then(response => response.text())
+      .then(data => {
+        // Split the data into lines
+        const lines = data.split('\n');
+
+        // Iterate over each line
+        lines.forEach(line => {
+          // Extract the user ID and instance URL
+          const [userid, instanceurl] = line.split(' ');
+
+          // Construct the API URL
+          const apiUrl = `${instanceurl}/api/v1/accounts/${userid}/statuses`;
+
+          // Check if the URL contains the 'limit' parameter
+          const urlParams = new URLSearchParams(window.location.search);
+          const limitParam = urlParams.get('limit');
+          const limit = limitParam ? parseInt(limitParam) : 1;
+
+          // Fetch posts using the Mastodon API
+          fetch(`${apiUrl}?limit=${limit}`)
+            .then(response => response.json())
+            .then(data => {
+              // Check if there are any posts
+              if (data.length > 0) {
+                // Create a new row in the table for the user
+                const tableRow = document.createElement('tr');
+
+                // User ID cell
+                const userIdCell = document.createElement('td');
+                fetch(`${instanceurl}/api/v1/accounts/${userid}`)
+                  .then(response => response.json())
+                  .then(data => {
+                    const username = data.username;
+                    const userpfp = data.avatar_static;
+                    const userLink = document.createElement('a');
+                    userLink.href = `${instanceurl}/@${username}`;
+                    userLink.target = '_blank';
+                    userLink.innerHTML = `<img src="${userpfp}" alt="${username}" width="128px"> ${username}`;
+                    userIdCell.appendChild(userLink);
+                  })
+                  .catch(error => {
+                    console.log('Error fetching user data for User ID:', userid);
+                    console.error(error);
+                  });
+
+                tableRow.appendChild(userIdCell);
+
+                // Posts cell
+                const postsCell = document.createElement('td');
+
+                // Iterate over each post
+                data.forEach(async post => {
+                  const postContent = await replaceEmojis(post.content, post.emojis);
+                  const linkUrl = `${instanceurl}/web/statuses/${post.id}`;
+                  const timestamp = new Date(post.created_at).toLocaleString();
+
+                  // Create a separate cell for each post
+                  const postCell = document.createElement('td');
+                  postCell.innerHTML = `${postContent}<br><a href="${linkUrl}" target="_blank">View</a> ${timestamp}`;
+                  postsCell.appendChild(postCell);
+                });
+
+                // Add the posts cell to the table row
+                tableRow.appendChild(postsCell);
+
+                // Append the row to the table body
+                const tableBody = document.getElementById('results');
+                tableBody.appendChild(tableRow);
+              } else {
+                console.log('No posts found for User ID:', userid);
+              }
+            })
+            .catch(error => {
+              console.log('Error fetching posts for User ID:', userid);
+              console.error(error);
+            });
+        });
+      })
+      .catch(error => {
+        console.log('Error:', error);
+      });
+
+    // Function to replace emoji codes with images
+    async function replaceEmojis(content, emojis) {
+      for (const emoji of emojis) {
+        const shortcode = emoji.shortcode;
+        const url = emoji.url;
+        const shortcodePattern = new RegExp(':' + shortcode + ':', 'g');
+        const emojiTag = `<img src="${url}" alt="${shortcode}" width="20px">`;
+        content = content.replace(shortcodePattern, emojiTag);
+      }
+      return content;
+    }
+  </script>
+
+</body>
+</html>

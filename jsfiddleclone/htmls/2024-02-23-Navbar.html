@@ -1,0 +1,79 @@
+<style>
+.navbar{list-style-type:none;margin:0;padding:0;background-color:#fff;float:right;margin-right:120px}.navbar li{display:inline-block;position:relative}.navbar a{display:block;color:#000;text-decoration:none;padding:8px}.navbar a:hover{background-color:#f5f}.submenu{display:none;position:absolute;background-color:#fff;left:-45px;top:100%;width:200px}.navbar li:hover .submenu{display:block}.submenu li{display:block;color:#000}.navbar .active .submenu{top:0}
+</style>
+<script>
+  function toggleNavbar() {
+    var navbar = document.getElementById('navbar');
+    navbar.style.display = (navbar.style.display === 'none' || navbar.style.display === '') ? 'block' : 'none';
+  }
+</script>
+<script>
+function toggleLayout() {
+  var extraLink = document.getElementById('extraLink');
+  var navbar = document.querySelector('.navbar');
+  var submenus = document.querySelectorAll('.submenu');
+  var checkbox = document.getElementById('layoutCheckbox');
+  if (checkbox.checked) {
+    extraLink.style.display = 'inline';
+    navbar.style.position = 'absolute';
+    navbar.style.left = '0';
+    navbar.style.top = '0';
+    navbar.style.margin = '0';
+    navbar.style.width = '120px';
+    navbar.style.height = '100vh';
+    navbar.style.display = 'flex';
+    navbar.style.flexDirection = 'column';
+    submenus.forEach(function(submenu)
+      {submenu.style.left = '100%';
+      submenu.style.top = '0';});
+  } else {
+    //extraLink.style.display = 'none';
+    navbar.style.float = 'right';
+    navbar.style.marginRight = '120px';
+    navbar.style.marginLeft = '0';}}
+</script>
+<a href="#" id="extraLink" style="position: fixed; right: 130px; top: 0;display:none;" onclick="toggleNavbar(event)">[-]</a>
+<nav>
+  <ul class="navbar" id="navbar">
+    <li class="u-nav-item"><a class="u-button-style u-nav-link u-text-active-palette-1-base u-text-hover-palette-2-base" href="index.html">Homepage</a></li>
+    <li class="u-nav-item"><a class="u-button-style u-nav-link u-text-active-palette-1-base u-text-hover-palette-2-base" href="About.html?user=alcea">About</a></li>
+    <li class="u-nav-item">
+      <a class="u-button-style u-nav-link u-text-active-palette-1-base u-text-hover-palette-2-base" href="Contact.html">Contact</a>
+      <div class="u-nav-popup submenu">
+        <ul class="u-h-spacing-5 u-nav u-unstyled u-v-spacing-5 u-nav-2">
+          <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="https://www.abcsubmit.com/view/id_1f8339emu_jn1?utm=abcsubmit" target="_blank">Mail [📬]</a></li>
+          <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="verify.html#mastodon" target="_blank">Mastodon [📬]</a></li>
+          <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="verify.html#twitter" target="_blank">Twitter [📬]</a></li>
+          <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="https://reddit.com/user/repeekyraid#https://www.reddit.com/user/-Rye-/" target="_blank">Reddit [📬]</a></li>
+          <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="Comments.html">Comments</a></li>
+        </ul></div></li><li class="u-nav-item">
+      <a class="u-button-style u-nav-link u-text-active-palette-1-base u-text-hover-palette-2-base" href="Hobbies.html">Hobbies</a>
+      <div class="u-nav-popup submenu">
+        <ul class="u-h-spacing-5 u-nav u-unstyled u-v-spacing-5 u-nav-3">
+          <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="All_Project_%28spoiler_button%29.html">OSTRip </a> </li>
+                    <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="pastebinlinks.html?note=FAQ" target=_blank>FAQ [ðŸ¡•]</a> </li>
+                   <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="Art.html">Art</a> </li>
+                  <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="code.html">Code</a> </li>
+                  <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="Games.html">GamingStuff</a> </li>
+                   <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="Blog.html">Blog</a> </li>
+                   <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="favs.html">Favorites</a> </li>
+                    <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="https://ry3yr.github.io/OSTR/" target=_blank>OldSite [ðŸ¡•]</a> </li>
+                   <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="UnderratedContent.html" target=_blank>Underrated [ðŸ¡•]</a> </li>
+        </ul></div></li><li class="u-nav-item">
+      <a class="u-button-style u-nav-link u-text-active-palette-1-base u-text-hover-palette-2-base" href="Music.html">Music</a>
+      <div class="u-nav-popup submenu"><ul class=u-"nav-4">
+           <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="Releases.html">Releases</a> </li>
+                    <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="Startseiteplayer.html">Musicplayer</a> </li>
+                    <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="midisheetmusic.html">Sheet Music (Midi)</a> </li>
+                    <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="Unresoundtracker.html">UnreSoundtracker</a> </li>
+                   <li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="radio.html">Radio/Shoutcast</a> </li>
+                   <li class="u-nav-item"><input type="checkbox" id="layoutCheckbox" onchange="toggleLayout()"></li>
+                   </ul></div></li></ul></nav>
+
+
+
+
+
+
+
+<!---PHN0eWxlPgoubmF2YmFye2xpc3Qtc3R5bGUtdHlwZTpub25lO21hcmdpbjowO3BhZGRpbmc6MDtiYWNrZ3JvdW5kLWNvbG9yOiNmZmY7ZmxvYXQ6cmlnaHQ7bWFyZ2luLXJpZ2h0OjEyMH0ubmF2YmFyIGxpe2Rpc3BsYXk6aW5saW5lLWJsb2NrO3Bvc2l0aW9uOnJlbGF0aXZlfS5uYXZiYXIgYXtkaXNwbGF5OmJsb2NrO2NvbG9yOiMwMDA7dGV4dC1kZWNvcmF0aW9uOm5vbmU7cGFkZGluZzoxMHB4fS5uYXZiYXIgYTpob3ZlcntiYWNrZ3JvdW5kLWNvbG9yOiNmNWZ9LnN1Ym1lbnV7ZGlzcGxheTpub25lO3Bvc2l0aW9uOmFic29sdXRlO2JhY2tncm91bmQtY29sb3I6I2ZmZjtsZWZ0Oi00NTt0b3A6MTAwJTt3aWR0aDoyMDBweH0ubmF2YmFyIGxpOmhvdmVyIC5zdWJtZW51e2Rpc3BsYXk6YmxvY2t9LnN1Ym1lbnUgbGl7ZGlzcGxheTpibG9jaztjb2xvcjojMDAwfS5uYXZiYXIgLmFjdGl2ZSAuc3VibWVudXt0b3A6MH0KPC9zdHlsZT4KPG5hdj4KICA8dWwgY2xhc3M9Im5hdmJhciI+CiAgICA8bGkgY2xhc3M9InUtbmF2LWl0ZW0iPjxhIGNsYXNzPSJ1LWJ1dHRvbi1zdHlsZSB1LW5hdi1saW5rIHUtdGV4dC1hY3RpdmUtcGFsZXR0ZS0xLWJhc2UgdS10ZXh0LWhvdmVyLXBhbGV0dGUtMi1iYXNlIiBocmVmPSJpbmRleC5odG1sIj5Ib21lcGFnZTwvYT48L2xpPgogICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXRleHQtYWN0aXZlLXBhbGV0dGUtMS1iYXNlIHUtdGV4dC1ob3Zlci1wYWxldHRlLTItYmFzZSIgaHJlZj0iQWJvdXQuaHRtbD91c2VyPWFsY2VhIj5BYm91dDwvYT48L2xpPgogICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj4KICAgICAgPGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS10ZXh0LWFjdGl2ZS1wYWxldHRlLTEtYmFzZSB1LXRleHQtaG92ZXItcGFsZXR0ZS0yLWJhc2UiIGhyZWY9IkNvbnRhY3QuaHRtbCI+Q29udGFjdDwvYT4KICAgICAgPGRpdiBjbGFzcz0idS1uYXYtcG9wdXAgc3VibWVudSI+CiAgICAgICAgPHVsIGNsYXNzPSJ1LWgtc3BhY2luZy01IHUtbmF2IHUtdW5zdHlsZWQgdS12LXNwYWNpbmctNSB1LW5hdi0yIj4KICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0iaHR0cHM6Ly93d3cuYWJjc3VibWl0LmNvbS92aWV3L2lkXzFmODMzOWVtdV9qbjE/dXRtPWFiY3N1Ym1pdCIgdGFyZ2V0PSJfYmxhbmsiPk1haWwgW8OwxbjigJzCrF08L2E+PC9saT4KICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0idmVyaWZ5Lmh0bWwjbWFzdG9kb24iIHRhcmdldD0iX2JsYW5rIj5NYXN0b2RvbiBbw7DFuOKAnMKsXTwvYT48L2xpPgogICAgICAgICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXdoaXRlIiBocmVmPSJ2ZXJpZnkuaHRtbCN0d2l0dGVyIiB0YXJnZXQ9Il9ibGFuayI+VHdpdHRlciBbw7DFuOKAnMKsXTwvYT48L2xpPgogICAgICAgICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXdoaXRlIiBocmVmPSJodHRwczovL3JlZGRpdC5jb20vdXNlci9yZXBlZWt5cmFpZCNodHRwczovL3d3dy5yZWRkaXQuY29tL3VzZXIvLVJ5ZS0vIiB0YXJnZXQ9Il9ibGFuayI+UmVkZGl0IFvDsMW44oCcwqxdPC9hPjwvbGk+CiAgICAgICAgICA8bGkgY2xhc3M9InUtbmF2LWl0ZW0iPjxhIGNsYXNzPSJ1LWJ1dHRvbi1zdHlsZSB1LW5hdi1saW5rIHUtd2hpdGUiIGhyZWY9IkNvbW1lbnRzLmh0bWwiPkNvbW1lbnRzPC9hPjwvbGk+CiAgICAgICAgPC91bD48L2Rpdj48L2xpPjxsaSBjbGFzcz0idS1uYXYtaXRlbSI+CiAgICAgIDxhIGNsYXNzPSJ1LWJ1dHRvbi1zdHlsZSB1LW5hdi1saW5rIHUtdGV4dC1hY3RpdmUtcGFsZXR0ZS0xLWJhc2UgdS10ZXh0LWhvdmVyLXBhbGV0dGUtMi1iYXNlIiBocmVmPSJIb2JiaWVzLmh0bWwiPkhvYmJpZXM8L2E+CiAgICAgIDxkaXYgY2xhc3M9InUtbmF2LXBvcHVwIHN1Ym1lbnUiPgogICAgICAgIDx1bCBjbGFzcz0idS1oLXNwYWNpbmctNSB1LW5hdiB1LXVuc3R5bGVkIHUtdi1zcGFjaW5nLTUgdS1uYXYtMyI+CiAgICAgICAgICA8bGkgY2xhc3M9InUtbmF2LWl0ZW0iPjxhIGNsYXNzPSJ1LWJ1dHRvbi1zdHlsZSB1LW5hdi1saW5rIHUtd2hpdGUiIGhyZWY9IkFsbF9Qcm9qZWN0XyUyOHNwb2lsZXJfYnV0dG9uJTI5Lmh0bWwiPk9TVFJpcCA8L2E+IDwvbGk+CiAgICAgICAgICAgICAgICAgICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXdoaXRlIiBocmVmPSJwYXN0ZWJpbmxpbmtzLmh0bWw/bm90ZT1GQVEiIHRhcmdldD1fYmxhbms+RkFRIFvDg8Kww4XCuMOCwqHDouKCrMKiXTwvYT4gPC9saT4KICAgICAgICAgICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0iQXJ0Lmh0bWwiPkFydDwvYT4gPC9saT4KICAgICAgICAgICAgICAgICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXdoaXRlIiBocmVmPSJjb2RlLmh0bWwiPkNvZGU8L2E+IDwvbGk+CiAgICAgICAgICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0iR2FtZXMuaHRtbCI+R2FtaW5nU3R1ZmY8L2E+IDwvbGk+CiAgICAgICAgICAgICAgICAgICA8bGkgY2xhc3M9InUtbmF2LWl0ZW0iPjxhIGNsYXNzPSJ1LWJ1dHRvbi1zdHlsZSB1LW5hdi1saW5rIHUtd2hpdGUiIGhyZWY9IkJsb2cuaHRtbCI+QmxvZzwvYT4gPC9saT4KICAgICAgICAgICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0iZmF2cy5odG1sIj5GYXZvcml0ZXM8L2E+IDwvbGk+CiAgICAgICAgICAgICAgICAgICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXdoaXRlIiBocmVmPSJodHRwczovL3J5M3lyLmdpdGh1Yi5pby9PU1RSLyIgdGFyZ2V0PV9ibGFuaz5PbGRTaXRlIFvDg8Kww4XCuMOCwqHDouKCrMKiXTwvYT4gPC9saT4KICAgICAgICAgICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0iVW5kZXJyYXRlZENvbnRlbnQuaHRtbCIgdGFyZ2V0PV9ibGFuaz5VbmRlcnJhdGVkIFvDg8Kww4XCuMOCwqHDouKCrMKiXTwvYT4gPC9saT4KICAgICAgICA8L3VsPjwvZGl2PjwvbGk+PGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj4KICAgICAgPGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS10ZXh0LWFjdGl2ZS1wYWxldHRlLTEtYmFzZSB1LXRleHQtaG92ZXItcGFsZXR0ZS0yLWJhc2UiIGhyZWY9Ik11c2ljLmh0bWwiPk11c2ljPC9hPgogICAgICA8ZGl2IGNsYXNzPSJ1LW5hdi1wb3B1cCBzdWJtZW51Ij48dWwgY2xhc3M9dS0ibmF2LTQiPgogICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0iUmVsZWFzZXMuaHRtbCI+UmVsZWFzZXM8L2E+IDwvbGk+CiAgICAgICAgICAgICAgICAgICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXdoaXRlIiBocmVmPSJTdGFydHNlaXRlcGxheWVyLmh0bWwiPk11c2ljcGxheWVyPC9hPiA8L2xpPgogICAgICAgICAgICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0ibWlkaXNoZWV0bXVzaWMuaHRtbCI+U2hlZXQgTXVzaWMgKE1pZGkpPC9hPiA8L2xpPgogICAgICAgICAgICAgICAgICAgIDxsaSBjbGFzcz0idS1uYXYtaXRlbSI+PGEgY2xhc3M9InUtYnV0dG9uLXN0eWxlIHUtbmF2LWxpbmsgdS13aGl0ZSIgaHJlZj0iVW5yZXNvdW5kdHJhY2tlci5odG1sIj5VbnJlU291bmR0cmFja2VyPC9hPiA8L2xpPgogICAgICAgICAgICAgICAgICAgPGxpIGNsYXNzPSJ1LW5hdi1pdGVtIj48YSBjbGFzcz0idS1idXR0b24tc3R5bGUgdS1uYXYtbGluayB1LXdoaXRlIiBocmVmPSJyYWRpby5odG1sIj5SYWRpby9TaG91dGNhc3Q8L2E+IDwvbGk+CiAgICAgICAgICAgICAgICAgICA8L3VsPjwvZGl2PjwvbGk+PC91bD48L25hdj4K-->

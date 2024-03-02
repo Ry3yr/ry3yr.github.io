@@ -1,0 +1,146 @@
+<a href="?search=https://sunny.garden/@Iva852/109293246960188756&pbUrl=https://pb.todon.de&apikey=apikey">test</a><br>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>API Key Form</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <!-- HTML form to input the API key, pbUrl, and URL -->
+  <form id="apiForm">
+    <label for="apikey">API Key:</label>
+    <input type="text" id="apikey" name="apikey" required>
+    <br>
+    <label for="pbUrl">pbUrl:</label>
+    <input type="text" id="pbUrl" name="pbUrl" required>
+    <br>
+    <label for="url">URL:</label>
+    <input type="text" id="url" name="url" pattern="https://.*" required>
+    <input type="submit" value="Submit">
+    <input type="button" value="Clear" id="clearButton">
+  </form>
+
+  <!-- Result container -->
+  <div id="result"></div>
+
+  <script>
+  $(document).ready(function() {
+  // Function to get query string parameter value by name
+  function getQueryStringParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  }
+
+  // Function to populate textboxes from query string values
+  function populateTextboxesFromQueryString() {
+    const apiKeyParam = getQueryStringParam('apikey');
+    const pbUrlParam = getQueryStringParam('pbUrl');
+    const urlParam = getQueryStringParam('search');
+
+    $('#apikey').val(apiKeyParam);
+    $('#pbUrl').val(pbUrlParam);
+    $('#url').val(urlParam);
+  }
+
+  // Call the function to populate textboxes on page load
+  populateTextboxesFromQueryString();
+
+  // Check if ampersand is present in the URL bar
+  const urlBarValue = window.location.href;
+  if (urlBarValue.includes('&')) {
+    // Retrieve form values
+    const apiKey = $('#apikey').val();
+    const pbUrl = $('#pbUrl').val();
+    const search = $('#url').val();
+
+    // Perform AJAX request
+    performAjaxRequest(apiKey, pbUrl, search);
+  }
+
+  // Perform AJAX request
+  function performAjaxRequest(apiKey, pbUrl, search) {
+    var url = pbUrl + "/api/v2/search/?q=" + encodeURIComponent(search) + "&limit=1&resolve=true";
+
+    // Disable form elements
+    $("#apikey").prop("disabled", true);
+    $("#pbUrl").prop("disabled", true);
+    $("#url").prop("disabled", true);
+    $("#submit").prop("disabled", true);
+
+    // Perform AJAX request
+    $.ajax({
+      url: url,
+      headers: {
+        "Authorization": "Bearer " + apiKey
+      },
+      success: function(response) {
+        if (response.statuses && response.statuses.length > 0 && response.statuses[0].id) {
+          var id = response.statuses[0].id;
+
+          // Extract username and domain from the URL
+          var urlParts = parseURL(search);
+          var pathParts = urlParts.pathname.split("/").filter(function(part) {
+            return part !== "";
+          });
+          var username = pathParts[0];
+          var domain = urlParts.hostname;
+
+          // Construct the new URL
+          var newUrl = pbUrl + "/" + username + "@" + domain + "/" + id;
+
+          // Output the new URL
+          $("#result").html("New URL: <a id='newUrlLink' href='" + newUrl + "'>" + newUrl + "</a>");
+
+          // Automatically open the new URL in a new tab
+          $("#newUrlLink")[0].click();
+        } else {
+          $("#result").html("Please enter a URL<br>cURL Result: " + JSON.stringify(response) + "<br>" + url + "<br><a target='_blank' href='https://codepen.io/ryedai1/full/WNYZBya'>Lookup</a>");
+        }
+      },
+      error: function(xhr, status, error) {
+        $("#result").html("Error: " + error);
+      },
+      complete: function() {
+        // Re-enable form elements
+        $("#apikey").prop("disabled", false);
+        $("#pbUrl").prop("disabled", false);
+        $("#url").prop("disabled", false);
+        $("#submit").prop("disabled", false);
+      }
+    });
+  }
+
+  // Helper function to parse URL
+  function parseURL(url) {
+    var parser = document.createElement("a");
+    parser.href = url;
+    return parser;
+  }
+
+  // Submit form event handler
+  $("#apiForm").submit(function(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Retrieve form values
+    var apiKey = $("#apikey").val();
+    var pbUrl = $("#pbUrl").val();
+    var search = $("#url").val();
+
+    // Perform AJAX request
+    performAjaxRequest(apiKey, pbUrl, search);
+  });
+
+  // Clear button event handler
+  $("#clearButton").click(function() {
+    // Clear input values
+    $("#apikey").val("");
+    $("#pbUrl").val("");
+    $("#url").val("");
+
+    // Clear result container
+    $("#result").html("");
+  });
+});
+  </script>
+</body>
+</html>

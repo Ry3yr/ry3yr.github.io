@@ -1,0 +1,181 @@
+<b>?userid=111958546062297646&apikey=APIKEYHERE&instanceurl=https://mastodon.social</b> <br>
+<head>
+  <title>Mastodon Notifications</title>
+  <style>
+    .notification {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .notification .account {
+      font-weight: bold;
+    }
+    .notification .status {
+      margin-top: 5px;
+    }
+    .notification .date {
+      font-size: 0.8em;
+      color: #888;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .notification.reply {
+      background-color: lightblue;
+    }
+    .notification.fav {
+      background-color: pink;
+    }
+  </style>
+</head>
+<body>
+  <div id="notifications"></div>
+  <div id="error"></div>
+  <script>
+    // Get the query parameters from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const apiKey = urlParams.get('apikey');
+    const userId = urlParams.get('userid');
+    const instanceUrl = urlParams.get('instanceurl');
+    // Create a new XMLHttpRequest object
+    const xhr = new XMLHttpRequest();
+    // Define the API endpoint URL
+    const apiUrl = `${instanceUrl}/api/v1/notifications`;
+    // Set up the request
+    xhr.open('GET', apiUrl);
+    xhr.setRequestHeader('Authorization', `Bearer ${apiKey}`);
+    // Define the onload callback function
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        const notifications = JSON.parse(xhr.responseText);
+        // Display the notifications
+        const notificationsDiv = document.getElementById('notifications');
+        notifications.forEach(notification => {
+          const notificationElement = createNotificationElement(notification);
+          notificationsDiv.appendChild(notificationElement);
+        });
+      } else {
+        const errorDiv = document.getElementById('error');
+        errorDiv.textContent = 'Request failed. Status: ' + xhr.status;
+        console.error('Request failed. Status:', xhr.status);
+      }
+    };
+    // Define the onerror callback function
+    xhr.onerror = function() {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = 'Request failed. Please check your network connection.';
+      console.error('Request failed. Please check your network connection.');
+    };
+    // Send the request
+    xhr.send();
+    // Helper function to create a notification element
+    function createNotificationElement(notification) {
+      const notificationElement = document.createElement('div');
+      notificationElement.classList.add('notification');
+      const accountElement = document.createElement('div');
+      accountElement.classList.add('account');
+      accountElement.textContent = notification.account.display_name || notification.account.username;
+      const statusElement = document.createElement('div');
+      statusElement.classList.add('status');
+      statusElement.innerHTML = notification.status.content;
+      const dateElement = document.createElement('div');
+      dateElement.classList.add('date');
+      const date = new Date(notification.created_at);
+      dateElement.textContent = date.toLocaleString();
+      dateElement.addEventListener('click', function() {
+        window.open(notification.status.url, '_blank');
+      });
+      // Find all links in the status and set target="_blank"
+      const links = statusElement.getElementsByTagName('a');
+      for (let i = 0; i < links.length; i++) {
+        links[i].setAttribute('target', '_blank');
+      }
+      if (notification.type === 'mention') {
+        notificationElement.classList.add('reply');
+      } else if (notification.type === 'favourite') {
+        notificationElement.classList.add('fav');
+      }
+      notificationElement.appendChild(accountElement);
+      notificationElement.appendChild(statusElement);
+      notificationElement.appendChild(dateElement);
+      return notificationElement;
+    }
+  </script>
+</body>
+</html>
+
+
+<!----PHP---->
+<!----
+< ?php
+// Get the query parameters from the URL
+$apiKey = $_GET['apikey'];
+$userId = $_GET['userid'];
+$instanceUrl = $_GET['instanceurl'];
+
+// Create a new cURL resource
+$ch = curl_init();
+
+// Define the API endpoint URL
+$apiUrl = $instanceUrl . '/api/v1/notifications';
+
+// Set up the request
+curl_setopt($ch, CURLOPT_URL, $apiUrl);
+curl_setopt($ch, CURLOPT_HTTPHEADER, array('Authorization: Bearer ' . $apiKey));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+// Execute the request
+$response = curl_exec($ch);
+
+// Check for errors
+if ($response === false) {
+    echo 'Request failed. Error: ' . curl_error($ch);
+    curl_close($ch);
+    exit;
+}
+
+// Get the HTTP status code
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+// Close the cURL resource
+curl_close($ch);
+
+// Process the response
+if ($httpCode === 200) {
+    $notifications = json_decode($response, true);
+
+    // Display the notifications
+    echo '<div id="notifications">';
+    foreach ($notifications as $notification) {
+        $notificationElement = createNotificationElement($notification);
+        echo $notificationElement;
+    }
+    echo '</div>';
+} else {
+    echo '<div id="error">Request failed. Status: ' . $httpCode . '</div>';
+    exit;
+}
+
+// Helper function to create a notification element
+function createNotificationElement($notification)
+{
+    $notificationElement = '<div class="notification" style="border: 1px solid #ccc;padding: 10px;margin-bottom: 10px;';
+    
+    if ($notification['type'] === 'mention') {
+        $notificationElement .= 'background-color: lightblue;">';
+    } else if ($notification['type'] === 'favourite') {
+        $notificationElement .= 'background-color: pink;">';
+    } else {
+        $notificationElement .= '">';
+    }
+
+    $accountElement = '<div class="account">' . ($notification['account']['display_name'] ?? $notification['account']['username']) . '</div>';
+    $statusElement = '<div class="status">' . $notification['status']['content'] . '</div>';
+
+    $dateElement = '<div class="date"><a href="' . $notification['status']['url'] . '" target="_blank">' . date('Y-m-d H:i:s', strtotime($notification['created_at'])) . '</a></div>';
+
+    $notificationElement .= $accountElement . $statusElement . $dateElement . '</div>';
+
+    return $notificationElement;
+}
+?>
+-->

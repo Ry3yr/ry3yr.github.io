@@ -1,0 +1,31 @@
+<!--for use with --https://codepen.io/ryedai1/pen/ZEPGdOx-->
+
+
+  <button id="extractButton">Random pixiv !</button>
+  <div id="artworkContainer"></div>
+
+  <script>
+    document.getElementById('extractButton').addEventListener('click', function() {
+      // Fetch the HTML file
+      fetch('https://ry3yr.github.io/pixiv-artworks-archive.html')
+        .then(response => response.text())
+        .then(html => {
+          // Create a temporary DOM element to parse the HTML
+          const tempElement = document.createElement('div');
+          tempElement.innerHTML = html;
+          const artworkLinks = tempElement.querySelectorAll('a[target=_blank]');
+          const randomIndex = Math.floor(Math.random() * artworkLinks.length);
+          const randomArtworkLink = artworkLinks[randomIndex];
+          const linkHref = randomArtworkLink.href;
+          const linkText = randomArtworkLink.textContent;
+          const artworkId = linkHref.match(/\/(\d+)$/)[1];
+          const embedCode = `<div><img src="https://embed.pixiv.net/decorate.php?illust_id=${artworkId}&mode=sns-automator" width="50%"></div><br>`;
+          const link = `<a href="${linkHref}" target="_blank">${linkText}</a>`;
+          const artworkContainer = document.getElementById('artworkContainer');
+          artworkContainer.innerHTML = embedCode + link;
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    });
+  </script>
