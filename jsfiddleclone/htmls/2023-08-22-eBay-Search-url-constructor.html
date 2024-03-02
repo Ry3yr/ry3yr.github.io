@@ -1,0 +1,129 @@
+<!--For preselection, add "selected"       <option value="16" selected>Price + Shipping: Highest First</option>-->
+
+
+
+<html>
+<head>
+    <title>eBay Search</title>
+</head>
+<body>
+    <h1>eBay Search</h1>
+    <form method="GET" action="">
+        <label for="query">Search Query:</label>
+        <input type="text" name="query" id="query" required><br><br>
+        
+        <label for="country">Country:</label>
+        <select name="country" id="country" >
+            <option value="EBAY-US">United States</option>
+            <option value="EBAY-UK">United Kingdom</option>
+            <option value="EBAY-AU">Australia</option>
+            <option value="EBAY-DE" selected>Germany</option>
+            <!-- Add more country options here -->
+        </select><br><br>
+        
+
+        <label for="sortBy">Sort By:</label>
+        <select name="sortBy" id="sortBy">
+            <option value="BestMatch">Best Match</option>
+            <option value="15">Price + Shipping: Lowest First</option>
+            <option value="16" selected>Price + Shipping: Highest First</option>
+            <!-- Add more sorting options here -->
+        </select><br><br>
+        
+        <label for="buyNow">Buy Now/Bid:</label>
+        <select name="buyNow" id="buyNow">
+            <option value="BuyNow">Buy Now</option>
+            <option value="Auction">Bid</option>
+        </select><br><br>
+        
+        <label for="minPrice">Minimum Price:</label>
+        <input type="number" name="minPrice" id="minPrice"><br><br>
+        
+        <label for="maxPrice">Maximum Price:</label>
+        <input type="number" name="maxPrice" id="maxPrice"><br><br>
+        
+        <label for="locationPref">Location Preference:</label>
+        <select name="locationPref" id="locationPref">
+            <option value="1">Home</option>
+            <option value="2">Worldwide</option>
+            <option value="3">Europe</option>
+        </select><br><br>
+        
+        <input type="submit" value="Search">
+    </form>
+
+    <script>
+        document.querySelector('form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            var query = document.getElementById('query').value;
+            var country = document.getElementById('country').value;
+            var sortBy = document.getElementById('sortBy').value;
+            var buyNow = document.getElementById('buyNow').value;
+            var minPrice = document.getElementById('minPrice').value;
+            var maxPrice = document.getElementById('maxPrice').value;
+            var locationPref = document.getElementById('locationPref').value;
+            
+            var baseUrl = '';
+            if (country === 'EBAY-DE') {
+                baseUrl = 'https://www.ebay.de';
+            } else if (country === 'EBAY-UK') {
+                baseUrl = 'https://www.ebay.co.uk';
+            } else {
+                baseUrl = 'https://www.ebay.com';
+            }
+            
+            var sortingOption = '';
+            if (sortBy === '15') {
+                sortingOption = '&_sop=15';
+            } else if (sortBy === '16') {
+                sortingOption = '&_sop=16';
+            }
+            
+            var priceOption = '';
+            if (minPrice !== '') {
+                priceOption += '&_udlo=' + minPrice;
+            }
+            if (maxPrice !== '') {
+                priceOption += '&_udhi=' + maxPrice;
+            }
+            
+            var locationOption = '';
+            if (locationPref === '1') {
+                locationOption = '&LH_PrefLoc=1';
+            } else if (locationPref === '2') {
+                locationOption = '&LH_PrefLoc=2';
+            } else if (locationPref === '3') {
+                locationOption = '&LH_PrefLoc=3';
+            }
+            
+            var searchUrl = baseUrl + '/sch/i.html?_nkw=' + encodeURIComponent(query) +
+                '&_ipg=50' +
+                sortingOption +
+                '&LH_BIN=' + (buyNow === 'BuyNow' ? '1' : '0') +
+                '&LH_LocatedIn=' + encodeURIComponent(country) +
+                priceOption +
+                locationOption;
+            
+            // Display the search URL
+            var searchUrlElement = document.createElement('a');
+            searchUrlElement.href = searchUrl;
+            searchUrlElement.target = '_blank';
+            searchUrlElement.innerText = searchUrl;
+
+            // Remove the existing link
+            var existingLink = document.querySelector('a');
+            if (existingLink) {
+            existingLink.parentNode.removeChild(existingLink);
+            }
+
+            // Append the new link to the document body
+            //document.body.appendChild(document.createElement('br'));
+            //document.body.appendChild(document.createElement('br'));
+            //document.body.appendChild(document.createElement('h2')).innerText = 'Search URL:';
+           //document.body.appendChild(document.createElement('br'));
+            document.body.appendChild(searchUrlElement);
+        });
+    </script>
+</body>
+</html>

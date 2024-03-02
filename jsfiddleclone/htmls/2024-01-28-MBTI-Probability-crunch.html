@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1 id="highestPercentage"></h1>
+    <h2 id="entryCount"></h2>
+    <h3 id="mostFrequentValue"></h3>
+    <canvas id="chart"></canvas>
+    <script>
+        fetch('https://alceawis.de/other/extra/personal/personality/mbti.txt')
+            .then(response => response.text())
+            .then(data => {
+                const lines = data.split('\n');
+                const frequencies = {};
+                lines.forEach(line => {
+                    const lastSixCharacters = line.slice(-6);
+                    if (frequencies[lastSixCharacters]) {
+                        frequencies[lastSixCharacters]++;
+                    } else {
+                        frequencies[lastSixCharacters] = 1;
+                    }
+                });
+                const sortedFrequencies = Object.entries(frequencies).sort((a, b) => b[1] - a[1]);
+                const labels = sortedFrequencies.map(entry => entry[0]);
+                const values = sortedFrequencies.map(entry => entry[1]);
+                const highestFrequency = values[0];
+                const totalFrequencies = values.reduce((acc, val) => acc + val, 0);
+                const highestPercentage = ((highestFrequency / totalFrequencies) * 100).toFixed(2);
+                const highestPercentageElement = document.getElementById('highestPercentage');
+                highestPercentageElement.textContent = `${labels[0]} %${highestPercentage}`;
+                const entryCountElement = document.getElementById('entryCount');
+                entryCountElement.textContent = `${highestFrequency} entries vs ${lines.length} total lines`;
+                const mostFrequentValueElement = document.getElementById('mostFrequentValue');
+                //mostFrequentValueElement.textContent = `Most frequent of {labels[0]}`;
+                const ctx = document.getElementById('chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Frequency',
+                            data: values,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                precision: 0
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.log(error));
+    </script>

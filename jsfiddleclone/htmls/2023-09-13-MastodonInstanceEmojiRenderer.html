@@ -1,0 +1,42 @@
+<!--Add querystring "instance" to instantly load emoji from that server-->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.getElementById('emojiForm');
+  var submitButton = document.getElementById('submitButton');
+  var instanceInput = document.getElementById('instance');
+  var queryString = window.location.search;
+  var urlParams = new URLSearchParams(queryString);
+  var instanceValue = urlParams.get('instance');
+  form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    submitButton.disabled = true;
+    var instanceValue = instanceInput.value;
+    var endpoint = 'https://' + instanceValue + '/api/v1/custom_emojis';
+    fetch(endpoint)
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(customEmojis) {
+        var emojiContainer = document.getElementById('emojiContainer');
+        emojiContainer.innerHTML = '';
+
+        customEmojis.forEach(function(customEmoji) {
+          var shortcode = customEmoji.shortcode;
+          var url = customEmoji.url;
+          var emojiTag = '<img src="' + url + '" alt="' + shortcode + '" width="45px" title="' + shortcode + '" onmouseover="hoverEmoji(this)" onmouseout="unhoverEmoji(this)">';
+          emojiContainer.innerHTML += emojiTag;
+        });
+      });
+  });
+  if (instanceValue) {
+    instanceInput.value = instanceValue;
+    submitButton.click();
+  }
+});
+</script>
+<div id="emojiContainer"></div>
+<form id="emojiForm">
+  <input type="text" id="instance" name="instance" required>
+  <button type="submit" id="submitButton">Fetch Emojis</button>
+</form>

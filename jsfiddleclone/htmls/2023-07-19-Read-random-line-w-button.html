@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--https://run.plnkr.co/plunks/6wCVvXqoIGl6hN6Q-->
+<style>
+div {text-align: left;}
+h1 {font-size: 11px;font-family: Arial;}
+button {width: 128px;height: 28px;background-color: white;color: black;}
+{font-size: 11px;}
+button:hover{background-color: white;}
+</style>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!--<link rel="stylesheet" href="style.css" />-->
+    <script src="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/jquery.min.js"></script>
+    <script>
+var lines;
+    var randomNumber;
+    var lastRandomNumber;
+    $(document.body).ready(function () {
+      // load the trivia from the server
+      $.ajax({
+        url: 'https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/Daymusic_array.js'
+      }).done(function(content) {
+        // normalize the line breaks, then split into lines
+        lines = content.replace(/\r\n|\r/g, '\n').trim().split('\n');
+        lines = content.replace(/\r\n|\r/g, 'quote').trim().split('quote');
+        // ^^ line rmvl ^^^
+        // only set up the click handler if there were lines found
+        if (lines && lines.length) {
+          $('#showLine').on('click', function () {
+            // loop to prevent repeating the last random number
+            while (randomNumber === lastRandomNumber) {
+              randomNumber = parseInt(Math.random() * lines.length);
+              // check to prevent infinite loop
+              if (lines.length === 1) { break; }
+            }
+            // keep track of the last random number
+            lastRandomNumber = randomNumber;
+            // show the corresponding line
+            $('#trivia').html(lines[randomNumber]);
+          });
+        }
+      });
+    });
+</script>
+  </head>
+<body><button id="showLine">Random!</button>
+    <p id="trivia"></p></body>

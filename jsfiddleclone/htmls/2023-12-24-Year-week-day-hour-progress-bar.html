@@ -1,0 +1,99 @@
+
+<style>
+.progress-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: -23px;
+  margin-right: 0px;
+}
+.progress-bar {
+  width: 234px;
+  height: 16px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 43px;
+  overflow: hidden;
+  position: relative;
+}
+.progress-bar-fill {
+  height: 100%;
+  background-color: #4caf50;
+}
+.progress-label {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #000;
+  //font-weight: italic;
+}
+.progress-text {
+  margin-left: 10px;
+}
+.year-progress-bar, .week-progress-bar, .day-progress-bar, .day2-progress-bar {
+  background-color: #fff;
+}
+.year-progress-label, .week-progress-label, .day-progress-label, .day2-progress-label {
+  color: #000;
+}
+</style>
+<body>
+  <div class="progress-container">
+    <div class="progress-bar" id="year-progress-bar">
+      <div class="progress-bar-fill" id="year-progress-bar-fill"></div>
+      <div class="progress-label" id="year-progress-label"></div>
+    </div>
+    <p class="progress-text" id="year-progress-text"></p>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar" id="week-progress-bar">
+      <div class="progress-bar-fill" id="week-progress-bar-fill"></div>
+      <div class="progress-label" id="week-progress-label"></div>
+    </div>
+    <p class="progress-text" id="week-progress-text"></p>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar" id="day-progress-bar">
+      <div class="progress-bar-fill" id="day-progress-bar-fill"></div>
+      <div class="progress-label" id="day-progress-label"></div>
+    </div>
+    <p class="progress-text" id="day-progress-text"></p>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar" id="hour-progress-bar">
+      <div class="progress-bar-fill" id="hour-progress-bar-fill"></div>
+      <div class="progress-label" id="hour-progress-label"></div>
+    </div>
+    <p class="progress-text" id="hour-progress-text"></p>
+  </div>
+  <script>
+    function updateProgressBar(progressBarId, fillId, labelId, textId, percentage, text) {
+      document.getElementById(fillId).style.width = percentage + "%";
+      document.getElementById(labelId).innerHTML = Math.round(percentage) + "%";
+      document.getElementById(textId).innerHTML = text;
+    }
+    var currentDate = new Date();
+    var currentYear = currentDate.getFullYear();
+    var startDate = new Date(currentYear, 0, 1);
+    var endDate = new Date(currentYear + 1, 0, 1);
+    var daysPassed = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+    var totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+    var yearPercentage = (daysPassed / totalDays) * 100;
+    var currentDayOfWeek = currentDate.getDay();
+    if (currentDayOfWeek === 0) {
+      currentDayOfWeek = 7;
+    }
+    var totalDaysOfWeek = 7;
+    var weekPercentage = (currentDayOfWeek / totalDaysOfWeek) * 100;
+    var currentDayOfMonth = currentDate.getDate();
+    var totalDaysOfMonth = new Date(currentYear, currentDate.getMonth() + 1, 0).getDate();
+    var dayPercentage = (currentDayOfMonth / totalDaysOfMonth) * 100;
+    var currentHourOfDay = currentDate.getHours();
+    var totalHoursOfDay = 24;
+    var hourPercentage = (currentHourOfDay / totalHoursOfDay) * 100;
+    updateProgressBar("year-progress-bar", "year-progress-bar-fill", "year-progress-label", "year-progress-text", yearPercentage, "Days in (" + currentYear + "): " + daysPassed + "/" + totalDays);
+    updateProgressBar("week-progress-bar", "week-progress-bar-fill", "week-progress-label", "week-progress-text", weekPercentage, "Days of the week: " + currentDayOfWeek + "/" + totalDaysOfWeek);
+    updateProgressBar("day-progress-bar", "day-progress-bar-fill", "day-progress-label", "day-progress-text", dayPercentage, "Days of the month: " + currentDayOfMonth + "/" + totalDaysOfMonth);
+    updateProgressBar("hour-progress-bar", "hour-progress-bar-fill", "hour-progress-label", "hour-progress-text", hourPercentage, "Hours/day: " + currentHourOfDay + "/" + totalHoursOfDay);
+  </script>
+</body>

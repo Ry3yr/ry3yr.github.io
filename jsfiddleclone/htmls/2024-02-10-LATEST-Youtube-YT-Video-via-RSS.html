@@ -1,0 +1,38 @@
+<a target="_blank" href="https://m.youtube.com/@alceasgamingbouquet/playlists" style=color:blue>Latest</a>:
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-dateFormat/1.0/jquery.dateFormat.js"></script>-->
+<style>.youtube-video{margin:20px;//border:1px solid #ccc;//padding:10px;//border-radius:5px;//box-shadow:2px 2px 5px #ccc;display:flex;flex-wrap:wrap;align-items:center}.youtube-video img{margin-right:10px;max-width:200px}.youtube-video h2{margin-top:0}.youtube-video iframe{margin-left:20px}
+    </style>
+    <div id="youtube-feed"></div>
+    <script>
+      $(function() {
+        var $content = $('#youtube-feed');
+        var data = {rss_url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC-5ooQ1hSQ-uM8Mu4dLko4Q'};
+        $.get('https://api.rss2json.com/v1/api.json', data, function(response) {
+          if (response.status == 'ok') {
+            var output = '';
+            $.each(response.items, function(k, item) {
+              const title = item.title;
+              const titleShortened = (title.length > 60) ? title.substring(0, 60) + "..." : title;
+              const thumbnail = item.thumbnail;
+              const videoId = item.guid.split(':')[2];
+              const count = item.viewCount;
+              const date = new Date(item.pubDate).toLocaleDateString();
+              const url = `https://www.youtube.com/watch?v=${videoId}`;
+              const urlShortened = url.substring(0,60)+'...';
+              const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+              output += '<div class="youtube-video">';
+              output += `<a href="${url}" target="_blank"><img src="${thumbnail}" /></a>`;
+              //output += `<iframe width="260" height="115" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+              output += '<br><div>';
+              output += `<h2><a href="${url}" target="_blank">${titleShortened}</a></h2>`;
+              //output += `<p>Views: ${count}</p>`;
+              output += `<p>Date: ${date}</p>`;
+              output += '</div>';
+              //output += `<iframe width="260" height="115" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+              output += '</div>';
+              return k < 0;
+            });
+            $content.html(output).hide();
+            $content.fadeIn('slow');}});});
+    </script>

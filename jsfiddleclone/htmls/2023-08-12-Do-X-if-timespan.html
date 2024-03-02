@@ -1,0 +1,18 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        var currentDate = new Date();
+        var targetDate = new Date('July 13, 2021');
+        var daysPassed = Math.floor((currentDate.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysPassed % 750 === 0) {
+            document.querySelector("a[href='javascript:mybdayFunction()']").click();
+        }
+    });
+    function mybdayFunction() {
+        $("#mybday").load("https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/site/effects/wisteria_petal_rain.html");
+    }
+</script>
+<a href="javascript:mybdayFunction()" style="color:transparent">bday</a>
+<div id="bigdivv" style="position:relative; top: 0px; left: -650px;">
+    <div class="formClass"><div id="mybday"></div></div>
+</div>

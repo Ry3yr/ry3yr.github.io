@@ -1,0 +1,55 @@
+<button id="myrdpbtn" style="background:transparent; border:transparent;" onclick="swap()">RandomPicture</button>
+<select id="image-selector" style="width:250px;">
+  <option value="">Select an image</option>
+</select>
+<style type="text/css">
+#banner {
+  height:100%;
+  object-fit: contain;
+  background-size: contain; 
+  background-repeat: no-repeat;
+}
+</style>
+<script type="text/javascript"> 
+if (document.getElementById) { window.onload = swap };
+var urls = [
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2022-10-18-TheOrgOfTwo.png#01",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2022-10-19-Aoi-Realist-no2.png#02",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-03-01-KisaraRelease.png#03",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-03-19-PunkLuv.png#04",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-03-17-HappyAlcea.png#05",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-05-06-ShokaConfidentBusinessReaper.png#06",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-05-08-YuNAoiFlippedHappiness.gif#07",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-05-10-RollbackCea.png#08",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-05-11-HibikiMisoraSemiRealism-BoredMissy.png#09",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-05-19-MisoraSelfFromElse.png#10",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-05-21-LinkIntoVRAINSTime.png#11",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2023-05-21-ZeriouslyContentAlcea.png#12",
+"https://alceawisteria.codeberg.page/images/arthost/2023-06-22-ShokaHi.png#13",
+"https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ca81d24e-918d-4918-bd5a-f5b53c49858b/dg0nhf2-77f59ee8-51d9-4e73-a016-ea7a9af7900a.png/v1/fill/w_1117,h_715/2023_06_23_happyyu_by_aoikurayami1_dg0nhf2-pre.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9ODIwIiwicGF0aCI6IlwvZlwvY2E4MWQyNGUtOTE4ZC00OTE4LWJkNWEtZjViNTNjNDk4NThiXC9kZzBuaGYyLTc3ZjU5ZWU4LTUxZDktNGU3My1hMDE2LWVhN2E5YWY3OTAwYS5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.PFzoLqNOce2sMzH4IDpTYhxIvC7YT4TlKU5X_MYsb-Q#14",
+"https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ca81d24e-918d-4918-bd5a-f5b53c49858b/dg2ph6q-5ba53964-efcb-4f30-9dd0-6f97520e11de.png/v1/fill/w_1117,h_715,q_70,strp/backhug_by_aoikurayami1_dg2ph6q-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9ODIwIiwicGF0aCI6IlwvZlwvY2E4MWQyNGUtOTE4ZC00OTE4LWJkNWEtZjViNTNjNDk4NThiXC9kZzJwaDZxLTViYTUzOTY0LWVmY2ItNGYzMC05ZGQwLTZmOTc1MjBlMTFkZS5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.aE2GYnZKfcTbmoUfWBm8t3RxnroMSTc6vn0Sokhov6o#15",
+"https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/extrafiles/images/arthost/2022-11-02-RealistShoka.png"
+];
+var select = document.getElementById("image-selector");
+for (var i = 0; i < urls.length; i++) {
+  var option = document.createElement("option");
+  option.value = urls[i];
+  var filename = urls[i].substring(urls[i].lastIndexOf('/')+1);
+  option.text = "Image " + (i+1) + " (" + filename + ")";
+  select.add(option);
+}
+function swap() {
+  var imageSelector = document.getElementById("image-selector");
+  var selectedImage = imageSelector.options[imageSelector.selectedIndex].value;
+  if (selectedImage) {
+    document.getElementById("banner").style.backgroundImage = "url(" + selectedImage + ")";
+  } else {
+    var numimages = urls.length;
+    var x = Math.floor(Math.random() * numimages);
+    var randomimage = urls[x];
+    document.getElementById("banner").style.backgroundImage = "url(" + randomimage + ")";
+  }
+}
+document.getElementById("image-selector").addEventListener("change", swap);
+</script>
+<div id="banner"></div>

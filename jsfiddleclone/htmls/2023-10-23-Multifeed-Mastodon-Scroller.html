@@ -1,0 +1,167 @@
+<!--https://pb.todon.de/@alcea/111285111844791912--https://fedionfire.stream/-->
+
+<!--https://allwebco-templates.com/support/S_script_newsfeed.htm-->
+<meta charset="utf-8">
+<base target="_parent">
+<style>
+@import url(https://fonts.googleapis.com/css?family=Droid+Sans:400,700);#news_iframe_scroll{width:100%;max-width:250px;min-width:400px;margin:0 auto 10px;border:1px solid #000;-moz-box-sizing:border-box;-webkit-box-sizing:border-box;box-sizing:border-box}#news_iframe_scroll iframe{width:100%;height:176px;display:block;margin:0;padding:0;overflow:hidden}.news_scroll-title{color:#fff;font:20px "Droid Sans",arial,sans-serif;text-align:left;background-color:#276396;padding:5px;border-bottom:5px solid silver}#NewsDiv{position:absolute;left:0;top:0;width:100%}body.news-scroll{background-color:#fff;margin:0;padding:0;border:0}.scroll-text-if{color:#666;font:12px "Droid Sans",arial,sans-serif;text-align:left;padding:8px 7px 0}.scroll-title-if{color:#000;font:bold 15px "Droid Sans",arial,sans-serif;text-align:left;border-bottom:0 solid #666}.news-scroll a:active,.news-scroll a:link{color:#03f;text-decoration:none}.news-scroll a:visited{color:#63f;text-decoration:none}.news-scroll a:hover{color:#69f;text-decoration:underline}
+</style>
+</head>
+<body class="news-scroll" onMouseover="scrollspeed=0" onMouseout="scrollspeed=current" OnLoad="NewsScrollStart();">
+<!-- START NEWS FEED -->
+<div id="NewsDiv">
+<div class="scroll-text-if">
+<!-- SCROLLER CONTENT STARTS HERE -->
+<span class="scroll-title-if">
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+  #messageContainer {
+    height: 100%;
+    overflow: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+  }
+  .message {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 5px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+  }
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  .message-content {
+    flex-grow: 1;
+  }
+  .message-link {
+    color: #007bff;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+  <div id="messageContainer"></div>
+  <script>
+    $(document).ready(function() {
+      function fetchMastodonStatuses(instanceUrls) {
+        const limit = 35;
+
+        instanceUrls.forEach(function(instanceUrl) {
+          const url = `${instanceUrl}/api/v1/timelines/public?limit=${limit}&exclude_bots=true`;
+          $.ajax({
+            url: url,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+              const statuses = data;
+              parseMastodonStatuses(statuses);
+            },
+            error: function(error) {
+              console.error('Error fetching Mastodon statuses:', error);
+            }
+          });
+        });
+      }
+      function parseMastodonStatuses(statuses) {
+        var messageContainer = $('#messageContainer');
+        statuses.forEach(function(status) {
+          var avatarUrl = status.account.avatar;
+          var displayName = status.account.display_name;
+          var content = status.content;
+          //var postUrl = status.url;
+
+//var postUrl = window.location.search.includes('takemehome') && !status.url.includes('/notes') && !status.url.includes('/item') && !status.url.includes('/objects') && !status.url.includes('/object') ? `https://alcea-wisteria.de/PHP/0demo/2023-10-22-MastodonTootSearch/searchmastourl.php?search=${encodeURIComponent(status.url)}&pbUrl=https://pb.todon.de&apikey=5x1Wr4gL-rM_Q0akdLZIQrcO2PBhEby39HatYQFmVvs` : status.url;
+
+var postUrl = window.location.search.includes('takemehome') && !status.url.includes('/notes') && !status.url.includes('/item') && !status.url.includes('/objects') && !status.url.includes('/object') ? `https://alcea-wisteria.de/PHP/0demo/2023-10-22-MastodonTootSearch/searchmastourl.php?search=${encodeURIComponent(status.url)}&pbUrl=https://urusai.social&apikey=lsgJo4S423LwtffLKzO78EFu-LYHzLd1ZbFHWrgafpM` : status.url; 
+
+          var message = $('<div>').addClass('message');
+          var avatar = $('<img>').attr('src', avatarUrl).addClass('avatar');
+          var messageContent = $('<div>').addClass('message-content').html(content);
+          var link = $('<a>').attr('href', postUrl).attr('target', '_blank').addClass('message-link').text('View Post');
+
+
+
+
+
+
+//hide posts with these keywords by making their text transparent
+const keywords = ['onlyfans', 'video', '$', '€', 'climate', 'Kuscheln', 'abide', 'Antisemitismus', 'cancer', 'disease', 'dead', 'wars', 'Trinky', 'blowin', 'man', 'yassie', 'Illness', 'Serious', 'shooting', 'died', 'gestorben', 'kill', 'disease', 'hate', 'Twitter', 'war', 'afraid', 'Israel', 'fuck', 'sex', 'mom', 'milf', 'dilf', 'Gaza', 'Ukraine', 'tits', 'cock', 'breasts', 'cunt', 'killing', 'shooter',  'killed', 'died', 'Nazi', 'Nazis', 'terror', 'weather', 'prison', 'Opfer', 'Hilfe', 'pregnant', 'schwanger'];
+const regex = new RegExp(`#${keywords.join('\\b|#')}\\b|\\b${keywords.join('\\b|\\b')}\\b`, 'gi');
+if (content.match(regex)) {
+  messageContent.css('color', 'transparent');
+  message.css('color', 'transparent');
+  link.css('color','transparent');
+}
+
+          message.append(avatar);
+          message.append(messageContent);
+          messageContent.append('<br>');
+          messageContent.append(link);
+          messageContainer.append(message);
+     
+        });
+      }
+      var instanceUrls = ['https://mastodon.social', 'https://sunnygarden.org', 'https://chaos.social', 'https://mementomori.social'];
+      fetchMastodonStatuses(instanceUrls);
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+<!-- END SCROLLER CONTENT -->
+</div>
+</div>
+<!-- END NEWS FEED -->
+<!-- YOU DO NOT NEED TO EDIT BELOW THIS LINE -->
+<script type="text/javascript">
+var startdelay 		= 1; 		// START SCROLLING DELAY IN SECONDS
+var scrollspeed		= 2.5;		// ADJUST SCROLL SPEED
+var scrollwind		= 1;		// FRAME START ADJUST
+var speedjump		= 30;		// ADJUST SCROLL JUMPING = RANGE 20 TO 40
+var nextdelay		= 0; 		// SECOND SCROLL DELAY IN SECONDS 0 = QUICKEST
+var topspace		= "2px";	// TOP SPACING FIRST TIME SCROLLING
+var frameheight		= 70;		// IF YOU RESIZE THE CSS HEIGHT, EDIT THIS HEIGHT TO MATCH
+current = (scrollspeed);
+function HeightData(){
+AreaHeight=dataobj.offsetHeight
+if (AreaHeight===0){
+setTimeout("HeightData()",( startdelay * 1000 ))
+}
+else {
+ScrollNewsDiv()
+}}
+function NewsScrollStart(){
+dataobj=document.all? document.all.NewsDiv : document.getElementById("NewsDiv")
+dataobj.style.top=topspace
+setTimeout("HeightData()",( startdelay * 1000 ))
+}
+function ScrollNewsDiv(){
+dataobj.style.top=scrollwind+'px';
+scrollwind-=scrollspeed;
+if (parseInt(dataobj.style.top)<AreaHeight*(-1)) {
+dataobj.style.top=frameheight+'px';
+scrollwind=frameheight;
+setTimeout("ScrollNewsDiv()",( nextdelay * 1000 ))
+}
+else {
+setTimeout("ScrollNewsDiv()",speedjump)
+}}
+</script>
+</body>
+</html>
+
+
+
+

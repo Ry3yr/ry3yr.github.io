@@ -1,0 +1,184 @@
+
+posts/day: (<a target="_blank" href="https://codepen.io/ryedai1/pen/WNYZBya">GetID</a>)<br><br><br>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Date Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        canvas {
+            display: block;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="dateChart"></canvas>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <div id="entities"></div>
+    <script>
+        $(document).ready(function() {
+            var endpoint = 'https://pb.todon.de/api/v1/accounts/109629985010224381/statuses';
+            var entities = [];
+            var dates = [];
+
+            // Get the value of the "endpoint" query string parameter
+            var urlParams = new URLSearchParams(window.location.search);
+            var customEndpoint = urlParams.get('endpoint');
+            if (customEndpoint) {
+                endpoint = customEndpoint;
+            }
+
+            fetchEntities();
+
+            function fetchEntities() {
+                var url = endpoint;
+
+                if (entities.length > 0) {
+                    var linkHeader = '<' + endpoint + '?max_id=' + entities[entities.length - 1].id + '>; rel="next"';
+                    $.ajaxSetup({
+                        headers: {
+                            'Link': linkHeader
+                        }
+                    });
+                }
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'Authorization': 'Bearer token'
+                    },
+                    success: function(response, textStatus, xhr) {
+                        var newEntities = response;
+
+                        for (var i = 0; i < newEntities.length; i++) {
+                            var entity = newEntities[i];
+                            entities.push(entity);
+                            // Filter out the date
+                            var date = new Date(entity.created_at);
+                            dates.push(date);
+                        }
+
+                        var linkHeader = xhr.getResponseHeader('Link');
+                        var nextLink = extractLinkUrl(linkHeader, 'next');
+
+                        if (entities.length >= 200) {
+                            // Render the fetched entities
+                            renderEntities();
+                            // Plot the dates
+                            plotDates();
+                        } else if (nextLink) {
+                            // Fetch the next set of entities
+                            endpoint = nextLink;
+                            fetchEntities();
+                        } else {
+                            console.log('Finished fetching 200 entities');
+                            // Render the fetched entities
+                            renderEntities();
+                            // Plot the dates
+                            plotDates();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error: ' + error);
+                    }
+                });
+            }
+
+            function extractLinkUrl(linkHeader, rel) {
+                var links = linkHeader.split(',');
+                for (var i = 0; i < links.length; i++) {
+                    var link = links[i].trim();
+                    var regex = /<([^>]+)>;\s*rel="([^"]+)"/g;
+                    var match = regex.exec(link);
+                    if (match && match[2] === rel) {
+                        return match[1];
+                    }
+                }
+                return null;
+            }
+
+            function renderEntities() {
+                for (var i = 0; i < entities.length; i++) {
+                    var entity = entities[i];
+                    // Render the URL and date on the page
+                    var entityHtml = '<p>';
+                    //entityHtml += 'URL: <a href="' + entity.url + '">' + entity.url + '</a><br>';
+                    //entityHtml += 'Date: ' + entity.created_at + '<br>';
+                    //entityHtml += '</p>';
+                    $('#entities').append(entityHtml);
+                }
+            }
+
+            function plotDates() {
+                // Filter the dates for the last 7 days
+                var today = new Date();
+                var lastSevenDays = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                var filteredDates = dates.filter(function(date) {
+                    return date >= lastSevenDays && date <= today;
+                });
+
+                // Count the occurrences of each date
+                var dateCounts = {};
+                filteredDates.forEach(function(date) {
+                    var dateString = date.toISOString().split('T')[0];
+                    dateCounts[dateString] = (dateCounts[dateString] || 0) + 1;
+                });
+
+                // Extract the dates and counts as separate arrays
+                var chartLabels = Object.keys(dateCounts);
+                var chartData = Object.values(dateCounts);
+
+                // Create the chart using Chart.js
+                var ctx = document.getElementById('dateChart').getContext('2d');
+                var chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Date Counts',
+                            data: chartData,
+                            fill: false,
+                            borderColor: 'rgba(0, 123, 255,0.8)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                },
+                                reverse: true // Add this line to reverse the x-axis
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Count'
+                                },
+                                beginAtZero: true,
+                                stepSize: 1
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+
+
+<!-----V0---
+UG9zdHMvRGF5IAo8aGVhZD4KICAgIDx0aXRsZT5EYXRlIENoYXJ0PC90aXRsZT4KICAgIDxzY3JpcHQgc3JjPSJodHRwczovL2Nkbi5qc2RlbGl2ci5uZXQvbnBtL2NoYXJ0LmpzIj48L3NjcmlwdD4KICAgIDxzdHlsZT4KICAgICAgICBjYW52YXMgewogICAgICAgICAgICBkaXNwbGF5OiBibG9jazsKICAgICAgICAgICAgbWF4LXdpZHRoOiA4MDBweDsKICAgICAgICAgICAgbWFyZ2luOiAwIGF1dG87CiAgICAgICAgfQogICAgPC9zdHlsZT4KCiAgICA8Y2FudmFzIGlkPSJkYXRlQ2hhcnQiPjwvY2FudmFzPgogICAgPHNjcmlwdCBzcmM9Imh0dHBzOi8vY29kZS5qcXVlcnkuY29tL2pxdWVyeS0zLjYuMC5taW4uanMiPjwvc2NyaXB0PgogICAgPGRpdiBpZD0iZW50aXRpZXMiPjwvZGl2PgogICAgPHNjcmlwdD4KICAgICAgICAkKGRvY3VtZW50KS5yZWFkeShmdW5jdGlvbigpIHsKICAgICAgICAgICAgdmFyIGVuZHBvaW50ID0gJ2h0dHBzOi8vcGIudG9kb24uZGUvYXBpL3YxL2FjY291bnRzLzEwOTYyOTk4NTAxMDIyNDM4MS9zdGF0dXNlcyc7CiAgICAgICAgICAgIHZhciBlbnRpdGllcyA9IFtdOwogICAgICAgICAgICB2YXIgZGF0ZXMgPSBbXTsKCiAgICAgICAgICAgIGZldGNoRW50aXRpZXMoKTsKCiAgICAgICAgICAgIGZ1bmN0aW9uIGZldGNoRW50aXRpZXMoKSB7CiAgICAgICAgICAgICAgICB2YXIgdXJsID0gZW5kcG9pbnQ7CgogICAgICAgICAgICAgICAgaWYgKGVudGl0aWVzLmxlbmd0aCA+IDApIHsKICAgICAgICAgICAgICAgICAgICB2YXIgbGlua0hlYWRlciA9ICc8aHR0cHM6Ly9wYi50b2Rvbi5kZS9hcGkvdjEvYWNjb3VudHMvMTA5NjI5OTg1MDEwMjI0MzgxL3N0YXR1c2VzP21heF9pZD0nICsgZW50aXRpZXNbZW50aXRpZXMubGVuZ3RoIC0gMV0uaWQgKyAnPjsgcmVsPSJuZXh0Iic7CiAgICAgICAgICAgICAgICAgICAgJC5hamF4U2V0dXAoewogICAgICAgICAgICAgICAgICAgICAgICBoZWFkZXJzOiB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAnTGluayc6IGxpbmtIZWFkZXIKICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgIH0pOwogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgICQuYWpheCh7CiAgICAgICAgICAgICAgICAgICAgdXJsOiB1cmwsCiAgICAgICAgICAgICAgICAgICAgdHlwZTogJ0dFVCcsCiAgICAgICAgICAgICAgICAgICAgZGF0YVR5cGU6ICdqc29uJywKICAgICAgICAgICAgICAgICAgICBoZWFkZXJzOiB7CiAgICAgICAgICAgICAgICAgICAgICAgICdBdXRob3JpemF0aW9uJzogJ0JlYXJlciB0b2tlbicKICAgICAgICAgICAgICAgICAgICB9LAogICAgICAgICAgICAgICAgICAgIHN1Y2Nlc3M6IGZ1bmN0aW9uKHJlc3BvbnNlLCB0ZXh0U3RhdHVzLCB4aHIpIHsKICAgICAgICAgICAgICAgICAgICAgICAgdmFyIG5ld0VudGl0aWVzID0gcmVzcG9uc2U7CgogICAgICAgICAgICAgICAgICAgICAgICBmb3IgKHZhciBpID0gMDsgaSA8IG5ld0VudGl0aWVzLmxlbmd0aDsgaSsrKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICB2YXIgZW50aXR5ID0gbmV3RW50aXRpZXNbaV07CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBlbnRpdGllcy5wdXNoKGVudGl0eSk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAvLyBGaWx0ZXIgb3V0IHRoZSBkYXRlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICB2YXIgZGF0ZSA9IG5ldyBEYXRlKGVudGl0eS5jcmVhdGVkX2F0KTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGRhdGVzLnB1c2goZGF0ZSk7CiAgICAgICAgICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICAgICAgICAgIHZhciBsaW5rSGVhZGVyID0geGhyLmdldFJlc3BvbnNlSGVhZGVyKCdMaW5rJyk7CiAgICAgICAgICAgICAgICAgICAgICAgIHZhciBuZXh0TGluayA9IGV4dHJhY3RMaW5rVXJsKGxpbmtIZWFkZXIsICduZXh0Jyk7CgogICAgICAgICAgICAgICAgICAgICAgICBpZiAoZW50aXRpZXMubGVuZ3RoID49IDIwMCkgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgLy8gUmVuZGVyIHRoZSBmZXRjaGVkIGVudGl0aWVzCiAgICAgICAgICAgICAgICAgICAgICAgICAgICByZW5kZXJFbnRpdGllcygpOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgLy8gUGxvdCB0aGUgZGF0ZXMKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBsb3REYXRlcygpOwogICAgICAgICAgICAgICAgICAgICAgICB9IGVsc2UgaWYgKG5leHRMaW5rKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAvLyBGZXRjaCB0aGUgbmV4dCBzZXQgb2YgZW50aXRpZXMKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGVuZHBvaW50ID0gbmV4dExpbms7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBmZXRjaEVudGl0aWVzKCk7CiAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb25zb2xlLmxvZygnRmluaXNoZWQgZmV0Y2hpbmcgMjAwIGVudGl0aWVzJyk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAvLyBSZW5kZXIgdGhlIGZldGNoZWQgZW50aXRpZXMKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlbmRlckVudGl0aWVzKCk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAvLyBQbG90IHRoZSBkYXRlcwogICAgICAgICAgICAgICAgICAgICAgICAgICAgcGxvdERhdGVzKCk7CiAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICB9LAogICAgICAgICAgICAgICAgICAgIGVycm9yOiBmdW5jdGlvbih4aHIsIHN0YXR1cywgZXJyb3IpIHsKICAgICAgICAgICAgICAgICAgICAgICAgY29uc29sZS5sb2coJ0Vycm9yOiAnICsgZXJyb3IpOwogICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIH0pOwogICAgICAgICAgICB9CgogICAgICAgICAgICBmdW5jdGlvbiBleHRyYWN0TGlua1VybChsaW5rSGVhZGVyLCByZWwpIHsKICAgICAgICAgICAgICAgIHZhciBsaW5rcyA9IGxpbmtIZWFkZXIuc3BsaXQoJywnKTsKICAgICAgICAgICAgICAgIGZvciAodmFyIGkgPSAwOyBpIDwgbGlua3MubGVuZ3RoOyBpKyspIHsKICAgICAgICAgICAgICAgICAgICB2YXIgbGluayA9IGxpbmtzW2ldLnRyaW0oKTsKICAgICAgICAgICAgICAgICAgICB2YXIgcmVnZXggPSAvPChbXj5dKyk+O1xzKnJlbD0iKFteIl0rKSIvZzsKICAgICAgICAgICAgICAgICAgICB2YXIgbWF0Y2ggPSByZWdleC5leGVjKGxpbmspOwogICAgICAgICAgICAgICAgICAgIGlmIChtYXRjaCAmJiBtYXRjaFsyXSA9PT0gcmVsKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiBtYXRjaFsxXTsKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICByZXR1cm4gbnVsbDsKICAgICAgICAgICAgfQoKICAgICAgICAgICAgZnVuY3Rpb24gcmVuZGVyRW50aXRpZXMoKSB7CiAgICAgICAgICAgICAgICBmb3IgKHZhciBpID0gMDsgaSA8IGVudGl0aWVzLmxlbmd0aDsgaSsrKSB7CiAgICAgICAgICAgICAgICAgICAgdmFyIGVudGl0eSA9IGVudGl0aWVzW2ldOwogICAgICAgICAgICAgICAgICAgIC8vIFJlbmRlciB0aGUgVVJMIGFuZCBkYXRlIG9uIHRoZSBwYWdlCiAgICAgICAgICAgICAgICAgICAgdmFyIGVudGl0eUh0bWwgPSAnPHA+JzsKICAgICAgICAgICAgICAgICAgICAvL2VudGl0eUh0bWwgKz0gJ1VSTDogPGEgaHJlZj0iJyArIGVudGl0eS51cmwgKyAnIj4nICsgZW50aXR5LnVybCArICc8L2E+PGJyPic7CiAgICAgICAgICAgICAgICAgICAgLy9lbnRpdHlIdG1sICs9ICdEYXRlOiAnICsgZW50aXR5LmNyZWF0ZWRfYXQgKyAnPGJyPic7CiAgICAgICAgICAgICAgICAgICAgLy9lbnRpdHlIdG1sICs9ICc8L3A+JzsKICAgICAgICAgICAgICAgICAgICAkKCcjZW50aXRpZXMnKS5hcHBlbmQoZW50aXR5SHRtbCk7CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGZ1bmN0aW9uIHBsb3REYXRlcygpIHsKICAgICAgICAgICAgICAgIC8vIEZpbHRlciB0aGUgZGF0ZXMgZm9yIHRoZSBsYXN0IDcgZGF5cwogICAgICAgICAgICAgICAgdmFyIHRvZGF5ID0gbmV3IERhdGUoKTsKICAgICAgICAgICAgICAgIHZhciBsYXN0U2V2ZW5EYXlzID0gbmV3IERhdGUodG9kYXkuZ2V0VGltZSgpIC0gNyAqIDI0ICogNjAgKiA2MCAqIDEwMDApOwogICAgICAgICAgICAgICAgdmFyIGZpbHRlcmVkRGF0ZXMgPSBkYXRlcy5maWx0ZXIoZnVuY3Rpb24oZGF0ZSkgewogICAgICAgICAgICAgICAgICAgIHJldHVybiBkYXRlID49IGxhc3RTZXZlbkRheXMgJiYgZGF0ZSA8PSB0b2RheTsKICAgICAgICAgICAgICAgIH0pOwoKICAgICAgICAgICAgICAgIC8vIENvdW50IHRoZSBvY2N1cnJlbmNlcyBvZiBlYWNoIGRhdGUKICAgICAgICAgICAgICAgIHZhciBkYXRlQ291bnRzID0ge307CiAgICAgICAgICAgICAgICBmaWx0ZXJlZERhdGVzLmZvckVhY2goZnVuY3Rpb24oZGF0ZSkgewogICAgICAgICAgICAgICAgICAgIHZhciBkYXRlU3RyaW5nID0gZGF0ZS50b0lTT1N0cmluZygpLnNwbGl0KCdUJylbMF07CiAgICAgICAgICAgICAgICAgICAgZGF0ZUNvdW50c1tkYXRlU3RyaW5nXSA9IChkYXRlQ291bnRzW2RhdGVTdHJpbmddIHx8IDApICsgMTsKICAgICAgICAgICAgICAgIH0pOwoKICAgICAgICAgICAgICAgIC8vIEV4dHJhY3QgdGhlIGRhdGVzIGFuZCBjb3VudHMgYXMgc2VwYXJhdGUgYXJyYXlzCiAgICAgICAgICAgICAgICB2YXIgY2hhcnRMYWJlbHMgPSBPYmplY3Qua2V5cyhkYXRlQ291bnRzKTsKICAgICAgICAgICAgICAgIHZhciBjaGFydERhdGEgPSBPYmplY3QudmFsdWVzKGRhdGVDb3VudHMpOwoKICAgICAgICAgICAgICAgIC8vIENyZWF0ZSB0aGUgY2hhcnQgdXNpbmcgQ2hhcnQuanMKICAgICAgICAgICAgICAgIHZhciBjdHggPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZGF0ZUNoYXJ0JykuZ2V0Q29udGV4dCgnMmQnKTsKICAgICAgICAgICAgICAgIHZhciBjaGFydCA9IG5ldyBDaGFydChjdHgsIHsKICAgICAgICAgICAgICAgICAgICB0eXBlOiAnbGluZScsCiAgICAgICAgICAgICAgICAgICAgZGF0YTogewogICAgICAgICAgICAgICAgICAgICAgICBsYWJlbHM6IGNoYXJ0TGFiZWxzLAogICAgICAgICAgICAgICAgICAgICAgICBkYXRhc2V0czogW3sKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxhYmVsOiAnRGF0ZSBDb3VudHMnLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgZGF0YTogY2hhcnREYXRhLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgZmlsbDogZmFsc2UsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBib3JkZXJDb2xvcjogJ3JnYmEoMCwgMTIzLCAyNTUsMC44KScsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBib3JkZXJXaWR0aDogMgogICAgICAgICAgICAgICAgICAgICAgICB9XQogICAgICAgICAgICAgICAgICAgIH0sCiAgICAgICAgICAgICAgICAgICAgb3B0aW9uczogewogICAgICAgICAgICAgICAgICAgICAgICBzY2FsZXM6IHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHg6IHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBkaXNwbGF5OiB0cnVlLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRpdGxlOiB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6IHRydWUsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRleHQ6ICdEYXRlJwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0sCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV2ZXJzZTogdHJ1ZSAvLyBBZGQgdGhpcyBsaW5lIHRvIHJldmVyc2UgdGhlIHgtYXhpcwogICAgICAgICAgICAgICAgICAgICAgICAgICAgfSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHk6IHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBkaXNwbGF5OiB0cnVlLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRpdGxlOiB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6IHRydWUsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRleHQ6ICdDb3VudCcKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9LAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGJlZ2luQXRaZXJvOiB0cnVlLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHN0ZXBTaXplOiAxCiAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9KTsKICAgICAgICAgICAgfQogICAgICAgIH0pOwogICAgPC9zY3JpcHQ+CgoKICAgIDxzY3JpcHQ+CiAgICAgICAgZnVuY3Rpb24gZ2V0RW5kcG9pbnRGcm9tUXVlcnlTdHJpbmcoKSB7CiAgICAgICAgICAgIHZhciB1cmxQYXJhbXMgPSBuZXcgVVJMU2VhcmNoUGFyYW1zKHdpbmRvdy5sb2NhdGlvbi5zZWFyY2gpOwogICAgICAgICAgICB2YXIgZW5kcG9pbnQgPSB1cmxQYXJhbXMuZ2V0KCdlbmRwb2ludCcpOwogICAgICAgICAgICBpZiAoIWVuZHBvaW50KSB7CiAgICAgICAgICAgICAgICBlbmRwb2ludCA9ICdodHRwczovL3BiLnRvZG9uLmRlL2FwaS92MS9hY2NvdW50cy8xMDk2Mjk5ODUwMTAyMjQzODEvc3RhdHVzZXMnOwogICAgICAgICAgICB9CiAgICAgICAgICAgIHJldHVybiBlbmRwb2ludDsKICAgICAgICB9CiAgICAgICAgZnVuY3Rpb24gdXBkYXRlUXVlcnlTdHJpbmcoZW5kcG9pbnQpIHsKICAgICAgICAgICAgdmFyIHVybFBhcmFtcyA9IG5ldyBVUkxTZWFyY2hQYXJhbXMod2luZG93LmxvY2F0aW9uLnNlYXJjaCk7CiAgICAgICAgICAgIHVybFBhcmFtcy5zZXQoJ2VuZHBvaW50JywgZW5kcG9pbnQpOwogICAgICAgICAgICB2YXIgbmV3VXJsID0gd2luZG93LmxvY2F0aW9uLnBhdGhuYW1lICsgJz8nICsgdXJsUGFyYW1zLnRvU3RyaW5nKCk7CiAgICAgICAgICAgIHdpbmRvdy5oaXN0b3J5LnJlcGxhY2VTdGF0ZSh7fSwgJycsIG5ld1VybCk7CiAgICAgICAgfQogICAgICAgICQoZG9jdW1lbnQpLnJlYWR5KGZ1bmN0aW9uKCkgewogICAgICAgICAgICBmZXRjaEVudGl0aWVzKCk7CiAgICAgICAgfSk7CiAgICA8L3NjcmlwdD4KCg==
+-->

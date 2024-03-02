@@ -1,0 +1,345 @@
+
+
+
+<!---Media-Session-Event-Listener-->
+<script>
+// Function to handle the previous button click event
+function onPrevButtonClick() {
+  // Your code logic for handling previous button click goes here
+  console.log('Previous button clicked');
+}
+// Function to handle the next button click event
+function onNextButtonClick() {
+  // Your code logic for handling next button click goes here
+  console.log('Next button clicked');
+}
+// Media session event listener for previous media session event
+navigator.mediaSession.setActionHandler('previoustrack', () => {
+  onPrevButtonClick();
+});
+
+// Media session event listener for next media session event
+navigator.mediaSession.setActionHandler('nexttrack', () => {
+  onNextButtonClick();
+});
+</script>
+
+<!--------MediaPlayer------>
+
+<!---<script>
+if ( window.location !== window.parent.location ) {
+alert("You have the player open already !"); 
+window.history.back(); 
+ } else {
+// The page is not in an iframe
+window.onbeforeunload = function() { return "Are you sure you want to leave? Think of the kittens!"; }
+}
+</script>--->
+<!---https://tommcfarlin.com/check-if-a-page-is-in-an-iframe/-->
+
+ <!---Prevent accidental reload -->
+<!-- <script type="text/javascript"> window.onbeforeunload = function() { return "Are you sure you want to leave? Think of the kittens!"; } </script>-->
+
+  <meta charset="UTF-8">
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Player</title>
+</head>
+<body>
+  <button id="prevButton">Previous</button>
+  <button id="playButton">▶ PLAY</button>
+  <button id="nextButton">Next</button>
+  
+  <div id="cue">
+    <a id="lastMusicLink"></a>
+    <b><a id="currentMusicLink"></a></b>
+    <a id="nextMusicLink"></a>
+  </div>
+
+  <script>
+    let audio = document.createElement('audio');
+    let playlist = getAwesomePlaylist();
+    let index = 0;
+
+    function onPrevButtonClick() {
+      index = (index - 1 + playlist.length) % playlist.length;
+      playAudio();
+    }
+
+    function onNextButtonClick() {
+      index = (index + 1) % playlist.length;
+      playAudio();
+    }
+
+    function onPlayButtonClick() {
+      playAudio();
+    }
+
+    function onCueLinkClick(clickedIndex) {
+      index = clickedIndex;
+      playAudio();
+    }
+
+    function playAudio() {
+      audio.src = playlist[index].src;
+      audio.play()
+        .then(_ => updateMetadata())
+        .catch(error => console.log(error));
+    }
+
+    function updateMetadata() {
+      let track = playlist[index];
+      console.log('Playing ' + track.title);
+      document.title = track.title;
+
+      // Update cue links
+      let lastMusicIndex = (index - 1 + playlist.length) % playlist.length;
+      let nextMusicIndex = (index + 1) % playlist.length;
+      document.querySelector('#lastMusicLink').textContent = 'Last: ' + playlist[lastMusicIndex].title;
+      document.querySelector('#lastMusicLink').href = playlist[lastMusicIndex].src;
+      document.querySelector('#lastMusicLink').addEventListener('click', () => onCueLinkClick(lastMusicIndex));
+      document.querySelector('#currentMusicLink').textContent = '' + playlist[index].title;
+      document.querySelector('#currentMusicLink').href = playlist[index].src;
+      document.querySelector('#currentMusicLink').addEventListener('click', () => onCueLinkClick(index));
+      document.querySelector('#nextMusicLink').textContent = 'Next: ' + playlist[nextMusicIndex].title;
+      document.querySelector('#nextMusicLink').href = playlist[nextMusicIndex].src;
+      document.querySelector('#nextMusicLink').addEventListener('click', () => onCueLinkClick(nextMusicIndex));
+    }
+
+    /* Previous Track & Next Track */
+    audio.addEventListener('ended', function() {
+      // Play automatically the next track when audio ends.
+      index = (index + 1) % playlist.length;
+      playAudio();
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelector('#prevButton').addEventListener('click', onPrevButtonClick);
+      document.querySelector('#playButton').addEventListener('click', onPlayButtonClick);
+      document.querySelector('#nextButton').addEventListener('click', onNextButtonClick);
+    });
+
+    /* Utils */
+    function getAwesomePlaylist() {
+      const BASE_URL = '';
+
+      return [
+    {
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/009_Guitar.mp3',
+      title: 'RnR Guitar Theme',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+    {
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kkj/Happy_Theme_07_%28Guitar_VERY_Happy_%5E%5E%29.mp3',
+      title: 'KKJGuitar Theme',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+  {
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kkj/Calming_Theme_04_%28Sindbad_burns_house_A-W-E-S-O-M-E%29.mp3',
+      title: 'Sindbad Burning',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kkj/Calming_Theme_02_-_Every_Living_Being_-_Kamikaze_Kaitou_Jeanne_Soundtrack_[unreleased].mp3',
+      title: 'Every Living Being',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/rnrt_002_Action_Theme_17_-_Bly_1st_Battle.mp3',
+      title: 'Bly',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kkj/Transformation_Theme_01.mp3',
+      title: 'Transformation 01',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/017_Action_Theme_08_-_DenpaHenkan.mp3',
+      title: 'DenpaHenkan!',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kkj/Action_Theme_01_-_(Checkmate_01).mp3',
+      title: 'Checkmate',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/015_Happy_Theme_05_-_Happiness.mp3',
+      title: 'Happiness (Happy Theme 05)',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/rnrt_004_Mu_Theme_09_(motivating_chanting).mp3',
+      title: 'Motivating Chanting',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/rnrt_008_TRIBEKING_FIN.mp3',
+      title: 'TribeKing',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kkj/Happy_Theme_08_(Guitar_Slow).mp3',
+      title: 'KKJ Guitar Slow',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/rnrt_012_Ending_04_-_Tranquility.mp3',
+      title: 'Tranquil Ending',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/010_Action_Theme_07_(Combat_Masters).mp3',
+      title: 'Combat Masters',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/rnr/rnrt_009_Action_Theme_19_-_After_Zerker.mp3',
+      title: 'After Zerker',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/ygos0/Mysterious_Calm.mp3',
+      title: 'Mysterious Calm',
+      artist: 'repeekyraid cero',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/ygos0/Calming_05_-_Understanding.mp3',
+      title: 'Calming Understanding',
+      artist: 'repeekyraid cero',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kj/Sad_Theme_01_-_Loss_and_Grief.mp3',
+      title: 'Loss & Grief',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/kj/Sad_Theme_04_-_Rebirth.mp3',
+      title: 'Rebirth',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/REXE/REXE_Stream_Sad_Piano.mp3',
+      title: 'Sad Piano (Rexe)',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/REXE/REXE_Sad_Pensive.mp3',
+      title: 'Sad Pensive (Rexe)',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/ygosub/ygovrains/Stopped_Time.mp3',
+      title: 'Stopped Time',
+      artist: 'repeekyraid cero',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/ygosub/ygovrains/Guitar_Theme.mp3',
+      title: 'Guitar Theme',
+      artist: 'repeekyraid cero',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/Dub/Beyblade/Dreamy_Scene_(diarykeeper_ver).mp3',
+      title: 'Dreamy Scene',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/FullMoonWoSagashite/Happiness_Ep34-(11-19).mp3',
+      title: 'Happiness FmwS',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/Dub/ygo_dub/ygo-dm/Kaiba_Mokuba_Conv-FIN.mp3',
+      title: 'Kaiba & Mokuba Conversation',
+      artist: 'repeekyraid cero',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/ygosub/ygogx/Classy_Combat.mp3',
+      title: 'Classy Combat',
+      artist: 'repeekyraid cero',
+      album: 'trackmix',
+      artwork: undefined
+    },
+{
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/z_other-reconstructs/Ygovrainsdub-Aoi.mp3',
+      title: 'Aoi',
+      artist: 'repeekyraid cero',
+      album: 'trackmix',
+      artwork: undefined
+    },
+
+    {
+      src: BASE_URL + 'https://ry3yr.github.io/OSTR/release/z_other-reconstructs/Mirai_Nikki-12_Become_a_holder.mp3',
+      title: 'Become a holder',
+      artist: 'diarykeeper',
+      album: 'trackmix',
+      artwork: undefined
+     }
+];
+}
+</script>
+<!---<div id="contentframe" style="position:relative; top: 0px; left: -30px;">--><br>
+    <!--<iframe src="index.html" name="audioplayer" style=" display:block; position: absolute; height: 100%; width: 100%" frameborder="0" ></iframe></div>-->
+</body>
+</html>
+
+
+

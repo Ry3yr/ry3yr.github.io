@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 10px;
+      max-width: 200px;
+    }
+    
+    .key {
+      padding: 10px;
+      text-align: center;
+      background-color: #e0e0e0;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="keypad">
+    <div class="key" onclick="pressKey('1')">1</div>
+    <div class="key" onclick="pressKey('2')">2<br>a b c</div>
+    <div class="key" onclick="pressKey('3')">3<br>d e f</div>
+    <div class="key" onclick="pressKey('4')">4<br>g h i</div>
+    <div class="key" onclick="pressKey('5')">5<br>j k l</div>
+    <div class="key" onclick="pressKey('6')">6<br>m n o</div>
+    <div class="key" onclick="pressKey('7')">7<br>p q r s</div>
+    <div class="key" onclick="pressKey('8')">8<br>t u v</div>
+    <div class="key" onclick="pressKey('9')">9<br>w x y z</div>
+    <div class="key" onclick="pressKey('*')">*</div>
+    <div class="key" onclick="pressKey('0')">0</div>
+    <div class="key" onclick="pressKey('#')">#</div>
+  </div><br>
+  
+  <input type="text" id="input-field">
+  
+  <div id="link-container" style="display: none;">
+    <a id="website-link" href="https://www.website.com" target="_blank">Visit Website.com</a>
+  </div>
+  
+  <script>
+    let inputValue = '';
+    
+    function pressKey(key) {
+      inputValue += key;
+      document.getElementById('input-field').value = inputValue;
+      checkSequence(inputValue);
+    }
+    
+    function checkSequence(value) {
+      if (value === '1234') {
+        document.getElementById('link-container').style.display = 'block';
+      } else {
+        document.getElementById('link-container').style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+	<head>
+		<title>Un-Google Link</title>
+		<meta name="description" content="Online tool for extracting the original link from a Google search engine link. Works with text banners and search results." ></meta>
+
+		<link rel="stylesheet" href="style.css" type="text/css"></link>
+		
+		<script>
+			function getParameterByName(name, paramlist) {
+			    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+			    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+			    results = regex.exec(paramlist);
+			    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+			}		
+		
+			
+			function ungoogle(){
+				var value=getParameterByName("url", document.getElementById('ungoogle').value);
+		
+				if(!value){
+					value=getParameterByName("adurl", document.getElementById('ungoogle').value);
+				}
+
+				
+				if(value){
+					document.getElementById('target').value=value;
+					document.getElementById('target_div').style.display='block';
+					document.getElementById('target_link').href=value;
+					document.getElementById('target_link').innerHTML=value;
+				}
+			}
+		</script>
+						
+	</head>
+	<body onload="document.getElementById('ungoogle').focus();">
+		
+
+
+		<div class="header">
+			<div class="header_wrapper">
+				<div class="logo">
+					<a href="./" style="color:#ffffff;text-decoration:none;">HTMLEscape.net</a>
+				</div>
+				
+			</div>
+		
+		</div>
+		<div class="menu">
+			<div class="menu_wrapper">
+				<div class="menu_push">
+
+					
+				</div>
+			</div>
+		</div>
+
+		<div class="banner">
+		
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-6510929008711430";
+/* HtmlEscape_top */
+google_ad_slot = "8983960906";
+google_ad_width = 970;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="//pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>		
+		
+		
+		</div>		
+		
+		<div class="content">
+			<h1>Un-Google link tool</h1>
+			
+			Paste URL to extract actual link from the Google search engine link:
+			<input onkeyup="ungoogle();" placeholder="Insert link" id="ungoogle" type="text" style="width:940px;border:4px solid #8f8f8f;padding:5px;"  />
+			<br/><br/>
+			
+			<div id="target_div" style="margin-top:20px;display:none;">
+				<input id="target" type="text" style="width:940px;"/><br/><br/>
+				Extracted actual link:<br/>
+				<a id="target_link" href=""></a>
+				<br/><br/>
+				

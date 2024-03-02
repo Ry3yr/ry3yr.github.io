@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Staff View</title>
+  <script src="https://cdn.jsdelivr.net/npm/tone@14.7.58"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.23.1/es6/core.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/focus-visible@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-midi-player@1.5.0"></script>
+</head>
+<body>
+  <div>
+    <label for="midiUrl">Enter MIDI URL:</label>
+    <input type="text" id="midiUrl" />
+    <button onclick="loadMidi()">Load MIDI</button>
+  </div>
+
+  <midi-player
+    id="player"
+    src="https://alceawis.de/other/music/midi/piano/ygovrains_-_Sad_Reminiscence.mid"
+    sound-font
+    visualizer="#myStaffVisualizer">
+  </midi-player>
+
+  <midi-visualizer
+    type="staff"
+    id="myStaffVisualizer"
+    src="https://alceawis.de/other/music/midi/piano/ygovrains_-_Sad_Reminiscence.mid">
+  </midi-visualizer>
+
+  <script>
+    function loadMidi() {
+      const midiUrlInput = document.getElementById('midiUrl');
+      const midiUrl = midiUrlInput.value;
+      const player = document.getElementById('player');
+      const visualizer = document.getElementById('myStaffVisualizer');
+
+      player.setAttribute('src', midiUrl);
+      visualizer.setAttribute('src', midiUrl);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadMidi();
+    });
+  </script>
+</body>
+</html>
+
+
+
+<!--<!DOCTYPE html>
+<html>
+<head>
+  <title>Staff View</title>
+  <script src="https://cdn.jsdelivr.net/npm/tone@14.7.58"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.23.1/es6/core.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/focus-visible@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-midi-player@1.5.0"></script>
+</head>
+<body>
+  <midi-player
+    id="player"
+    src="https://alceawis.de/other/music/midi/piano/ygovrains_-_Sad_Reminiscence.mid"
+    sound-font
+    visualizer="#myStaffVisualizer">
+  </midi-player>
+
+  <midi-visualizer
+    type="staff"
+    id="myStaffVisualizer"
+    src="https://alceawis.de/other/music/midi/piano/ygovrains_-_Sad_Reminiscence.mid">
+  </midi-visualizer>
+</body>
+</html>-->

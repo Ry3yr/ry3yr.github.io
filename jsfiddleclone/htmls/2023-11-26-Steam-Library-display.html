@@ -1,0 +1,215 @@
+<a target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2023-11-26-SteamLibraryFetch/steamfetch.php">Fetch</a><br><br>
+<br>
+ <a target="_blank" href="https://steamcommunity.com/id/alceawisteria#https://steamcommunity.com/profiles/76561198119673186/games/?tab=all">[Alcea's Steam Library]</a> 
+
+  <style>
+.game {
+  margin-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.game h2 {
+  margin-bottom: 0px;
+  text-align: center;
+}
+.game img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+table {
+  border-collapse: collapse;
+}
+table td,
+table th {
+  padding: 0;
+  border: none;
+}
+</style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script>
+    function getQueryStringParameter(parameter) {
+      var urlParams = new URLSearchParams(window.location.search);
+      return urlParams.has(parameter);
+    }
+
+    fetch('https://ry3yr.github.io/steam_library.json')
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Error loading JSON file: ' + response.status);
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        var games = data.response.games;
+        // Sort games alphabetically if "alphabetical" query string parameter exists
+        if (getQueryStringParameter('sort')) {
+          games.sort(function(a, b) {
+            return a.name.localeCompare(b.name);
+          });
+        }
+        var table = document.createElement('table');
+        var tableHead = document.createElement('thead');
+        var tableBody = document.createElement('tbody');
+        var headerRow = document.createElement('tr');
+        var nameHeader = document.createElement('th');
+        nameHeader.textContent = 'Game Name';
+        var appidHeader = document.createElement('th');
+        appidHeader.textContent = 'App ID';
+        var achievementsHeader = document.createElement('th');
+        achievementsHeader.textContent = 'Achievements'; // New header for achievements URL
+        var playtimeHeader = document.createElement('th');
+        playtimeHeader.textContent = 'Playtime';
+        headerRow.appendChild(nameHeader);
+        headerRow.appendChild(appidHeader);
+        headerRow.appendChild(achievementsHeader); // Append the new header to the header row
+        headerRow.appendChild(playtimeHeader); // Append the playtime header to the header row
+        tableHead.appendChild(headerRow);
+        table.appendChild(tableHead);
+        games.forEach(function(game) {
+          var row = document.createElement('tr');
+          var nameCell = document.createElement('td');
+          var appidCell = document.createElement('td');
+          var achievementsCell = document.createElement('td'); // New cell for achievements URL
+          var playtimeCell = document.createElement('td');
+          var gameLink = document.createElement('a');
+          gameLink.href = 'https://store.steampowered.com/app/' + game.appid;
+          gameLink.textContent = game.name;
+          gameLink.target = '_blank'; // Open link in a new tab or window
+
+          //nameCell.appendChild(gameLink);
+          appidCell.textContent = game.appid;
+          achievementsCell.innerHTML = `<a target="_blank" href="https://steamcommunity.com/id/alceawisteria/stats/${game.appid}/achievements/">Achievements</a> <a id="transp" target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2024-01-14-Lastplayed/lastplayed.php?gamename=${game.name}" style="color: transparent;">â†’</a>`;
+          playtimeCell.textContent = game.playtime_forever;
+          var image = document.createElement('img');
+          image.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`;
+          image.style.width = '200px';
+          image.style.height = '35px';
+          image.style.objectFit = 'cover';
+          var imageLink = document.createElement('a');
+          imageLink.href = gameLink.href;
+          imageLink.target = '_blank';
+          imageLink.appendChild(image);
+          var container = document.createElement('div');
+          container.classList.add('game');
+          container.appendChild(imageLink);
+          container.appendChild(nameCell);
+
+          row.appendChild(container);
+          row.appendChild(appidCell);
+          row.appendChild(achievementsCell);
+          row.appendChild(playtimeCell);
+          tableBody.appendChild(row);
+        });
+
+        table.appendChild(tableBody);
+        document.getElementById('game-container').appendChild(table);
+      })
+      .catch(function(error) {
+        console.error('Error loading/parsing JSON file:', error);
+      });
+  </script>
+
+
+
+<!---
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .game {
+      margin-bottom: 20px;
+    }
+    .game h2 {
+      margin-bottom: 5px;
+    }
+    .game img {
+      width: 100px;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <script>
+    function getQueryStringParameter(parameter) {
+      var urlParams = new URLSearchParams(window.location.search);
+      return urlParams.has(parameter);
+    }
+
+    fetch('https://ry3yr.github.io/steam_library.json')
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Error loading JSON file: ' + response.status);
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        var games = data.response.games;
+
+        // Sort games alphabetically if "alphabetical" query string parameter exists
+        if (getQueryStringParameter('sort')) {
+          games.sort(function(a, b) {
+            return a.name.localeCompare(b.name);
+          });
+        }
+
+        var table = document.createElement('table');
+        var tableHead = document.createElement('thead');
+        var tableBody = document.createElement('tbody');
+
+        // Create table header
+        var headerRow = document.createElement('tr');
+        var nameHeader = document.createElement('th');
+        nameHeader.textContent = 'Game Name';
+        var appidHeader = document.createElement('th');
+        appidHeader.textContent = 'App ID';
+        var achievementsHeader = document.createElement('th');
+        achievementsHeader.textContent = 'Achievements'; // New header for achievements URL
+        var playtimeHeader = document.createElement('th');
+        playtimeHeader.textContent = 'Playtime';
+
+        headerRow.appendChild(nameHeader);
+        headerRow.appendChild(appidHeader);
+        headerRow.appendChild(achievementsHeader); // Append the new header to the header row
+        headerRow.appendChild(playtimeHeader); // Append the playtime header to the header row
+        tableHead.appendChild(headerRow);
+        table.appendChild(tableHead);
+
+        // Create table rows for each game
+        games.forEach(function(game) {
+          var row = document.createElement('tr');
+          var nameCell = document.createElement('td');
+          var appidCell = document.createElement('td');
+          var achievementsCell = document.createElement('td'); // New cell for achievements URL
+          var playtimeCell = document.createElement('td');
+
+          var gameLink = document.createElement('a');
+          gameLink.href = 'https://store.steampowered.com/app/' + game.appid;
+          gameLink.textContent = game.name;
+          gameLink.target = '_blank'; // Open link in a new tab or window
+
+          nameCell.appendChild(gameLink);
+          appidCell.textContent = game.appid;
+          achievementsCell.innerHTML = `<a target="_blank" href="https://steamcommunity.com/id/alceawisteria/stats/${game.appid}/achievements/">Achievements</a>`; // Add achievements URL to the cell
+          playtimeCell.textContent = game.playtime_forever;
+
+          row.appendChild(nameCell);
+          row.appendChild(appidCell);
+          row.appendChild(achievementsCell); // Append the new cell to the row
+          row.appendChild(playtimeCell); // Append the playtime cell to the row
+          tableBody.appendChild(row);
+        });
+
+        table.appendChild(tableBody);
+        document.getElementById('game-container').appendChild(table);
+      })
+      .catch(function(error) {
+        console.error('Error loading/parsing JSON file:', error);
+      });
+  </script>
+</body>

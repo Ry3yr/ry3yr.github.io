@@ -1,0 +1,11 @@
+ <script>
+    function loadBase64HTML() {
+      var base64HTML = "PGh0bWw+PGJvZHk+VGhpcyBpcyBhIGJhc2U2NC1lbmNvZGVkIEhUTUwgY29kZSBpbiBhIG51bWJlciBvZiBhIGRpdmlkZSBkYXRhPC9ib2R5PjwvaHRtbD4=";
+      var decodedHTML = atob(base64HTML);
+      var contentContainer = document.getElementById('contentContainer');
+      contentContainer.innerHTML = decodedHTML;
+    }
+  </script>
+  <button onclick="loadBase64HTML()">Load HTML</button>
+  <div id="contentContainer"></div>
+

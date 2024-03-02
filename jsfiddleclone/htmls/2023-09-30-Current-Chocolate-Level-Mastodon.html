@@ -1,0 +1,236 @@
+<meta charset="utf-8">
+
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div id="result"></div>
+
+  <script>
+    $(document).ready(function() {
+      var apiUrl = "https://pb.todon.de/api/v1/accounts/109629985010224381/statuses";
+
+      $.ajax({
+        url: apiUrl,
+        dataType: "json",
+        success: function(response) {
+          var targetPost = null;
+          for (var i = 0; i < response.length; i++) {
+            var content = response[i].content;
+            if (content.toLowerCase().indexOf("chocolate") !== -1 || content.toLowerCase().indexOf("choco") !== -1) {
+              targetPost = response[i];
+              break; // Exit the loop if a target post is found
+            }
+          }
+
+          if (targetPost) {
+            var content = targetPost.content;
+            var matches = content.match(/(\d+([.,]\d+)?)%/);
+            if (matches) {
+              var chocolateValue = matches[1] + "%";
+              var chocolateBars = Math.floor(parseFloat(chocolateValue) / 10);
+              var chocolateBarsString = "".repeat(chocolateBars);
+              $("#result").text("Current chocolate value: " + chocolateValue + " " + chocolateBarsString);
+            } else {
+              checkNextPost(i + 1);
+            }
+          } else {
+            checkNextPost(0);
+          }
+        },
+        error: function() {
+          $("#result").text("Error retrieving data from the API.");
+        }
+      });
+    });
+
+    function checkNextPost(index) {
+      $.ajax({
+        url: "https://pb.todon.de/api/v1/accounts/109629985010224381/statuses",
+        dataType: "json",
+        success: function(response) {
+          if (index < response.length) {
+            var content = response[index].content;
+            var matches = content.match(/(\d+([.,]\d+)?)%/);
+            if (matches) {
+              var chocolateValue = matches[1] + "%";
+              var chocolateBars = Math.floor(parseFloat(chocolateValue) / 10);
+              var chocolateBarsString = "🍫".repeat(chocolateBars);
+              $("#result").text("Current chocolate value: " + chocolateValue + " " + chocolateBarsString);
+            } else {
+              checkNextPost(index + 1);
+            }
+          } else {
+            $("#result").text("100% Choco. Must be homemade !");
+          }
+        },
+        error: function() {
+          $("#result").text("Error retrieving data from the API.");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
+<!----
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div id="result"></div>
+  <script>
+    $(document).ready(function() {
+      var apiUrl = "https://pb.todon.de/api/v1/accounts/109629985010224381/statuses";
+
+      $.ajax({
+        url: apiUrl,
+        dataType: "json",
+        success: function(response) {
+          var targetPost = null;
+          for (var i = 0; i < response.length; i++) {
+            var content = response[i].content;
+            if (content.toLowerCase().indexOf("chocolate") !== -1 || content.toLowerCase().indexOf("choco") !== -1) {
+              targetPost = response[i];
+              break; // Exit the loop if a target post is found
+            }
+          }
+
+          if (targetPost) {
+            var content = targetPost.content;
+            var matches = content.match(/(\d+([.,]\d+)?)%/);
+            if (matches) {
+              var chocolateValue = matches[1] + "%";
+              $("#result").text("Current chocolate value: " + chocolateValue);
+            } else {
+              checkNextPost(i + 1);
+            }
+          } else {
+            checkNextPost(0);
+          }
+        },
+        error: function() {
+          $("#result").text("Error retrieving data from the API.");
+        }
+      });
+    });
+
+    function checkNextPost(index) {
+      $.ajax({
+        url: "https://pb.todon.de/api/v1/accounts/109629985010224381/statuses",
+        dataType: "json",
+        success: function(response) {
+          if (index < response.length) {
+            var content = response[index].content;
+            var matches = content.match(/(\d+([.,]\d+)?)%/);
+            if (matches) {
+              var chocolateValue = matches[1] + "%";
+              $("#result").text("Current chocolate value: " + chocolateValue);
+            } else {
+              checkNextPost(index + 1);
+            }
+          } else {
+            $("#result").text("100% Choco. Must be homemade !");
+          }
+        },
+        error: function() {
+          $("#result").text("Error retrieving data from the API.");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+-->
+
+
+<!---RSS ver--(will-not-with-replies)-->
+<!--<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div id="result"></div>
+  <script>
+    $(document).ready(function() {
+      var rssUrl = "https://pb.todon.de/@alcea.rss";
+      $.ajax({
+        url: rssUrl,
+        dataType: "xml",
+        success: function(xml) {
+          var targetPost = null;
+          $(xml).find("item").each(function() {
+            var description = $(this).find("description").text();
+            if (description.toLowerCase().indexOf("chocolate") !== -1 || description.toLowerCase().indexOf("choco") !== -1) {
+              targetPost = $(this);
+              return false; // Exit the loop if a target post is found
+            }
+          });
+          if (targetPost) {
+            var description = targetPost.find("description").text();
+            var matches = description.match(/(\d+([.,]\d+)?)%/);
+            //var matches = description.match(/(\d+)%/);
+            if (matches) {
+              var chocolateValue = matches[1] + "%";
+              $("#result").text("Current chocolate value: " + chocolateValue);
+            } else {
+              checkNextPost(targetPost.next(), xml);
+            }
+          } else {
+            checkNextPost($(xml).find("item").first(), xml);
+          }
+        },
+        error: function() {
+          $("#result").text("Error retrieving RSS feed.");
+        }
+      });
+    });
+    function checkNextPost(post, xml) {
+      if (post.length > 0) {
+        var description = post.find("description").text();
+        var matches = description.match(/(\d+)%/);
+        if (matches) {
+          var chocolateValue = matches[1] + "%";
+          $("#result").text("Current chocolate value: " + chocolateValue);
+        } else {
+          var nextPost = post.next();
+          checkNextPost(nextPost, xml);
+        }
+      } else {
+        $("#result").text("100% Choco. Must be homemade !");
+      }
+    }
+  </script>
+</body>
+</html>-->
+
+
+<!--php
+<?php
+$rss = file_get_contents('https://pb.todon.de/@alcea.rss');
+$xml = simplexml_load_string($rss);
+$targetPost = null;
+foreach ($xml->channel->item as $item) {
+    $description = $item->description;
+    if (stripos($description, 'chocolate') !== false || stripos($description, 'choco') !== false) {
+        $targetPost = $item;
+        break;
+    }
+}
+if ($targetPost) {
+    $description = $targetPost->description;
+    if (preg_match('/(\d+)%/', $description, $matches)) {
+        $chocolateValue = $matches[1] . '%';
+        echo 'Current chocolate value: ' . $chocolateValue;
+    } else {
+        echo 'No chocolate value found.';
+    }
+} else {
+    echo 'No post found containing chocolate or choco.';
+}
+?>
+
+-->

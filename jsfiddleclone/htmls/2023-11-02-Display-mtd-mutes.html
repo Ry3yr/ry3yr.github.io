@@ -1,0 +1,76 @@
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var entities = [];
+            var muteCount = 0; // Variable to store the number of mutes
+            function fetchEntities(url) {
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'Authorization': 'Bearer 5x1Wr4gL-rM_Q0akdLZIQrcO2PBhEby39HatYQFmVvs'
+                    },
+                    success: function(response, textStatus, xhr) {
+                        var newEntities = response;
+                        for (var i = 0; i < newEntities.length; i++) {
+                            var entity = newEntities[i];
+                            entities.push(entity);
+                            muteCount++; // Increment the mute count
+                        }
+                        var linkHeader = xhr.getResponseHeader('Link');
+                        var nextLink = extractLinkUrl(linkHeader, 'next');
+                        if (entities.length >= 1000) {
+                            // Render the fetched entities
+                            renderEntities();
+                        } else if (nextLink) {
+                            // Fetch the next set of entities
+                            fetchEntities(nextLink);
+                        } else {
+                            console.log('Finished fetching entities');
+                            // Render the fetched entities
+                            renderEntities();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error: ' + error);
+                    }
+                });
+            }
+            function extractLinkUrl(linkHeader, rel) {
+                var links = linkHeader.split(',');
+                for (var i = 0; i < links.length; i++) {
+                    var link = links[i].trim();
+                    var regex = /<([^>]+)>;\s*rel="([^"]+)"/g;
+                    var match = regex.exec(link);
+                    if (match && match[2] === rel) {
+                        return match[1];
+                    }
+                }
+                return null;
+            }
+            function renderEntities() {
+                // Display the mute count at the top
+                var muteCountHtml = '<p>Mute Count: ' + muteCount + '</p>';
+                $('#muteCount').html(muteCountHtml);
+                for (var i = 0; i < entities.length; i++) {
+                    var entity = entities[i];
+                    var entityHtml = '<p>';
+                    entityHtml += '<a target="_blank" href="' + entity.url + '">' + entity.url + '</a><br>';
+                    //entityHtml += 'Date: ' + entity.created_at + '<br>';
+                    entityHtml += '</p>';
+                    $('#entities').append(entityHtml);
+                }
+            }
+            // Start fetching entities from the initial URL
+            var initialUrl = 'https://pb.todon.de/api/v1/mutes';
+            fetchEntities(initialUrl);
+        });
+    </script>
+</head>
+<body>
+    <div id="muteCount"></div> <!-- Display the mute count here -->
+    <div id="entities"></div>
+</body>
+</html>

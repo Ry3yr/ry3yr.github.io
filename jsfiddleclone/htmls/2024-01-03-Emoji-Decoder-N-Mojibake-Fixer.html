@@ -1,0 +1,77 @@
+<a target="_blank" href="http://www.linestarve.com/tools/mojibake/" style=color:blue>FixMojibake</a><br><br>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Emoji/Unicode/Alt Key Code Converter</title>
+</head>
+<body>
+  <input type="text" id="inputText" placeholder="Enter text or Alt key code">
+  <button onclick="convertText()">Convert</button>
+  <div id="result"></div>
+
+  <script>
+    function convertText() {
+      var input = document.getElementById('inputText').value;
+      var output = '';
+
+      if (isAltKeyCode(input)) {
+        var altCode = input.replace('Alt+', '');
+        var altCharCode = parseInt(altCode, 10);
+        output = 'Character: ' + String.fromCharCode(altCharCode) + '<br>Alt Key Code: ' + input;
+      } else {
+        var emoji = convertToEmoji(input);
+        var unicode = convertToUnicode(input);
+        var unicodeCode = convertToUnicodeCode(input);
+        output = 'Emoji: ' + emoji + '<br>Unicode: ' + unicode + '<br>Unicode Code: ' + unicodeCode;
+        if (emoji) {
+          var altKeyCodes = getAltKeyCodes(emoji);
+          output += '<br>Alt Key Codes: ' + altKeyCodes.join(', ');
+        }
+      }
+
+      var result = document.getElementById('result');
+      result.innerHTML = output;
+    }
+
+    function isAltKeyCode(input) {
+      return /^Alt\+\d+$/.test(input);
+    }
+
+    function convertToEmoji(text) {
+      var emoji = '';
+      for (var i = 0; i < text.length; i++) {
+        emoji += String.fromCodePoint(text.codePointAt(i));
+      }
+      return emoji;
+    }
+
+    function convertToUnicode(text) {
+      var unicode = '';
+      for (var i = 0; i < text.length; i++) {
+        unicode += 'U+' + text.codePointAt(i).toString(16).toUpperCase() + ' ';
+      }
+      return unicode.trim();
+    }
+
+    function convertToUnicodeCode(text) {
+      var unicodeCode = '';
+      for (var i = 0; i < text.length; i++) {
+        unicodeCode += '\\u' + text.codePointAt(i).toString(16).toUpperCase() + ' ';
+      }
+      return unicodeCode.trim();
+    }
+
+    function getAltKeyCodes(text) {
+      var altKeyCodes = [];
+      for (var i = 0; i < text.length; i++) {
+        var char = text.charAt(i);
+        var charCode = char.charCodeAt(0);
+        var altKeyCode = 'Alt+' + charCode;
+        altKeyCodes.push(altKeyCode);
+      }
+      return altKeyCodes;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<body>
+  <div id="feed"></div>
+  <script>
+    const apiUrl = 'https://mastodon.social/api/v1/accounts/109977878421486714/statuses';
+    const accessToken = 'your-access-token';
+    fetch(apiUrl, {
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      data.forEach(status => {
+        const content = '<div>' + status.content + '</div>';
+        let media = '';
+        let avatar = '';
+        let tootLink = '';
+        // Check for video and audio attachments
+        if (status.media_attachments.length > 0) {
+          media = '<div>';
+          status.media_attachments.forEach(attachment => {
+            if (attachment.type === 'image') {
+              media += '<img src="' + attachment.url + '" width="50%"><br>';
+            } else if (attachment.type === 'video') {
+              media += '<video src="' + attachment.url + '" controls width="50%"></video><br>';
+            } else if (attachment.type === 'audio') {
+              media += '<audio src="' + attachment.url + '" controls></audio><br>';
+            }
+          });
+          media += '</div>';
+        } else {
+          // Check for YouTube video link
+          const youtubeRegex = /https?:\/\/(www\.)?(m\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/;
+          const youtubeMatch = status.content.match(youtubeRegex);
+          if (youtubeMatch) {
+            // Extract video ID from YouTube link
+            const videoId = youtubeMatch[3];
+            // Create embedded player for YouTube video
+            media = `<div><iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+          } else {
+            // Check for Pixiv artwork link
+            const pixivRegex = /https?:\/\/(?:www\.)?pixiv\.net\/(?:en\/)?artworks\/(\d+)/;
+            const pixivMatch = status.content.match(pixivRegex);
+            if (pixivMatch) {
+              // Extract artwork ID from Pixiv link
+              const artworkId = pixivMatch[1];
+              // Create image preview for Pixiv artwork
+              media = `<div><img src="https://embed.pixiv.net/decorate.php?illust_id=${artworkId}&mode=sns-automator" width="50%"></div>`;
+              } else {
+              const tenorRegex = /https?:\/\/(?:www\.)?tenor\.com\/view\/[a-zA-Z0-9-]+-(\d+)/;
+              const tenorMatch = status.content.match(tenorRegex);
+              if (tenorMatch) {
+              // Extract Tenor.com video ID
+              const videoId = tenorMatch[1];
+              // Create embedded player for Tenor.com video
+               media = `<div><iframe src="https://tenor.com/embed/${videoId}" frameborder="0" allowfullscreen="true" width="100%" height="400px"></iframe></div>`;
+              }
+            }
+          }
+        }
+        // Check for spoiler tag
+        if (status.url.includes('activity')) {
+          avatar = '<!--<details><summary>Avatar (spoiler)</summary><img src="' + status.account.avatar + '" width="100px"></details>--><br>';
+          tootLink = '<!--<details><summary>View on Mastodon (spoiler)</summary><a href="' + status.url + '" target="_blank">Click here to view activity</a></details>-->';
+        } else {
+          avatar = '<img src="' + status.account.avatar + '" width="100px"><br>';
+          tootLink = '<a href="' + status.url + '" target="_blank">View on Mastodon</a>';
+        }
+        // Get the date of the status
+        const date = new Date(status.created_at);
+        // Append content to feed
+        document.getElementById('feed').innerHTML += content + media + avatar + tootLink + '&nbsp;' + date.toLocaleString() + '<hr>';
+      });
+    })
+    .catch(error => console.error(error));
+  </script>
+</body>

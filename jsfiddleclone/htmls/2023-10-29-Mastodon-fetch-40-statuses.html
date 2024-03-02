@@ -1,0 +1,85 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <div id="entities"></div>
+    <script>
+        $(document).ready(function() {
+            var endpoint = 'https://urusai.social/api/v1/accounts/111417582756052979/statuses';
+            var entities = [];
+
+            fetchEntities();
+
+            function fetchEntities() {
+                var url = endpoint;
+
+                if (entities.length > 0) {
+                    var linkHeader = '<' + endpoint + '?max_id=' + entities[entities.length - 1].id + '>; rel="next"';
+                    $.ajaxSetup({
+                        headers: {
+                            'Link': linkHeader
+                        }
+                    });
+                }
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'Authorization': 'Bearer token'
+                    },
+                    success: function(response, textStatus, xhr) {
+                        var newEntities = response;
+
+                        for (var i = 0; i < newEntities.length; i++) {
+                            var entity = newEntities[i];
+                            entities.push(entity);
+                        }
+
+                        var linkHeader = xhr.getResponseHeader('Link');
+                        var nextLink = extractLinkUrl(linkHeader, 'next');
+
+                        if (entities.length >= 200) {
+                            // Render the fetched entities
+                            renderEntities();
+                        } else if (nextLink) {
+                            // Fetch the next set of entities
+                            endpoint = nextLink;
+                            fetchEntities();
+                        } else {
+                            console.log('Finished fetching 200 entities');
+                            // Render the fetched entities
+                            renderEntities();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error: ' + error);
+                    }
+                });
+            }
+
+            function extractLinkUrl(linkHeader, rel) {
+                var links = linkHeader.split(',');
+                for (var i = 0; i < links.length; i++) {
+                    var link = links[i].trim();
+                    var regex = /<([^>]+)>;\s*rel="([^"]+)"/g;
+                    var match = regex.exec(link);
+                    if (match && match[2] === rel) {
+                        return match[1];
+                    }
+                }
+                return null;
+            }
+
+            function renderEntities() {
+                for (var i = 0; i < entities.length; i++) {
+                    var entity = entities[i];
+                    // Render the URL and date on the page
+                    var entityHtml = '<p>';
+                    entityHtml += 'URL: <a target=_blank href="' + entity.url + '">' + entity.url + '</a><br>';
+                    entityHtml += 'Date: ' + entity.created_at + '<br>';
+                    entityHtml += 'Toot: ' + entity.content + '<br>';
+                    entityHtml += '</p>';
+                    $('#entities').append(entityHtml);
+                }
+            }
+        });
+    </script>

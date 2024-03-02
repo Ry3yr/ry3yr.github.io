@@ -1,0 +1,157 @@
+<a target="_blank" href="http://fmstream.org/index.php?c=D" style=color:blue>Kartoffelstations</a>
+<br><hr><br>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input[type="text"], input[type="file"], button {
+      margin-bottom: 10px;
+    }
+    #player {
+      margin-top: 20px;
+      background-color: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    audio {
+      width: 100%;
+    }
+    #trackInfo {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<button onclick="queryURL()">[NowPlaying]</button>
+<div id="response"></div>
+  <br>
+  <br>
+[ <a href="#" onclick="document.getElementById('urlInput').value ='https://stream.antenne.de/antenne/stream/mp3'; return false;">Antenne</a> <a href="#" onclick="document.getElementById('urlInput').value = 'https://stream.bigfm.de/bw/mp3-128'; return false;">BigFM</a> <a href="#" onclick="document.getElementById('urlInput').value = 'https://liveradio.swr.de/sw890cl/swr3/play.aac'; return false;">SWR3</a>
+ ] 
+<a href="javascript:var spoiler = document.getElementById('pastplaying'); spoiler.open = !spoiler.open;">LastPlaying</a>
+
+
+<details id="pastplaying">
+  <summary style="display: none;"></summary>
+  <div class="custom-summary" onclick="toggleDetails()"></div>
+  <div class="dropdown-content">
+    •<a target="_blank" href="https://codepen.io/ryedai1/full/ZEPMqZB" style=color:blue>AntenneBayern</a>
+    •<a target="_blank" href="https://codepen.io/ryedai1/full/ZEPMqZB?baseurl=https://myonlineradio.de/bigfm/playlist?date=" style=color:blue>BigFM</a>
+  </details><br>
+<br>
+  <input type="text" id="urlInput" value="https://stream.antenne.de/antenne/stream/mp3">
+  <br>
+  <button onclick="renderShoutcast()">[▷Play]</button>
+  <br>
+  <div id="player"></div>
+  <div id="trackInfo"></div>
+
+
+  <script>
+    var audioElement = null;
+function renderShoutcast() {
+  var urlInput = document.getElementById("urlInput").value;
+  var playerDiv = document.getElementById("player");
+  // Clear existing player
+  while (playerDiv.firstChild) {
+    playerDiv.removeChild(playerDiv.firstChild);
+  }
+  audioElement = document.createElement("audio");
+  audioElement.src = urlInput;
+  audioElement.controls = true;
+  playerDiv.appendChild(audioElement);
+  // Add event listener for the 'canplay' event
+  audioElement.addEventListener('canplay', function() {
+    audioElement.play();
+   var button = document.querySelector("[onclick='queryURL()']");
+  button.click(); //click queryURLButton
+  });
+}
+
+// Handle file upload
+var fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', function(event) {
+  var file = event.target.files[0];
+  var reader = new FileReader();
+  reader.onload = function(event) {
+    var url = event.target.result;
+    document.getElementById('urlInput').value = url;
+    renderShoutcast();
+  };
+  reader.readAsDataURL(file);
+});
+  </script>
+
+
+<!---Get Nowplaying--->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function queryURL() {
+        var url = $('#urlInput').val();
+        var requestURL = 'https://alcea-wisteria.de/PHP/0demo/2024-02-09-ShoutcaseMetadataextract/querystringextract.php?streamurl=' + url;
+        fetch(requestURL)
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(function(data) {
+                $('#response').text(data);
+            })
+            .catch(function(error) {
+                $('#response').text('Error occurred while fetching data: ' + error);
+            });
+    }
+</script>
+  <details><summary>file</summary><input type="file" id="fileInput"></details>
+<details><summary>PHPTitlefetch</summary>
+<plaintext>
+<?php
+function getStreamMetadata() {
+    if (isset($_GET['streamurl'])) {
+        $streamUrl = $_GET['streamurl'];
+        $needle = 'StreamTitle=';
+        $ua = 'Dailymate Radio/1.0';
+        $opts = ['http' => ['method' => 'GET',
+        'header' => 'Icy-MetaData: 1',
+        'user_agent' => $ua]
+                ];
+        $context = stream_context_create($opts);
+        $icyMetaIntFound = false;
+        $icyInterval = -1;
+        $offset = 0;
+        if(($headers = get_headers($streamUrl, 0, $context))) {
+            foreach($headers as $h) {
+                if(!(strpos(strtolower($h), 'icy-metaint:') === false)) {
+                    $icyMetaIntFound = true;
+                    $icyInterval = explode(':', $h)[1];
+                    break;
+                }
+            }
+        }
+        if(!$icyMetaIntFound) {
+            echo "icy-metaint header not exists!";
+            return;
+        }
+        if($stream = fopen($streamUrl, 'r', false, $context)) {
+            while($buffer = stream_get_contents($stream, $icyInterval, $offset)) {
+                if(strpos($buffer, $needle) !== false) {
+                    fclose($stream);
+                    $title = explode($needle, $buffer)[1];
+                    return substr($title, 1, strpos($title, ';') - 2);
+                }
+                $offset += $icyInterval;
+            }
+        }
+    } else {
+        // The 'streamurl' parameter is not set
+    }
+}
+echo getStreamMetadata();
+?>

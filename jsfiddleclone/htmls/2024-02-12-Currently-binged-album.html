@@ -1,0 +1,16 @@
+<div id="output"></div><div id="old"></div>
+<script>
+  window.addEventListener('DOMContentLoaded', (event) => {
+    fetch('https://ry3yr.github.io/Dayalbum.js')
+      .then(response => response.text())
+      .then(fileContent => {
+        var lines = fileContent.split("\n");
+        var topLine = lines[0];
+        document.getElementById("output").innerHTML = "<b>CurrBingedAlbum</>: " + topLine;
+        var lines = fileContent.split("\n");
+        var randomIndex = Math.floor(Math.random() * lines.length);
+        var randomLine = lines[randomIndex];
+        document.getElementById("old").innerHTML = "<span style='color: gray; font-size: 12px;'>(Old: " + randomLine + "</span>" + ")";   
+      });
+  });
+</script>

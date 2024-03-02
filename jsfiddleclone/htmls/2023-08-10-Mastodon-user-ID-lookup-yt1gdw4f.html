@@ -1,0 +1,55 @@
+<!---account-id-lookup-https://pb.todon.de/api/v1/accounts/lookup?acct=@ryedai@mastodon.social-->
+
+
+<body>
+  <label for="instance">Mastodon instance:</label>
+  <input type="text" id="instance" value="mastodon.social">
+  <label for="username">Username:</label>
+  <input type="text" id="username" value="ryedai">
+  <button onclick="fetchAvatarUrl()">Get UserID</button>
+  <p id="avatarUrlContainer"></p>
+  <script>
+    function fetchAvatarUrl() {
+      const instance = document.getElementById('instance').value;
+      const username = document.getElementById('username').value;
+      const rssUrl = `https://${instance}/@${username}.rss`;
+      fetch(rssUrl)
+        .then(response => response.text())
+        .then(xml => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xml, 'text/xml');
+          const urlElement = xmlDoc.querySelector('url');
+          const url = urlElement.textContent;
+          const startIndex = url.indexOf('avatars/') + 'avatars/'.length;
+          const endIndex = url.indexOf('/original');
+          const avatarUrl = url.slice(startIndex, endIndex).replace(/\//g, '');
+          const idurl = `https://${instance}/api/v1/accounts/${avatarUrl}`;
+          const avatarUrlhref = `<br><br><a target="_blank" href="https://${instance}/api/v1/accounts/${avatarUrl}/statuses"> link</a>`;
+          // Display the URL in the DOM
+          const urlContainer = document.getElementById('avatarUrlContainer');
+          urlContainer.innerHTML = avatarUrl + avatarUrlhref;
+        })
+        .catch(error => console.error(error));
+    }
+  </script>
+</body>
+</html>
+
+
+<!--<script>
+fetch('https://mastodon.social/@ryedai.rss')
+  .then(response => response.text())
+  .then(xml => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xml, 'text/xml');
+    const urlElement = xmlDoc.querySelector('url');
+    const url = urlElement.textContent;
+    const startIndex = url.indexOf('avatars/') + 'avatars/'.length;
+    const endIndex = url.indexOf('/original');
+    const avatarUrl = url.slice(startIndex, endIndex).replace(/\//g, '');
+    const urlContainer = document.createElement('p');
+    urlContainer.textContent = avatarUrl;
+    document.body.appendChild(urlContainer);
+  })
+  .catch(error => console.error(error));
+</script>-->

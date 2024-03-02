@@ -1,0 +1,21 @@
+<div id="collection-links"></div>
+<script>
+  function fetchData() {
+    fetch('https://ry3yr.github.io/collection.json')
+      .then(response => response.json())
+      .then(data1 => {
+        const randomIndex1 = Math.floor(Math.random() * data1.items.length);
+        const randomEntry1 = data1.items[randomIndex1];
+        fetch('https://ry3yr.github.io/steam_library.json')
+          .then(response => response.json())
+          .then(data2 => {
+            const games = data2.response.games;
+            const randomIndex2 = Math.floor(Math.random() * games.length);
+            const randomGame = games[randomIndex2];
+            const randomEntry = Math.random() < 0.5 ? randomEntry1.name + ' (NintendoSwitch)' : randomGame.name + ' (Steam)';
+            document.getElementById('collection-links').innerHTML = `<p>${randomEntry} <a href="javascript:fetchData()">[Rerun]</a></p>`;
+          });
+      });
+  }
+  fetchData();
+</script>

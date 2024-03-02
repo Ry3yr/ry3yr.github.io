@@ -1,0 +1,45 @@
+<div class="table-container"></div>
+<style>
+  .table-container {
+    display: inline-block;
+  }
+  table {
+    border-collapse: collapse;
+  }
+  tr {
+    border-bottom: 2px solid #000;
+    border-top: 2px solid #000;
+  }
+  td {
+    border-right: 2px solid #000;
+    border-left: 2px solid #000;
+  }
+</style>
+<script>
+  function fetchAndPopulateDataTD() {
+    fetch('https://alceawis.de/other/extra/personal/personality/0apersonality.html')
+      .then(response => response.text())
+      .then(data => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data;
+        const table = tempDiv.querySelector('table');
+        const rows = table.querySelectorAll('tr');
+        const filteredRows = Array.from(rows).filter(row => {
+          const cells = row.querySelectorAll('td');
+          return Array.from(cells).some(cell => cell.innerHTML.includes('Favorite'));
+        });
+        const displayDiv = document.querySelector('.table-container');
+        displayDiv.innerHTML = '';
+        const filteredTable = document.createElement('table');
+        filteredRows.forEach(row => {
+          const clonedRow = row.cloneNode(true);
+          filteredTable.appendChild(clonedRow);
+        });
+        displayDiv.appendChild(filteredTable);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+  fetchAndPopulateDataTD();
+</script>

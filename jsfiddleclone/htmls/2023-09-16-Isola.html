@@ -1,0 +1,171 @@
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Grid Game</title>
+    <style>
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(8, 50px);
+        grid-template-rows: repeat(6, 50px);
+      }
+      .cell {
+        width: 50px;
+        height: 50px;
+        border: 1px solid black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .red-dot,
+      .blue-dot {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .red-dot {
+        background-color: red;
+      }
+      .blue-dot {
+        background-color: blue;
+      }
+      .broken-field {
+        background-color: gray;
+        cursor: default;
+      }
+      #turn-display {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="grid"></div>
+    <div id="turn-display"></div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const grid = document.querySelector("#grid");
+        const turnDisplay = document.querySelector("#turn-display");
+        const cells = [];
+        const rows = 6;
+        const columns = 8;
+
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < columns; j++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.dataset.row = i;
+            cell.dataset.column = j;
+            grid.appendChild(cell);
+            cells.push(cell);
+          }
+        }
+
+        let redDotPosition = { row: 2, column: 0 };
+        cells[redDotPosition.row * columns + redDotPosition.column].classList.add("red-dot");
+
+        let blueDotPosition = { row: rows - 3, column: columns - 1 };
+        cells[blueDotPosition.row * columns + blueDotPosition.column].classList.add("blue-dot");
+
+        let currentPlayer = "red";
+        let brokenFields = [];
+        let currentAction = "move";
+
+        updateTurnDisplay();
+
+        cells.forEach(function (cell) {
+          cell.addEventListener("click", function () {
+            const clickedRow = parseInt(cell.dataset.row);
+            const clickedColumn = parseInt(cell.dataset.column);
+
+            if (currentAction === "move") {
+              if (currentPlayer === "red" && isNeighboringCell(redDotPosition, clickedRow, clickedColumn)) {
+                moveDot("red-dot", redDotPosition, clickedRow, clickedColumn);
+                currentAction = "break";
+              } else if (currentPlayer === "blue" && isNeighboringCell(blueDotPosition, clickedRow, clickedColumn)) {
+                moveDot("blue-dot", blueDotPosition, clickedRow, clickedColumn);
+                currentAction = "break";
+              }
+            } else if (currentAction === "break") {
+              if (!isPlayerCell(clickedRow, clickedColumn) && !isBrokenField(clickedRow, clickedColumn)) {
+                breakField(clickedRow, clickedColumn);
+                currentAction = "move";
+                currentPlayer = currentPlayer === "red" ? "blue" : "red";
+              }
+            }
+
+            updateTurnDisplay();
+          });
+        });
+
+        function moveDot(dotClass, currentPosition, newRow, newColumn) {
+  const newPosition = { row: newRow, column: newColumn };
+  const newPositionCell = cells[newPosition.row * columns + newPosition.column];
+
+  if (!newPositionCell.classList.contains("red-dot") && !newPositionCell.classList.contains("blue-dot")) {
+    cells[currentPosition.row * columns + currentPosition.column].classList.remove(dotClass);
+    newPositionCell.classList.add(dotClass);
+
+    if (dotClass === "red-dot") {
+      redDotPosition = newPosition;
+    } else if (dotClass === "blue-dot") {
+      blueDotPosition = newPosition;
+    }
+
+    invalidateGridPoint(newPosition);
+  } else {
+    console.log("Cannot move to an occupied spot.");
+  }
+}
+
+        function isNeighboringCell(currentPosition, clickedRow, clickedColumn) {
+          const rowDiff = Math.abs(clickedRow - currentPosition.row);
+          const columnDiff = Math.abs(clickedColumn - currentPosition.column);
+          const isBroken = isBrokenField(clickedRow, clickedColumn);
+
+          if (isBroken) {
+            return false; // Prevent moving onto a broken field
+          }
+
+          return (
+            (rowDiff === 1 && columnDiff === 0) ||
+            (rowDiff === 0 && columnDiff === 1) ||
+            (rowDiff === 1 && columnDiff === 1)
+          );
+        }
+
+        function isPlayerCell(row, column) {
+          return (row === redDotPosition.row && column === redDotPosition.column) || (row === blueDotPosition.row && column === blueDotPosition.column);
+        }
+
+        function isBrokenField(row, column) {
+          return brokenFields.some((field) => field.row === row && field.column === column);
+        }
+
+        function breakField(row, column) {
+          const brokenField = { row: row, column: column };
+          brokenFields.push(brokenField);
+          cells[row * columns + column].classList.add("broken-field");
+          console.log("Field broken at (" + row + ", " + column + ")");
+        }
+
+        function invalidateGridPoint(position) {
+          const cell = cells[position.row * columns + position.column];
+          cell.style.backgroundColor = "";
+        }
+
+        function updateTurnDisplay() {
+          turnDisplay.textContent = "Current Turn: " + currentPlayer + " (" + currentAction + ")";
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+  <style>
+    .smart-hover:hover::after {
+      content: attr(title);
+    }
+  </style>
+  <script>
+    function generateHTML() {
+      // Get input values
+      const url = document.getElementById('urlInput').value;
+      const name = document.getElementById('nameInput').value;
+      const imageLink = document.getElementById('imageInput').value;
+      const description = document.getElementById('descriptionInput').value;
+      // Create the link element
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      // Create the image element
+      const image = document.createElement('img');
+      image.src = imageLink;
+      image.style.width = '45px';
+      const span = document.createElement('span');
+      span.classList.add('smart-hover');
+      span.title = ' •' + description;
+      const nameElement = document.createElement('u');
+      nameElement.innerText = name;
+      span.appendChild(nameElement);
+      link.appendChild(image);
+      link.appendChild(span);
+      // Get the generated HTML code
+      const generatedHTML = '<a target="_blank" href="' + url + '"><img src="' + imageLink + '" style="width:45px;"></img></a><span class="smart-hover" title=" ' + description + '">  <u>' + name + '</u></span><style>.smart-hover:hover::after{content:attr(title);}</style><br>';
+      const outputHTML = document.getElementById('outputHTML');
+      outputHTML.innerHTML = generatedHTML;
+      const outputText = document.getElementById('outputText');
+      outputText.value = generatedHTML;
+    }
+  </script>
+</head>
+<body>
+  <form>
+    <label for="urlInput">URL:</label>
+    <input type="text" id="urlInput" oninput="generateHTML()"><br>
+    <label for="nameInput">Name:</label>
+    <input type="text" id="nameInput" oninput="generateHTML()"><br>
+    <label for="imageInput">Image Link:</label>
+    <input type="text" id="imageInput" oninput="generateHTML()"><br>
+    <label for="descriptionInput">Description:</label>
+    <input type="text" id="descriptionInput" oninput="generateHTML()"><br>
+  </form>
+  <div id="outputHTML"></div>
+  <textarea id="outputText" rows="10" cols="50" readonly></textarea
+</body>
+</html>

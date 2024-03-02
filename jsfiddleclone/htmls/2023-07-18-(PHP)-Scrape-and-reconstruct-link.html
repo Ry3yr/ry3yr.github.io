@@ -1,0 +1,25 @@
+
+<?php
+require 'simple_html_dom.php';
+$dom = new DOMDocument;
+@$dom->loadHTML($html);
+$links = $dom->getElementsByTagName('a');
+$url = 'https://bitbucket.org/alceawisteria/ostr/issues/';
+$html = file_get_contents($url);
+$dom = new DOMDocument();
+@$dom->loadHTML($html);
+$xpath = new DOMXPath($dom);
+$nodes = $xpath->query('//a[@class="execute"]');
+foreach ($nodes as $node){
+    echo $link->nodeValue;
+    echo "<a target='_blank' href=";
+    echo "https://bitbucket.org";
+    echo $node-> getAttribute('href');
+    echo ">";
+    echo $node-> getAttribute('href');
+    echo "</a>", '<br>';
+}
+?>
+
+<br><br>
+demo: <a target="_blank" href="http://alceawisteria.byethost7.com/PHP/0demo/2023-01-22-Scrape-spec-link/Bitbucketissue.php">clixk</a>

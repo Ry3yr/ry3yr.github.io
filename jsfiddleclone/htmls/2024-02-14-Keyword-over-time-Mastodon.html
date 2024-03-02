@@ -1,0 +1,188 @@
+<a target="_blank" href="?endpoint=https://urusai.social/api/v1/accounts/111417582756052979/statuses&keyword=koyu" style=color:blue>title</a><br>
+<form onsubmit="openInNewTab(event)">
+  <label for="dropdown"></label>
+  <select id="dropdown" name="endpoint">
+    <option value="https://urusai.social/api/v1/accounts/111417582756052979/statuses">@alcea@urusai.social</option>
+    <option value="https://pb.todon.de/api/v1/accounts/109629985010224381/statuses">@alcea@pb.todon</option>
+    <option value="https://mastodon.social/api/v1/accounts/109977878421486714/statuses">@ryedai@mastodon.social</option>
+    <option value="https://mstdn.animexx.de/api/v1/accounts/111676830721936824/statuses">@alcea@animexx</option>
+  </select>
+  <label for="textfield">Enter a keyword:</label>
+  <input type="text" id="textfield" name="keyword">
+  <input type="submit" value="Submit">
+</form>
+<script>
+  function openInNewTab(event) {
+    event.preventDefault();
+    var endpoint = document.getElementById("dropdown").value;
+    var keyword = document.getElementById("textfield").value;
+    var url = "" +
+      "?endpoint=" + encodeURIComponent(endpoint) +
+      "&keyword=" + encodeURIComponent(keyword);
+    window.open(url, "_blank"); // Open the URL in a new tab or window
+  }
+</script><hr>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Line Chart Example</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!--<div id="entities"></div>-->
+    <canvas id="lineChart"></canvas>
+
+    <script>
+        $(document).ready(function() {
+            var endpoint = 'https://pb.todon.de/api/v1/accounts/109629985010224381/statuses';
+            // Get the value of the "endpoint" and "keyword" query string parameters
+            var urlParams = new URLSearchParams(window.location.search);
+            var customEndpoint = urlParams.get('endpoint');
+            if (customEndpoint) {
+                endpoint = customEndpoint;
+            }
+            var keyword = urlParams.get('keyword');
+
+            var entities = [];
+
+            fetchEntities();
+
+            function fetchEntities() {
+                var url = endpoint;
+
+                if (entities.length > 0) {
+                    var linkHeader = '<' + endpoint + '?max_id=' + entities[entities.length - 1].id + '>; rel="next"';
+                    $.ajaxSetup({
+                        headers: {
+                            'Link': linkHeader
+                        }
+                    });
+                }
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'Authorization': 'Bearer token'
+                    },
+                    success: function(response, textStatus, xhr) {
+                        var newEntities = response;
+
+                        for (var i = 0; i < newEntities.length; i++) {
+                            var entity = newEntities[i];
+                            entities.push(entity);
+                        }
+
+                        var linkHeader = xhr.getResponseHeader('Link');
+                        var nextLink = extractLinkUrl(linkHeader, 'next');
+
+                        if (entities.length >= 200) {
+                            // Render the fetched entities
+                            renderEntities();
+                            // Create the line chart
+                            createLineChart();
+                        } else if (nextLink) {
+                            // Fetch the next set of entities
+                            endpoint = nextLink;
+                            fetchEntities();
+                        } else {
+                            console.log('Finished fetching 200 entities');
+                            // Render the fetched entities
+                            renderEntities();
+                            // Create the line chart
+                            createLineChart();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error: ' + error);
+                    }
+                });
+            }
+
+            function extractLinkUrl(linkHeader, rel) {
+                var links = linkHeader.split(',');
+                for (var i = 0; i < links.length; i++) {
+                    var link = links[i].trim();
+                    var regex = /<([^>]+)>;\s*rel="([^"]+)"/g;
+                    var match = regex.exec(link);
+                    if (match && match[2] === rel) {
+                        return match[1];
+                    }
+                }
+                return null;
+            }
+
+            function renderEntities() {
+                for (var i = 0; i < entities.length; i++) {
+                    var entity = entities[i];
+                    // Render the URL and date on the page
+                    var entityHtml = '<p>';
+                    entityHtml += 'URL: <a target=_blank href="' + entity.url + '">' + entity.url + '</a><br>';
+                    entityHtml += 'Date: ' + entity.created_at + '<br>';
+                    entityHtml += 'Toot: ' + entity.content + '<br>';
+                    entityHtml += '</p>';
+                    $('#entities').append(entityHtml);
+                }
+            }
+
+            function createLineChart() {
+                var labels = [];
+                var dataPoints = [];
+
+                for (var i = 0; i < entities.length; i++) {
+                    var entity = entities[i];
+                    labels.push(entity.created_at);
+                    var keywordCount = countKeywordOccurrences(entity.content, keyword);
+                    dataPoints.push(keywordCount);
+                }
+
+                var ctx = document.getElementById('lineChart').getContext('2d');
+                var lineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Keyword "' + keyword + '" Occurrences - ' + endpoint,
+                            data: dataPoints,
+                            borderColor: 'blue',
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                display: true,
+                                reverse: true, // Invert the x-axis
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Keyword "' + keyword + '" Occurrences'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function countKeywordOccurrences(text, keyword) {
+                var regex = new RegExp(keyword, 'gi');
+                var matches = text.match(regex);
+                if (matches) {
+                    return matches.length;
+                }
+                return 0;
+            }
+        });
+    </script>
+</body>
+</html>

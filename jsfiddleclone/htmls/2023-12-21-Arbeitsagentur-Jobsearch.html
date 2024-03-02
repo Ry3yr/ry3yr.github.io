@@ -1,0 +1,57 @@
+<script>
+    function searchJobs() {
+        var params = {};
+        var angebotsart = document.getElementById('angebotsart').value;
+        if (angebotsart) {
+            params.angebotsart = angebotsart;
+        }
+        var wo = document.getElementById('wo').value;
+        if (wo) {
+            params.wo = wo;
+        }
+        var umkreis = document.getElementById('umkreis').value;
+        if (umkreis) {
+            params.umkreis = umkreis;
+        }
+        var was = document.getElementById('was').value;
+        if (was) {
+            params.was = was;
+        }
+        var zeitarbeitCheckbox = document.getElementById('zeitarbeit');
+        if (!zeitarbeitCheckbox.checked) {
+            params.zeitarbeit = true;
+        }
+        var arbeitszeit = document.getElementById('arbeitszeit').value;
+        if (arbeitszeit) {
+            params.arbeitszeit = arbeitszeit;
+        }
+        var queryString = Object.keys(params).map(function(key) {
+            return key + '=' + encodeURIComponent(params[key]);
+        }).join('&');
+        var url = "https://www.arbeitsagentur.de/jobsuche/suche?" + queryString;
+        var decodedUrl = decodeURIComponent(url);
+        document.getElementById('url').innerHTML = '<a href="' + url + '" target="_blank">' + decodedUrl + '</a>';
+        window.open(url, "_blank");
+    }
+</script>
+</head>
+<body>
+    <label for="was">Was:</label>
+    <input type="text" id="was" placeholder="Jobtitel" value=""><br>
+    <label for="angebotsart">Art:</label>
+    <input type="text" id="angebotsart" placeholder="???"><br>
+    <label for="wo">Wo:</label>
+    <input type="text" id="wo" placeholder=""><br>
+    <label for="umkreis">Umkreis:</label>
+    <input type="text" id="umkreis" placeholder="25km"><br>
+    <label for="arbeitszeit">Arbeitszeit:</label>
+    <input type="text" id="arbeitszeit" placeholder="vz;tz;snw;ho;mj"><br>
+    <label for="zeitarbeit">ZA:</label>
+    <input type="checkbox" id="zeitarbeit"><br>
+    <button onclick="searchJobs()">Search</button>
+    
+    <br>
+    <br>
+    <p>URL: <span id="url"></span></p>
+</body>
+</html>

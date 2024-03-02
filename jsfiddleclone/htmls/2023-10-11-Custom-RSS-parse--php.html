@@ -1,0 +1,130 @@
+
+
+========JS Ver Start =====
+  <div id="outputpixiv"></div>
+  <script>
+    function getAllTitlesAndGuidLinks(url) {
+  const rss2jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
+  fetch(rss2jsonUrl)
+    .then(response => response.json())
+    .then(data => {
+      if (data.status !== 'ok') {
+        throw new Error('Failed to convert RSS to JSON');
+      }
+      data.items.slice(0, 3).forEach(item => {
+        const guid = item.guid;
+        const title = item.title;
+        const content = item.description;
+        const firstParagraph = extractParagraph(content);
+        const wrappedTitle = `<a href="${guid}" target="_blank">${title}</a>`;
+        document.getElementById('outputpixiv').innerHTML += `<b>${wrappedTitle}</b> ${firstParagraph.replace(/\s+/g, ' ')}`;
+      });
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+}
+function extractParagraph(content) {
+  const regex = /<p>(.*?)<\/p>/;
+  const matches = regex.exec(content);
+  return matches ? matches[0] : null;
+}
+const pixivUserUrl = 'https://rsshub.app/pixiv/user/75406576';
+getAllTitlesAndGuidLinks(pixivUserUrl);
+  </script>
+========JS Ver End =====
+
+
+
+<!---Full-rss-process--
+  <div id="output"></div>
+  <script>
+    function getAllTitlesAndGuidLinks(url) {
+      const rss2jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
+      fetch(rss2jsonUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status !== 'ok') {
+            throw new Error('Failed to convert RSS to JSON');
+          }
+          data.items.forEach(item => {
+            const guid = item.guid;
+            const title = item.title;
+            const content = item.description;
+            const firstParagraph = extractParagraph(content);
+            const wrappedTitle = `<a href="${guid}" target="_blank">${title}</a>`;
+            document.getElementById('output').innerHTML += `<b>${wrappedTitle}</b> ${firstParagraph}<br>`;
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+    function extractParagraph(content) {
+      const regex = /<p>(.*?)<\/p>/;
+      const matches = regex.exec(content);
+      return matches ? matches[0] : null;
+    }
+    const pixivUserUrl = 'https://rsshub.app/pixiv/user/75406576';
+    getAllTitlesAndGuidLinks(pixivUserUrl);
+  </script>
+</body>
+</html>
+-->
+
+<!---PHP-ver-->
+<plaintext>
+<?php
+function getAllTitlesAndGuidLinks($url) {
+  try {
+    $xml = simplexml_load_file($url);
+    if ($xml === false) {
+      throw new Exception('Failed to load RSS feed');
+    }
+    foreach ($xml->channel->item as $item) {
+      $guid = (string) $item->guid;
+      $title = (string) $item->title;
+      $content = (string) $item->description;
+      $firstParagraph = extractParagraph($content);
+      $wrappedTitle = "<a href=\"{$guid}\" target=\"_blank\">{$title}</a>";
+      echo "<b>{$wrappedTitle}</b> {$firstParagraph}";
+    }
+  } catch (Exception $e) {
+    echo 'Error: ' . $e->getMessage();
+  }
+}
+function extractParagraph($content) {
+  $regex = '/<p>(.*?)<\/p>/';
+  preg_match($regex, $content, $matches);
+  return isset($matches[0]) ? $matches[0] : null;
+}
+$pixivUserUrl = 'https://rsshub.app/pixiv/user/75406576';
+getAllTitlesAndGuidLinks($pixivUserUrl);
+?>
+
+
+<!---<?php
+function getAllTitlesAndGuidLinks($url) {
+  try {
+    $apiUrl = "https://api.rss2json.com/v1/api.json?rss_url=" . urlencode($url);
+    $response = file_get_contents($apiUrl);
+    $data = json_decode($response, true);
+    foreach ($data['items'] as $item) {
+      $guid = $item['guid'];
+      $title = $item['title'];
+      $firstParagraph = extractParagraph($item['content']);
+      $wrappedTitle = "<a href=\"{$guid}\" target=\"_blank\">{$title}</a>";
+      echo "<b>{$wrappedTitle}</b> {$firstParagraph}";
+    }
+  } catch (Exception $e) {
+    echo 'Error: ' . $e->getMessage();
+  }
+}
+function extractParagraph($content) {
+  $regex = '/<p>(.*?)<\/p>/';
+  preg_match($regex, $content, $matches);
+  return isset($matches[0]) ? $matches[0] : null;
+}
+$pixivUserUrl = 'https://rsshub.app/pixiv/user/75406576';
+getAllTitlesAndGuidLinks($pixivUserUrl);
+?>--->

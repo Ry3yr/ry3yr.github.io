@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Channel Content Search</title>
+</head>
+<body>
+    <h1>YouTube Channel Content Search</h1>
+    <label for="channelName">Channel Name:</label>
+    <input type="text" id="channelName"><br><br>
+    <label for="channelId">Channel ID:</label>
+    <input type="text" id="channelId" value="UCrltGih11A_Nayz6hG5XtIw"><br><br>
+    <label for="searchText">Search Text:</label>
+    <input type="text" id="searchText" required><br><br>
+    <button onclick="searchVideos()">Search</button>
+
+    <div id="searchResults"></div>
+
+    <script>
+        function searchVideos() {
+            var channelName = document.getElementById("channelName").value;
+            var channelId = document.getElementById("channelId").value;
+            var searchText = document.getElementById("searchText").value;
+
+            if (searchText === "") {
+                alert("Please enter a search text.");
+                return;
+            }
+
+            // Set your YouTube Data API key
+            var apiKey = 'APIKEY';
+
+            // Determine the channel parameter based on channel name or channel ID
+            var channelParam = "";
+            if (channelId !== "") {
+                channelParam = "channelId=" + encodeURIComponent(channelId);
+            } else if (channelName !== "") {
+                channelParam = "channel=" + encodeURIComponent(channelName);
+            }
+
+            // Make a request to the YouTube Data API
+            var url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + encodeURIComponent(searchText) + "&maxResults=10&key=" + apiKey + "&" + channelParam;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    var searchResultsDiv = document.getElementById("searchResults");
+                    searchResultsDiv.innerHTML = "";
+
+                    if (data.items && data.items.length > 0) {
+                        var resultsHeading = document.createElement("h2");
+                        resultsHeading.textContent = "Search Results";
+                        searchResultsDiv.appendChild(resultsHeading);
+
+                        data.items.forEach(function(item) {
+                            if (item.id.kind !== "youtube#video") {
+                                return; // Skip non-video results
+                            }
+
+                            var videoId = item.id.videoId;
+                            var videoTitle = item.snippet.title;
+                            var videoThumbnail = item.snippet.thumbnails.default.url;
+
+                            var videoLink = "https://www.youtube.com/watch?v=" + videoId;
+
+                            var videoLinkElement = document.createElement("a");
+                            videoLinkElement.href = videoLink;
+                            videoLinkElement.target = "_blank";
+
+                            var thumbnailImageElement = document.createElement("img");
+                            thumbnailImageElement.src = videoThumbnail;
+                            thumbnailImageElement.alt = videoTitle;
+
+                            var videoTitleElement = document.createElement("p");
+                            videoTitleElement.textContent = videoTitle;
+
+                            videoLinkElement.appendChild(thumbnailImageElement);
+                            videoLinkElement.appendChild(videoTitleElement);
+
+                            searchResultsDiv.appendChild(videoLinkElement);
+                        });
+                    } else {
+                        var noResultsMessage = document.createElement("p");
+                        noResultsMessage.textContent = "No videos found for the specified channel and search text.";
+                        searchResultsDiv.appendChild(noResultsMessage);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("An error occurred during the API request.");
+                });
+        }
+    </script>
+</body>
+</html>

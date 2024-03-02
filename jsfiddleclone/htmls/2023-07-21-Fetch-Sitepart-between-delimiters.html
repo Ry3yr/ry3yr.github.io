@@ -1,0 +1,41 @@
+<details>
+  <div id="content"></div>
+  <script>
+    const baseUrl = "https://alceawis.de"; // Base URL
+    fetch("https://alceawis.de/code.html")
+      .then(response => response.text())
+      .then(data => {
+        const start = data.indexOf("CMDS") + 4;
+        const end = data.indexOf("CodeDistribution") - 0;
+        const content = data.substring(start, end);
+        // Create a temporary element to parse the content as HTML
+        const tempElement = document.createElement("div");
+        tempElement.innerHTML = content;
+        // Find and convert relative URLs to absolute URLs
+        const relativeUrls = tempElement.querySelectorAll("a[href], img[src]");
+        relativeUrls.forEach(url => {
+          const originalUrl = url.getAttribute("href") || url.getAttribute("src");
+          const absoluteUrl = new URL(originalUrl, baseUrl).href;
+          url.setAttribute("href", absoluteUrl);
+          url.setAttribute("src", absoluteUrl);
+        });
+        // Append the modified content to the target element
+        document.getElementById("content").appendChild(tempElement);
+      });
+  </script>
+</details><br>
+
+
+<details><summary>relativ ver<summary>
+<div id="content"></div>
+    <script> fetch("https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/Cool_Stuff.html")
+        .then(response => response.text())
+        .then(data => {
+          const start = data.indexOf("<!------Tools---------->") + 24;
+          const end = data.indexOf("<!-----Hobbies---->") - 8;
+          const content = data.substring(start, end);
+          document.getElementById("content").innerHTML = content;
+        })
+        .catch(error => console.log(error));
+    </script>
+</details>

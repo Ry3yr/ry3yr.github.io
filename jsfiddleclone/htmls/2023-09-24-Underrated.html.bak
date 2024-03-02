@@ -1,0 +1,904 @@
+<meta charset="utf-8">
+<base href="https://" target="_blank" rel="noopener noreferrer">
+
+<a target="_blank" href="https://nomore/OSTR/Diarykeepers_Homepage/underratedyoutubelinks.html">All YT Links</a><br>
+
+<!DOCTYPE html>
+<html style=" font-size: 16px;">
+<html>
+<head>
+<meta http-equiv="Cache-Control" content="public, max-age=31536000">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+    <title>UnderratedContent</title>
+<br>
+<!------------------Own QR------------->
+<img src=" data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPoAAAD6AQMAAACyIsh+AAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAACC0lEQVRogeWZMa6EMAxEHVFQcgSOwtHgaDkKR6CkQPh7xs4u2l9svU6KFQlPK8UajxMj8m2sinGKTPtcn1M+6JYFwF6HczymXWTRTbl5nxrfEaB6DSdmc10U74dLGDcLUzZgVMWKjXIzEp0CMh1cX/UuV0rAZa/HrK6HQnn8y4vsgPse8t3yYlvlBmDTD5/8caANW9i578IXh3yO5AACdQ1Yoh42BYA0mfelGp8EEFGzNVN9FHfTg7rbo8ZRD10AsMGWF8rIlHbm8WkSQLHvkdVdFry/h2s8af6Y9gPobWlxhu2Z3ZeWJlolEYBDC+KAfDd5hOrhefZy6wWQqOYQANP95pl2giuK22AOAEfU0asYdO7yEJ7k/Q+6AFZE5nFFfeSFByoJ4LLHK5e9PVyocZg+8iI7IAyUsrgzTq2423NtefH7wIpqfiEOOzSuLO5K04ui1geAai4PG2SHAoGz9A8bzADYzl0AvnE/2qHW2yzyog8g8gJ9mPpqu3nc6tsnEwAlDi0QQLTd2I7wC0w3gN9ZWkOiVT2MGo2aBEAMNF5oc9FsPPwM0w+werpHPwoKKF7c95cNpgAQBbYT1V3O+02Ig+u+G6AJwBfQlWGP/Z04qYDJV+yXpsfiLs9E6AWIbyhmg7inT3u05bIAEgKgyWlruz0upH0AjM7Jm/mi/HToH0z10Y7uAPg2/gCJcpY5m9E2HAAAAABJRU5ErkJggg==" height="50" width="50"> 
+<!--<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://nomore/OSTR/Diarykeepers_Homepage/UnderratedContent.html"</img>-->
+
+<div class="pre-spoiler"><input name="Deutsch" type="button" onClick="if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') { this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'ButtontextSpoiler'; } else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'ButtontextSpoiler';}" value="ButtontextSpoiler" style="background:transparent; border:none; color:transparent;"><div class="spoiler" style="display: none;" >
+<a target="_blank" href="https://www.cssscript.com/demo/decoding-encoding-qr-code/">ALT</a>
+  
+  <b>QR Encoder</b>
+<body>
+<!-- partial:index.partial.html -->
+<body>
+  <div class="wrapper">
+    <header>
+    </header>
+    <div class="form">
+      <input name="text" type="text" spellcheck="false" placeholder="" value="https://nomore/OSTR/Diarykeepers_Homepage/UnderratedContent.html">
+<!--<button>Generate QR Code</button> -->
+      <input class="submit" type="submit" value="QR">
+    </div>
+    <div class="qr-code">
+      <img src="" alt="https://nomore/OSTR/Diarykeepers_Homepage/UnderratedContent.html">
+    </div>
+  </div>
+</body>
+</html>
+<!-- partial -->
+  <script>
+const wrapper = document.querySelector(".wrapper"),
+  qrInput = wrapper.querySelector(".form input"),
+  generateBtn = wrapper.querySelector(".submit"),
+  qrImg = wrapper.querySelector(".qr-code img");
+let preValue;
+generateBtn.addEventListener("click", () => {
+  let qrValue = qrInput.value.trim();
+  if (!qrValue || preValue === qrValue) return;
+  preValue = qrValue;
+  generateBtn.innerText = "Generating QR Code...";
+  qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrValue}`;
+  qrImg.addEventListener("load", () => {
+    wrapper.classList.add("active");
+    generateBtn.innerText = "Generate QR Code";
+  });
+});
+qrInput.addEventListener("keyup", () => {
+  if (!qrInput.value.trim()) {
+    wrapper.classList.remove("active");
+    preValue = "";
+  }
+});
+</script>
+</body>
+</html>
+
+<!--DecodeQR--->
+<iframe src="data:text/html;base64,
+PGI+RGVjb2RlIFFSPC9iPgo8Zm9ybT4KPGlucHV0IHR5cGU9InRleHQiIGlkPSJxcnVybCIgdmFsdWU9Imh0dHBzOi8vdXBsb2FkLndpa2ltZWRpYS5vcmcvd2lraXBlZGlhL2NvbW1vbnMvdGh1bWIvZC9kMC9RUl9jb2RlX2Zvcl9tb2JpbGVfRW5nbGlzaF9XaWtpcGVkaWEuc3ZnLzI0MHB4LVFSX2NvZGVfZm9yX21vYmlsZV9FbmdsaXNoX1dpa2lwZWRpYS5zdmcucG5nIiAvPgo8YSBocmVmPSJqYXZhc2NyaXB0OmZ1bmN0aW9uKCkiIGlkPSJidG4zIj48aW1nIHNyYz0iaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEvY29tbW9ucy90aHVtYi9kL2QwL1FSX2NvZGVfZm9yX21vYmlsZV9FbmdsaXNoX1dpa2lwZWRpYS5zdmcvMjQwcHgtUVJfY29kZV9mb3JfbW9iaWxlX0VuZ2xpc2hfV2lraXBlZGlhLnN2Zy5wbmciIGhlaWdodD0iMjUiIHdpZHRoPSIyNSI+PC9hPgo8c2NyaXB0Pgpkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuMycpLm9uY2xpY2sgPSBmdW5jdGlvbigpIHsKICB2YXIgdmFsID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3FydXJsJykudmFsdWU7CiAgLy92YWwgPSB2YWwucmVwbGFjZSgnaHR0cHM6Ly8nLCAnJyk7CiAgdmFyIHVybCA9ICJodHRwczovL3p4aW5nLm9yZy93L2RlY29kZT91PSIgKyB2YWw7CiAgd2luZG93Lm9wZW4oIiIrdXJsLCAiX2JsYW5rIik7fQo8L3NjcmlwdD4=
+" style="border:0px #ffffff none;" name="statusit" scrolling="auto" frameborder="0" marginheight="0px" marginwidth="0px" height="150px" width="500px" allowfullscreen></iframe>
+
+<!---QR-Decoder--2--->
+<iframe src="data:text/html;base64,
+CjwvaGVhZD4KPGJvZHk+CjwhLS0gcGFydGlhbDppbmRleC5wYXJ0aWFsLmh0bWwgLS0+CjwhLS0tVGFrZW4taW5mbHVlbmNlLWZyb20taHR0cHM6Ly9qc2ZpZGRsZS5uZXQvRGV2ZUxvcGVyL3E3YTl1OWs5Ly0tPgo8ZGl2PgogIDxpbWcgaWQ9ImltYWdlIiBzcmM9Imh0dHBzOi8vZmlsZXMubWFzdG9kb24uc29jaWFsL21lZGlhX2F0dGFjaG1lbnRzL2ZpbGVzLzExMC82MTEvNzQ4LzM0OC8zODEvMzU5L29yaWdpbmFsLzI4NDVhZmQwODI3YTFjZmQucG5nIiB3aWR0aD0iMjAlIiAvPgogIDxkaXYgaWQ9InJlc3VsdCI+PC9kaXY+CiAgPGZvcm0+CiAgICA8bGFiZWwgZm9yPSJmaWxlIj5TZWxlY3QgYW4gaW1hZ2U6PC9sYWJlbD4KICAgIDxpbnB1dCB0eXBlPSJmaWxlIiBpZD0iZmlsZSIgYWNjZXB0PSJpbWFnZS8qIj4KICAgIDxicj4KICAgIDxsYWJlbCBmb3I9ImlucHV0Ij5PciBlbnRlciBhIFVSTCBvciB0ZXh0OjwvbGFiZWw+CiAgICA8aW5wdXQgdHlwZT0idGV4dCIgaWQ9ImlucHV0IiB2YWx1ZT0iaHR0cHM6Ly9maWxlcy5tYXN0b2Rvbi5zb2NpYWwvbWVkaWFfYXR0YWNobWVudHMvZmlsZXMvMTEwLzYxMS83NDgvMzQ4LzM4MS8zNTkvb3JpZ2luYWwvMjg0NWFmZDA4MjdhMWNmZC5wbmciPgogICAgPGJyPgogICAgPGlucHV0IHR5cGU9ImNoZWNrYm94IiBpZD0iYmFzZTY0IiBuYW1lPSJiYXNlNjQiIHZhbHVlPSJ0cnVlIj4KICAgIDxsYWJlbCBmb3I9ImJhc2U2NCI+T3V0cHV0IHJlc3VsdCBhcyBiYXNlNjQ8L2xhYmVsPgogICAgPGJyPgogICAgPGJ1dHRvbiB0eXBlPSJidXR0b24iIG9uY2xpY2s9ImRlY29kZSgpIj5EZWNvZGU8L2J1dHRvbj4KICAgIDxidXR0b24gdHlwZT0iYnV0dG9uIiBvbmNsaWNrPSJjb3B5UmVzdWx0KCkiPkNvcHkgT3V0cHV0PC9idXR0b24+CiAgPC9mb3JtPgo8L2Rpdj4KCjxzY3JpcHQ+CmZ1bmN0aW9uIGRlY29kZSgpIHsKICB2YXIgaW5wdXQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiaW5wdXQiKS52YWx1ZTsKICB2YXIgZmlsZSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJmaWxlIikuZmlsZXNbMF07CiAgdmFyIHJlYWRlciA9IG5ldyBGaWxlUmVhZGVyKCk7CiAgcmVhZGVyLm9ubG9hZCA9IGZ1bmN0aW9uKGUpIHsKICAgIHZhciBpbWFnZSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJpbWFnZSIpOwogICAgaW1hZ2Uuc3JjID0gZS50YXJnZXQucmVzdWx0OwogICAgcXJjb2RlLmNhbGxiYWNrID0gZnVuY3Rpb24ocil7CiAgICAgIGlmIChkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiYmFzZTY0IikuY2hlY2tlZCkgewogICAgICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZXN1bHQnKS5pbm5lclRleHQgPSAnRGVjb2RlIHJlc3VsdCBpczogJyArIGJ0b2Eocik7CiAgICAgIH0gZWxzZSB7CiAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Jlc3VsdCcpLmlubmVyVGV4dCA9ICdEZWNvZGUgcmVzdWx0IGlzOiAnICsgcjsKICAgICAgfQogICAgfQogICAgcXJjb2RlLmRlY29kZShlLnRhcmdldC5yZXN1bHQpOwogIH07CiAgaWYgKGZpbGUpIHsKICAgIHJlYWRlci5yZWFkQXNEYXRhVVJMKGZpbGUpOwogIH0gZWxzZSB7CiAgICBxcmNvZGUuY2FsbGJhY2sgPSBmdW5jdGlvbihyKXsKICAgICAgaWYgKGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJiYXNlNjQiKS5jaGVja2VkKSB7CiAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Jlc3VsdCcpLmlubmVyVGV4dCA9ICdEZWNvZGUgcmVzdWx0IGlzOiAnICsgYnRvYShyKTsKICAgICAgfSBlbHNlIHsKICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncmVzdWx0JykuaW5uZXJUZXh0ID0gJ0RlY29kZSByZXN1bHQgaXM6ICcgKyByOwogICAgICB9CiAgICB9CiAgICBxcmNvZGUuZGVjb2RlKGlucHV0KTsKICB9Cn0KCmZ1bmN0aW9uIGNvcHlSZXN1bHQoKSB7CiAgdmFyIHJlc3VsdCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJyZXN1bHQiKS5pbm5lclRleHQ7CiAgbmF2aWdhdG9yLmNsaXBib2FyZC53cml0ZVRleHQocmVzdWx0KS50aGVuKGZ1bmN0aW9uKCkgewogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoInJlc3VsdCIpLmlubmVyVGV4dCA9ICJDb3BpZWQhIjsKICB9LCBmdW5jdGlvbigpIHsKICAgIGNvbnNvbGUuZXJyb3IoIkZhaWxlZCB0byBjb3B5IHJlc3VsdCB0byBjbGlwYm9hcmQuIik7CiAgfSk7Cn0KPC9zY3JpcHQ+Cgo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSJodHRwczovL2Nkbi5yYXdnaXQuY29tL0xhemFyU29mdC9qc3FyY29kZS9tYXN0ZXIvc3JjL2dyaWQuanMiPjwvc2NyaXB0Pgo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSJodHRwczovL2Nkbi5yYXdnaXQuY29tL0xhemFyU29mdC9qc3FyY29kZS9tYXN0ZXIvc3JjL3ZlcnNpb24uanMiPjwvc2NyaXB0Pgo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSJodHRwczovL2Nkbi5yYXdnaXQuY29tL0xhemFyU29mdC9qc3FyY29kZS9tYXN0ZXIvc3JjL2RldGVjdG9yLmpzIj48L3NjcmlwdD4KPHNjcmlwdCB0eXBlPSJ0ZXh0L2phdmFzY3JpcHQiIHNyYz0iaHR0cHM6Ly9jZG4ucmF3Z2l0LmNvbS9MYXphclNvZnQvanNxcmNvZGUvbWFzdGVyL3NyYy9mb3JtYXRpbmYuanMiPjwvc2NyaXB0Pgo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSJodHRwczovL2Nkbi5yYXdnaXQuY29tL0xhemFyU29mdC9qc3FyY29kZS9tYXN0ZXIvc3JjL2Vycm9ybGV2ZWwuanMiPjwvc2NyaXB0Pgo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSJodHRwczovL2Nkbi5yYXdnaXQuY29tL0xhemFyU29mdC9qc3FyY29kZS9tYXN0ZXIvc3JjL2JpdG1hdC5qcyI+PC9zY3JpcHQ+CjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Imh0dHBzOi8vY2RuLnJhd2dpdC5jb20vTGF6YXJTb2Z0L2pzcXJjb2RlL21hc3Rlci9zcmMvZGF0YWJsb2NrLmpzIj48L3NjcmlwdD4KPHNjcmlwdCB0eXBlPSJ0ZXh0L2phdmFzY3JpcHQiIHNyYz0iaHR0cHM6Ly9jZG4ucmF3Z2l0LmNvbS9MYXphclNvZnQvanNxcmNvZGUvbWFzdGVyL3NyYy9ibXBhcnNlci5qcyI+PC9zY3JpcHQ+CjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Imh0dHBzOi8vY2RuLnJhd2dpdC5jb20vTGF6YXJTb2Z0L2pzcXJjb2RlL21hc3Rlci9zcmMvZGF0YW1hc2suanMiPjwvc2NyaXB0Pgo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSJodHRwczovL2Nkbi5yYXdnaXQuY29tL0xhemFyU29mdC9qc3FyY29kZS9tYXN0ZXIvc3JjL3JzZGVjb2Rlci5qcyI+PC9zY3JpcHQ+CjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Imh0dHBzOi8vY2RuLnJhd2dpdC5jb20vTGF6YXJTb2Z0L2pzcXJjb2RlL21hc3Rlci9zcmMvZ2YyNTZwb2x5LmpzIj48L3NjcmlwdD4KPHNjcmlwdCB0eXBlPSJ0ZXh0L2phdmFzY3JpcHQiIHNyYz0iaHR0cHM6Ly9jZG4ucmF3Z2l0LmNvbS9MYXphclNvZnQvanNxcmNvZGUvbWFzdGVyL3NyYy9nZjI1Ni5qcyI+PC9zY3JpcHQ+CjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Imh0dHBzOi8vY2RuLnJhd2dpdC5jb20vTGF6YXJTb2Z0L2pzcXJjb2RlL21hc3Rlci9zcmMvZGVjb2Rlci5qcyI+PC9zY3JpcHQ+CjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Imh0dHBzOi8vY2RuLnJhd2dpdC5jb20vTGF6YXJTb2Z0L2pzcXJjb2RlL21hc3Rlci9zcmMvcXJjb2RlLmpzIj48L3NjcmlwdD4KPHNjcmlwdCB0eXBlPSJ0ZXh0L2phdmFzY3JpcHQiIHNyYz0iaHR0cHM6Ly9jZG4ucmF3Z2l0LmNvbS9MYXphclNvZnQvanNxcmNvZGUvbWFzdGVyL3NyYy9maW5kcGF0LmpzIj48L3NjcmlwdD4KPHNjcmlwdCB0eXBlPSJ0ZXh0L2phdmFzY3JpcHQiIHNyYz0iaHR0cHM6Ly9jZG4ucmF3Z2l0LmNvbS9MYXphclNvZnQvanNxcmNvZGUvbWFzdGVyL3NyYy9hbGlnbnBhdC5qcyI+PC9zY3JpcHQ+CjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Imh0dHBzOi8vY2RuLnJhd2dpdC5jb20vTGF6YXJTb2Z0L2pzcXJjb2RlL21hc3Rlci9zcmMvZGF0YWJyLmpzIj48L3NjcmlwdD4KPCEtLSBwYXJ0aWFsIC0tPgogIAo8L2JvZHk+CjwvaHRtbD4K
+" style="border:0px #ffffff none;" name="statusit" scrolling="auto" frameborder="0" marginheight="0px" marginwidth="0px" height="350px" width="500px" allowfullscreen></iframe>
+<!--QR-Decoder--2-end-->
+	
+</div>
+</div>
+</div>
+
+<br>
+<br>
+Blogs:<br>
+<img
+src="https://waitbutwhy.com/wp-coent/uploads/2019/02/WBW-ogo-vector-crop.jpg"alt="Image" height="15" width="15"><a href="https://www.waitbutwhy.com">•Waitbutwhy</a><br>
+<img
+src="https://64.media.tumbr.com/7df85173c80468f7a0868d56b7dd4a1/6d43840c7a5f4c9b-28/s96x96u_c1/e57dde44e12eb8ca24b96eb83d2b919d910c5d1.jp"alt="Image" height="15" width="15">
+<a href="https://tehuti88-art.tumblr.com/">•tehuti88-art</a><br>
+<a href="https://pastebin.com/9PNxSRYH#https://f.ls/happynewworld">😿• Happy new world</a><br>
+•<a target="_blank" href="https://duesterburg.rpg-atelier.net/aktuell.php#https://www.facebook.com/UiDuesterburg">UnterwegsInDüsterburg</a>&nbsp;(<a target="_blank" href="https://youtu.be/XIpdkkBsQYM">Trailer</a>)<br>
+•<a target="_blank" href="https://solsocog.de/">SolsoCog</a><br>
+<br>
+<br>
+<!-----
+•SocialMedia:<br>
+ <a target="_blank" href="https://mobile.twitter.com/i/lists/1520104104567128065">TwttrPpl</a>: <a target="_blank" href="https://mobile.twitter.com/nabzdraws">@nabzdraws</a> 
+------>
+<br>
+<br>
+•CoolWebsites(ByPrivatePPL)<br>
+<a target="_blank" href="http://windystar.myartsonline.com/gallery.html#https://www.deviantart.com/starca">Windystar</a><br>
+<a target="_blank" href="https://etel-tuning.eu/">etel-tuning</a><br>
+<a target="_blank" href="https://dokodemo.neocities.org/indexv3">Doko's Adorable Website 🤗</a><br>
+<br>
+<br>
+•Single Instance Phenomena:<br>
+<img src="https://static.wikia.nocookie.net/newgrounds/images/7/73/There_She_Is_Sign.png" height="15"> <a target="_blank" href="https://m.youtube.com/watch?v=3quYcNI3dOs">There She Is!!</a><br>
+<br>
+<div class="pre-spoiler">
+<input name="Deutsch" type="button" onClick="if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') { this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'More...'; } else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'More...';}" value="More..." style="background:transparent; border:none; color:transparent;">
+<div class="spoiler" style="display: none;" >
+• <a target="_blank" href="https://m.youtube.com/watch?v=VRfO_0eRwh0">Pkmn RED Full Game Animation</a><br>
+
+</div>
+
+
+<br>
+<br>
+<!--Youtube-CHID-to-ChannelPlaylist-convert--->
+<form>
+  <input type="text" id="yturl" value="UCn-K7GIs62ENvdQe6ZZk9-w" />
+  <input type="button" id="btn" value="ChannelPlayListURL" />
+</form>
+<script>
+document.getElementById('btn').onclick = function() {
+  var val = document.getElementById('yturl').value;
+  val = val.replace('https://m.youtube.com/channel/', '');
+  val = val.replace('https://www.youtube.com/channel/', '');
+  val = val.replace('/videos', '');
+  val = val.replace('UC', 'UU');
+  var url = "https://www.youtube.com/embed/videoseries?list=" + val;
+  window.open(""+url, "_blank");
+  //var a = document.createElement('a');
+  //var linkText = document.createTextNode(url);
+  //a.appendChild(linkText);
+  //a.title = "yturl";
+  //a.target = '_blank';
+  //a.href = url;
+  //a.style.display = 'block';
+  //document.body.appendChild(a);
+}
+</script>
+<br>
+<!--Youtube-Wayback-Archve-->
+<form>
+<input type="text" id="ytwayurl" value="https://www.youtube.com/watch?v=hyytN5xAFo4" />
+<!--<input type="button" id="btn" img src="https://png.pngtree.com/element_our/md/20180506/md_5aeee5973210e.jpg" alt="Dinosaur" />-->
+<a href="javascript:function()" id="btn2"><img src="https://png.pngtree.com/element_our/md/20180506/md_5aeee5973210e.jpg" height="25" width="25"></a>
+<script>
+document.getElementById('btn2').onclick = function() {
+  var val = document.getElementById('ytwayurl').value;
+  val = val.replace('https://', '');
+  val = val.replace('m.youtube.com/watch?v=', '');
+  val = val.replace('www.youtube.com/watch?v=', '');
+  val = val.replace('youtube.com/watch?v=', '');
+  var url = "https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/" + val;
+  window.open(""+url, "_blank");
+  //var urlnew = "https://web.archive.org/web/" + val;
+  //window.open(""+urlnew, "_blank");
+  //var a = document.createElement('a');
+  //var linkText = document.createTextNode(url);
+  //a.appendChild(linkText);
+  //a.title = "yturl";
+  //a.target = '_blank';
+  //a.href = url;
+  //a.style.display = 'block';
+  //document.body.appendChild(a);
+}
+</script>
+
+
+ <br>
+ <hr>
+<body>
+	<div>
+		<label for="channel-url-input">Channel URL:</label>
+		<input type="text" id="channel-url-input" oninput="fillVideo()">
+	</div>
+	<div>
+		<label for="channel-image-input">Channel Image URL:</label>
+		<input type="text" id="channel-image-input" oninput="fillVideo()">
+	</div>
+	<div>
+		<label for="channel-name-input">Channel Name:</label>
+		<input type="text" id="channel-name-input" oninput="fillVideo()">
+	</div>
+	<div>
+		<label for="video-url-input">Video URL:</label>
+		<input type="text" id="video-url-input" oninput="fillVideo()">
+	</div>
+	<div>
+		<label for="video-title-input">Video Title:</label>
+		<input type="text" id="video-title-input" oninput="fillVideo()">
+	</div>
+	<br><br>
+	<div style="display: flex;">
+		<div>
+			<label for="html-output">HTML Output:</label>
+			<textarea id="html-output"></textarea>
+		</div>
+		<div id="preview-container" style="margin-left: 50px;"></div>
+	</div>
+	<script>
+		function fillVideo() {
+			let channelUrl = document.getElementById("channel-url-input").value.trim();
+			let channelImage = document.getElementById("channel-image-input").value.trim();
+			let channelName = document.getElementById("channel-name-input").value.trim();
+			let videoUrl = document.getElementById("video-url-input").value.trim();
+			let videoTitle = document.getElementById("video-title-input").value.trim();
+			let channelLink = document.createElement("a");
+			channelLink.href = channelUrl;
+			let channelImageElement = document.createElement("img");
+			channelImageElement.alt = "Channel Image";
+			channelImageElement.src = channelImage;
+			channelImageElement.height = 50;
+			channelImageElement.width = 50;
+			channelLink.appendChild(channelImageElement);
+			let channelNameElement = document.createElement("span");
+			channelNameElement.textContent = channelName;
+			let videoLink = document.createElement("a");
+			videoLink.href = videoUrl;
+			let videoTitleElement = document.createElement("span");
+			videoTitleElement.textContent = videoTitle;
+			let videoContainer = document.createElement("div");
+			videoContainer.appendChild(channelLink);
+			videoContainer.appendChild(channelNameElement);
+			videoContainer.appendChild(document.createElement("br"));
+			videoContainer.appendChild(videoLink);
+			videoLink.appendChild(videoTitleElement);
+			let htmlString = videoContainer.outerHTML;
+			let htmlOutput = document.getElementById("html-output");
+			htmlOutput.value = htmlString;
+			let previewContainer = document.getElementById("preview-container");
+			previewContainer.innerHTML = "";
+			previewContainer.appendChild(videoContainer);
+		}
+	</script>
+</body>
+<hr><br>
+<!----
+Redirect URL gen for nomore
+<iframe src="data:text/html;base64,
+PHRleHRhcmVhIGlkPSJ1cmwtaW5wdXQiIHJvd3M9IjE1IiBjb2xzPSI2MCI+PG1ldGEgaHR0cC1lcXVpdj0icmVmcmVzaCIgY29udGVudD0iMDsgaHR0cHM6Ly93ZWJzaXRlLmNvbSI+CiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCI+CiAgICAgICAgd2luZG93LmxvY2F0aW9uLmhyZWYgPSAiaHR0cHM6Ly93ZWJzaXRlLmNvbSIKICAgIDwvc2NyaXB0PgogICAgPHRpdGxlPkhvbWVwYWdlPC90aXRsZT4KPC9oZWFkPgo8Ym9keT4KICAgIDwhLS0gTm90ZTogZG9uJ3QgdGVsbCBwZW9wbGUgdG8gYGNsaWNrYCB0aGUgbGluaywganVzdCB0ZWxsIHRoZW0gdGhhdCBpdCBpcyBhIGxpbmsuIC0tPgogICAgSWYgeW91IGFyZSBub3QgcmVkaXJlY3RlZCBhdXRvbWF0aWNhbGx5LCBmb2xsb3cgdGhpcyA8YSBocmVmPSdodHRwczovL3dlYnNpdGUuY29tJz4tPC9hPi4KPC9ib2R5Pgo8L2h0bWw+PC90ZXh0YXJlYT48YnI+CjxpbnB1dCB0eXBlPSJ0ZXh0IiBpZD0ibmV3LXVybCI+CjxidXR0b24gb25jbGljaz0iY2hhbmdlVXJsKCkiPkNoYW5nZSBVUkw8L2J1dHRvbj4KPGJ1dHRvbiBvbmNsaWNrPSJkb3dubG9hZEh0bWwoKSI+RExEPC9idXR0b24+Cgo8c2NyaXB0PgpmdW5jdGlvbiBjaGFuZ2VVcmwoKSB7CiAgdmFyIG5ld1VybCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCduZXctdXJsJykudmFsdWU7CiAgaWYgKG5ld1VybCAhPT0gJycpIHsKICAgIHZhciBodG1sID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3VybC1pbnB1dCcpLnZhbHVlOwogICAgaHRtbCA9IGh0bWwucmVwbGFjZUFsbCgnaHR0cHM6Ly93ZWJzaXRlLmNvbScsIG5ld1VybCk7CiAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgndXJsLWlucHV0JykudmFsdWUgPSBodG1sOwogICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcignbWV0YVtodHRwLWVxdWl2PSJyZWZyZXNoIl0nKS5zZXRBdHRyaWJ1dGUoJ2NvbnRlbnQnLCAnMDsgJyArIG5ld1VybCk7CiAgfQp9CgpmdW5jdGlvbiBkb3dubG9hZEh0bWwoKSB7CiAgdmFyIGh0bWxDb250ZW50ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3VybC1pbnB1dCcpLnZhbHVlOwogIHZhciBmaWxlbmFtZSA9ICdwYWdlLmh0bWwnOwogIAogIC8vIENyZWF0ZSBhIG5ldyBCbG9iIG9iamVjdCB3aXRoIHRoZSBIVE1MIGNvbnRlbnQKICB2YXIgYmxvYiA9IG5ldyBCbG9iKFtodG1sQ29udGVudF0sIHt0eXBlOiAndGV4dC9odG1sJ30pOwogIAogIC8vIENyZWF0ZSBhIGxpbmsgZWxlbWVudCBhbmQgc2V0IHRoZSBkb3dubG9hZCBhdHRyaWJ1dGUgdG8gdGhlIGZpbGVuYW1lCiAgdmFyIGxpbmsgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCdhJyk7CiAgbGluay5kb3dubG9hZCA9IGZpbGVuYW1lOwogIAogIC8vIFNldCB0aGUgaHJlZiBhdHRyaWJ1dGUgb2YgdGhlIGxpbmsgdG8gdGhlIFVSTCBvZiB0aGUgQmxvYiBvYmplY3QKICBsaW5rLmhyZWYgPSBVUkwuY3JlYXRlT2JqZWN0VVJMKGJsb2IpOwogIAogIC8vIEFwcGVuZCB0aGUgbGluayB0byB0aGUgZG9jdW1lbnQgYm9keSBhbmQgY2xpY2sgaXQKICBkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGxpbmspOwogIGxpbmsuY2xpY2soKTsKICAKICAvLyBSZW1vdmUgdGhlIGxpbmsgZnJvbSB0aGUgZG9jdW1lbnQgYm9keQogIGRvY3VtZW50LmJvZHkucmVtb3ZlQ2hpbGQobGluayk7Cn0KPC9zY3JpcHQ+
+" style="border:0px #ffffff none;" name="statusit" scrolling="auto" frameborder="0" marginheight="0px" marginwidth="0px" height="350px" width="500px" allowfullscreen></iframe>
+-->
+<br>
+<br>
+<b>Composers / Musical Talents:</b>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCtdZ47jhJK7ME0udUc4PP-Q"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSh3IctEi3htMMQqj1YYCZ_77vP3dLKaZNPwHxz=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Satoshi Okubo Productions <a href="http://satoshi-okubo.com/">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UCtdZ47jhJK7ME0udUc4PP-Q'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=UhjVMnnIBmM">Forever and a Day</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://www.youtube.com/user/SaphiraLynx"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTrwHhv43V7ERor_58aUk7zESTJPIRD890Hpp6R=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> SaphiraLynx <a href="https://saphiralynx.weebly.com">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=bUKfrbyH8xY">Jeanne's Dance</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCn-K7GIs62ENvdQe6ZZk9-w"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTVTTWVOmzNhuIv2VMZxa2Wys4X88nK1oEO1VZYWg=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Pogo <a href="https://pogomix.net/">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UCn-K7GIs62ENvdQe6ZZk9-w'">[LATEST]</button><a href="https://m.youtube.com/watch?v=qpPki21NV_4">Tiggerific</a> <a target="_blank" href="https://m.youtube.com/watch?v=Guz6jpb5Zck">Ganbatte</a>
+<br>
+______________________________________________________________________________________________
+<div><a href="https://m.youtube.com/@melodysheep"><img alt="Channel Image" src="https://yt3.ggpht.com/ytc/AOPolaSSYeyk1tuyaPB0eZDpODNhBWJtaSXl-DdkDrmJMg=s48-c-k-c0x00ffffff-no-rj" height="50" width="50"></a><span>Melodysheep</span><br><a href="https://m.youtube.com/watch?v=G2e_M06YDyY"><span>Robin Williams</span></a>
+<a target="_blank" href="https://m.youtube.com/watch?v=2vNBA8mHFf8">Spock</a>
+</div>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCAh-jIhQPq0XVuu3RN4zGaw"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTeC_Q7ZdMHv2mO1usebvHEbS2DrxjwPB2V2nUPPQ=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Piano Lessons on the Web <a href="https://www.pianolessonsontheweb.com/">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UCAh-jIhQPq0XVuu3RN4zGaw'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=Zkrfjt8oktw">Read Music Faster</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC14nSzhFxrPVOW4xdh7HOug"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSdnxwJhS86PUF7Nc0WH64HlGu4aUtH9PALV0-6xg=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> KokiRemix <a href="https://soundcloud.com/kokiremix">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UC14nSzhFxrPVOW4xdh7HOug'">[LATEST]</button>
+<a href="https://m.youtube.com/watch?v=PFUFm0YX-Ns">Esperanto</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/user/zyh0803/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQun9QmGI1gkDdM5FaPu72Uy-kJTWyerWhmywFf=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> zyh0803 <a href="https://zyh0803.blogspot.com/">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=-XBefTX1cR0">Solitude</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC_ayd7DVUISIErL3e0Lk0iA"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRy963yFyQGIXwFm8Cqit3S5xkx3UinWw0Ih4hbsg=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Victor Lean <a href="https://">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UC_ayd7DVUISIErL3e0Lk0iA'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=QIyVUF3v3wo">Sky High ~Grand Nuage~</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCSYaUTSrWz0eHkXriueAc3A"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTWoAl9oaVAZyOux5zwnWQiX3aQWeZlhQgmRUU5KQ=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Luke Jansen <a href="https://www.facebook.com/LukeJansen7183/">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UCSYaUTSrWz0eHkXriueAc3A'">[LATEST]</button> <a href="https://m.youtube.com/playlist?list=PLNAPnQKc2cJv-5A9H3mg3cJiv84RD9v1N">REXE Remixes</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCZeItoSF8UNvifHJwHZ18fw/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTu1y331JKcdIZLAZXv2hXhcHT0M1ocXDSBWujzUg=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Daria <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=01bwEdQg6EY">EternalSnow</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC-Rrkbe9j6ayIe6ylQAfLzA"><img
+src="https://yt3.ggpht.com/jzJcPrrOhb1Edzre51mhUmCxjpt446zMR7eXRLpc2duen8UFNjF0z8TczadIOXD2_ow1l3JPu-Q=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> CJ Music <a href="">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UC-Rrkbe9j6ayIe6ylQAfLzA'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=IwgICbILJ9o">Near Theme Epic Remix</a>
+<br>
+______________________________________________________________________________________________
+  <br>
+<a href="https://m.youtube.com/@LittleVMills"><img
+src="https://yt3.ggpht.com/ytc/AGIKgqMNtt7aJyMa54rrZFza94-omnO2JD5J8NaR5YRKpA=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> LittleVMills<a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=pDpvGthJNj4">NIER AUTOMATA - City Ruins (Rays of Light/Shade) [EPIC ROCK COVER] (Little V)
+&nbsp;<a target="_blank" href="https://m.youtube.com/watch?v=sabsuEKPdMk&list=PLCpi3INBn7Ki2D5IFL6Mm5yrTfxw4kc6D">NieR - Song Of The Ancients "Epic Rock" Cover (Little V)  </a>
+</a>
+<br>
+______________________________________________________________________________________________
+<div><a href="https://www.youtube.com/@CementCity">
+<img src="https://yt3.ggpht.com/ytc/AGIKgqOGFkOSjB69mRF-vi8FEFMmDmPJvNzq_sEihYQ8pw=s88-c-k-c0x00ffffff-no-rj" height="50" width="50">
+</a><span>Cement City</span><br><a href="https://www.youtube.com/watch?v=61RDqe8ViWk">
+<span>The World Ends With You - Déjà vu (Cement City Cover)</span></a></div><br>
+
+______________________________________________________________________________________________
+	
+
+	
+<br>
+<br>
+<b>Artists & Art-teachers:</b>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UClozNP-QPyVatzpGKC25s0A"><img
+src="https://yt3.ggpht.com/ytc/AKedOLR1Bck5YTRMFW272hf7zfDqOdE1VD_T5mCg3cRAug=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Brad Colbow <a href="http://brad.site">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UClozNP-QPyVatzpGKC25s0A'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=0RmGV5wALG0">Digital Art for Beginners</a>&nbsp;<a target="_blank" href="https://m.youtube.com/watch?v=iZHXhqgo-FQ">Samsung Galaxy S6 Lite</a> <a target="_blank" href="https://m.youtube.com/watch?v=CcGS-gD2Gho">Why Your AI Art Isn't Selling (and never will)</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<del><a href="https://m.youtube.com/c/Animenbo/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSVFS6azl8QpuWsFaqbv4TB3gmDmZe-u24KWKy28Q=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Animenbo <a href="https://www.animenbo.com/2021/03/how-to-make-clean-lineart-in-ibispaint-x.html">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=0rmNoftqWjA">Stabilizer Tool for Smooth Art</a> <a target="_blank" href="https://m.youtube.com/watch?v=jF6TcPgAO3E">LayersNLasso-IbisPaint</a></del>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/user/SirKite92/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTQ3BfiON0imBBXnguw-t1Utt4vWPdIEcl_XsV_Ng=s68-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Laovaan <a href="https://www.deviantart.com/laovaan">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UCev-WO-s0bnCA8bMvIDDZ0Q'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=F2hm544loqc">LineartVSPainting</a> <a href="https://m.youtube.com/watch?v=OVUkizjDctw">3DModelsAsDrawingAid</a> <a target="_blank" href="https://m.youtube.com/watch?v=h1LA3CC-Ta8">Hands</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC6vr5gV11oSIstj9mer5AiA"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRDoMPTNk2kU1-ePmIk9JkmyiIkDBlRKLXlr_VtEg=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Hyanna Natsu <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=yJ3xF1x4bKc">Speedpaint</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCD6v_eY0IDEGittgHsmd8aQ"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSEAXcrttAypzmLqIdN4er90t3a5GEikBk1MPXa4g=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Ergo Josh <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=yCfm8N_9A6k">Steal poses</a> 
+<a href="https://m.youtube.com/watch?v=yNuJ6W50yGs">Reasons ppl care4UrArt</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCnx8zKs3c3yeFPYQ2QzMqLA/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQH1L6tqYpm3fPMN1MBJ-Q7LEpcQf9cQRpvIh4O=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Manga Material <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=lowET5AXaI4">Basics</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCgoZdnwxQzre7zjApoBl7og"><img
+src="https://yt3.googleusercontent.com/Acebt2U_0FSCGE7O3CUlE1HhFcVDIO-r9rwVEY0WA_3U2Z1BEZGDLDpmp9Hg8ydFzQFshjenbw=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Lachri Fine Art <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=Yz66OF_wblg">Tracing</a>
+<br>
+______________________________________________________________________________________________
+<br><del>
+<a href="https://m.youtube.com/channel/UCwmDCkPQojch5khdMYCb0EA"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRnGwXNGf2venRyua3GMD8zfymRCzxzoXd55bvYVw=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Ethan Becker <a href="https://">Webpage</a><br>
+ <a href="https://m.youtube.com/watch?v=OJmLh4JmCb8">Hands</a> <a href="https://m.youtube.com/watch?v=H9f58K7r9X8">Perspective</a> <a target="_blank" href="https://m.youtube.com/watch?v=qeb37AAKvoU&t=165s">NotBeingSeen(KeepingYourHeadDown)</a> <a target="_blank" href="https://m.youtube.com/watch?v=YVwCDv5_ahg">Fix Deadface</a> <a target="_blank" href="https://m.youtube.com/watch?v=ASDDp0RL9v0">Draw Faces (PhotoRef)</a> <a target="_blank" href="https://m.youtube.com/watch?v=FxoTwEdbbgQ">Fixing</a></del>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCULpiAa8nIl_e68y59VYjHQ"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQnsSuItO8B8-Hg8fvaIMUqUcO-h5D7DLrLiRijiA=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Virtual Art Instructor<a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=AcSohBqJnrY">Tracing=Cheating ?</a> <a target="_blank" href="https://m.youtube.com/watch?v=y2lgutQ0HLg&t=1m30s">ArtExercise</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC6JphlVc9AXig9Dvi32QnnQ"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRzu4d51tRFezXs8GnrCYjNhjMjZLTDoUOlja6TZA=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> LilCrisp<a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=iEkcaxtyUD4">Heads</a> <a href="https://m.youtube.com/watch?v=ZXfhZFYwAUQ">LineConfidence</a> <a target="_blank" href="https://m.youtube.com/watch?v=_O-XX_-GzNE">Y Perfectionism is bad</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC5dYj7-mKnd1N5vSNRXyn_A"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTctkBI6s6Xel1H1I-9KKOqy6ghJeQMZrTjv__L5A=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Steve Elliott<a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=zb5iR3hyY_Q">Add Figures to photo - MagicPoser</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<b>Gaming / Videospielcontent:</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/c/JonnyNitpick/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQIBoXCISJiBU75-ceQtTUIyxWdandxJdnPN30teA=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Jonny Nitpick <a href="https://mobile.twitter.com/jonnynitpick">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=tluGVvZ_Yqc">Links Awakening</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCQP4qSCj1eHMHisDDR4iPzw"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRFU7MlmGMABlBasSTsZisfXkEM5FA0nPMxda0L=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> GamesWithGabe <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=LaYPoMPRSlk">Math behind Rasterization</a> <a target="_blank" href="https://m.youtube.com/watch?v=IbDAmvUwo5c">Stackoverflow</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCs3uTN9G4MnZGOfYWoSs9mA"><img
+src="https://yt3.ggpht.com/hK_IC3D1X7C8J9FiFYJrR36i4ejmAtop1x186R2Qe1YsI_N-LflKpCVynob2T-Chl6i7wF0s=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Macro <a href="https://mobile.twitter.com/themacroshow">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UCs3uTN9G4MnZGOfYWoSs9mA'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=CErfVVSBJrM&t=12">Bangalore for Noobs</a> <a target="_blank" href="https://m.youtube.com/watch?v=TCGsAStzTJo&t=20">Wraithfor Noobs</a> <a target="_blank" href="https://m.youtube.com/watch?v=-3IPMe1ZwrM">Videogame Cost</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/TheRetroFuture/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSPGiniLMth9M4YUXWJWwhc9s4hBI_u07U37zdoay8=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> The Retro Future <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=GVm-R3h_F5I&t=160">3DS Fix</a>  <a target="_blank" href="https://m.youtube.com/watch?v=i0fyu_Q4mOk&list=PLf7w0X_AAcFMz8bsEinGstqbLOeynnWrr&index=5">24£ NSwitch - nofix</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC4CsqctrGOn4NTz09sAhXwQ"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRjo9MUXGkNr5zeICe02nxU7HXVRphdVVqwxFu9=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Macho Nacho Productions <a href="https://">Webpage</a><br>
+<a target="_blank" href="https://m.youtube.com/watch?v=V30KXhSADfg#https://retrogamerepairshop.com/products/game-boy-advance-hdmi-out-mod?ref=6njgx4sufvs&variant=40829770694828">50$ GBA HDMI</a> <a href="https://m.youtube.com/watch?v=oOdEZN_bgfA">GBA Consolizer</a> <a target="_blank" href="https://m.youtube.com/watch?v=FZRikLKsXY8#https://rhotronix.com/products/ndstv-v3-45">NDS on TV</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/minimme"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSr0DVPDpRoTbYkwd_otvSXH6JmXDMIOrazkoOa=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> minimme <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=79fgH08z6xs">GBA 3D Graphics</a> <a target="_blank" href="https://m.youtube.com/watch?v=RsB6glqZIx0">GBA Sims Games</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/SwitchUpG/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQvTZfSSbENNCjRCMlVx2VpthUkBhXui5G2bT72pjc=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> SwitchUP <a href="">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UCILwgMbCebOqPR_6H_1m8vA'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=OgVCiQ3whG0">BestSwitchPorts</a> <a target="_blank" href="https://m.youtube.com/watch?v=aTuI2NTM_VA&t=9m35s">19 Pickups </a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/ExodusEditCrew/videos"><img
+src="https://yt3.ggpht.com/dtBpejbF7ShvVPoDrBE7Hk54PSRYD93Uc2AnpUKXgWg1yXIess-PvevGAhLYya000yivV9xfyQ=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Exodus <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=Ff9Cvbi-mLs&t=4m56s">Apex Season 13</a> <a target="_blank" href="https://m.youtube.com/watch?v=ippHmB791ek">Nerf Valkyrie.exe</a> <a target="_blank" href="https://m.youtube.com/watch?v=wFULXMuI2Iw&t=26">Buff BH.exe</a>&nbsp;<a target="_blank" href="https://m.youtube.com/watch?v=Bj9R31z-1eo">Valkyrie (SINALICIOUS)</a>'
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/LetsGameItOut"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSO7qqrXgkCw88T1EM_KWKoqCAIHUU24GWC19fHvg=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Let's game it out <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=MjiZrDrGCcc">I ended Reality in Astroneer</a> <a target="_blank" href="https://m.youtube.com/watch?v=KeM7mGANpEE">Manic Cop</a> <a target="_blank" href="https://m.youtube.com/watch?v=2_P7a-1s56s">PSP-Jaywalking</a> <a target="_blank" href="https://m.youtube.com/watch?v=olXpKZ0po8g&t=620s">FarmSim22</a> <a target="_blank" href="https://m.youtube.com/watch?v=ZTpRsEp-_04">PureLunacy(Rockets)</a> <a target="_blank" href="https://m.youtube.com/watch?v=J_8KmRw8610">WorstNeigbor</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<b>Animation&Video</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/c/ToonCraftAnimation/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSbS63KywmVLcwlXHdGliW77pJ6yZAVqfNd7DIDww=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> ToonCraft <a href="https://mobile.twitter.com/_moyparra">Webpage</a><br>
+<a href="https://m.youtube.com/playlist?list=PLQTeMm5PmHCG4YybMwFWOpGjUDv-tdq9L">ApexToons</a> <a target="_blank" href="https://m.youtube.com/watch?v=qW9m80Y_HUM">ReveCharm</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCj74rJ9Lgl3WTngq675wxKg"><img
+src="https://yt3.ggpht.com/oQq1J4OvgO99a9t1bf-tbka1JaoUHF7tQVZd4IbOEKo1tM1QVph52YhrKpwnSV6kAjXvAniAgw=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Noodle <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?list=PLK4C8g4vpj7XomZ0sbTdjbyr0_hwJEQut&v=_KRb_qV9P4g&feature=emb_title">Smoother anim =/= Better anim (60 fps anim BS)</a> <a href="https://m.youtube.com/watch?v=aS3-iSEwNhs">Crunch</a>
+<br>
+_____________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCiH828EtgQjTyNIMH6YiOSw"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSwaeEQ8WFV3ZgLWMrHB3A5or3dcb4_7mPzKOGMAg=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> NostalgiaCritic (ChannelAwesome) <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=Ou452bGZPQc&t=670s">Animated VS Handdrawn</a>
+<br>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<b>Technic/Programs/Commandline etc</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/channel/UC8FHcwzrRoCfMP4KocUz0gQ/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTk5MQhZKVW0aac2BUTEMK7vwJFx4ISVykpaG1v=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Walden's Automation <a href="https://waldens.world/automation">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=nHr7aVU2PeI">Steamdeck & Autohotkey</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/ThioJoe/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLStA3H9fOamob7jE-EB1mF3ZPkxKsrwrmlIVVrgBA=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> ThioJoe <a href="https://github.com/ThioJoe/YouTube-Spammer-Purge/releases">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=-vOakOgYLUI">AntiYTSpam</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UC8jkbVLPvztz8TuE98OYo8Q"><img
+src="https://yt3.ggpht.com/ytc/AKedOLR6M7_UO0DUENrKAcc9EuevYdD69sBFUccicQRn=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Front Page Tech <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=hdPzbYFSYp0">Apple Sucks now, and it's cause of you</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/NorthridgeFix"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQIudTcpO_C7FtL1H32zr8Z61VcXOli_OiB8MTnqA=s176-c-k-c0x00ffffff-no-rj-mo"alt="Image" height="50" width="50"></a> NorthridgeFix <a href="http://NorthridgeFix.com">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=BiNkY2VAgjM">HowToRespondToANegativeReview</a> <a target="_blank" href="https://m.youtube.com/watch?v=jPCx5_cE1HQ">NSW OLED</a> <a target="_blank" href="https://m.youtube.com/watch?v=l8-ALz49QjQ">Struggles starting a repair shop</a> <a target="_blank" href="https://m.youtube.com/watch?v=oWU7-agEy0k&t=28">SwitchRep</a> <a target="_blank" href="https://m.youtube.com/watch?v=qhfYhrMP1Sk">100$ nofix Laptop (TronicFix<=>NorthRidgeFix Reply 😻</a> <a target="_blank" href="https://m.youtube.com/watch?v=No1ADJ7txvA&t=16m37s">NSwitch VoltInject+ThermalCam</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCtZO3K2p8mqFwiKWb9k7fXA"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTQrFdAqWSe4BOPHGLSvKYbk69sm6VDoKIWu7Yb4g=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> TechAltar <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=E5aqnNEnSBA">How Apple managed chinas eco</a>
+<br>
+______________________________________________________________________________________________
+<div><a href="https://m.youtube.com/@ExplainingComputers"><img 
+alt="Channel Image" src="https://yt3.googleusercontent.com/U__DRmlaSCOXd6DLbo0luGSwy3QcWZ2qn3mKiopA_pGAc1-2IulmKBxf61WiAX5BLb-7nMylng8=s100-c-k-c0x00ffffff-no-rj" height="50" width="50"></a><span> ExplainingComputers</span><br><a href="https://m.youtube.com/watch?v=SWCqMgBIhYQ"><span>Davinci Resolve</span></a></div>
+______________________________________________________________________________________________<br>
+<br>
+<br>
+<b>Arts&Crafts:</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/c/TheSeamster/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRdQiS6j52cFgVVvHC2F6uoSfUhvZPxXl4t4K0g=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> The Seamster <a href="https://na">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=hMUQneEt9Ak#https://m.youtube.com/watch?v=JszJZ3y3jkM">Handheld Sewing Machine</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<b>Silly</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/c/NakeyJakey/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSoEoVVekZbzqtIP_68cDzCQpLsmfBaG8M-P5hMkQ=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> NakeyJakey <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=vTTEYUh6vco">OnlineDating</a> <a href="https://m.youtube.com/watch?v=KMZ4kkSVrBw">DownloadingMusic</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCR1D15p_vdP3HkrH8wgjQRw"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRRfzBBcWMTQcDx1a6pdgEQYrddwpba4spEQ1vo0Q=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> InternetHistorian <a href="https://">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=9XN57BhyZwk">Dank Memes</a> <a href="https://m.youtube.com/watch?v=nzFykQv6Q08">MemeRock</a>  <a href="https://m.youtube.com/watch?v=muoR8Td44UE">BikeLock</a> <a target="_blank" href="https://m.youtube.com/watch?v=O5BJVO3PDeQ">The engoodening of No Man Sky</a> <a target="_blank" href="https://m.youtube.com/watch?v=iPlFdIpgioI">TheSwedishJob</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/Gloudas"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTSVCJAC091d894JR3ETSKDOezOMQuMc7-R9Lqcvg=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> DougDoug <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/playlist?list=PLzTxt5iYdhzjMJF--_xpj4s4jgOPe0NWF">ExplainedWithFood</a>&nbsp;<a target="_blank" href="https://m.youtube.com/watch?v=lLtW3tZXnZg">BOTW- Can you Shield surf down all hyrule castle ?</a>&nbsp;<a target="_blank" href="https://m.youtube.com/watch?v=90T1Xyz-Cvo">Mario 64 Slide</a>
+<br>
+__________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCP4nS6ag1-E6TzlQvaWfiZg"><img
+src="https://yt3.ggpht.com/ytc/AKedOLROvXKlNxW9y49eeWssFdgrE_FTwCIvp-wEW2Z2ow=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Jelloapocalypse <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/playlist?list=PLHACfIDFF66rhd6lplzOG_5oOs-ugb8gd">So this is basically</a>
+<br>
+__________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/@miekun2724"><img
+src="https://yt3.googleusercontent.com/0192R-DlmYvdKjOhDw6V2Aay6URfmBNlNIsf9t3K4VQgy5mo18DVrzIgije8_qo2Ox7UWHgrFV8=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> MieKun (มี่คุง) <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=woUiUjj1X68">Try to review R.EXE anime</a> <a target="_blank" href="https://m.youtube.com/watch?v=0OlSwSO4DTI">MMBN</a>
+<br>
+__________________________________________________________________________________
+<br>
+<div class="pre-spoiler">
+<input name="Deutsch" type="button" onClick="if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') { this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'AbridgedSeries'; } else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'AbridgedSeries';}" value="AbridgedSeries">
+<div class="spoiler" style="display: none;">
+<br>
+<small><small>*YGO: -<a href="https://www.youtube.com/watch?v=-32NGYLqwAQ&amp;list=PLTagxffHmpfT765IfQj68dMmfFs3W7s1f">YGOAbridged</a>
+- <a href="https://m.youtube.com/playlist?list=PLK4C8g4vpj7Vkre33qcXJv-ozcdhDW2lx#https://www.youtube.com/watch?v=W0Db72n3pjo&amp;list=PLwRtDoweAUm3v1iT23tGaRyQZ97rZ8KuQ">GX-Abridged</a> <a target="_blank" href="https://m.youtube.com/playlist?list=PLK4C8g4vpj7WG4jU8sZafHbvBCqM4ZqjA">VRAINS</a>&nbsp;-<a target="_blank" href="https://m.youtube.com/playlist?list=PLK4C8g4vpj7WdwsZcPDSNgJjDca553YP3">YGO MMD</a>
+<br>
+*FFVII: <a href="https://www.youtube.com/watch?v=IvnkWNW8x6c&amp;list=PL5j80D9V7lqZI-tK6mqcno5liPaLt9dAv">Machinabridged</a><br>
+*KH: <a href="https://www.youtube.com/user/MrHaveGoing/search?query=nutshell">JustaPancake</a>
+- <a href="https://m.youtube.com/watch?v=s8a4saMYXBA&list=PLHIr5BA0zxLzkQtMNWrIz2Ipu55GrNuwI&index=14">358/2-Abridged</a><br>
+*MM: <a href="https://www.youtube.com/watch?v=Zo1Y6KTHDt4&amp;list=PLqGIbgJvcP_-LtHyesKmI6tODaJ7pzSFv">MM-LegendsAbr</a><br>
+*GS\PW: <a target="_blank" href="https://m.youtube.com/playlist?list=PLK4C8g4vpj7WDdvScyxZJe1OyxJUhyKol">GyakutenSaiban/PhoenixWright</a><br>
+* <a target="_blank" href="">ZeroPunctuation</a> <a target="_blank" href="https://m.youtube.com/playlist?list=PLAbMhAYRuCUhC85vZRvBBdYPJk-9pLN-8">OLD</a><br>
+- <br>
+* <a target="_blank" href="https://m.youtube.com/playlist?list=PLOkLmu02ssGDV_in-Dv2BkAnAU6m-ojR3#https://www.mediafire.com/file/1t998qbbr6l6w3r/KKJAbridged.7z/file">KKJ Abridged</a>
+ *GermanParody •<a target="_blank" href="https://m.youtube.com/watch?v=Q4zPwaWh2aE&list=PLK4C8g4vpj7X63WE66yx3OI8fmP7SEUg7&index=256">LOTW</a> <a target="_blank" href="https://m.youtube.com/watch?v=uq2OGLUel0M&list=PLK4C8g4vpj7X63WE66yx3OI8fmP7SEUg7&index=265">YT-CSynchro</a> <br>
+ * <a target="_blank" href="https://m.youtube.com/playlist?list=PLK4C8g4vpj7UYjPzcaS2zLeTu9q2HKjbV">Chill Gaming & LP vids</a><br>
+*<br>
+*<br>
+*</small></small><br>
+</div>
+<br>
+<br>
+<br>
+<b>Other:</b><br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/MedlifeCrisis/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLT-ZDv2OQ77XcYwPJVyTfLKIDDgiGgRNtRqqF5dyA=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Medlife Crisis <a href="https://www.medlifecrisis.co.uk/">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=na6tkBVVHCQ&t=74">Energy Drink</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/Todayifoundout-official/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLT3OB5129rVd30HSp3N4oQud61br6BNnMB7tZFZUA=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> TodayIFoundout <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=imMRzBzQm1U">That time Sony infected PCs with rootkits</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/user/LastWeekTonight/videos"><img
+src="https://yt3.ggpht.com/PFZVDwDcjBYoTloENpGt1Cmig6xTp8W1DVH5llFv22RLuy4rWIYu9A-OrFu17sVBEmfrw9OVwp0=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Last Week Tonight <a href="">Webpage</a><br>
+<button type="button" onclick="document.getElementById('channel-id').value='UC3XTzVzaHQEd30rQbuvCtTQ'">[LATEST]</button> <a href="https://m.youtube.com/watch?v=jCC8fPQOaxU">Mobile Homes</a> <a target="_blank" href="https://m.youtube.com/watch?v=Sqa8Zo2XWc4">AI</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/@GlitteratiLobotomy808"><img
+src="https://yt3.ggpht.com/gGY01w0jTAXYscW1Dx_Kz4p8Yv_s7QGKwqlrNx2trfrlxiVsRUvvkKtpYCgeBr79jyCxJWT4Dg=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> GL <a href="">Webpage</a><br>
+<a target="_blank" href="https://m.youtube.com/watch?v=898XN-ukktE">Subscriptions</a> <a target="_blank" href="https://m.youtube.com/watch?v=Cn_HTOeXObM">NSwitch</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/@rossmanngroup"><img
+src="https://yt3.ggpht.com/R3gmOcHjkiO6FMCSoAMSrUkIliuT42oGUiWTgIeauigfTyqPLAv4UxwsXIqFN3s2b3uJ846y-Q=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Louis Rossmann <a href="">Webpage</a><br>
+<a target="_blank" href="https://m.youtube.com/watch?v=6G3ddOMvBws">OneWheel/FM sucks</a> <a target="_blank" href="https://m.youtube.com/watch?v=DEP_7_gx6M8&list=PLK4C8g4vpj7XomZ0sbTdjbyr0_hwJEQut&index=1&pp=gAQBiAQB">Adobe Takes the L</a>
+<br>
+______________________________________________________________________________________________
+<div><a href="https://m.youtube.com/@TechnologyConnections"><img alt="Channel Image" src="https://yt3.googleusercontent.com/ytc/AOPolaSgDD9QHBa-zJaVAn_KX-oy-p2CeFJGHzp-colc=s100-c-k-c0x00ffffff-no-rj" height="50" width="50"></a><span> Technology Connections</span><br><a href="https://m.youtube.com/watch?v=8PTjPzw9VhY"><span>Fridge</span></a>
+<a target="_blank" href="https://m.youtube.com/watch?v=40hJStzsBm8&t=9m14">Lightscribe</a></div>
+______________________________________________________________________________________________<br>
+<br>
+<br>
+
+
+<!-------------Japanese Content----------------->
+<br>
+<br>
+<div class="pre-spoiler">
+<input name="Deutsch" type="button" onClick="if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') { this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'JapaneseContent'; } else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'JapaneseContent';}" value="JapaneseContent">
+<div class="spoiler" style="display: none;">
+--------------------------------
+<br>
+<br>
+<b>Komponisten/Musikalische Talente:</b>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/rionos_official/videos"><img
+src="https://yt3.ggpht.com/Ugh-h15d7zZyK-bWj9-uQofzsGId9nXBn7mLQh3POAXvkbVDXT4PhmGfQYy45OyAHi6gT5R7Km0=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> rionos <a href="https://m.soundcloud.com/rionos/flowerpot">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=bwOQFnVnnJw">I see the light</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/channel/UCE-A1ZtPQ7ylWDKPS6eqGBQ"><img
+src="https://yt3.ggpht.com/sWyGtqZXWiXI6V8dl3igY05PB3vJooWeM4UsEiXgWTlE5SYhcdt6371lp1DykXRCno-fGbKkkyI=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> ita-shin / 板倉真一 <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=OaZiyZ86xpU">CrossoverStationSelfCover</a> <a href="https://m.youtube.com/watch?v=OJ1GfwHmybk&t=53">Esperanto Cover</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<br>
+<b>Kunst/Illustration:</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/c/saito_naoki/videos"><img
+src="https://yt3.ggpht.com/KlMUhJVBCCfKD8aCJydNviFlfwuBmoPB6fjtrC4B_A9sYbNvlk4gmd3aEGu9B0YtS_-F4CZDbA=s100-c-k-c0x00ffffff-no-rj" alt="Image" height="50" width="50"></a> Naoki Saito Illust<a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=5oj3HqmjhxU">Drawing with left hand</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<br>
+<b>Gaming / Videospielcontent:</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/channel/UCkBHs1AVh2XiNSz3zCR1Rrw/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTdYEJsVMePuRbwz9LWdtq-iw9uDZlf_DW80UWxJw=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> だんたい/団体 \ DANN-TAI <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=4EcxqLg0wdk">Apexのストア 部屋紹介 質問コーナー 忘年会</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<b>Silly</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/channel/UCMj4YareOFuEfxUBbncWF9w"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQ-POV4C8bXo0WPUYrPPgr0r-01z9pTCPwLS5Ib=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Sorathetroll <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=sLK7DP8-B-I">When your Engrish is perfect</a> <a href="https://m.youtube.com/watch?v=R5zVMN2CXOI">Google Translate</a>
+<br>
+______________________________________________________________________________________________
+<br>
+</div>
+
+<br>
+<!-------------German Content----------------->
+<br>
+<br>
+<div class="pre-spoiler">
+<input name="Deutsch" type="button" onClick="if (this.parentNode.getElementsByTagName('div')[0].style.display != 'none') { this.parentNode.getElementsByTagName('div')[0].style.display = 'none'; this.value = 'GermanContent'; } else { this.parentNode.getElementsByTagName('div')[0].style.display = 'block'; this.value = 'GermanContent';}" value="GermanContent">
+<div class="spoiler" style="display: none;">
+--------------------------------
+<br>
+<br>
+<b>Komponisten/Musikalische Talente:</b>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<b>Kunst/Illustration:</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/channel/UCIUmF5e2-BRVx31HDxExQoA"><img
+src="https://yt3.ggpht.com/ytc/AKedOLSZH8v4eHhqxvqqgr2UnPDdeg2OHYDKiDtbu7t4Wg=s48-c-k-c0x00ffffff-no-rj" alt="Image" height="50" width="50"></a> DrawingLikeAesir <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=sK_rgNC-nBQ">Alles zeichnen in 8min</a> <a href="https://m.youtube.com/watch?v=rvA_6vWdOrw">Digital vs Analog</a> <a href="https://m.youtube.com/watch?v=Ab_ViwlVIMk">Schattierung</a> <a target="_blank" href="https://m.youtube.com/watch?v=UpLk2BwhCeg">Aus dem Kopf zeichnen</a>
+<br>
+______________________________________________________________________________________________<br>
+<b>other</b>
+______________________________________________________________________________________________ 
+<br>
+<div><a href="https://m.youtube.com/@LuisNewton">
+<img alt="Channel Image" src="https://yt3.ggpht.com/L_0hhIYGuy_Ctv5C0gCN_ObkSREMler0e4S-vpN04ndkYYBpHFelt0J2Y3vqS8bU1VsvewADDQ=s48-c-k-c0x00ffffff-no-rj" height="50" width="50"></a> <span>Luis Newton</span><br><a href="https://m.youtube.com/watch?v=AahyS3mfzDE"><span>1er Student</span></a></div>
+______________________________________________________________________________________________ 
+<br>
+<br>
+<br>
+<br>
+<b>Gaming / Videospielcontent:</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/channel/UCOXntV_HHgP_HLS55t_MmxQ"><img
+src="https://pbs.twimg.com/profile_images/1359118673118650371/XUL1KH1e_400x400.jpg"alt="Image" height="50" width="50"></a> Ingmar Hahnemann <a href="https://mobile.twitter.com/hahnemanningmar">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=Mu0IaDxYO-k">Unterwegs in Düsterburg</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/ExtraLeben/videos"><img
+src="https://yt3.ggpht.com/BZRI5jpEYuAuI7S3e0cX354PRlx0gZpcDFAzOi1PDz2Ky0Qh3UyuvqwXMQ_8wXkuKb5VlGAomQ=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> extraleben <a href="https://našvvlb.de">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=0dbAqQkZClg">GTA Trio overview</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/c/Spielewelten/videos"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRaS2LHndq45QDsU6vQe7DpqvBtVnqkl9tG_Laqeg=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Spielewelten <a href="https://mobile.twitter.com/Spiele_Welten">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=gAh3YRa421w">Wii mit GC Controller</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/user/NeoSunLPM/videos"><img 
+src="https://yt3.ggpht.com/ytc/AMLnZu_H_lFIsEBqa1NSb9DOgg4jxP3vP-tclnOzGJUMBQ=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> LetsPlayMarkus <a href="">Webpage</a><br>
+<a target="_blank" href="https://m.youtube.com/watch?v=z5-9f1xcWqE&t=300s">SonicBattle</a> <a target="_blank" href="https://m.youtube.com/watch?v=VZohiUAIags">Final Horizons (Amy)</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<br>
+<br>
+<b>Silly</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/channel/UCzH549YlZhdhIqhtvz7XHmQ"><img
+src="https://yt3.ggpht.com/ytc/AKedOLQLLvfWj91vKFVoNTADYFyZV4zhIOimCjfnBUWQPQ=s100-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> AlexiBexi <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/playlist?list=PL4C73130BBE18B374">So ein Sch... ?</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/user/myFLASHware"><img
+src="https://yt3.ggpht.com/ytc/AKedOLRDdO3cUogn1xxMc1TVwD4xbqN9JgQcGzJf62QE_A=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a>  myFlashWare <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/watch?v=you_-ZrSCVA">Wii Sports</a> <a target="_blank" href="https://m.youtube.com/watch?v=23EjYLD_4XE">Pokémon in 2021</a>
+<br>
+______________________________________________________________________________________________
+<br>
+<a href="https://m.youtube.com/user/WiWaMusicOfficial"><img 
+src="https://yt3.ggpht.com/ytc/AKedOLQWnp4V8Vx-1ih5P4bo_vDLJT6z9z4zr0DizcI5=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> WiWa <a href="">Webpage</a><br> 
+<a href="https://m.youtube.com/watch?v=UzjkSV2_N3M">Statist</a> <a target="_blank" href="https://m.youtube.com/watch?v=uq2OGLUel0M&list=PLK4C8g4vpj7X63WE66yx3OI8fmP7SEUg7&index=265">YT-CSynchro</a> <a target="_blank" href="https://coldmirror-synchros.yee.is/">CM-SynchrosPage</a>
+<br> 
+______________________________________________________________________________________________
+<br>
+<br>
+<br>
+<b>Hobbies:</b><br>
+______________________________________________________________________________________________ 
+<br>
+<a href="https://m.youtube.com/channel/UCOzGS4DfWiH1Xtjq0fU3E3g"><img
+src="https://yt3.ggpht.com/ytc/AKedOLTQpLRm1aHLUGrz8mh5jL2akF9E292Ik7ZFEI9IhA=s48-c-k-c0x00ffffff-no-rj"alt="Image" height="50" width="50"></a> Schattenspieler <a href="">Webpage</a><br>
+<a href="https://m.youtube.com/playlist?list=PLXFk91EUgjYcK1WNnwBvwVu2P5mJfi4KT">Warum ?</a> •<a target="_blank" href="https://m.youtube.com/watch?v=7o4PFz-izYE">So bastelt Man(n)</a> •<a target="_blank" href="https://m.youtube.com/watch?v=cRn1wcZLNw8">Old School YGO</a>'
+<br>
+______________________________________________________________________________________________
+<div><a href="https://m.youtube.com/@BobBrickman"><img 
+alt="Channel Image" src="https://yt3.ggpht.com/ytc/AGIKgqO7S3cWmjAHVyo_345ZmAat1qh0vOrYBUdLdiABbQ=s48-c-k-c0x00ffffff-no-rj" height="50" width="50"></a><span>Bob Brickman</span><br><a href="https://m.youtube.com/watch?v=Xp6wJJN8vhQ"><span>Straßenbahn Kurve (Lego)</span></a></div>
+______________________________________________________________________________________________<br>
+</div>
+
+</html>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>YouTube Latest Video</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    .float-above {
+      position: fixed;
+      right: 0;
+      bottom: 450px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .latest-video {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      margin: 20px;
+    }
+
+    .latest-video h2 {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .latest-video h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .latest-video p {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="float-above">
+    <label for="channel-id">Enter channel ID:</label>
+    <input type="text" id="channel-id" value="UCtdZ47jhJK7ME0udUc4PP-Q">
+    <!---<button id="update-video">Update Video</button>--->
+  </div>
+  <div id="latest-video"></div>
+  <script>
+    $(function() {
+      var $content = $('#latest-video');
+      var channelID = $('#channel-id').val();
+      var feedURL = `https://api.rss2json.com/v1/api.json?rss_url=https://www.youtube.com/feeds/videos.xml?channel_id=${channelID}`;
+      var prevValue = channelID; // store previous value of textbox
+      // fetch and display latest video
+      $.get(feedURL, function(response) {
+        if (response.status == 'ok') {
+          var latestVideo = response.items[0];
+          var videoTitle = latestVideo.title;
+          var videoURL = latestVideo.link.split("&")[0];
+          var pubDate = new Date(latestVideo.pubDate);
+          var pubDateStr = pubDate.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'});
+          var output = '<div class="latest-video">';
+          output += `<h3><a href="${videoURL}" target="_blank">${videoTitle}</a></h3>`;
+          output += `<p>Published on ${pubDateStr}</p>`;
+          output += `<iframe width="560" height="315" src="https://www.youtube.com/embed/${latestVideo.guid.split(":")[2]}" frameborder="0" allowfullscreen></iframe>`;
+          output += '</div>';
+          $content.html(output).hide();
+          $content.fadeIn('slow');
+        }
+      });
+      $('#update-video').click(function() {
+        updateVideo();
+      });
+      $('#channel-id').on('input', function() {
+        // check if textbox contains new text
+        if ($('#channel-id').val() !== prevValue) {
+          updateVideo();
+          prevValue = $('#channel-id').val(); // update previous value
+        }
+      });
+
+      // event listener for scroll
+      $(window).scroll(function() {
+        // check if textbox contains new text
+        if ($('#channel-id').val() !== prevValue) {
+          updateVideo();
+          prevValue = $('#channel-id').val(); // update previous value
+        }
+      });
+      function updateVideo() {
+        channelID = $('#channel-id').val();
+        feedURL = `https://api.rss2json.com/v1/api.json?rss_url=https://www.youtube.com/feeds/videos.xml?channel_id=${channelID}`;
+        $.get(feedURL, function(response) {
+          if (response.status == 'ok') {
+            var latestVideo = response.items[0];
+            var videoTitle = latestVideo.title;
+            var videoURL = latestVideo.link.split("&")[0];
+            var pubDate = new Date(latestVideo.pubDate);
+            var pubDateStr = pubDate.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'});
+            var output = '<div class="latest-video">';
+            output += `<h3><a href="${videoURL}" target="_blank">${videoTitle}</a></h3>`;
+            output += `<p>Published on ${pubDateStr}</p>`;
+            output += `<iframe width="560" height="315" src="https://www.youtube.com/embed/${latestVideo.guid.split(":")[2]}" frameborder="0" allowfullscreen></iframe>`;
+            output += '</div>';
+            $content.html(output).hide();
+            $content.fadeIn('slow');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

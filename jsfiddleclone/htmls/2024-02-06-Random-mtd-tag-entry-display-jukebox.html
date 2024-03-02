@@ -1,0 +1,43 @@
+<a href="?tag=https://urusai.social/api/v1/timelines/tag/RamblingsAlcea">xmpl<a><br>
+
+
+<div id="entryContainer"></div>
+<script>
+  async function displayRandomEntry() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tag = urlParams.get("tag");
+    let randomInstanceUrl;
+    if (tag) {
+      randomInstanceUrl = `${tag}`;
+    } else {
+      const instances = [
+        "https://urusai.social/api/v1/timelines/tag/CurrListeningAlcea",
+        "https://mastodon.social/api/v1/timelines/tag/CurrListeningRyeDai",
+        "https://pb.todon.de/api/v1/timelines/tag/CurrListeningAlcea"
+      ];
+      randomInstanceUrl = instances[Math.floor(Math.random() * instances.length)];
+    }
+    try {
+      const response = await fetch(randomInstanceUrl);
+      const data = await response.json();
+      const randomEntry = data[Math.floor(Math.random() * data.length)];
+      //let entryContent = randomEntry.content.replace(/<br(\s*\/)?>/g, "").replace(/<\/?p>/g, "");
+      let entryContent = randomEntry.content;
+      const entryContainer = document.getElementById("entryContainer");
+      if (entryContainer) {
+        const entryLink = document.createElement("a");
+        entryLink.href = randomEntry.url;
+        entryLink.target = "_blank";
+        entryLink.textContent = "->";
+        entryContainer.innerHTML = entryContent;
+        entryContainer.appendChild(entryLink);
+      } else {
+        console.log("Entry container not found.");
+      }
+    } catch (error) {
+      console.error("Error fetching the entry:", error);
+    }
+  }
+  displayRandomEntry();
+</script>
+

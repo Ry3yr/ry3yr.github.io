@@ -1,0 +1,21 @@
+<!--https://github.com/sdepold/jquery-rss-->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-rss/4.3.0/jquery.rss.min.js"></script>
+  <script>
+    jQuery(function($) {
+      $("#rss-feeds").rss("https://www.youtube.com/feeds/videos.xml?channel_id=UCmIpOnd5BVx5Si2hp0WNKZw", {
+        limit: 10,
+        entryTemplate: '<div><a href="{url}" target="_blank">{title}</a><p>{shortBodyPlain}</p></div>'
+      });
+    });
+  </script>
+</head>
+<body>
+  <div id="rss-feeds"></div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+
+<!--
+<a target="_blank" href="https://ry3yr.github.io/ytsearch">YT General Search</a><br>
+<a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/ytchannelsearch-dkpr.html">YTChannel Search</a><br>
+<a target="_blank" href="https://ry3yr.github.io/ytstudio">YTStudio Overview</a><br>-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Search</title>
+    <style>
+        .additional-info {
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <label for="api_key">API Key:</label>
+    <input type="text" id="api_key" required><br><br>
+    <label for="search_query">Search Query:</label>
+    <input type="text" id="search_query" required><br><br>
+    <label for="max_results">Max Results:</label>
+    <input type="number" id="max_results" min="1" max="50" value="50" required><br><br>
+    <input type="checkbox" id="show_additional_info">
+    <label for="show_additional_info">Show Additional Info</label><br><br>
+    <button onclick="searchYouTube()">Search</button>
+    <br><br>
+    <div id="results"></div>
+
+    <script>
+        function searchYouTube() {
+            var apiKey = document.getElementById('api_key').value;
+            var searchQuery = document.getElementById('search_query').value;
+            var maxResults = document.getElementById('max_results').value;
+            var showAdditionalInfo = document.getElementById('show_additional_info').checked;
+
+            var apiUrl = 'https://www.googleapis.com/youtube/v3/search';
+            var requestUrl = apiUrl + '?part=snippet&maxResults=' + maxResults + '&q=' + encodeURIComponent(searchQuery) + '&key=' + apiKey;
+
+            fetch(requestUrl)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    var resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = '';
+
+                    data.items.forEach(function(item) {
+                        if (item.id.kind === 'youtube#video') {
+                            var videoId = item.id.videoId;
+                            var title = item.snippet.title;
+                            var link = 'https://www.youtube.com/watch?v=' + videoId;
+
+                            var titleElement = document.createElement('p');
+                            titleElement.textContent = 'Title: ' + title;
+
+                            if (showAdditionalInfo) {
+                                var channelId = item.snippet.channelId;
+                                var channelTitle = item.snippet.channelTitle;
+                                var uploadDate = item.snippet.publishedAt;
+
+                                var channelElement = document.createElement('p');
+                                channelElement.classList.add('additional-info');
+                                channelElement.textContent = 'Channel: ' + channelTitle + ' (ID: ' + channelId + ')';
+
+                                var uploadDateElement = document.createElement('p');
+                                uploadDateElement.classList.add('additional-info');
+                                uploadDateElement.textContent = 'Upload Date: ' + uploadDate;
+
+                                resultsDiv.appendChild(channelElement);
+                                resultsDiv.appendChild(uploadDateElement);
+                            }
+
+                            var linkElement = document.createElement('a');
+                            linkElement.href = link;
+                            linkElement.textContent = 'Link';
+                            linkElement.target = '_blank'; // Add target="_blank" attribute
+
+                            resultsDiv.appendChild(titleElement);
+                            resultsDiv.appendChild(linkElement);
+                            resultsDiv.appendChild(document.createElement('br'));
+                        }
+                    });
+                })
+                .catch(function(error) {
+                    console.log('Error:', error);
+                });
+        }
+
+        // Prefill API Key if present in the URL
+        window.onload = function() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var apiKey = urlParams.get('apikey');
+            var apiKeyField = document.getElementById('api_key');
+
+            if (apiKey) {
+                apiKeyField.value = apiKey;
+            }
+        };
+    </script>
+</body>
+</html>

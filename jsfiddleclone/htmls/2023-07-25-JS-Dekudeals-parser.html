@@ -1,0 +1,183 @@
+<!--<meta http-equiv="refresh" content="0; https://alceawis.de/dekugames.html">-->
+    <script type="text/javascript">
+        window.location.href = "https://alceawis.de/dekugames.html"
+    </script>
+    <title>Homepage</title>
+</head>
+<body>
+    <!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->
+    If you are not redirected automatically, follow this <a href='https://alceawis.de/dekugames.html'>-</a>.
+</body>
+</html>
+<br><hr>
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Aoi's Collection | Deku Deals</title>
+  </head>
+  <body>
+    <a target="_blank" href="https://www.dekudeals.com/collection/nw7vnrstb9">Link</a>&nbsp;
+    <!--<a target="_blank" href="parse.php">reload</a>-->
+    <a target="_blank" href="http://gg.gg/dekugamesizes#http://alcea-wisteria.de/PHP/0demo/2023-04-30-parse-json/dekudeals_gamesize_collection_json_add.php#http://gg.gg/dekudealsgamezisecollectionjson">Add (Gamesizes) to json</a><br>
+
+
+
+
+  <style>
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #000;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }
+</style>
+</head>
+
+<body>
+  <div id="collection-table"></div>
+
+  <script>
+    fetch('https://ry3yr.github.io/collection.json')
+      .then(response => response.json())
+      .then(data => {
+        let totalPhysicalGames = 0;
+        let totalPhysicalPrice = 0;
+        let totalAllPrice = 0;
+        let completedCount = 0;
+        let playingCount = 0;
+        let abandonedCount = 0;
+        let tableHtml = `
+          <table>
+            <tr>
+              <th>Link</th>
+              <th>Format <a href="?sort=format_asc">^</a> / <a href="?sort=format_desc">v</a></th>
+              <th>Price <a href="?sort=price_asc">^</a> / <a href="?sort=price_desc">v</a></th>
+              <th>Status <a href="?sort=status_asc">^</a> / <a href="?sort=status_desc">v</a></th>
+              <th>Date Added <a href="?sort=date_asc">^</a> / <a href="?sort=date_desc">v</a></th>
+              <th>Gamesize</th>
+              <th>Rating <a href="?sort=rating_asc">^</a> / <a href="?sort=rating_desc">v</a></th>
+            </tr>
+        `;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortBy = urlParams.get('sort');
+
+        if (sortBy === 'price_asc') {
+          data.items.sort((a, b) => a.price_paid - b.price_paid);
+        } else if (sortBy === 'price_desc') {
+          data.items.sort((a, b) => b.price_paid - a.price_paid);
+        } else if (sortBy === 'format_asc') {
+          data.items.sort((a, b) => a.format.localeCompare(b.format));
+        } else if (sortBy === 'format_desc') {
+          data.items.sort((a, b) => b.format.localeCompare(a.format));
+        } else if (sortBy === 'date_asc') {
+          data.items.sort((a, b) => new Date(a.added_at) - new Date(b.added_at));
+        } else if (sortBy === 'date_desc') {
+          data.items.sort((a, b) => new Date(b.added_at) - new Date(a.added_at));
+        } else if (sortBy === 'status_asc') {
+          data.items.sort((a, b) => (a.status || '').localeCompare(b.status || ''));
+        } else if (sortBy === 'status_desc') {
+          data.items.sort((a, b) => (b.status || '').localeCompare(a.status || ''));
+        } else if (sortBy === 'rating_asc') {
+          data.items.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+        } else if (sortBy === 'rating_desc') {
+          data.items.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        }
+
+        data.items.forEach(item => {
+          let status = item.status || '';
+          let formatCell = item.format;
+          let extrainfo = '';
+          if (item.note && item.note.includes("DigitalAlso")) {
+            extrainfo = ' DigitalAlso';
+          }
+          // Retrieve the image URL from the "image" field
+          let imageUrl = item.image;
+
+          // Determine the rating in terms of ★☆ based on the numeric rating (1-5)
+          let rating = '';
+          if (item.rating) {
+            rating = '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating);
+          }
+
+          tableHtml += `
+            <tr>
+              <td>
+                <div class="tooltip">
+                  <img src="${imageUrl}" width="20" height="20" loading="lazy">
+                  <span class="tooltiptext">${item.note}</span>
+                  <a target="_blank" href="${item.link}">${item.name}</a>${extrainfo} <a id="transp" target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2024-01-14-Lastplayed/lastplayed.php?gamename=${item.name}" style="color: transparent;">→</a>
+                </div>
+              </td>
+              <td>${formatCell}</td>
+              <td>${item.price_paid}</td>
+              <td>${status}</td>
+              <td>${new Date(item.added_at).toLocaleDateString()}</td>
+              <td>${item.gamesize}</td>
+              <td>${rating}</td>
+            </tr>
+          `;
+
+          if (item.format === "physical") {
+            totalPhysicalGames++;
+            totalPhysicalPrice += item.price_paid;
+          }
+          totalAllPrice += item.price_paid;
+          if (status.toLowerCase() === 'completed') {
+            completedCount++;
+          } else if (status.toLowerCase() === 'playing') {
+            playingCount++;
+          } else if (status.toLowerCase() === 'abandoned') {
+            abandonedCount++;
+          }
+        });
+        tableHtml += `
+          </table>
+          <p>
+            • Total Games: ${data.items.length}
+            • Physical Games: ${totalPhysicalGames}
+            <br><hr>
+            • Physical Price: ${totalPhysicalPrice}
+            • Total All Price: ${totalAllPrice}
+            (• Completed: ${completedCount}
+            • Playing: ${playingCount}
+            • Abandoned: ${abandonedCount} )
+          </p>
+        `;
+        document.getElementById('collection-table').innerHTML = tableHtml;
+      });
+  </script>
+
+
+
+<!---New--PHP-Gamesize_&_image_Fetcher--2023-09-17--
+PD9waHAKZGVmaW5lKCJBTExPV19TT1VSQ0UiLCBUUlVFKTsKZGVmaW5lKCJBTExPV19USVRMRSIsIFRSVUUpOwoKaWYgKEFMTE9XX1NPVVJDRSAmJiBpc3NldCgkX0dFVFsnc291cmNlJ10pKSB7CiAgICBoaWdobGlnaHRfZmlsZShfX0ZJTEVfXyk7CiAgICBleGl0KDApOwp9CgovLyBGdW5jdGlvbiB0byBoYW5kbGUgZmlsZSB1cGxvYWQKZnVuY3Rpb24gaGFuZGxlRmlsZVVwbG9hZCgkZmlsZSkKewogICAgLy8gQ2hlY2sgaWYgdGhlIHVwbG9hZCB3YXMgc3VjY2Vzc2Z1bAogICAgaWYgKCRmaWxlWydlcnJvciddID09PSBVUExPQURfRVJSX09LKSB7CiAgICAgICAgLy8gUmVhZCB0aGUgdXBsb2FkZWQgZmlsZQogICAgICAgICRqc29uRGF0YSA9IGZpbGVfZ2V0X2NvbnRlbnRzKCRmaWxlWyd0bXBfbmFtZSddKTsKCiAgICAgICAgLy8gRGVjb2RlIHRoZSBKU09OIGRhdGEgaW50byBhbiBhc3NvY2lhdGl2ZSBhcnJheQogICAgICAgICRkYXRhID0ganNvbl9kZWNvZGUoJGpzb25EYXRhLCB0cnVlKTsKCiAgICAgICAgLy8gQ2hlY2sgaWYgdGhlIEpTT04gZGVjb2Rpbmcgd2FzIHN1Y2Nlc3NmdWwKICAgICAgICBpZiAoJGRhdGEgIT09IG51bGwpIHsKICAgICAgICAgICAgLy8gSXRlcmF0ZSBvdmVyIGVhY2ggaXRlbSBpbiB0aGUgY29sbGVjdGlvbgogICAgICAgICAgICBmb3JlYWNoICgkZGF0YVsnaXRlbXMnXSBhcyAmJGl0ZW0pIHsKICAgICAgICAgICAgICAgIC8vIENoZWNrIGlmIHRoZSBpdGVtIGhhcyBhICJsaW5rIiBrZXkKICAgICAgICAgICAgICAgIGlmIChpc3NldCgkaXRlbVsnbGluayddKSkgewogICAgICAgICAgICAgICAgICAgIC8vIEZldGNoIHRoZSBjb250ZW50IG9mIHRoZSBVUkwKICAgICAgICAgICAgICAgICAgICAkdXJsID0gJGl0ZW1bJ2xpbmsnXTsKICAgICAgICAgICAgICAgICAgICAkaHRtbCA9IGZpbGVfZ2V0X2NvbnRlbnRzKCR1cmwpOwoKICAgICAgICAgICAgICAgICAgICAvLyBDcmVhdGUgYSBET01Eb2N1bWVudCBvYmplY3QgYW5kIGxvYWQgdGhlIEhUTUwgY29udGVudAogICAgICAgICAgICAgICAgICAgICRkb20gPSBuZXcgRE9NRG9jdW1lbnQoKTsKICAgICAgICAgICAgICAgICAgICBAJGRvbS0+bG9hZEhUTUwoJGh0bWwpOwoKICAgICAgICAgICAgICAgICAgICAvLyBDcmVhdGUgYSBET01YUGF0aCBvYmplY3QgdG8gcXVlcnkgdGhlIEhUTUwKICAgICAgICAgICAgICAgICAgICAkeHBhdGggPSBuZXcgRE9NWFBhdGgoJGRvbSk7CgogICAgICAgICAgICAgICAgICAgIC8vIEZpbmQgdGhlIGRvd25sb2FkIHNpemUgZWxlbWVudCB1c2luZyBYUGF0aAogICAgICAgICAgICAgICAgICAgICRxdWVyeSA9ICIvL3N0cm9uZ1tjb250YWlucyh0ZXh0KCksICdEb3dubG9hZCBzaXplOicpXS9mb2xsb3dpbmctc2libGluZzo6dGV4dCgpIjsKICAgICAgICAgICAgICAgICAgICAkZG93bmxvYWRTaXplID0gJHhwYXRoLT5xdWVyeSgkcXVlcnkpLT5pdGVtKDApLT5ub2RlVmFsdWU7CgogICAgICAgICAgICAgICAgICAgIC8vIEZpbmQgdGhlIG9nOmltYWdlIG1ldGEgdGFnIHVzaW5nIFhQYXRoCiAgICAgICAgICAgICAgICAgICAgJHF1ZXJ5SW1hZ2UgPSAiLy9tZXRhW0Bwcm9wZXJ0eT0nb2c6aW1hZ2UnXS9AY29udGVudCI7CiAgICAgICAgICAgICAgICAgICAgJGltYWdlID0gJHhwYXRoLT5xdWVyeSgkcXVlcnlJbWFnZSktPml0ZW0oMCktPm5vZGVWYWx1ZTsKCiAgICAgICAgICAgICAgICAgICAgLy8gQWRkIHRoZSBuZXcgImdhbWVzaXplIiBhbmQgImltYWdlIiBmaWVsZHMgdG8gdGhlIGl0ZW0KICAgICAgICAgICAgICAgICAgICAkaXRlbVsnZ2FtZXNpemUnXSA9ICRkb3dubG9hZFNpemU7CiAgICAgICAgICAgICAgICAgICAgJGl0ZW1bJ2ltYWdlJ10gPSAkaW1hZ2U7CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIC8vIEVuY29kZSB0aGUgbW9kaWZpZWQgZGF0YSBiYWNrIHRvIEpTT04KICAgICAgICAgICAgJHVwZGF0ZWRKc29uRGF0YSA9IGpzb25fZW5jb2RlKCRkYXRhLCBKU09OX1BSRVRUWV9QUklOVCB8IEpTT05fVU5FU0NBUEVEX1NMQVNIRVMpOwoKICAgICAgICAgICAgLy8gU2V0IHRoZSBhcHByb3ByaWF0ZSBoZWFkZXJzIGZvciBkb3dubG9hZGluZyB0aGUgZmlsZQogICAgICAgICAgICBoZWFkZXIoJ0NvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbicpOwogICAgICAgICAgICBoZWFkZXIoJ0NvbnRlbnQtRGlzcG9zaXRpb246IGF0dGFjaG1lbnQ7IGZpbGVuYW1lPSJ1cGRhdGVkX2NvbGxlY3Rpb24uanNvbiInKTsKCiAgICAgICAgICAgIC8vIE91dHB1dCB0aGUgdXBkYXRlZCBKU09OIGRhdGEgZm9yIGRvd25sb2FkCiAgICAgICAgICAgIGVjaG8gJHVwZGF0ZWRKc29uRGF0YTsKICAgICAgICAgICAgZXhpdCgwKTsgLy8gU3RvcCBmdXJ0aGVyIGV4ZWN1dGlvbiBvZiB0aGUgc2NyaXB0CiAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgLy8gSlNPTiBkZWNvZGluZyBmYWlsZWQKICAgICAgICAgICAgZWNobyAiRmFpbGVkIHRvIGRlY29kZSBKU09OIGRhdGEuIjsKICAgICAgICB9CiAgICB9IGVsc2UgewogICAgICAgIC8vIEZpbGUgdXBsb2FkIGZhaWxlZAogICAgICAgIGVjaG8gIkZpbGUgdXBsb2FkIGZhaWxlZC4gUGxlYXNlIHRyeSBhZ2Fpbi4iOwogICAgfQp9CgovLyBDaGVjayBpZiBhIGZpbGUgd2FzIHVwbG9hZGVkCmlmICgkX0ZJTEVTICYmIGlzc2V0KCRfRklMRVNbJ2pzb25fZmlsZSddKSkgewogICAgaGFuZGxlRmlsZVVwbG9hZCgkX0ZJTEVTWydqc29uX2ZpbGUnXSk7Cn0KPz4KCjwhRE9DVFlQRSBodG1sPgo8aHRtbD4KPGhlYWQ+CiAgICA8dGl0bGU+RGVrdWRlYWxzIERvd25sb2FkIFNpemUgRmV0Y2hlcjwvdGl0bGU+CjwvaGVhZD4KPGJvZHk+CiAgICA8aDE+VXBsb2FkIHlvdXIgY29sbGVjdGlvbiBKU09OIChvciB1c2UgVVJMKSB0byBhZGQgZ2FtZXNpemVzICYgaW1hZ2V1cmxzPC9oMT4KCiAgICA8IS0tIFN0YXJ0IGJ1dHRvbiAtLT4KICAgIDxmb3JtIGFjdGlvbj0iIiBtZXRob2Q9IlBPU1QiPgogICAgICAgIDxidXR0b24gdHlwZT0ic3VibWl0IiBuYW1lPSJzdGFydCI+U3RhcnQ8L2J1dHRvbj4KICAgIDwvZm9ybT4KCiAgICA8aHI+CgogICAgPCEtLSBGaWxlIHVwbG9hZCBmb3JtIC0tPgogICAgPGgzPlVwbG9hZCBjdXN0b20gSlNPTjwvaDM+CiAgICA8Zm9ybSBhY3Rpb249IiIgbWV0aG9kPSJQT1NUIiBlbmN0eXBlPSJtdWx0aXBhcnQvZm9ybS1kYXRhIj4KICAgICAgICA8aW5wdXQgdHlwZT0iZmlsZSIgbmFtZT0ianNvbl9maWxlIiBhY2NlcHQ9Ii5qc29uIj4KICAgICAgICA8YnV0dG9uIHR5cGU9InN1Ym1pdCIgbmFtZT0idXBsb2FkIj5VcGxvYWQ8L2J1dHRvbj4KICAgIDwvZm9ybT4KPC9ib2R5Pgo8L2h0bWw+Cgo8P3BocAogICAgZGVmaW5lKCJBTExPV19TT1VSQ0UiLCBUUlVFKTsKICAgIGRlZmluZSgiQUxMT1dfVElUTEUiLCBUUlVFKTsKICAgIGlmIChBTExPV19TT1VSQ0UgJiYgaXNzZXQoJF9HRVRbJ3NvdXJjZSddKSkgewogICAgICAgIGhpZ2hsaWdodF9maWxlKF9fRklMRV9fKTsKICAgICAgICBleGl0KDApOwogICAgfQo/Pgo8YSB0YXJnZXQ9Il9ibGFuayIgaHJlZj0iP3NvdXJjZSI+U291cmNlIENvZGU8L2E+CjwvYm9keT4KPC9odG1sPg==
+-->
+
+<!---Old--PHP-Gamesize--Fetcher--
+PCEtLS1QSFAtR2FtZXNpemVfRmV0Y2hlcl9mb3JfY29sbGVjdGlvbi5qc29uLS0KPD9waHAKLy8gRnVuY3Rpb24gdG8gaGFuZGxlIGZpbGUgdXBsb2FkCmZ1bmN0aW9uIGhhbmRsZUZpbGVVcGxvYWQoJGZpbGUpCnsKICAgIC8vIENoZWNrIGlmIHRoZSB1cGxvYWQgd2FzIHN1Y2Nlc3NmdWwKICAgIGlmICgkZmlsZVsnZXJyb3InXSA9PT0gVVBMT0FEX0VSUl9PSykgewogICAgICAgIC8vIFJlYWQgdGhlIHVwbG9hZGVkIGZpbGUKICAgICAgICAkanNvbkRhdGEgPSBmaWxlX2dldF9jb250ZW50cygkZmlsZVsndG1wX25hbWUnXSk7CgogICAgICAgIC8vIERlY29kZSB0aGUgSlNPTiBkYXRhIGludG8gYW4gYXNzb2NpYXRpdmUgYXJyYXkKICAgICAgICAkZGF0YSA9IGpzb25fZGVjb2RlKCRqc29uRGF0YSwgdHJ1ZSk7CgogICAgICAgIC8vIENoZWNrIGlmIHRoZSBKU09OIGRlY29kaW5nIHdhcyBzdWNjZXNzZnVsCiAgICAgICAgaWYgKCRkYXRhICE9PSBudWxsKSB7CiAgICAgICAgICAgIC8vIEl0ZXJhdGUgb3ZlciBlYWNoIGl0ZW0gaW4gdGhlIGNvbGxlY3Rpb24KICAgICAgICAgICAgZm9yZWFjaCAoJGRhdGFbJ2l0ZW1zJ10gYXMgJiRpdGVtKSB7CiAgICAgICAgICAgICAgICAvLyBDaGVjayBpZiB0aGUgaXRlbSBoYXMgYSAibGluayIga2V5CiAgICAgICAgICAgICAgICBpZiAoaXNzZXQoJGl0ZW1bJ2xpbmsnXSkpIHsKICAgICAgICAgICAgICAgICAgICAvLyBGZXRjaCB0aGUgY29udGVudCBvZiB0aGUgVVJMCiAgICAgICAgICAgICAgICAgICAgJHVybCA9ICRpdGVtWydsaW5rJ107CiAgICAgICAgICAgICAgICAgICAgJGh0bWwgPSBmaWxlX2dldF9jb250ZW50cygkdXJsKTsKCiAgICAgICAgICAgICAgICAgICAgLy8gQ3JlYXRlIGEgRE9NRG9jdW1lbnQgb2JqZWN0IGFuZCBsb2FkIHRoZSBIVE1MIGNvbnRlbnQKICAgICAgICAgICAgICAgICAgICAkZG9tID0gbmV3IERPTURvY3VtZW50KCk7CiAgICAgICAgICAgICAgICAgICAgQCRkb20tPmxvYWRIVE1MKCRodG1sKTsKCiAgICAgICAgICAgICAgICAgICAgLy8gQ3JlYXRlIGEgRE9NWFBhdGggb2JqZWN0IHRvIHF1ZXJ5IHRoZSBIVE1MCiAgICAgICAgICAgICAgICAgICAgJHhwYXRoID0gbmV3IERPTVhQYXRoKCRkb20pOwoKICAgICAgICAgICAgICAgICAgICAvLyBGaW5kIHRoZSBkb3dubG9hZCBzaXplIGVsZW1lbnQgdXNpbmcgWFBhdGgKICAgICAgICAgICAgICAgICAgICAkcXVlcnkgPSAiLy9zdHJvbmdbY29udGFpbnModGV4dCgpLCAnRG93bmxvYWQgc2l6ZTonKV0vZm9sbG93aW5nLXNpYmxpbmc6OnRleHQoKSI7CiAgICAgICAgICAgICAgICAgICAgJGRvd25sb2FkU2l6ZSA9ICR4cGF0aC0+cXVlcnkoJHF1ZXJ5KS0+aXRlbSgwKS0+bm9kZVZhbHVlOwoKICAgICAgICAgICAgICAgICAgICAvLyBBZGQgdGhlIG5ldyAiZ2FtZXNpemUiIGZpZWxkIHRvIHRoZSBpdGVtCiAgICAgICAgICAgICAgICAgICAgJGl0ZW1bJ2dhbWVzaXplJ10gPSAkZG93bmxvYWRTaXplOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CgogICAgICAgICAgICAvLyBFbmNvZGUgdGhlIG1vZGlmaWVkIGRhdGEgYmFjayB0byBKU09OCiAgICAgICAgICAgICR1cGRhdGVkSnNvbkRhdGEgPSBqc29uX2VuY29kZSgkZGF0YSwgSlNPTl9QUkVUVFlfUFJJTlQgfCBKU09OX1VORVNDQVBFRF9TTEFTSEVTKTsKCiAgICAgICAgICAgIC8vIFNldCB0aGUgYXBwcm9wcmlhdGUgaGVhZGVycyBmb3IgZG93bmxvYWRpbmcgdGhlIGZpbGUKICAgICAgICAgICAgaGVhZGVyKCdDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24nKTsKICAgICAgICAgICAgaGVhZGVyKCdDb250ZW50LURpc3Bvc2l0aW9uOiBhdHRhY2htZW50OyBmaWxlbmFtZT0idXBkYXRlZF9jb2xsZWN0aW9uLmpzb24iJyk7CgogICAgICAgICAgICAvLyBPdXRwdXQgdGhlIHVwZGF0ZWQgSlNPTiBkYXRhIGZvciBkb3dubG9hZAogICAgICAgICAgICBlY2hvICR1cGRhdGVkSnNvbkRhdGE7CiAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgLy8gSlNPTiBkZWNvZGluZyBmYWlsZWQKICAgICAgICAgICAgZWNobyAiRmFpbGVkIHRvIGRlY29kZSBKU09OIGRhdGEuIjsKICAgICAgICB9CiAgICB9IGVsc2UgewogICAgICAgIC8vIEZpbGUgdXBsb2FkIGZhaWxlZAogICAgICAgIGVjaG8gIkZpbGUgdXBsb2FkIGZhaWxlZC4gUGxlYXNlIHRyeSBhZ2Fpbi4iOwogICAgfQp9CgovLyBDaGVjayBpZiBhIGZpbGUgd2FzIHVwbG9hZGVkCmlmICgkX0ZJTEVTICYmIGlzc2V0KCRfRklMRVNbJ2pzb25fZmlsZSddKSkgewogICAgaGFuZGxlRmlsZVVwbG9hZCgkX0ZJTEVTWydqc29uX2ZpbGUnXSk7Cn0KPz4KCjwhRE9DVFlQRSBodG1sPgo8aHRtbD4KPGhlYWQ+CiAgICA8dGl0bGU+RGVrdWRlYWxzIERvd25sb2FkIFNpemUgRmV0Y2hlcjwvdGl0bGU+CjwvaGVhZD4KPGJvZHk+CiAgICA8aDE+dXBsb2FkIHlvdXIgY29sbGVjdGlvbiBqc29uIChvciB1c2UgdXJsKSB0byBhZGQgZ2FtZXNpemVzIDwvaDE+CgogICAgPGZvcm0gYWN0aW9uPSIiIG1ldGhvZD0iUE9TVCI+CiAgICAgICAgPGJ1dHRvbiB0eXBlPSJzdWJtaXQiIG5hbWU9InN0YXJ0Ij5TdGFydDwvYnV0dG9uPgogICAgPC9mb3JtPgoKICAgIDxocj4KCiAgICA8aDM+VXBsb2FkIGN1c3RvbSBKU09OPC9oMz4KICAgIDxmb3JtIGFjdGlvbj0iIiBtZXRob2Q9IlBPU1QiIGVuY3R5cGU9Im11bHRpcGFydC9mb3JtLWRhdGEiPgogICAgICAgIDxpbnB1dCB0eXBlPSJmaWxlIiBuYW1lPSJqc29uX2ZpbGUiIGFjY2VwdD0iLmpzb24iPgogICAgICAgIDxidXR0b24gdHlwZT0ic3VibWl0IiBuYW1lPSJ1cGxvYWQiPlVwbG9hZDwvYnV0dG9uPgogICAgPC9mb3JtPgo8L2JvZHk+CjwvaHRtbD4KCjw/cGhwCiAgICBkZWZpbmUoIkFMTE9XX1NPVVJDRSIsVFJVRSk7CiAgICBkZWZpbmUoIkFMTE9XX1RJVExFIixUUlVFKTsKICAgIGlmKEFMTE9XX1NPVVJDRSAmJiBpc3NldCgkX0dFVFsnc291cmNlJ10pKXsKICAgICAgICBoaWdobGlnaHRfZmlsZShfX0ZJTEVfXyk7CiAgICAgICAgZXhpdCgwKTsKICAgIH0KPz4KPGEgdGFyZ2V0PSJfYmxhbmsiIGhyZWY9Ij9zb3VyY2UiPlNvdXJjZSBDb2RlPC9hPgo8L2JvZHk+CjwvaHRtbD4tLT4=
+-->

@@ -1,0 +1,18 @@
+?user=user<br><br>
+
+<button id="showLinksButton" style="border: none;">Show Links</button>
+  <script>
+    document.getElementById('showLinksButton').addEventListener('click', function() {
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('user') === 'user') {
+        var links = document.querySelectorAll('a#transp');
+        for (var i = 0; i < links.length; i++) {
+          links[i].style.color = 'red';
+        }
+      } else {
+        alert('Sorry, you do not have permission.');
+      }
+    });
+  </script><br>
+
+ <a id="transp" target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2024-01-14-Lastplyed/lastplayed.php?gamename=${item.name}" style="color: transparent;">LinkyLink</a>

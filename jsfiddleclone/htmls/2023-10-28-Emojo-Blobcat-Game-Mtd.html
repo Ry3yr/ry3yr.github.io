@@ -1,0 +1,116 @@
+<a target="_blank" href="?instance=mastodon.social&random=no">QueryString</a><br><br>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .emoji {
+      width: 45px;
+      cursor: pointer;
+    }
+    .highlight {
+      outline: 2px solid green;
+    }
+    .mirror {
+      transform: scaleX(1);
+    }
+  </style>
+</head>
+<body>
+  <div id="emojiContainer"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var customEmojis = [];
+
+      function fetchEmojis() {
+        var endpoint = 'https://pb.todon.de/api/v1/custom_emojis';
+        var urlParams = new URLSearchParams(window.location.search);
+        var instanceParam = urlParams.get('instance');
+        if (instanceParam) {
+          endpoint = 'https://' + instanceParam + '/api/v1/custom_emojis';
+        }
+
+        fetch(endpoint)
+          .then(function(response) {
+            return response.json();
+          })
+          .then(function(data) {
+            customEmojis = data;
+            displayEmojis();
+          });
+      }
+
+      function displayEmojis() {
+        var emojiContainer = document.getElementById('emojiContainer');
+        emojiContainer.innerHTML = '';
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var randomParam = urlParams.get('random');
+        var shouldRandomize = randomParam !== 'no';
+
+        var shuffledEmojis = shouldRandomize
+          ? customEmojis.sort(function() {
+              return 0.5 - Math.random();
+            })
+          : customEmojis;
+
+        shuffledEmojis.forEach(function(customEmoji) {
+          var shortcode = customEmoji.shortcode;
+          var url = customEmoji.url;
+          var emojiElement = document.createElement('img');
+          emojiElement.src = url;
+          emojiElement.alt = shortcode;
+          emojiElement.width = '45px';
+          emojiElement.title = shortcode;
+          emojiElement.classList.add('emoji');
+          emojiElement.addEventListener('click', function() {
+            emojiElement.classList.add('highlight');
+            setTimeout(function() {
+              emojiElement.classList.remove('highlight');
+              checkEmojiFound(customEmoji);
+            }, 1000);
+          });
+          emojiContainer.appendChild(emojiElement);
+        });
+
+        var randomIndex = Math.floor(Math.random() * customEmojis.length);
+        var randomEmoji = customEmojis[randomIndex];
+        var emojiToFind = document.createElement('div');
+        emojiToFind.classList.add('emoji-to-find');
+        var emojiToFindImage = document.createElement('img');
+        emojiToFindImage.src = randomEmoji.url;
+        emojiToFindImage.alt = randomEmoji.shortcode;
+        emojiToFindImage.width = '45px';
+        emojiToFindImage.title = randomEmoji.shortcode;
+        emojiToFind.appendChild(emojiToFindImage);
+        var emojiToFindText = document.createElement('p');
+        //emojiToFindText.textContent = 'Find this emoji: ' + randomEmoji.shortcode;
+        emojiToFind.appendChild(emojiToFindText);
+        emojiContainer.insertBefore(emojiToFind, emojiContainer.firstChild);
+
+        var emojiImages = document.querySelectorAll('.emoji');
+        var randomEmojiImage = emojiImages[Math.floor(Math.random() * emojiImages.length)];
+        var emojiToFindImageClone = randomEmojiImage.cloneNode(true);
+        emojiToFindImageClone.classList.add('mirror');
+        emojiToFindImage.parentNode.replaceChild(emojiToFindImageClone, emojiToFindImage);
+      }
+
+      function checkEmojiFound(emoji) {
+        var emojiContainer = document.getElementById('emojiContainer');
+        var emojiToFind = emojiContainer.querySelector('.emoji-to-find');
+        var foundEmoji = emojiToFind.querySelector('img').alt;
+
+        if (emoji.shortcode === foundEmoji) {
+          emojiContainer.removeChild(emojiToFind);
+          fetchEmojis();
+        }
+      }
+
+      fetchEmojis();
+    });
+  </script>
+</body>
+</html>
+

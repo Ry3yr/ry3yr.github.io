@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    iframe {
+      width: 500px;
+      height: 300px;
+      border: none;
+    }
+  </style>
+  <script>
+    function checkCORSStatus() {
+      const url = document.getElementById('urlInput').value;
+      const xhr = new XMLHttpRequest();
+      xhr.open('HEAD', url);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          const corsStatus = xhr.getResponseHeader('Access-Control-Allow-Origin');
+          const headers = xhr.getAllResponseHeaders();
+          const result = document.getElementById('result');
+          if (corsStatus) {
+            result.innerHTML = '<strong>CORS is enabled for the URL.</strong><br>';
+            result.innerHTML += 'Access-Control-Allow-Origin: ' + corsStatus + '<br>';
+          } else {
+            result.innerHTML = '<strong>CORS is not enabled for the URL.</strong><br>';
+          }
+          
+          result.innerHTML += '<br><strong>Response Headers:</strong><br>' + headers;
+        }
+      };
+      xhr.send();
+      
+      const iframe = document.getElementById('iframe');
+      iframe.src = url;
+    }
+  </script>
+</head>
+<body>
+  <h1>CORS Status Checker</h1>
+  <div>
+    <label for="urlInput">Enter URL:</label>
+    <input type="text" id="urlInput" placeholder="https://example.com" />
+    <button onclick="checkCORSStatus()">Check CORS Status</button>
+  </div>
+  <div id="result"></div>
+  <iframe id="iframe"></iframe>
+</body>
+</html>

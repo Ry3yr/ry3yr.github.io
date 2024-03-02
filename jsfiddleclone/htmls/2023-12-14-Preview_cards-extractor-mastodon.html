@@ -1,0 +1,80 @@
+Preview-cards<br>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Preview Card Images</title>
+</head>
+<body>
+  <div id="previewCardImages"></div>
+
+  <script>
+    function extractPreviewCardLinks(responseText) {
+      const pattern = /\/cache\/preview_cards\/images\/\d{3}\/\d{3}\/\d{3}\/original\/[a-f0-9]+\.(?:jpg|jpeg|png|gif)/gi;
+      const matches = responseText.match(pattern);
+      return matches || [];
+    }
+
+    function generateImageTags(imageUrls, domain) {
+      let html = '';
+      imageUrls.forEach(imageUrl => {
+        html += '<img src="' + domain + imageUrl + '" alt="Preview Card Image"><br>';
+      });
+      return html;
+    }
+
+    const url = 'https://mastodon.social/api/v1/accounts/109977878421486714/statuses';
+
+    fetch(url)
+      .then(response => response.text())
+      .then(responseText => {
+        const previewCards = extractPreviewCardLinks(responseText);
+        const domain = 'https://files.mastodon.social';
+        const html = generateImageTags(previewCards, domain);
+        document.getElementById('previewCardImages').innerHTML = html;
+      })
+      .catch(error => {
+        console.error('Error: Unable to fetch data.', error);
+      });
+  </script>
+</body>
+</html>
+
+<!---
+<plaintext>
+PHP
+<?php
+$url = 'https://mastodon.social/api/v1/accounts/109977878421486714/statuses';
+$parsedUrl = parse_url($url);
+$domain = $parsedUrl['scheme'] . '://' . $parsedUrl['host'];
+// Fetch data from the URL
+$response = file_get_contents($url);
+if ($response === false) {
+    echo 'Error: Unable to fetch data.';
+    exit;
+}
+$previewCards = extractPreviewCardLinks($response);
+$html = generateImageTags($previewCards, $domain);
+echo 'Domain: ' . $domain . '<br>';
+echo 'Preview Card Images:<br>';
+echo $html;
+function extractPreviewCardLinks($responseText)
+{
+    //$pattern = '/\/system\/cache\/preview_cards\/images\/\d+\/\d+\/\d+\/original\/[a-f0-9]+\.(?:jpg|jpeg|png|gif)/i';  //normal masstodon
+        $pattern = '/\/cache\/preview_cards\/images\/\d{3}\/\d{3}\/\d{3}\/original\/[a-f0-9]+\.(?:jpg|jpeg|png|gif)/i';     //glitchfork suchas urusai.social
+         preg_match_all($pattern, $responseText, $matches);
+
+
+    return $matches[0] ?? [];
+}
+function generateImageTags($imageUrls, $domain)
+{
+    $html = '';
+    foreach ($imageUrls as $imageUrl) {
+        $domain = " https://files.mastodon.social";
+        $html .= '<img src="' .$domain . $imageUrl . '" alt="Preview Card Image"><br>';
+    }
+
+    return $html;
+}
+?>

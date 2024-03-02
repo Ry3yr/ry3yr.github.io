@@ -1,0 +1,38 @@
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+  var lines;
+  var randomNumber;
+  var lastRandomNumber;
+  $(document.body).ready(function () {
+    $.ajax({
+      url: "https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/Daymusic_array.js",
+    }).done(function (content) {
+      lines = content
+        .replace(/\r\n|\r/g, "\n")
+        .trim()
+        .split("\n");
+      lines = content
+        .replace(/\r\n|\r/g, "quote")
+        .trim()
+        .split("quote");
+      // ^^ line rmvl ^^^
+      if (lines && lines.length) {
+        $("#showLine").on("click", function () {
+          while (randomNumber === lastRandomNumber) {
+            randomNumber = parseInt(Math.random() * lines.length);
+            if (lines.length === 1) {
+              break;
+            }
+          }
+          lastRandomNumber = randomNumber;
+          $("#trivia").html(lines[randomNumber]);
+        })
+       .trigger("click");
+       document.getElementById("showLine").style.visibility="hidden";
+      }
+    });
+  });
+</script>
+
+<button id="showLine">CurrListening</button>
+<p id="trivia"></p>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .message {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+    }
+
+    .message.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <p class="message">..</p>
+  <script>
+    fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js').then(() => {
+      document.getElementsByClassName('message')[0].innerHTML = 'Adblock disabled.. Consider installing one !';
+      document.getElementsByClassName('message')[0].classList.add('no-ab');
+      document.getElementsByClassName('message')[0].classList.add('show');
+    }).catch(() => {
+      document.getElementsByClassName('message')[0].innerHTML = 'Adblock detected! Good Job !<br>Party time !';
+      document.getElementsByClassName('message')[0].classList.add('ab');
+      document.getElementsByClassName('message')[0].classList.add('show');
+    });
+
+    document.addEventListener('click', function(event) {
+      var message = document.getElementsByClassName('message')[0];
+      if (event.target !== message && !message.contains(event.target)) {
+        message.classList.remove('show');
+      }
+    });
+  </script>
+</body>
+</html>

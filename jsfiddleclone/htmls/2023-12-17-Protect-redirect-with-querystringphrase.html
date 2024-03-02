@@ -1,0 +1,29 @@
+<script>
+var time = 3 * 1;
+setInterval(function() {
+  var seconds = time;
+  var minutes = 0;
+  if (seconds.toString().length == 1) {
+    seconds = "0" + seconds;
+  }
+  if (minutes.toString().length == 1) {
+    minutes = "0" + minutes;
+  }
+  document.getElementById("time").innerHTML = minutes + ":" + seconds;
+  time--;
+  if (time == 0) {
+    var queryString = window.location.search;
+    var params = new URLSearchParams(queryString);
+    var encodedSavegames = "c2F2ZWdhbWVz";
+    var decodedSavegames = atob(encodedSavegames);
+    if (params.get(decodedSavegames) !== null) {
+      var encodedUrl = "aHR0cHM6Ly9teS5oaWRyaXZlLmNvbS9zaGFyZS8xZDNmazFhcW9i";
+      var decodedUrl = atob(encodedUrl);
+      window.location.href = decodedUrl;
+    }
+  }
+}, 1000);
+</script>
+<div class="timer" onload="timer(1800)">
+  <div class="time"><strong>Redirecting in <span id="time">x seconds</span></strong></div>
+</div>

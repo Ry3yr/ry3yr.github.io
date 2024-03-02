@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div id="statusesCount"></div>
+  <div id="registrationDate"></div>
+  <div id="daysRegistered"></div>
+  <div id="tootsPerDay"></div>
+
+  <script>
+    function fetchStatusesCountAndRegistrationDate() {
+
+      const instanceUrl = 'https://pb.todon.de';
+      const userId = '109629985010224381';
+
+      const profileUrl = `${instanceUrl}/api/v1/accounts/${userId}`;
+      $.get(profileUrl)
+        .done(function(profileData) {
+
+          const statusesCount = profileData.statuses_count;
+
+          const registrationDate = new Date(profileData.created_at);
+
+          const currentDate = new Date();
+          const daysRegistered = Math.floor((currentDate - registrationDate) / (1000 * 60 * 60 * 24));
+
+          const tootsPerDay = statusesCount / daysRegistered;
+
+          $('#statusesCount').text("Statuses Count: " + statusesCount);
+          $('#registrationDate').text("Registration Date: " + registrationDate.toLocaleString());
+          $('#daysRegistered').text("Days Registered: " + daysRegistered + " days");
+          $('#tootsPerDay').text("Toots Per Day: " + tootsPerDay + " toots/day");
+        })
+        .fail(function(error) {
+          console.error("Error:", error);
+        });
+    }
+    fetchStatusesCountAndRegistrationDate();
+  </script>
+</body>
+</html>
+
+<!--<plaintext>
+<?php
+function fetchStatusesCountAndRegistrationDate() {
+    // Replace with the actual instance URL and user ID
+    $instanceUrl = 'https://pb.todon.de';
+    $userId = '109629985010224381';
+    $profileUrl = $instanceUrl . '/api/v1/accounts/' . $userId;
+    $profileResponse = file_get_contents($profileUrl);
+    $profileData = json_decode($profileResponse, true);
+    $statusesCount = $profileData['statuses_count'];
+    $registrationDate = new DateTime($profileData['created_at']);
+    $currentDate = new DateTime();
+    $daysRegistered = $registrationDate->diff($currentDate)->days;
+    $tootsPerDay = $statusesCount / $daysRegistered;
+    echo "Statuses Count: " . $statusesCount . "<br>";
+    echo "Registration Date: " . $registrationDate->format('Y-m-d H:i:s') . "<br>";
+    echo "Days Registered: " . $daysRegistered . " days<br>";
+    echo "Toots Per Day: " . $tootsPerDay . " toots/day";
+}
+fetchStatusesCountAndRegistrationDate();
+?>
+-->

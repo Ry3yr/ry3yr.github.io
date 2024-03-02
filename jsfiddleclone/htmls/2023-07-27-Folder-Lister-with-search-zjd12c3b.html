@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Drag and Drop Folder</title>
+</head>
+<body>
+<!--<img src="https://www.solar-fox.de/files/oneo/img/soledos/logos/meteocontrol_neu.png" width="30%">--><br>
+  <input type="file" id="folder-selector" webkitdirectory directory="C:\Konfi-Data\Export"><br><br>
+  <div id="dropzone">Drop a folder here</div>
+  <input type="text" id="searchBox" placeholder="Search...">
+  <input type="text" id="keyword" placeholder="Count element">
+  <div id="count"></div>
+  <button id="countTodayButton">Done today</button>
+  <ul id="fileList"></ul>
+
+  <script>
+    var dropzone = document.getElementById('dropzone');
+    var fileList = document.getElementById('fileList');
+    var timestamps = {
+      today: [],
+      yesterday: []
+    };
+    var elementsDoneToday = 0;
+
+    dropzone.addEventListener('dragover', function(event) {
+      event.preventDefault();
+    });
+
+    dropzone.addEventListener('drop', function(event) {
+      event.preventDefault();
+
+      var items = event.dataTransfer.items;
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+
+        if (item.kind === 'file' && item.webkitGetAsEntry().isDirectory) {
+          traverseFileTree(item.webkitGetAsEntry(), function(file) {
+            var timestamp = new Date(file.lastModified);
+            var today = new Date();
+            today.setHours(0,0,0,0);
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            if (timestamp >= today) {
+              timestamps.today.push(file.lastModified);
+            } else if (timestamp >= yesterday) {
+              timestamps.yesterday.push(file.lastModified);
+            }
+            var li = document.createElement('li');
+            li.textContent = file.name + " (" + timestamp.toLocaleString() + ")";
+            fileList.appendChild(li);
+
+            var index = timestamps.today.indexOf(file.lastModified);
+            if (index === -1) {
+              index = timestamps.yesterday.indexOf(file.lastModified) + timestamps.today.length;
+            }
+            fileList.insertBefore(li, fileList.childNodes[index]);
+
+            if (timestamp >= today) {
+              elementsDoneToday++;
+            }
+          });
+        }
+      }
+
+      countDiv.textContent = 'Elements done today: ' + (timestamps.today.length);
+    });
+
+    function traverseFileTree(item, callback) {
+      var dirReader = item.createReader();
+      var entries = [];
+
+      function readEntries() {
+        dirReader.readEntries(function(results) {
+          if (!results.length) {
+            // All entries have been read
+            entries.forEach(function(entry) {
+              if (entry.isFile) {
+                entry.file(function(file) {
+                  callback(file);
+                });
+              } else if (entry.isDirectory) {
+                traverseFileTree(entry, callback);
+              }
+            });
+          } else {
+            // Read next set of entries
+            entries = entries.concat(Array.from(results));
+            readEntries();
+          }
+        });
+      }
+
+      readEntries();
+    }
+
+    var searchBox = document.getElementById('searchBox');
+    searchBox.addEventListener('input', function(event) {
+      var searchTerm = event.target.value.toLowerCase();
+      var fileItems = fileList.getElementsByTagName('li');
+
+      for (var i = 0; i < fileItems.length; i++) {
+        var fileName = fileItems[i].textContent.toLowerCase();
+        if (fileName.indexOf(searchTerm) === -1) {
+          fileItems[i].classList.add('hidden');
+        } else {
+          fileItems[i].classList.remove('hidden');
+        }
+      }
+    });
+
+    var keywordInput = document.getElementById('keyword');
+    var countDiv = document.getElementById('count');
+    var keywordCount = 0;
+
+    keywordInput.addEventListener('input', function(event) {
+      var keyword = event.target.value.toLowerCase();
+      var fileItems = fileList.getElementsByTagName('li');
+      keywordCount = 0;
+
+      for (var i = 0; i < fileItems.length; i++) {
+        var fileName = fileItems[i].textContent.toLowerCase();
+        if (fileName.indexOf(keyword) !== -1) {
+          keywordCount++;
+        }
+      }
+
+      countDiv.textContent = 'Number of files containing "' + keyword + '": ' + keywordCount;
+    });
+
+    var countTodayButton = document.getElementById('countTodayButton');
+    countTodayButton.addEventListener('click', function() {
+      var today = new Date();
+      today.setHours(0,0,0,0);
+      elementsDoneToday = 0;
+
+      for (var i = 0; i < timestamps.today.length; i++) {
+        if (timestamps.today[i] >=today) {
+          elementsDoneToday++;
+        }
+      }
+
+      countDiv.textContent = 'Elements done today: ' + elementsDoneToday;
+    });
+  </script>
+<style>
+    #dropzone {
+      width: 500px;
+      height: 100px;
+      border: 2px dashed black;
+      text-align: center;
+      padding-top: 80px;
+      font-size: 24px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</body>
+</html>

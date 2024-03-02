@@ -1,0 +1,42 @@
+"note" querystring value determines which links stay<br>
+"?note=FAQ" keeps all links with FAQ in them and hides the rest<br><br>
+
+
+<a href="https://pastebin.com/raw/mVuXsgzr" target="_blank">[FAQ]3D Modelling </a><br>
+<a href="https://pastebin.com/raw/pYdDJkgv" target="_blank">[FAQ]Audioripping/Reconstruction </a><br>
+<a href="https://pastebin.com/raw/6xirujw9" target="_blank">[FAQ]Art n Drawing</a><br>
+<a href="https://pastebin.com/6S0NTh0S" target="_blank">HappyNewWorld</a><br>
+
+
+
+
+<!--
+data:text/html;base64,PGEgaHJlZj0iaHR0cHM6Ly9wYXN0ZWJpbi5jb20vcmF3L21WdVhzZ3pyIiB0YXJnZXQ9Il9ibGFuayI+W0ZBUV0zRCBNb2RlbGxpbmcgPC9hPjxicj4KPGEgaHJlZj0iaHR0cHM6Ly9wYXN0ZWJpbi5jb20vcmF3L3BZZERKa2d2IiB0YXJnZXQ9Il9ibGFuayI+W0ZBUV1BdWRpb3JpcHBpbmcvUmVjb25zdHJ1Y3Rpb24gPC9hPjxicj4KPGEgaHJlZj0iaHR0cHM6Ly9wYXN0ZWJpbi5jb20vcmF3LzZ4aXJ1anc5IiB0YXJnZXQ9Il9ibGFuayI+W0ZBUV1BcnQgbiBEcmF3aW5nPC9hPjxicj4=
+-->
+
+<!-----FilterLinks-with-note-querystring-->
+  <style>
+    .hidden {
+      display: none;
+    }
+  </style>
+  <script>
+// Get the value of the "note" query string parameter from the URL
+const urlParams = new URLSearchParams(window.location.search);
+const noteValue = urlParams.get("note");
+
+// Get all the anchor tags (URLs) on the page
+const links = document.getElementsByTagName("a");
+
+// Loop through each link and hide the ones that don't have the note value in their title
+for (let i = 0; i < links.length; i++) {
+  const link = links[i];
+  const linkTitle = link.textContent;
+  if (noteValue && linkTitle && !linkTitle.toLowerCase().includes(noteValue.toLowerCase())) {
+    link.classList.add("hidden");
+  }
+}
+  </script>
+
+
+

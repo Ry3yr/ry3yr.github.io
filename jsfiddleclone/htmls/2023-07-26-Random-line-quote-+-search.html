@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<!--https://run.plnkr.co/plunks/6wCVvXqoIGl6hN6Q-->
+<style>
+div {text-align: left;}
+h1 {font-size: 11px;font-family: Arial;}
+button {width: 128px;height: 28px;background-color: white;color: black;}
+{font-size: 11px;}
+button:hover{background-color: white;}
+</style>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!--<link rel="stylesheet" href="style.css" />-->
+    <script src="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/jquery.min.js"></script>
+    <script>
+var lines;
+var randomNumber;
+var lastRandomNumber;
+$(document.body).ready(function () {
+  // load the trivia from the server
+  $.ajax({
+    url: 'https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/Daymusic_array.js'
+  }).done(function(content) {
+    lines = content.replace(/\r\n|\r/g, '\n').trim().split('\n');
+    if (lines && lines.length) {
+      $('#searchInput').on('keyup', function () {
+        searchLines($(this).val());
+      });
+      $('#showLine').on('click', function () {
+        while (randomNumber === lastRandomNumber) {
+          randomNumber = parseInt(Math.random() * lines.length);
+          if (lines.length === 1) { break; }
+        }
+        lastRandomNumber = randomNumber;
+        
+        var line = lines[randomNumber].replace("{'quote': '", "").replace("'},", "");
+        $('#trivia').html(line);
+        $('#searchResults').empty();
+      });
+    }
+  });
+});
+
+function searchLines(query) {
+  // filter the list of lines based on the search query
+  var filteredLines = lines.filter(function(line) {
+    return line.toLowerCase().includes(query.toLowerCase());
+  });
+  // display the filtered results
+  var resultsHtml = '';
+  filteredLines.forEach(function(line) {
+    resultsHtml += '<div>' + line + '</div>';
+  });
+  $('#searchResults').html(resultsHtml);
+}
+</script>
+  </head>
+<body>
+  <input type="text" id="searchInput" placeholder="Search...">
+  <div id="searchResults"></div>
+  <button id="showLine">CurrListening</button>
+  <p id="trivia"></p>
+</body>
+• <a target="_blank" href="https://vgmdb.net/db/ratings.php?do=view&userid=24381">vgmdb ratings</a>
+• <a target="_blank" href="https://www.last.fm/user/Alceawisteria/loved">LastFM </a>
+<!----------------viewsource--->
+• <a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/Daymusic_array.js">List</a>
+<!--<a id="myLink" title="Click to do something" href="#" onclick="viewSource();return false;">List</a>
+<script>
+function viewSource(){;
+    var source = "<html>";
+    source += document.getElementsByTagName('html')[0].innerHTML;
+    source += "</html>";
+    source = source.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    source = "<pre>"+source+"</pre>";
+    sourceWindow = window.open('','Source of page','height=800,width=800,scrollbars=1,resizable=1');
+    sourceWindow.document.write(source);
+    sourceWindow.document.close(); 
+    if(window.focus) sourceWindow.focus();
+}  </script>-->
+</html>

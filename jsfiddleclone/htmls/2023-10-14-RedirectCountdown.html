@@ -1,0 +1,22 @@
+<script>
+var time = 5 * 1;
+setInterval(function() {
+  //var seconds = time % 60;
+  //var minutes = (time - seconds) / 60;
+  var seconds = time;
+  var minutes = 0;
+  if (seconds.toString().length == 1) {
+    seconds = "0" + seconds;
+  }
+  if (minutes.toString().length == 1) {
+    minutes = "0" + minutes;
+  }
+  document.getElementById("time").innerHTML = minutes + ":" + seconds;
+  time--;
+  if (time == 0) {
+    window.location.href = "https://alceawis.de";
+  }
+}, 1000);
+</script>
+<div class="timer" onload="timer(1800)">
+<div class="time"><strong>Redirecting in <span id="time"> x seconds</span></strong></div></div>

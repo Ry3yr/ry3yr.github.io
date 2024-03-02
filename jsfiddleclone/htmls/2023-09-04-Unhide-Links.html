@@ -1,0 +1,17 @@
+
+
+  <script>
+    function changeOpacity() {
+      var links = document.getElementsByTagName('a');
+      for (var i = 0; i < links.length; i++) {
+        //links[i].style.opacity = '1';
+        links[i].style.display = 'inline';
+      }
+    }
+  </script>
+  <button onclick="changeOpacity()">Change Opacity</button>
+
+
+    <a href="https://example.com"" style="display: none;">Link 1</a>
+    <a href="https://example.com'" style="display: none;">Link 2</a>
+    <a href="https://example.com'" style="display: none;">Link 3</a>

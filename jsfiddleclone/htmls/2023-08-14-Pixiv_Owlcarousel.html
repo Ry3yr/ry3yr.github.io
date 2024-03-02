@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<html>
+
+<head> 
+
+  <title>Ryedai1's new Art n Doodle's</title>
+
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.1/animate.min.css'>
+
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.0.0-beta.3/assets/owl.carousel.min.css'>
+
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.0.0-beta.3/assets/owl.theme.default.min.css'>
+
+</head>
+
+<body>
+
+<!-- partial:index.partial.html -->
+
+<div class="owl-carousel owl-theme" id="carousel"></div>
+
+<!-- partial -->
+
+<script src='https://code.jquery.com/jquery-1.12.2.min.js'></script>
+
+<script src='https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.0.0-beta.3/owl.carousel.min.js'></script>
+
+<script>
+
+$(document).ready(function(){
+
+  var imageUrl = "https://embed.pixiv.net/decorate.php?illust_id=";
+
+  var artworks = [
+
+    { id: "101357774" },
+
+    { id: "98087776" },
+
+  ];
+
+  var carousel = $('#carousel');
+
+  // Dynamically generate the carousel items
+
+  artworks.forEach(function(artwork) {
+
+    var link = $('<a></a>').attr('target', '_blank').attr('href', 'https://www.pixiv.net/en/artworks/' + artwork.id);
+
+    //var image = $('<img>').attr('src', imageUrl + artwork.id + '&mode=sns-automator').attr('height', '50%').attr('width', '50%');
+    var image = $('<img>').attr('src', imageUrl + artwork.id + '&mode=sns-automator').attr('height', '50%').attr('width', '50%').attr('loading', 'lazy');
+
+    var item = $('<div></div>').addClass('item').append(link.append(image));
+
+    carousel.append(item);
+
+  });
+
+  // Initialize the Owl Carousel
+
+  carousel.owlCarousel({
+
+    loop:true,
+
+    margin:10,
+
+    nav:true,
+
+    center: true,
+
+    responsive:{
+
+      0:{
+
+        items:1
+
+      },
+
+      600:{
+
+        items:3
+
+      },
+
+      1000:{
+
+        items:5
+
+      }
+
+    }
+
+  });
+
+});
+
+</script>
+
+</body>
+
+</html>

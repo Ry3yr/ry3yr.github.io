@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Comment Finder</title>
+</head>
+<body>
+    <h2>YouTube Comment Finder</h2>
+    <form id="searchForm">
+        <label for="yturl">YouTube Video URL:</label>
+        <input type="text" id="yturl" name="yturl" placeholder="Enter YouTube video URL" required><br>
+
+        <label for="keyword">Keyword:</label>
+        <input type="text" id="keyword" name="keyword" placeholder="Enter keyword" required><br>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <div id="commentsContainer">
+        <h3>Comments containing the keyword:</h3>
+        <ul id="commentsList"></ul>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            var videoUrl = document.getElementById('yturl').value;
+            var keyword = document.getElementById('keyword').value;
+
+            findYouTubeComments(videoUrl, keyword);
+        });
+
+        function findYouTubeComments(videoUrl, keyword) {
+            var videoId = getVideoIdFromUrl(videoUrl);
+            var apiKey = ''APIKEY';
+
+            var url = 'https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=10&videoId=' + videoId + '&searchTerms=' + encodeURIComponent(keyword) + '&key=' + apiKey;
+
+            fetch(url)
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    displayComments(data.items);
+                })
+                .catch(function (error) {
+                    console.log('Error:', error);
+                });
+        }
+
+        function displayComments(items) {
+            var commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '';
+
+            if (items.length === 0) {
+                commentsList.innerHTML = '<li>No comments found.</li>';
+            } else {
+                items.forEach(function (item) {
+                    var commentId = item.id;
+                    var comment = item.snippet.topLevelComment.snippet.textDisplay;
+                    var commentUrl = 'https://www.youtube.com/watch?v=' + item.snippet.videoId + '&google_comment_id=' + commentId;
+
+                    var listItem = document.createElement('li');
+                    listItem.innerHTML = '<a href="' + commentUrl + '">' + comment + '</a>';
+
+                    commentsList.appendChild(listItem);
+                });
+            }
+        }
+
+        function getVideoIdFromUrl(url) {
+            var videoId = '';
+
+            var pattern = /(?:\?v=|\/embed\/|\/\d\/|\/vi\/|\/v\/|https?:\/\/(?:www\.)?youtube\.com\/v\/|https?:\/\/(?:www\.)?youtube\.com\/embed\/|https?:\/\/youtu\.be\/|https?:\/\/(?:www\.)?youtube\.com\/user\/[^#\/]+#p\/[^#\/]+\/|https?:\/\/(?:www\.)?youtube\.com\/s[^#\/]+\/|https?:\/\/(?:www\.)?youtube\.com\/playlist\?)([^#\&\?\/]+)/;
+            var matches = url.match(pattern);
+            if (matches && matches.length > 1) {
+                videoId = matches[1];
+            }
+
+            return videoId;
+        }
+    </script>
+</body>
+</html>

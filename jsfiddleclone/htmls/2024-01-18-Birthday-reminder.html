@@ -1,0 +1,126 @@
+<div id="outputbday"></div>
+<script>
+  fetchBirthday();
+  function fetchBirthday() {
+    fetch('https://ry3yr.github.io/bdays.txt')
+      .then(response => response.text())
+      .then(data => {
+        const lines = data.split('\n');
+        const randomIndex = Math.floor(Math.random() * lines.length);
+        const randomLine = lines[randomIndex];
+        const [date, name] = randomLine.split('*').map(entry => entry.trim());
+        const daysTillBday = daysUntilBirthday(date);
+        const age = calculateAge(date);
+        displayBirthdayInfo(name, daysTillBday, age);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+  function daysUntilBirthday(birthday) {
+    const today = new Date();
+    const nextBirthday = new Date(today.getFullYear(), new Date(birthday).getMonth(), new Date(birthday).getDate());
+    if (nextBirthday < today) {
+      nextBirthday.setFullYear(today.getFullYear() + 1);
+    }
+    const timeDiff = nextBirthday.getTime() - today.getTime();
+    const daysUntil = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    const isLeapYear = (year) => (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+    const year = nextBirthday.getFullYear();
+    const daysInYear = isLeapYear(year) ? 366 : 365;
+    return daysUntil;
+  }
+  function calculateAge(birthday) {
+    const today = new Date();
+    const birthDate = new Date(birthday);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const dayDiff = today.getDate() - birthDate.getDate();
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--;
+    }
+    return age;
+  }
+  function displayBirthdayInfo(name, days, age) {
+    const outputDiv = document.getElementById('outputbday');
+    if (Number.isNaN(days)) {
+      fetchBirthday(); // Retry fetching a valid birthday
+    } else {
+const currentDate = new Date();
+const year = currentDate.getFullYear();
+const isLeapYear = (year) => (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+const daysInYear = isLeapYear(year) ? 366 : 365;
+if (days === 0) {
+  outputDiv.innerHTML = `Today is <b>${name}</b>'s Birthday! (Age: ${age}) <a target="_blank" href="https://alceawis.de/bdays.txt" style="color:gray">(s)</a>`;
+} else if (days === daysInYear) {
+  outputDiv.innerHTML = `Today is <b>${name}</b>'s Birthday! (Age: ${age}) <a target="_blank" href="https://alceawis.de/bdays.txt" style="color:gray">(s)</a>`;
+      } else {
+        outputDiv.innerHTML = `[${name}] <b>${days}</b> day(s) till birthday. (Age: ${age}) <a target="_blank" href="https://alceawis.de/bdays.txt" style="color:gray">(s)</a>`;
+      }
+    }
+  }
+</script>
+
+
+
+<!-----
+<plaintext>
+<div id="outputbday"></div>
+<script>
+  fetchBirthday();
+  function fetchBirthday() {
+    fetch('https://ry3yr.github.io/bdays.txt')
+      .then(response => response.text())
+      .then(data => {
+        const lines = data.split('\n');
+        const randomIndex = Math.floor(Math.random() * lines.length); // Generate a random index
+        const randomLine = lines[randomIndex];
+        const [date, name] = randomLine.split('*').map(entry => entry.trim());
+        const daysTillBday = daysUntilBirthday(date);
+        const age = calculateAge(date);
+        displayBirthdayInfo(name, daysTillBday, age);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+  function daysUntilBirthday(birthday) {
+    const today = new Date();
+    const nextBirthday = new Date(today.getFullYear(), new Date(birthday).getMonth(), new Date(birthday).getDate());
+    if (nextBirthday < today) {
+      nextBirthday.setFullYear(today.getFullYear() + 1);
+    }
+    const timeDiff = nextBirthday.getTime() - today.getTime();
+    const daysUntil = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    return daysUntil;
+  }
+  function calculateAge(birthday) {
+    const today = new Date();
+    const birthDate = new Date(birthday);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const dayDiff = today.getDate() - birthDate.getDate();
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--;
+    }
+    return age;
+  }
+  function displayBirthdayInfo(name, days, age) {
+    const outputDiv = document.getElementById('outputbday');
+    if (Number.isNaN(days)) {
+      fetchBirthday(); // Retry fetching a valid birthday
+      } else if (days === 365 || days === 366) {
+    outputDiv.innerHTML = `Today is <b>${name}</b>'s Birthday! (Age: ${age}) <a target="_blank" href="https://alceawis.de/bdays.txt" style="color:gray">(s)</a>`;
+
+
+
+    } else {
+      outputDiv.innerHTML = `[${name}] <b>${days}</b> day(s) till birthday. (Age: ${age}) <a target="_blank" href="https://alceawis.de/bdays.txt" style="color:gray">(s)</a>`;
+    }
+  }
+</script>
+
+<!---<br>
+<details><summary>old trash</summary>
+<plaintext

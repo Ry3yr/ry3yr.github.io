@@ -1,0 +1,52 @@
+<a target="_blank" href="?baseurl=https://www.antenne.de/pramm/song-suche?date=" style=color:blue>Changestation</a><br>
+
+<script>
+  function openSongSearchResults() {
+    var parameterUrl = new URL(window.location.href);
+    var baseurl = parameterUrl.searchParams.get("baseurl");
+
+    if (baseurl == null) {
+      baseurl = "https://www.antenne.de/programm/song-suche";
+    }
+
+    var year = document.getElementById("yearInput").value;
+    var month = document.getElementById("monthInput").value;
+    var day = document.getElementById("dayInput").value;
+    var hours = document.getElementById("hoursInput").value;
+    var minutes = document.getElementById("minutesInput").value;
+    var date = year + '-' + month + '-' + day;
+    var time = hours + '' + minutes;
+    var url = baseurl + "?date=" + date + "&channel=live&time=" + time;
+
+    window.open(url, "_blank");
+  }
+
+  function getCurrentDateTime() {
+    var currentDate = new Date();
+    var year = currentDate.getFullYear();
+    var month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    var day = String(currentDate.getDate()).padStart(2, '0');
+    var hours = String(currentDate.getHours()).padStart(2, '0');
+    var minutes = String(currentDate.getMinutes()).padStart(2, '0');
+    document.getElementById("yearInput").value = year;
+    document.getElementById("monthInput").value = month;
+    document.getElementById("dayInput").value = day;
+    document.getElementById("hoursInput").value = hours;
+    //document.getElementById("minutesInput").value = minutes;
+  }
+</script>
+<body onload="getCurrentDateTime()">
+  <h1>RadioSongSearch</h1>
+  <label for="yearInput">Year:</label>
+  <input type="text" id="yearInput">
+  <label for="monthInput">Month:</label>
+  <input type="text" id="monthInput">
+  <label for="dayInput">Day:</label>
+  <input type="text" id="dayInput">
+  <label for="hoursInput">Time:</label>
+  <input type="text" id="hoursInput">
+  <label for="minutesInput">Minutes:</label>
+  <input type="text" id="minutesInput">
+  <br>
+  <button onclick="openSongSearchResults()">Search</button>
+</body>

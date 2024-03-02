@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Zip Renderer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+  <script>
+    function renderZipFile() {
+      var zipFileName = document.getElementById("zipFileName").value;
+      fetch(zipFileName)
+        .then(function(response) {
+          return response.arrayBuffer();
+        })
+        .then(function(buffer) {
+          return JSZip.loadAsync(buffer);
+        })
+        .then(function(zip) {
+          var folders = [];
+          var files = [];
+          var linksWithSecondSlash = [];
+          zip.forEach(function(relativePath, zipEntry) {
+            if (zipEntry.dir) {
+              folders.push(relativePath);
+            } else {
+              files.push({ relativePath: relativePath, zipEntry: zipEntry });
+            }
+          });
+          folders.sort();
+          files.sort(function(a, b) {
+            return a.relativePath.localeCompare(b.relativePath);
+          });
+          files.forEach(function(file) {
+            var link = file.relativePath;
+            if (link.split('/').length > 2) {
+              linksWithSecondSlash.push(link);
+            } else {
+              renderFile(file.zipEntry);
+            }
+          });
+          linksWithSecondSlash.forEach(function(link) {
+            var zipEntry = zip.file(link);
+            if (zipEntry) {
+              renderFile(zipEntry);
+            }
+          });
+          folders.forEach(function(folder) {
+            renderFolder(folder);
+          });
+        })
+        .catch(function(error) {
+          console.error('Error rendering zip file:', error);
+        });
+    }
+    function renderFolder(folder) {
+      var folderElement = document.createElement('p');
+      folderElement.textContent = folder;
+      document.body.appendChild(folderElement);
+    }
+    function renderFile(zipEntry) {
+      zipEntry.async('blob').then(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var fileElement = document.createElement('a');
+        fileElement.href = url;
+        fileElement.download = zipEntry.name;
+        fileElement.textContent = zipEntry.name;
+        fileElement.target = "_blank";
+        document.body.appendChild(fileElement);
+        document.body.appendChild(document.createElement('br'));
+      });
+    }
+  </script>
+</head>
+<body>
+  <label for="zipFileName">Zip File Name:</label>
+  <input type="text" id="zipFileName" name="zipFileName" value="https://ry3yr.github.io/alceawis.de.zip">
+  <button onclick="renderZipFile()">Render Zip</button>
+</body>
+</html>

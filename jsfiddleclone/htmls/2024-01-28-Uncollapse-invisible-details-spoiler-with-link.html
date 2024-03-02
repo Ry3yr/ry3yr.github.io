@@ -1,0 +1,39 @@
+<a href="javascript:var spoiler = document.getElementById('search'); spoiler.open = !spoiler.open;">(src)</a>
+
+<details id="search">
+  <summary style="display: none;">-</summary>
+  <div class="custom-summary" onclick="toggleDetails()">-</div>
+<pre>
+< ?php
+$directory = '.'; // Specify the directory you want to list
+$data = array();
+if (is_dir($directory)) {
+    $files = scandir($directory);
+    foreach ($files as $file) {
+        if ($file != '.' && $file != '..' && $file != 'directory_listing.php') {
+            $filePath = $directory . '/' . $file;
+            if (is_dir($filePath)) {
+                // Add directory information
+                $data[] = array(
+                    'id' => uniqid(),
+                    'page_name' => $file,
+                    'html_name' => '',
+                    'undefined_value' => '',
+                    'profile_image' => 'null.png'
+                );
+            } elseif (pathinfo($file, PATHINFO_EXTENSION) == 'html') {
+                // Add HTML file information
+                $data[] = array(
+                    'id' => uniqid(),
+                    'page_name' => pathinfo($file, PATHINFO_FILENAME),
+                    'html_name' => $file,
+                    'undefined_value' => '',
+                    'profile_image' => 'null.png'
+                );
+            }
+        }
+    }
+}
+header('Content-Type: application/json');
+echo json_encode($data);
+?>

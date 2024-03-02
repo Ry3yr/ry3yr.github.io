@@ -1,0 +1,56 @@
+  <ul id="playlists"></ul>
+  <script>
+    // YouTube API Key
+    var api_key = 'AIzaSyAMI5iE6oUzj5qaDkwCy_YKH5qjDGFyKy4'; // Replace with your own YouTube Data API key
+    // YouTube Channel ID
+    var channel_id = new URLSearchParams(window.location.search).get('channelid') || 'UCmIpOnd5BVx5Si2hp0WNKZw'; // Replace with the desired channel ID or use the default channel ID if not provided in the query string
+    // Search term
+    var search_term = new URLSearchParams(window.location.search).get('keyword') || ''; // Get the keyword from the query string or set it as an empty string if not provided
+    // Retrieve playlists using YouTube Data API
+    var playlistsContainer = document.getElementById('playlists');
+    function fetchPlaylists(pageToken) {
+      var url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&channelId=${channel_id}&maxResults=50&key=${api_key}`;
+      // Add pageToken if provided
+      if (pageToken) {
+        url += `&pageToken=${pageToken}`;
+      }
+      // Make a GET request using Fetch API
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          var playlists = data.items;
+          if (playlists.length > 0) {
+            playlists.forEach(playlist => {
+              var playlistTitle = playlist.snippet.title;
+              var playlistId = playlist.id;
+              // Filter playlists based on the search term
+              if (search_term === '' || playlistTitle.toLowerCase().includes(search_term.toLowerCase())) {
+                var playlistLink = document.createElement('a');
+                playlistLink.href = `https://www.youtube.com/playlist?list=${playlistId}`;
+                playlistLink.target = '_blank';
+                playlistLink.textContent = playlistTitle;
+                var listItem = document.createElement('li');
+                listItem.appendChild(playlistLink);
+                
+                playlistsContainer.appendChild(listItem);
+              }
+            });
+            // Check if there are more playlists to fetch
+            if (data.nextPageToken) {
+              fetchPlaylists(data.nextPageToken);
+            }
+          } else {
+            if (playlistsContainer.childElementCount === 0) {
+              playlistsContainer.innerHTML = "<p>No playlists found for the channel with the provided criteria.</p>";
+            }
+          }
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
+    // Start fetching the playlists
+    fetchPlaylists();
+  </script>
+</body>
+</html>

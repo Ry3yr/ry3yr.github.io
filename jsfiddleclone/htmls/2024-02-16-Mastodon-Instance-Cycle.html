@@ -1,0 +1,93 @@
+<input type="checkbox" id="cycleCheckbox" onchange="toggleCycle()" />
+<script>
+let canFire = true;
+let intervalId;
+function toggleCycle() {
+const checkbox = document.getElementById('cycleCheckbox');
+if (checkbox.checked) {
+// Start the cycle
+intervalId = setInterval(() => {
+if (!canFire) return;
+const elements = [...document.querySelectorAll('#mtdlink')];
+if (elements.length > 0) {
+const randomIndex = Math.floor(Math.random() * elements.length);
+elements[randomIndex].click();
+}
+canFire = false;
+setTimeout(() => {
+canFire = true;
+}, 20000);
+}, 1000);
+} else {
+// Stop the cycle
+clearInterval(intervalId);
+}
+}
+</script>
+
+<!--renderer-->
+•<a href="#" onclick="changeEndpoint('https://mastodon.social')" id="mtdlink">mastodon.social</a>
+•<a href="#" onclick="changeEndpoint('https://urusai.social')" id="mtdlink">urusai.social</a>
+•<a href="#" onclick="changeEndpoint('https://phpc.social')" id="mtdlink">phpc.social</a>
+•<a href="#" onclick="changeEndpoint('https://pb.todon.de')"id="mtdlink">pb.todon.de</a>
+•<a href="#" onclick="changeEndpoint('https://kopimi.space')" id="mtdlink">kopimi.space</a>
+<div id="container"><div id="instance-data" class="example"></div></div>
+<style>
+#container {
+background-size: cover;
+background-position: center;
+background-repeat: no-repeat;
+}
+#instance-data {
+color: black;
+text-shadow: 2px 2px 8px #ffffff;
+//}
+@keyframes colorCycle {
+0% { color: #7f00ff; text-shadow: 2px 2px 4px #7f00ff; }
+50% { color: transparent; }
+100% { color: #7f00ff; text-shadow: 2px 2px 4px #7f00ff; }
+}
+.example {
+animation: colorCycle 18s infinite;
+}
+</style>
+</head>
+<body onload="fetchInstanceData('https://urusai.social')">
+<script>
+function fetchInstanceData(endpoint) {
+const url = `${endpoint}/api/v1/instance`;
+const instanceDataElement = document.getElementById('instance-data');
+const containerElement = document.getElementById('container');
+fetch(url)
+.then(response => response.json())
+.then(instanceData => {
+// Extract specific fields
+const uri = instanceData.uri;
+const title = instanceData.title;
+const shortDescription = instanceData.short_description;
+const description = instanceData.description;
+const userCount = instanceData.stats.user_count;
+const statusCount = instanceData.stats.status_count;
+const domainCount = instanceData.stats.domain_count;
+const streamingApiUrl = instanceData.urls.streaming_api;
+const thumbnail = instanceData.thumbnail;
+const email = instanceData.email;
+const registrations = instanceData.registrations;
+instanceDataElement.innerHTML = `
+<b><a target="_blank" href="https://${uri}" style="color: pink">${uri}</a></b><br>
+${title} (${email})<br>
+•${shortDescription}<br>
+<hr>${description}<hr>
+<b>UserCount:</b> ${userCount}
+Statuses: ${statusCount}
+<b>Domains:</b> ${domainCount}
+<b>Registration possible:</b> <u>${registrations}</u><br>-
+`;
+containerElement.style.backgroundImage = `url(${thumbnail})`;
+})
+}
+function changeEndpoint(endpoint) {
+fetchInstanceData(endpoint);
+}
+</script>
+</body>

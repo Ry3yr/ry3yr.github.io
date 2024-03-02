@@ -1,0 +1,235 @@
+<br><!-----gamedbgames--->
+<a target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2024-01-07-GameDatabase/gamedb.php" style=color:lightgray>(+)</a><br><br><iframe src="https://alceawis.de/gamedbrender.html" style="border:0px #ffffff none;" name="statusit" scrolling="auto" frameborder="0" marginheight="0px" marginwidth="0px" height="100%" width="100%" allowfullscreen></iframe><!---<script src="jquery.min.js"></script><script type="text/javascript">$(document).ready(function(){ var baseUrl; if (window.location.protocol === "file:") { baseUrl = "file://" + window.location.pathname.match(/(.*)[\/\\]/)[1]; } else { baseUrl = window.location.href.match(/(.*)[\/\\]/)[1]; } $("#gamedbgames").load(baseUrl + "/gamedbrender.html");});</script><div class="formClass"> <div id="gamedbgames"> </div></div></div>-->
+
+<details>
+<plaintext>
+PHP Gamedatabase (with html renderer):
+-------------------------------------------
+
+=================gamedb.php========
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sortable Table</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            cursor: pointer;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <?php
+    // Function to write table data to a file
+    function writeDataToFile($data, $filename) {
+        $file = fopen($filename, 'w');
+        fwrite($file, json_encode($data));
+        fclose($file);
+    }
+    // Function to read table data from a file
+    function readDataFromFile($filename) {
+        if (file_exists($filename)) {
+            $data = file_get_contents($filename);
+            return json_decode($data, true);
+        }
+        return [];
+    }
+    // Database file name
+    $dbFile = 'gamedb.json';
+    // Check if a new entry is submitted
+    if (isset($_POST['submit'])) {
+        $newEntry = [
+            'Gamename' => $_POST['gamename'],
+            'System' => $_POST['system'],
+            'Vendor' => $_POST['vendor'],
+            'Comment' => $_POST['comment'],
+            'Rating' => $_POST['rating'],
+            'Description' => $_POST['description'],
+            'link' => $_POST['link']
+        ];
+        // Read existing data from file
+        $games = readDataFromFile($dbFile);
+        // Add the new entry
+        $games[] = $newEntry;
+        // Write the updated data to file
+        writeDataToFile($games, $dbFile);
+    } else {
+        // Read data from file
+        $games = readDataFromFile($dbFile);
+    }
+    ?>
+    <table>
+        <tr>
+            <th onclick="sortTable(0)">Gamename</th>
+            <th onclick="sortTable(1)">System</th>
+            <th onclick="sortTable(2)">Vendor</th>
+            <th onclick="sortTable(3)">Comment</th>
+            <th onclick="sortTable(4)">Rating</th>
+            <th onclick="sortTable(5)">Description</th>
+            <th onclick="sortTable(6)">Link</th>
+        </tr>
+        <?php foreach ($games as $game): ?>
+            <tr>
+                <td><?php echo $game['Gamename']; ?></td>
+                <td><?php echo $game['System']; ?></td>
+                <td><?php echo $game['Vendor']; ?></td>
+                <td><?php echo $game['Comment']; ?></td>
+                <td><?php echo $game['Rating']; ?></td>
+                <td><?php echo $game['Description']; ?></td>
+                <td><?php echo $game['link']; ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+    <form method="post" action="">
+        <input type="text" name="gamename" placeholder="Gamename" required>
+        <input type="text" name="system" placeholder="System" required>
+        <input type="text" name="vendor" placeholder="Vendor" required>
+        <input type="text" name="comment" placeholder="Comment" required>
+        <input type="text" name="rating" placeholder="Rating" required>
+        <input type="text" name="description" placeholder="Description" required>
+        <input type="text" name="link" placeholder="Link" required>
+        <input type="submit" name="submit" value="Add Entry">
+    </form>
+    <script>
+    // Function to sort the table
+    function sortTable(columnIndex) {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementsByTagName("table")[0];
+        switching = true;
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[columnIndex];
+                y = rows[i + 1].getElementsByTagName("td")[columnIndex];
+                if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+    }
+    // Add event listeners to table headers for sorting
+    var headers = document.getElementsByTagName("th");
+    for (var i = 0; i < headers.length; i++) {
+        headers[i].addEventListener("click", function () {
+            var columnIndex = Array.from(this.parentNode.children).indexOf(this);
+            sortTable(columnIndex);
+        });
+    }
+</script>
+</body>
+</html>
+
+
+======html json renderer====
+<style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+      cursor: pointer;
+    }
+    th::after {
+      content: "";
+      display: inline-block;
+      margin-left: 5px;
+    }
+    .asc::after {
+      content: "^";
+    }
+    .desc::after {
+      content: "v";
+    }
+  </style>
+</head>
+<body>
+  <table id="gameTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">Game Name</th>
+        <th onclick="sortTable(1)">System</th>
+        <th onclick="sortTable(2)">Vendor</th>
+        <th onclick="sortTable(3)">Comment</th>
+        <th onclick="sortTable(4)">Rating</th>
+        <th onclick="sortTable(5)">Description</th>
+        <th onclick="sortTable(6)">Link</th>
+      </tr>
+    </thead>
+    <tbody id="gameTableBody"></tbody>
+  </table>
+  <script>
+    let sortingOrder = {};
+    // Function to fetch the JSON data and populate the table
+    function fetchGameData() {
+      fetch('gamedb.json')
+        .then(response => response.json())
+        .then(data => {
+          const gameTableBody = document.getElementById('gameTableBody');
+          gameTableBody.innerHTML = '';
+          data.forEach(game => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${game.Gamename}</td>
+              <td>${game.System}</td>
+              <td>${game.Vendor}</td>
+              <td>${game.Comment}</td>
+              <td>${game.Rating}</td>
+              <td>${game.Description}</td>
+              <td><a href="${game.link}">Link</a></td>
+            `;
+            gameTableBody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+    // Function to sort the table based on the selected column
+    function sortTable(columnIndex) {
+      const table = document.getElementById('gameTable');
+      const rows = Array.from(table.rows).slice(1); // Exclude the table header row
+      const asc = sortingOrder[columnIndex] === 'asc';
+      rows.sort((a, b) => {
+        const cellA = a.cells[columnIndex].textContent.toLowerCase();
+        const cellB = b.cells[columnIndex].textContent.toLowerCase();
+        return asc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+      });
+      table.tBodies[0].append(...rows);
+      // Update sortingOrder for the current column
+      sortingOrder = {};
+      sortingOrder[columnIndex] = asc ? 'desc' : 'asc';
+      // Update CSS classes for sorting indicators
+      const ths = table.tHead.rows[0].cells;
+      ths.forEach(th => th.classList.remove('asc', 'desc'));
+      ths[columnIndex].classList.add(sortingOrder[columnIndex]);
+    }
+    // Fetch the game data when the page loads
+    fetchGameData();
+  </script>
+</body>
+</html>-->

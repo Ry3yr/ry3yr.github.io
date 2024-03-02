@@ -1,0 +1,15 @@
+<script>
+if (window.location.href.includes("lowbandwidth")) {
+  var style = document.createElement("style");
+  style.innerHTML = `object, img:not(#important) {display: none !important;}`;
+  document.head.appendChild(style);
+}
+</script>
+
+
+<h1>Images display/not depending on "?mode=<a target="_blank" href="?mode=lowbandwidth" style=color:blue>lowbandwidth</a>" querystring:</h1><br><br>
+
+keep (id="important"): [<img src="https://alcea-wisteria.de/PHP/0demo/2023-07-09-FetchMastodonAva/alcea/alcea_2024-02-08.png" id="important" style="height: 35px;">]<br><br>
+
+hide (id="null"): [<img src="https://alcea-wisteria.de/PHP/0demo/2023-07-09-FetchMastodonAva/alcea/alcea_2024-02-08.png" id="null" style="height: 35px;">]
+

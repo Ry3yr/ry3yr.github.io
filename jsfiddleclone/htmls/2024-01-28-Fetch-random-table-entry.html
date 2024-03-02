@@ -1,0 +1,36 @@
+<div class="random-row-container"></div><button onclick="fetchAndPopulateData()">me</button>
+<style>.random-row-container {display: inline-block;}
+  button {display: inline-block;vertical-align: top;}</style>
+<script>
+  function fetchAndPopulateData() {
+    fetch('https://alceawis.de/other/extra/personal/personality/0apersonality.html')
+      .then(response => response.text())
+      .then(data => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data;
+        const table = tempDiv.querySelector('table');
+        const rows = table.querySelectorAll('tr');
+        const randomRowIndex = Math.floor(Math.random() * rows.length);
+        const randomRow = rows[randomRowIndex];
+        const displayDiv = document.querySelector('.random-row-container');
+        displayDiv.innerHTML = '';
+        const tableElement = document.createElement('table');
+        const newRow = tableElement.insertRow();
+        randomRow.querySelectorAll('td').forEach((cell, index) => {
+          const newCell = newRow.insertCell();
+          newCell.innerHTML = cell.innerHTML;
+          newCell.style.border = '1px solid #000';
+          newCell.style.padding = '5px 10px';
+          newCell.style.margin = '2px';
+          newCell.style.whiteSpace = 'nowrap';
+        });
+        displayDiv.appendChild(tableElement);
+      })
+      .catch(error => {
+        //fetchAndPopulateData();
+        console.error('Error:', error);
+      });
+  }
+  // Fetch data on page load
+  //fetchAndPopulateData();
+</script>

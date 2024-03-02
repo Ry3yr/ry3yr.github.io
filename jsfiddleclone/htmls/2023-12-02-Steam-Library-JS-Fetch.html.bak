@@ -1,0 +1,91 @@
+<a href="?api_key=F96D40C8F7FA9C51B204D&steam_id=76561198119673186">Custom</a>   <a href="https://steamcommunity.com/login/home/?goto=%2Fdev%2Fapikey" target="_blank" style="color:grey">Get ApiKey</a>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Steam Library Viewer</title>
+  <style>
+    table {
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+
+  <table id="steamLibrary">
+    <thead>
+      <tr>
+        <th>Game Name</th>
+        <th>Playtime (minutes)</th>
+        <th>Purchase Date</th>
+        <th>Price (Current)</th>
+        <th>Last Played</th>
+      </tr>
+    </thead>
+    <tbody id="libraryData">
+    </tbody>
+  </table>
+
+  <div id="constructedUrl"></div>
+  <div id="libraryApiUrl"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const apiKey = urlParams.get('api_key') || 'F96D40C8F7FA9C51B204D';
+    const steamId = urlParams.get('steam_id') || '76561198119673186';
+
+    const libraryApiUrl = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`;
+
+    document.getElementById('libraryApiUrl').innerText = libraryApiUrl;
+
+    fetch(libraryApiUrl)
+      .then(response => response.json())
+      .then(data => {
+        const games = data.response.games;
+
+        if (games && games.length > 0) {
+          games.sort((a, b) => a.name.localeCompare(b.name));
+
+          const libraryData = document.getElementById('libraryData');
+
+          games.forEach(game => {
+            const appId = game.appid;
+            const appName = game.name;
+            const playtimeMinutes = game.playtime_forever;
+            const purchaseDate = game.purchase_date ? new Date(game.purchase_date * 1000).toDateString() : 'Unknown';
+            const rtimeLastPlayed = game.playtime_2weeks ? new Date(game.playtime_2weeks * 1000).toDateString() : 'Unknown';
+
+            const purchaseApiUrl = `https://store.steampowered.com/api/appdetails?appids=${appId}`;
+
+            fetch(purchaseApiUrl)
+              .then(response => response.json())
+              .then(purchaseData => {
+                const price = purchaseData[appId].data ? purchaseData[appId].data.price_overview.final / 100 : 'Unknown';
+
+                libraryData.innerHTML += `
+                  <tr>
+                    <td>${appName}</td>
+                    <td>${playtimeMinutes}</td>
+                    <td>${purchaseDate}</td>
+                    <td>${price}</td>
+                    <td>${rtimeLastPlayed}</td>
+                  </tr>
+                `;
+              });
+          });
+        } else {
+          document.getElementById('libraryData').innerHTML = '<tr><td colspan="5">No games found in the Steam library.</td></tr>';
+        }
+      })
+      .catch(error => {
+        document.getElementById('libraryData').innerHTML = '<tr><td colspan="5">Error retrieving Steam library data from the Steam Web API.</td></tr>';
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<script>
+const API_KEY = 'AIzaSyAMI5iE6oUzj5qaDkwCy_YKH5qjDGFyKy4';
+const CHANNEL_ID = 'UCmIpOnd5BVx5Si2hp0WNKZw';
+const MAX_RESULTS = 15;
+function fetchVideos() {
+  fetch(
+    `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=${MAX_RESULTS}`
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      data.items.forEach((item) => {
+        const videoId = item.id.videoId;
+        const title = item.snippet.title;
+        const link = document.createElement('a');
+        link.href = `https://www.youtube.com/watch?v=${videoId}`;
+        link.textContent = title;
+        link.target = '_blank'; // Add target="_blank" to open the link in a new tab
+        document.body.appendChild(link);
+        const lineBreak = document.createElement('br');
+        document.body.appendChild(lineBreak);
+        const additionalLineBreak = document.createElement('br');
+        document.body.appendChild(additionalLineBreak);
+      });
+    })
+    .catch((error) => {
+      console.error('Error fetching videos:', error);
+    });
+}
+fetchVideos();
+</script>
+
+<br><br><a target="_blank" href="https://www.googleapis.com/youtube/v3/search?key=AIzaSyAMI5iE6oUzj5qaDkwCy_YKH5qjDGFyKy4&channelId=UCmIpOnd5BVx5Si2hp0WNKZw&part=snippet,id&order=date&maxResults=15  " style=color:gray>quota</a><br><br>

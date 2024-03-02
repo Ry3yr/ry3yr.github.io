@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stream Media Example</title>
+  <style>
+    /* Optional styling for the media players */
+    .media-container {
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <a href="https://web.archive.org/web/20230707174059/https://alceawisteria.codeberg.page/OSTR/release/kkj/48.%20CD%20Track%2048.mp3" class="stream-link">Stream Audio</a><br>
+  <a href="https://ssscdn.io/ssstwitter/aHR0cHM6Ly92aWRlby50d2ltZy5jb20vZXh0X3R3X3ZpZGVvLzE2OTA0MDMxNjU5OTEyNzI0NDgvcHUvdmlkLzEyODB4NzIwLzBCeVRvX3NncVBqUnlrdGoubXA0P3RhZz0xMg==" class="stream-link">Stream Video</a>
+
+  <script>
+    function streamMedia(link) {
+      link.addEventListener('click', function(event) {
+        event.preventDefault();
+        const mediaUrl = this.getAttribute('href');
+
+        const isAudio = mediaUrl.endsWith('.mp3') || mediaUrl.endsWith('.wav') || mediaUrl.endsWith('.ogg');
+
+        const mediaElement = isAudio ? document.createElement('audio') : document.createElement('video');
+        mediaElement.src = mediaUrl;
+        mediaElement.controls = true;
+        mediaElement.autoplay = true;
+
+        const container = document.createElement('div');
+        container.className = 'media-container';
+        container.appendChild(mediaElement);
+
+        // Replace the link with the media player
+        this.parentNode.replaceChild(container, this);
+      });
+    }
+
+    const streamLinks = document.querySelectorAll('.stream-link');
+    streamLinks.forEach(link => {
+      streamMedia(link);
+    });
+  </script>
+</body>
+</html>
