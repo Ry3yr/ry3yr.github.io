@@ -1,0 +1,108 @@
+
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const url = document.getElementById("dropdownMenu").value;
+    changeDropdownSelection(url);
+  });
+</script>
+<head>
+    <style>
+.extracted{margin-bottom:10px}.title{background-color:#f1f1f1;padding:10px;cursor:pointer;font-weight:700}.content{display:none;padding:10px;background-color:#fff;position:relative}.content.show{display:block}.copy-button{position:absolute;top:5px;right:5px;padding:5px 10px;border:none;background-color:#ddd;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="dropdown">
+  <select id="dropdownMenu" onchange="changeDropdownSelection()">
+    <option value="lpsnswitch.txt">NSwitch</option>
+    <option value="lpspc.txt">PCGames</option>
+  </select>
+</div>
+<div id="output"></div>
+<script>
+function toggleContent(titleElement) {
+  const contentElement = titleElement.nextElementSibling;
+  contentElement.classList.toggle("show");
+}
+
+function copyContent(contentElement) {
+  const text = contentElement.innerText.trim();
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      console.log('Content copied to clipboard:', text);
+    })
+    .catch((error) => {
+      console.error('Failed to copy content to clipboard:', error);
+    });
+}
+
+function changeDropdownSelection() {
+  const dropdown = document.getElementById('dropdownMenu');
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const fileTextParam = urlParams.get('filetext');
+  if (fileTextParam !== null) {
+    dropdown.value = fileTextParam;
+  }
+  const selectedValue = dropdown.value;
+
+
+if (fileTextParam) {
+  dropdown.disabled = true; // Disable the dropdown menu if querystring exists
+  //const reloadLink = document.createElement('a');
+  //reloadLink.innerText = 'Reload';
+  //document.body.prependChild(reloadLink);
+}
+
+
+  fetch(selectedValue)
+    .then((response) => response.text())
+    .then((data) => {
+      const container = document.getElementById('output');
+      container.innerHTML = '';
+      const lines = data.split('\n');
+      const filteredLines = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('---------')) {
+          if (i > 0) {
+            filteredLines.push(lines[i - 1]);
+          }
+        }
+      }
+
+      const contentLines = data.split(/---------+/);
+      contentLines.shift();
+
+      filteredLines.forEach((line, index) => {
+        const extractedElement = document.createElement("div");
+        extractedElement.className = "extracted";
+
+        const titleElement = document.createElement("div");
+        titleElement.className = "title";
+        titleElement.innerText = line;
+        titleElement.addEventListener("click", () => toggleContent(titleElement));
+        extractedElement.appendChild(titleElement);
+
+        const contentElement = document.createElement("div");
+        contentElement.className = "content";
+        contentElement.innerHTML = contentLines[index].trim();
+        extractedElement.appendChild(contentElement);
+
+        const copyButton = document.createElement("button");
+        copyButton.innerText = "Copy";
+        copyButton.className = "copy-button";
+        copyButton.addEventListener("click", () => copyContent(contentElement));
+        contentElement.appendChild(copyButton);
+
+        container.appendChild(extractedElement);
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+}
+</script>
+</body>
+</html>
+
+</body>
+</html>

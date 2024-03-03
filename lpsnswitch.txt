@@ -1,0 +1,16 @@
+
+
+
+Another Code Recollection
+----------------------------------------------
+
+<table id="videoTable">
+        <thead>
+            <tr>
+                <th>Video Name</th>
+                <th>Playtime</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="videoList"><tr><td><a href="https://www.youtube.com/watch?v=jhLMk9_0uAI" target="_blank">~Another Code~ (Recollection):- [Two Memories] - Pt1 (no commentary)</a></td><td>0h 23m 31s</td><td>Thu Feb 08 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=81GvAzG8rxA" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt4 (no commentary) (USBCamera+GenkiShadowcast !) (NSW)</a></td><td>0h 23m 1s</td><td>Thu Feb 08 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=02gSs8ogfww" target="_blank">~Another Code~ (Recollection):- [Two Memories] - Pt2 (no commentary)</a></td><td>0h 31m 12s</td><td>Thu Feb 08 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=9JY2VQ1X_18" target="_blank">~Another Code~ (Recollection):- [Two Memories] - Pt3 (no commentary)</a></td><td>1h 14m 27s</td><td>Thu Feb 08 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=dqp8izWnci0" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt5 (no commentary)</a></td><td>0h 14m 39s</td><td>Sun Feb 18 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=PlVitbMn4fY" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt6 (no commentary)</a></td><td>0h 19m 26s</td><td>Wed Feb 21 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=Fq6-gHa55eg" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt7 (no commentary)</a></td><td>0h 36m 48s</td><td>Wed Feb 28 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=jwtQD9nC5po" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt8 (no commentary)</a></td><td>0h 43m 28s</td><td>Thu Feb 29 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=pKHXwInBvDM" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt11 (no commentary)</a></td><td>0h 40m 26s</td><td>Sat Mar 02 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=N0MoZJFBr08" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt10 (no commentary)</a></td><td>0h 40m 3s</td><td>Sat Mar 02 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=esvJiPsJKZA" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt12 (no commentary)</a></td><td>0h 37m 21s</td><td>Sat Mar 02 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=Ib-hByYA3sA" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt9 (no commentary)</a></td><td>0h 33m 38s</td><td>Sat Mar 02 2024</td></tr><tr><td><a href="https://www.youtube.com/watch?v=KdvmDStxM0A" target="_blank">~Another Code~(Recollection)[Two Memories] - Pt13 (no commentary)</a></td><td>0h 42m 6s</td><td>Sun Mar 03 2024</td></tr><tr><td colspan="2">Total Playtime: 07h 40m 06s</td></tr></tbody>
+    </table>
