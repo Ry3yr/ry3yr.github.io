@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Filter, Erase, and Add Leading Numbers</title>
+</head>
+<body>
+  <textarea id="linesToFilter" rows="10" cols="50"></textarea>
+  <br>
+  <input type="text" id="keyword" placeholder="Enter keyword" />
+  <button id="filterButton">Filter Lines</button>
+  <br>
+  <input type="text" id="eraseTextbox" placeholder="Enter phrase to erase" />
+  <button id="eraseButton">Erase</button>
+  <br>
+  <button id="leadingNumbersButton">Leading Numbers</button>
+  <input type="checkbox" id="leadingZeroCheckbox" />
+  <label for="leadingZeroCheckbox">Leading Zero</label>
+
+  <script>
+    const linesToFilterInput = document.getElementById('linesToFilter');
+    const keywordInput = document.getElementById('keyword');
+    const filterButton = document.getElementById('filterButton');
+
+    const mainTextbox = document.getElementById('linesToFilter');
+    const eraseTextbox = document.getElementById('eraseTextbox');
+    const eraseButton = document.getElementById('eraseButton');
+
+    const leadingNumbersButton = document.getElementById('leadingNumbersButton');
+    const leadingZeroCheckbox = document.getElementById('leadingZeroCheckbox');
+
+    filterButton.addEventListener('click', function() {
+      const linesToFilter = linesToFilterInput.value.split('\n');
+      const keyword = keywordInput.value;
+
+      const filteredLines = linesToFilter.filter(line => line.includes(keyword));
+
+      const newContent = filteredLines.join('\n');
+
+      linesToFilterInput.value = newContent;
+    });
+
+    eraseButton.addEventListener('click', function() {
+      const phraseToErase = eraseTextbox.value;
+
+      const content = mainTextbox.value;
+
+      const newContent = content.replace(new RegExp(phraseToErase, 'g'), '');
+
+      mainTextbox.value = newContent;
+    });
+
+    leadingNumbersButton.addEventListener('click', function() {
+      const linesToNumber = mainTextbox.value.split('\n');
+      const useLeadingZero = leadingZeroCheckbox.checked;
+      let numberedLines = '';
+
+      for (let i = 0; i < linesToNumber.length; i++) {
+        let lineNumber = i + 1;
+
+        if (useLeadingZero) {
+          lineNumber = lineNumber.toString().padStart(linesToNumber.length.toString().length, '0');
+        }
+
+        numberedLines += `${lineNumber}. ${linesToNumber[i]}\n`;
+      }
+
+      mainTextbox.value = numberedLines;
+    });
+  </script>
+</body>
+</html>

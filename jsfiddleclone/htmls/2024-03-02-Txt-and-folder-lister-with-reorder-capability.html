@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Draggable Grid Example</title>
+  <style>
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-gap: 10px;
+    }
+    .grid-item {
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      cursor: grab;
+    }
+    .grid-item.dragging {
+      opacity: .5;
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-container">
+    <div id="folder-grid" class="grid-item">
+      <h3>Folder Files</h3>
+    </div>
+    <div id="text-grid" class="grid-item">
+      <h3>Text Lines</h3>
+    </div>
+  </div>
+
+  <script>
+    let folderGrid = null;
+    let textGrid = null;
+    let clickedItem = null;
+
+    function createGridItem(content, draggable = true) {
+      const gridItem = document.createElement("div");
+      gridItem.className = "grid-item";
+      gridItem.textContent = content;
+      if (draggable) {
+        gridItem.draggable = true;
+        gridItem.addEventListener("dragstart", function (event) {
+          event.dataTransfer.setData("text/plain", content);
+          gridItem.classList.add("dragging");
+        });
+        gridItem.addEventListener("dragend", function () {
+          gridItem.classList.remove("dragging");
+        });
+      }
+      gridItem.addEventListener("click", function () {
+        if (clickedItem === null) {
+          clickedItem = gridItem;
+          gridItem.classList.add("dragging");
+        } else {
+          swapItems(clickedItem, gridItem);
+          clickedItem = null;
+          gridItem.classList.remove("dragging");
+        }
+      });
+      return gridItem;
+    }
+
+    function addFileToList(file) {
+      if (file.isDirectory) {
+        return; // Exclude directories from the list
+      }
+      const fileName = file.name;
+      const isHeaderPresent = folderGrid.querySelector("h3");
+      const gridItem = createGridItem(fileName);
+
+      if (isHeaderPresent) {
+        folderGrid.appendChild(gridItem);
+      } else {
+        const header = document.createElement("h3");
+        header.textContent = "Folder Files";
+        folderGrid.appendChild(header);
+        folderGrid.appendChild(gridItem);
+      }
+    }
+
+    function addLineToList(line) {
+      const gridItem = createGridItem(line.trim(), false);
+      textGrid.appendChild(gridItem);
+    }
+
+    function readTextFile(file) {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const lines = event.target.result.split("\n");
+        lines.forEach((line) => {
+          addLineToList(line);
+        });
+      };
+      reader.readAsText(file);
+    }
+
+    function traverseDirectory(directory) {
+      const directoryReader = directory.createReader();
+      directoryReader.readEntries(function (entries) {
+        entries.forEach((entry) => {
+          if (entry.isFile) {
+            entry.file(function (file) {
+              if (file.type === "text/plain") {
+                readTextFile(file);
+              } else {
+                addFileToList(file);
+              }
+            });
+          } else if (entry.isDirectory) {
+            addFileToList(entry);
+            traverseDirectory(entry);
+          }
+        });
+      });
+    }
+
+    function swapItems(item1, item2) {
+      const tempContent = item1.textContent;
+      item1.textContent = item2.textContent;
+      item2.textContent = tempContent;
+    }
+
+    window.addEventListener("DOMContentLoaded", function () {
+      folderGrid = document.getElementById("folder-grid");
+      textGrid = document.getElementById("text-grid");
+
+      folderGrid.addEventListener("dragover", function (event) {
+        event.preventDefault();
+      });
+
+      folderGrid.addEventListener("drop", function (event) {
+        event.preventDefault();
+
+        const isHeaderPresent = folderGrid.querySelector("h3");
+        if (!isHeaderPresent) {
+          const header = document.createElement("h3");
+          header.textContent = "Folder Files";
+          folderGrid.appendChild(header);
+        }
+
+        const items = event.dataTransfer.items;
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.kind === "file") {
+            const entry = item.webkitGetAsEntry();
+            if (entry) {
+              if (entry.isDirectory) {
+                addFileToList(entry);
+                traverseDirectory(entry);
+              } else if (entry.isFile) {
+                entry.file(function (file) {
+                  if (file.type === "text/plain") {
+                    readTextFile(file);
+                  } else {
+                    addFileToList(file);
+                  }
+                });
+              }
+            }
+          }
+        }
+      });
+      
+      textGrid.addEventListener("dragover", function (event) {
+        event.preventDefault();
+      });
+
+      textGrid.addEventListener("drop", function (event) {
+        event.preventDefault();
+        
+        const items = event.dataTransfer.items;
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.kind === "file") {
+            const entry = item.webkitGetAsEntry();
+            if (entry && entry.isFile) {
+              entry.file(function (file) {
+                if (file.type === "text/plain") {
+                  readTextFile(file);
+                }
+              });
+            }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+
+<label for="insert-text">Insert Text:</label>
+  <input type="text" id="insert-text" placeholder="Insert Text" />
+  <br />
+  <label for="placeholder-text">Placeholder Text:</label>
+  <input type="text" id="placeholder-text" placeholder="Placeholder Text" />
+  <br />
+  <label for="after-text">After Text:</label>
+  <input type="text" id="after-text" placeholder="After Text" />
+  <br />
+  <button id="copy-button">Copy to Clipboard</button>
+<script>
+    document.getElementById("copy-button").addEventListener("click", function () {
+      const folderGridLines = Array.from(document.getElementById("folder-grid").querySelectorAll("div")).map(line => line.innerText);
+      const textGridLines = Array.from(document.getElementById("text-grid").querySelectorAll("div")).map(line => line.innerText);
+      const insertText = document.getElementById("insert-text").value || "Insert text";
+      const placeholderText = document.getElementById("placeholder-text").value || "placeholder";
+      const afterText = document.getElementById("after-text").value;
+
+      const combinedContent = folderGridLines.map((line, index) => `${insertText} "${line}" ${placeholderText} "${textGridLines[index]}"${afterText ? " " + afterText : ""}`).join('\n');
+
+      const tempTextarea = document.createElement("textarea");
+      tempTextarea.value = combinedContent;
+      document.body.appendChild(tempTextarea);
+      tempTextarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempTextarea);
+
+      alert("Content copied to clipboard!");
+    });
+  </script>
+
+
+</body>
+</html>
