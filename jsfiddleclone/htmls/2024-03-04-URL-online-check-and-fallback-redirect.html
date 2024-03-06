@@ -1,0 +1,28 @@
+<a href="#" id="checkURLLink">Check URL</a>
+<div id="result"></div>
+<script>
+document.getElementById('checkURLLink').addEventListener('click', function() {
+  var url = "https://alcea-wisteria.de/PHP/0demo/2023-08-15-JSFiddle-Clone/htmls/0ld/link.html";
+  //var url = "https://alcea-wisteria.de/PHP/0demo/2023-08-15-JSFiddle-Clone/jsfiddle-user.ph?mode=lowbandwidth"
+  var xhr = new XMLHttpRequest();
+  xhr.open('HEAD', url);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      const corsStatus = xhr.getResponseHeader('Access-Control-Allow-Origin');
+      const headers = xhr.getAllResponseHeaders();
+      const result = document.getElementById('result');
+      if (corsStatus || headers.includes('content-length') || headers.includes('content-type') || headers.includes('last-modified')) {
+        result.innerHTML = '<strong>Accessing original URL</strong><br>';
+        result.innerHTML += 'Access-Control-Allow-Origin: ' + corsStatus + '<br>';
+        window.open(url, "_blank");
+      } else {
+        result.innerHTML = '<strong>Accessing static backup</strong><br>';
+        result.innerHTML += 'Response Headers:<br>' + headers + '<br>';
+        var alternativeUrl = "https://ry3yr.github.io/jsfiddleclone/jsfiddle-user.html?mode=lowbandwidth";
+        window.open(alternativeUrl, "_blank");
+      }
+    }
+  };
+  xhr.send();
+});
+</script>

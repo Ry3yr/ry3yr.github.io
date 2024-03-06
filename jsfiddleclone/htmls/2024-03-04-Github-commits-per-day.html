@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Commit Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div>
+    <label for="apiUrl">API URL:</label>
+    <input type="text" id="apiUrl" value="https://api.github.com/repos/Ry3yr/ry3yr.github.io/commits?per_page=50">
+    <button id="loadButton" onclick="loadChart()">Load Chart</button>
+  </div>
+  
+  <div id="repoName"></div>
+  
+  <canvas id="commitChart"></canvas>
+
+    <script>
+    let chart;
+
+    function loadChart() {
+      if (chart) {
+        chart.destroy(); // Clear the existing chart
+      }
+
+      const apiUrl = document.getElementById('apiUrl').value;
+
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          // Extract commit dates
+          const commitDates = data.map(commit => new Date(commit.commit.author.date).toLocaleDateString());
+
+          // Count commits per day
+          const commitCounts = {};
+          commitDates.forEach(date => {
+            commitCounts[date] = (commitCounts[date] || 0) + 1;
+          });
+
+          // Prepare data for the chart
+          const labels = Object.keys(commitCounts);
+          const values = Object.values(commitCounts);
+
+          // Get the repository name from the API URL
+          const repoName = getRepoName(apiUrl);
+
+          // Display the repository name
+          document.getElementById('repoName').textContent = `Repository: ${repoName}`;
+
+          // Create the chart
+          const ctx = document.getElementById('commitChart').getContext('2d');
+          chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Commits per Day',
+                data: values,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)'
+              }]
+            },
+            options: {
+              scales: {
+                x: {
+                  display: true,
+                  reverse: true, // Invert the x-axis
+                  title: {
+                    display: true,
+                    text: 'Date'
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  stepSize: 1
+                }
+              }
+            }
+          });
+        });
+    }
+
+    // Extract the repository name from the API URL
+    function getRepoName(apiUrl) {
+      const parts = apiUrl.split('/');
+      return parts[parts.length - 3] + '/' + parts[parts.length - 2];
+    }
+
+    // Load chart with default API URL
+    loadChart();
+  </script>

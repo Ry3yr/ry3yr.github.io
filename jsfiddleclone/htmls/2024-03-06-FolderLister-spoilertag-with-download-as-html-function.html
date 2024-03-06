@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.folder {
+margin-left: 20px;
+}
+.empty-folder {
+color: gray;
+}
+</style>
+</head>
+<body>
+<h1>Drag and Drop Folder Lister</h1>
+<div>
+<label for="baseUrl">Base URL: </label>
+<input type="text" id="baseUrl" placeholder="Enter base URL" value="http://10.10.10.254/data/UsbDisk1/Volume1">
+</div>
+<div>
+<label for="excludeText">Exclude Text: </label>
+<input type="text" id="excludeText" placeholder="Enter text to exclude" value="D_drive/">
+</div>
+<div id="folderList" ondragover="allowDrop(event)" ondrop="drop(event)">
+<p>Drop a folder here to list its contents:</p>
+</div>
+<script>
+function allowDrop(event) {
+event.preventDefault();
+}
+
+function drop(event) {
+event.preventDefault();
+const folder = event.dataTransfer.items[0].webkitGetAsEntry();
+const baseUrl = document.getElementById("baseUrl").value;
+const excludeText = document.getElementById("excludeText").value;
+listFolderContents(folder, document.getElementById("folderList"), baseUrl, excludeText);
+}
+
+function listFolderContents(folder, parentElement, baseUrl, excludeText) {
+if (folder.isDirectory) {
+const details = document.createElement("details");
+const summary = document.createElement("summary");
+summary.textContent = folder.name;
+details.appendChild(summary);
+const subFolderList = document.createElement("ul");
+details.appendChild(subFolderList);
+parentElement.appendChild(details);
+const directoryReader = folder.createReader();
+
+function readEntries() {
+directoryReader.readEntries(function (entries) {
+if (entries.length > 0) {
+entries.forEach(function (entry) {
+listFolderContents(entry, subFolderList, baseUrl, excludeText);
+});
+readEntries(); // Continue reading entries in chunks
+} else if (subFolderList.childElementCount === 0) {
+details.classList.add("empty-folder"); // Apply the CSS class to the empty folder
+}
+});
+}
+
+readEntries();
+} else {
+const listItem = document.createElement("li");
+const link = document.createElement("a");
+link.textContent = folder.name;
+link.target = "_blank";
+link.href = baseUrl ? baseUrl + folder.fullPath : "file:///123/" + folder.fullPath;
+
+if (excludeText && link.href.includes(excludeText)) {
+link.href = link.href.replace(excludeText, "");
+}
+
+listItem.appendChild(link);
+parentElement.appendChild(listItem);
+}
+}
+</script>
+
+<!--Download-->
+<script>
+function downloadHTML() {
+const folderList = document.getElementById("folderList").cloneNode(true);
+const baseUrl = document.getElementById("baseUrl").value;
+updateHyperlinks(folderList, baseUrl);
+const doctype = document.implementation.createDocumentType('html', '', '');
+const html = document.implementation.createDocument('', 'html', doctype);
+html.documentElement.appendChild(folderList);
+const serializer = new XMLSerializer();
+const htmlString = serializer.serializeToString(html);
+const blob = new Blob([htmlString], { type: 'text/html' });
+const url = URL.createObjectURL(blob);
+const downloadLink = document.createElement('a');
+downloadLink.href = url;
+downloadLink.download = 'folder_list.html';
+downloadLink.click();
+}
+function updateHyperlinks(element, baseUrl) {
+const links = element.getElementsByTagName('a');
+for (let i = 0; i < links.length; i++) {
+const link = links[i];
+const href = link.getAttribute('href');
+if (baseUrl) {
+link.href = href;
+} else {
+link.href = href;
+}
+}
+}
+</script>
+<button onclick="downloadHTML()">Download HTML</button>
+
+  <!---
+PCFET0NUWVBFIGh0bWw+CjxodG1sPgo8aGVhZD4KICA8c3R5bGU+CiAgICAuZm9sZGVyIHsKICAgICAgbWFyZ2luLWxlZnQ6IDIwcHg7CiAgICB9CiAgICAKICAgIC5lbXB0eS1mb2xkZXIgewogICAgICBjb2xvcjogZ3JheTsKICAgIH0KICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5PgogIDxoMT5EcmFnIGFuZCBEcm9wIEZvbGRlciBMaXN0ZXI8L2gxPgogIDxkaXY+CiAgICA8bGFiZWwgZm9yPSJiYXNlVXJsIj5CYXNlIFVSTDogPC9sYWJlbD4KICAgIDxpbnB1dCB0eXBlPSJ0ZXh0IiBpZD0iYmFzZVVybCIgcGxhY2Vob2xkZXI9IkVudGVyIGJhc2UgVVJMIiB2YWx1ZT0iaHR0cHM6Ly8xMjMuY29tIj4KICA8L2Rpdj4KPGRpdiBpZD0iZm9sZGVyTGlzdCIgb25kcmFnb3Zlcj0iYWxsb3dEcm9wKGV2ZW50KSIgb25kcm9wPSJkcm9wKGV2ZW50KSI+CiAgICA8cD5Ecm9wIGEgZm9sZGVyIGhlcmUgdG8gbGlzdCBpdHMgY29udGVudHM6PC9wPgogIDwvZGl2PgogIDxzY3JpcHQ+CiAgICBmdW5jdGlvbiBhbGxvd0Ryb3AoZXZlbnQpIHsKICAgICAgZXZlbnQucHJldmVudERlZmF1bHQoKTt9CiAgICBmdW5jdGlvbiBkcm9wKGV2ZW50KSB7CiAgICAgIGV2ZW50LnByZXZlbnREZWZhdWx0KCk7CiAgICAgIGNvbnN0IGZvbGRlciA9IGV2ZW50LmRhdGFUcmFuc2Zlci5pdGVtc1swXS53ZWJraXRHZXRBc0VudHJ5KCk7CiAgICAgIGNvbnN0IGJhc2VVcmwgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiYmFzZVVybCIpLnZhbHVlOwogICAgICBsaXN0Rm9sZGVyQ29udGVudHMoZm9sZGVyLCBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiZm9sZGVyTGlzdCIpLCBiYXNlVXJsKTt9CiAgICBmdW5jdGlvbiBsaXN0Rm9sZGVyQ29udGVudHMoZm9sZGVyLCBwYXJlbnRFbGVtZW50LCBiYXNlVXJsKSB7CiAgICAgIGlmIChmb2xkZXIuaXNEaXJlY3RvcnkpIHsKICAgICAgICBjb25zdCBkZXRhaWxzID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgiZGV0YWlscyIpOwogICAgICAgIGNvbnN0IHN1bW1hcnkgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCJzdW1tYXJ5Iik7CiAgICAgICAgc3VtbWFyeS50ZXh0Q29udGVudCA9IGZvbGRlci5uYW1lOwogICAgICAgIGRldGFpbHMuYXBwZW5kQ2hpbGQoc3VtbWFyeSk7CiAgICAgICAgY29uc3Qgc3ViRm9sZGVyTGlzdCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoInVsIik7CiAgICAgICAgZGV0YWlscy5hcHBlbmRDaGlsZChzdWJGb2xkZXJMaXN0KTsKICAgICAgICBwYXJlbnRFbGVtZW50LmFwcGVuZENoaWxkKGRldGFpbHMpOwogICAgICAgIGNvbnN0IGRpcmVjdG9yeVJlYWRlciA9IGZvbGRlci5jcmVhdGVSZWFkZXIoKTsKICAgICAgICBmdW5jdGlvbiByZWFkRW50cmllcygpIHsKICAgICAgICAgIGRpcmVjdG9yeVJlYWRlci5yZWFkRW50cmllcyhmdW5jdGlvbiAoZW50cmllcykgewogICAgICAgICAgICBpZiAoZW50cmllcy5sZW5ndGggPiAwKSB7CiAgICAgICAgICAgICAgZW50cmllcy5mb3JFYWNoKGZ1bmN0aW9uIChlbnRyeSkgewogICAgICAgICAgICAgICAgbGlzdEZvbGRlckNvbnRlbnRzKGVudHJ5LCBzdWJGb2xkZXJMaXN0LCBiYXNlVXJsKTsKICAgICAgICAgICAgICB9KTsKICAgICAgICAgICAgICByZWFkRW50cmllcygpOyAvLyBDb250aW51ZSByZWFkaW5nIGVudHJpZXMgaW4gY2h1bmtzCiAgICAgICAgICAgIH0gZWxzZSBpZiAoc3ViRm9sZGVyTGlzdC5jaGlsZEVsZW1lbnRDb3VudCA9PT0gMCkgewogICAgICAgICAgICAgIGRldGFpbHMuY2xhc3NMaXN0LmFkZCgiZW1wdHktZm9sZGVyIik7IC8vIEFwcGx5IHRoZSBDU1MgY2xhc3MgdG8gdGhlIGVtcHR5IGZvbGRlcgogICAgICAgICAgICB9fSk7fQogICAgICAgIHJlYWRFbnRyaWVzKCk7CiAgICAgIH0gZWxzZSB7CiAgICAgICAgY29uc3QgbGlzdEl0ZW0gPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCJsaSIpOwogICAgICAgIGNvbnN0IGxpbmsgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCJhIik7CiAgICAgICAgbGluay50ZXh0Q29udGVudCA9IGZvbGRlci5uYW1lOwogICAgICAgIGxpbmsudGFyZ2V0ID0gIl9ibGFuayI7CiAgICAgICAgbGluay5ocmVmID0gYmFzZVVybCA/IGJhc2VVcmwgKyBmb2xkZXIuZnVsbFBhdGggOiAiZmlsZTovLy8xMjMvIiArIGZvbGRlci5mdWxsUGF0aDsKICAgICAgICBsaXN0SXRlbS5hcHBlbmRDaGlsZChsaW5rKTsKICAgICAgICBwYXJlbnRFbGVtZW50LmFwcGVuZENoaWxkKGxpc3RJdGVtKTt9fQogIDwvc2NyaXB0Pgo8L2JvZHk+CjwvaHRtbD4KCjwhLS1Eb3dubG9hZC0tPgo8c2NyaXB0PgogIGZ1bmN0aW9uIGRvd25sb2FkSFRNTCgpIHsKICAgIGNvbnN0IGZvbGRlckxpc3QgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiZm9sZGVyTGlzdCIpLmNsb25lTm9kZSh0cnVlKTsKICAgIGNvbnN0IGJhc2VVcmwgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiYmFzZVVybCIpLnZhbHVlOwogICAgdXBkYXRlSHlwZXJsaW5rcyhmb2xkZXJMaXN0LCBiYXNlVXJsKTsKCiAgICBjb25zdCBkb2N0eXBlID0gZG9jdW1lbnQuaW1wbGVtZW50YXRpb24uY3JlYXRlRG9jdW1lbnRUeXBlKCdodG1sJywgJycsICcnKTsKICAgIGNvbnN0IGh0bWwgPSBkb2N1bWVudC5pbXBsZW1lbnRhdGlvbi5jcmVhdGVEb2N1bWVudCgnJywgJ2h0bWwnLCBkb2N0eXBlKTsKICAgIGh0bWwuZG9jdW1lbnRFbGVtZW50LmFwcGVuZENoaWxkKGZvbGRlckxpc3QpOwoKICAgIGNvbnN0IHNlcmlhbGl6ZXIgPSBuZXcgWE1MU2VyaWFsaXplcigpOwogICAgY29uc3QgaHRtbFN0cmluZyA9IHNlcmlhbGl6ZXIuc2VyaWFsaXplVG9TdHJpbmcoaHRtbCk7CgogICAgY29uc3QgYmxvYiA9IG5ldyBCbG9iKFtodG1sU3RyaW5nXSwgeyB0eXBlOiAndGV4dC9odG1sJyB9KTsKICAgIGNvbnN0IHVybCA9IFVSTC5jcmVhdGVPYmplY3RVUkwoYmxvYik7CgogICAgY29uc3QgZG93bmxvYWRMaW5rID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnYScpOwogICAgZG93bmxvYWRMaW5rLmhyZWYgPSB1cmw7CiAgICBkb3dubG9hZExpbmsuZG93bmxvYWQgPSAnZm9sZGVyX2xpc3QuaHRtbCc7CiAgICBkb3dubG9hZExpbmsuY2xpY2soKTsKICB9CgogIGZ1bmN0aW9uIHVwZGF0ZUh5cGVybGlua3MoZWxlbWVudCwgYmFzZVVybCkgewogICAgY29uc3QgbGlua3MgPSBlbGVtZW50LmdldEVsZW1lbnRzQnlUYWdOYW1lKCdhJyk7CgogICAgZm9yIChsZXQgaSA9IDA7IGkgPCBsaW5rcy5sZW5ndGg7IGkrKykgewogICAgICBjb25zdCBsaW5rID0gbGlua3NbaV07CiAgICAgIGNvbnN0IGhyZWYgPSBsaW5rLmdldEF0dHJpYnV0ZSgnaHJlZicpOwoKICAgICAgaWYgKGJhc2VVcmwpIHsKICAgICAgICBsaW5rLmhyZWYgPSBiYXNlVXJsICsgaHJlZjsKICAgICAgfSBlbHNlIHsKICAgICAgICBsaW5rLmhyZWYgPSAiZmlsZTovLy8xMjMvIiArIGhyZWY7CiAgICAgIH0KICAgIH0KICB9Cjwvc2NyaXB0PgoKPGJ1dHRvbiBvbmNsaWNrPSJkb3dubG9hZEhUTUwoKSI+RG93bmxvYWQgSFRNTDwvYnV0dG9uPgoK
+--->

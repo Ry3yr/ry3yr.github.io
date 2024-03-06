@@ -1,15 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
     <style>
-        table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:8px;border-bottom:1px solid #ddd}th{background-color:#f2f2f2}
+        table {border-collapse: collapse; width: 100%}
+        td, th {text-align: left; padding: 8px; border-bottom: 1px solid #ddd}
+        th {background-color: #f2f2f2}
     </style>
 </head>
 <body>
     <form id="playlistForm">
         <label for="playlistInput">YouTube Playlist URL:</label>
-        <input type="text" id="playlistInput" required>
-        <br>
+        <input type="text" id="playlistInput" required><br>
         <label for="apiKeyInput">YouTube API Key:</label>
-        <input type="text" id="apiKeyInput" required>
-        <br>
+        <input type="text" id="apiKeyInput" required><br>
+        <input type="checkbox" id="sortCheckbox">
+        <label for="sortCheckbox">Sort by playlist order</label><br>
         <input type="submit" value="Get Video List">
     </form>
     <table id="videoTable">
@@ -28,124 +33,142 @@
             var hours = (parseInt(match[1]) || 0);
             var minutes = (parseInt(match[2]) || 0);
             var seconds = (parseInt(match[3]) || 0);
-            return hours + "h " + minutes + "m " + seconds + "s";}
+            return hours + "h " + minutes + "m " + seconds + "s";
+        }
+
         function convertDate(date) {
             var isoDate = new Date(date);
-            return isoDate.toDateString();}
+            return isoDate.toDateString();
+        }
+
         document.getElementById("playlistForm").addEventListener("submit", function (event) {
-  event.preventDefault();
-  var playlistUrl = document.getElementById("playlistInput").value;
-  var apiKey = document.getElementById("apiKeyInput").value;
-  var playlistId = playlistUrl.match(/(?:list=)([\w-]+)/)[1];
-  var apiUrl = "https://www.googleapis.com/youtube/v3/playlistItems";
-  var params = {
-    part: "snippet,contentDetails",
-    maxResults: 50,
-    playlistId: playlistId,
-    key: apiKey,
-  };
-  var url =
-    apiUrl +
-    "?" +
-    Object.keys(params)
-      .map(function (key) {
-        return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
-      })
-      .join("&");
-  fetch(url)
-    .then((response) => response.json())
-    .then((data) => {
-      var videoList = document.getElementById("videoList");
-      videoList.innerHTML = "";
-      var videoItems = [];
-      var totalDuration = 0; // Variable to store the total playtime
-      data.items.forEach(function (item) {
-        var videoId = item.contentDetails.videoId;
-        var videoTitle = item.snippet.title;
-        var vId = item.contentDetails.videoId;
-        var durUrl =
-          "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" +
-          vId +
-          "&key=" +
-          apiKey;
-        fetch(durUrl)
-          .then((response) => response.json())
-          .then((durationData) => {
-            var duration = durationData.items[0].contentDetails.duration;
-            var videoDuration = convertDuration(duration);
-            var videoDate = item.snippet.publishedAt;
-            var videoDateFormatted = convertDate(videoDate);
-            videoItems.push({
-              videoId: videoId,
-              videoTitle: videoTitle,
-              videoDuration: videoDuration,
-              videoDate: videoDateFormatted,
-            });
-            // Accumulate the playtime
-            totalDuration += getDurationInSeconds(duration);
-            if (videoItems.length === data.items.length) {
-              videoItems.sort(
-                (a, b) => new Date(a.videoDate) - new Date(b.videoDate)
-              );
-              videoItems.forEach(function (video) {
-                var videoRow = document.createElement("tr");
-                var videoNameCell = document.createElement("td");
-                var videoNameLink = document.createElement("a");
-                videoNameLink.href =
-                  "https://www.youtube.com/watch?v=" + video.videoId;
-                videoNameLink.target = "_blank";
-                videoNameLink.textContent = video.videoTitle;
-                videoNameCell.appendChild(videoNameLink);
-                videoRow.appendChild(videoNameCell);
-                var playtimeCell = document.createElement("td");
-                playtimeCell.textContent = video.videoDuration;
-                videoRow.appendChild(playtimeCell);
-                var dateCell = document.createElement("td");
-                dateCell.textContent = video.videoDate;
-                videoRow.appendChild(dateCell);
-                videoList.appendChild(videoRow);
-              });
-              // Add total playtime row
-              var totalDurationRow = document.createElement("tr");
-              var totalDurationCell = document.createElement("td");
-              totalDurationCell.setAttribute("colspan", "2");
-              totalDurationCell.textContent =
-                "Total Playtime: " + convertSecondsToDuration(totalDuration);
-              totalDurationRow.appendChild(totalDurationCell);
-              videoList.appendChild(totalDurationRow);
-            }
-          })
-          .catch((error) => {
-            console.log(error);
-            var videoTable = document.getElementById("videoTable");
-            videoTable.innerHTML = "An error occurred while fetching the video list.";
-          });
-      });
-    })
-    .catch((error) => {
-      console.log(error);
-      var videoTable = document.getElementById("videoTable");
-      videoTable.innerHTML = "An error occurred while fetching the video list.";
-    });
-});
+            event.preventDefault();
+            var playlistUrl = document.getElementById("playlistInput").value;
+            var apiKey = document.getElementById("apiKeyInput").value;
+            var playlistId = playlistUrl.match(/(?:list=)([\w-]+)/)[1];
+            var apiUrl = "https://www.googleapis.com/youtube/v3/playlistItems";
+            var params = {
+                part: "snippet,contentDetails",
+                maxResults: 50,
+                playlistId: playlistId,
+                key: apiKey,
+            };
+            var url =
+                apiUrl +
+                "?" +
+                Object.keys(params)
+                    .map(function (key) {
+                        return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+                    })
+                    .join("&");
+            fetch(url)
+                .then((response) => response.json())
+                .then((data) => {
+                    var videoList = document.getElementById("videoList");
+                    videoList.innerHTML = "";
+                    var videoItems = [];
+                    var totalDuration = 0; // Variable to store the total playtime
+                    data.items.forEach(function (item, index) { // Add the index parameter
+                        var videoId = item.contentDetails.videoId;
+                        var videoTitle = item.snippet.title;
+                        var vId = item.contentDetails.videoId;
+                        var durUrl =
+                            "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" +
+                            vId +
+                            "&key=" +
+                            apiKey;
+                        fetch(durUrl)
+                            .then((response) => response.json())
+                            .then((durationData) => {
+                                var duration = durationData.items[0].contentDetails.duration;
+                                var videoDuration = convertDuration(duration);
+                                var videoDate = item.snippet.publishedAt;
+                                var videoDateFormatted = convertDate(videoDate);
+                                videoItems.push({
+                                    videoId: videoId,
+                                    videoTitle: videoTitle,
+                                    videoDuration: videoDuration,
+                                    videoDate: videoDateFormatted,
+                                    playlistIndex: index, // Store the playlist index
+                                });
+                                // Accumulate the playtime
+                                totalDuration += getDurationInSeconds(duration);
+                                if (videoItems.length === data.items.length) {
+                                    if (document.getElementById("sortCheckbox").checked) {
+                                        // Sort by playlist order
+                                        videoItems.sort((a, b) => a.playlistIndex - b.playlistIndex); // Sort by playlist index
+                                    } else {
+                                        // Sort by date
+                                        videoItems.sort((a, b) => new Date(a.videoDate) - new Date(b.videoDate));
+                                    }
+                                    videoItems.forEach(function (video) {
+                                        var videoRow = document.createElement("tr");
+                                        var videoNameCell = document.createElement("td");
+                                        var videoNameLink = document.createElement("a");
+                                        videoNameLink.href =
+                                            "https://www.youtube.com/watch?v=" + video.videoId;
+                                        videoNameLink.target = "_blank";
+                                        videoNameLink.textContent = video.videoTitle;
+                                        videoNameCell.appendChild(videoNameLink);
+                                        videoRow.appendChild(videoNameCell);
+                                        var playtimeCell= document.createElement("td");
+                                        playtimeCell.textContent = video.videoDuration;
+                                        videoRow.appendChild(playtimeCell);
+                                        var dateCell = document.createElement("td");
+                                        dateCell.textContent = video.videoDate;
+                                        videoRow.appendChild(dateCell);
+                                        videoList.appendChild(videoRow);
+                                    });
+                                    // Add total playtime row
+                                    var totalDurationRow = document.createElement("tr");
+                                    var totalDurationCell = document.createElement("td");
+                                    totalDurationCell.setAttribute("colspan", "2");
+                                    totalDurationCell.textContent =
+                                        "Total Playtime: " + convertSecondsToDuration(totalDuration);
+                                    totalDurationRow.appendChild(totalDurationCell);
+                                    videoList.appendChild(totalDurationRow);
+                                }
+                            })
+                            .catch((error) => {
+                                console.log(error);
+                                var videoTable = document.getElementById("videoTable");
+                                videoTable.innerHTML = "An error occurred while fetching the video list.";
+                            });
+                    });
+                })
+                .catch((error) => {
+                    console.log(error);
+                    var videoTable = document.getElementById("videoTable");
+                    videoTable.innerHTML = "An error occurred while fetching the video list.";
+                });
+        });
 
-// Helper function to convert YouTube duration format to seconds
-function getDurationInSeconds(duration) {
-  var match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-  var hours = parseInt(match[1]) || 0;
-  var minutes = parseInt(match[2]) || 0;
-  var seconds = parseInt(match[3]) || 0;
-  return hours * 3600 + minutes * 60 + seconds;
-}
+        // Helper function to convert YouTube duration format to seconds
+        function getDurationInSeconds(duration) {
+            var match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+            var hours = parseInt(match[1]) || 0;
+            var minutes = parseInt(match[2]) || 0;
+            var seconds = parseInt(match[3]) || 0;
+            return hours * 3600 + minutes * 60 + seconds;
+        }
 
-// Helper function to convert seconds to YouTube duration format
-function convertSecondsToDuration(seconds) {
-  var hours = Math.floor(seconds / 3600);
-  var minutes = Math.floor((seconds % 3600) / 60);
-  var secs = seconds % 60;
-  return hours.toString().padStart(2, "0") + "h " + minutes.toString().padStart(2, "0") + "m " + secs.toString().padStart(2, "0") + "s";
-}
+        // Helper function to convert seconds to YouTube duration format
+        function convertSecondsToDuration(seconds) {
+            var hours = Math.floor(seconds / 3600);
+            var minutes = Math.floor((seconds % 3600) / 60);
+            var secs = seconds % 60;
+            return (
+                hours.toString().padStart(2, "0") +
+                "h " +
+                minutes.toString().padStart(2, "0") +
+                "m " +
+                secs.toString().padStart(2, "0") +
+                "s"
+            );
+        }
     </script>
+</body>
+</html>
 </body>
 </html>
 <!---https://stackoverflow.com/questions/15596753/how-do-i-get-video-durations-with-youtube-api-version-3--->
