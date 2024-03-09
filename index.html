@@ -1,4 +1,4 @@
-
+<!--<meta http-equiv="refresh" content="3; URL=https://alceawis.de/">-->
 
 
 <script>
@@ -9,17 +9,13 @@ setInterval(function() {
   var seconds = time;
   var minutes = 0;
   if (seconds.toString().length == 1) {
-    seconds = "0" + seconds;
-  }
+    seconds = "0" + seconds;}
   if (minutes.toString().length == 1) {
-    minutes = "0" + minutes;
-  }
+    minutes = "0" + minutes;}
   document.getElementById("time").innerHTML = minutes + ":" + seconds;
   time--;
   if (time == 0) {
-    window.location.href = "https://alceawis.de";
-  }
-}, 1000);
+    window.location.href = "https://alceawis.de";}}, 1000);
 </script>
 <div class="timer" onload="timer(1800)">
 <div class="time"><strong>Redirecting in <span id="time"> x seconds</span></strong></div></div>
