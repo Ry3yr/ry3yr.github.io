@@ -1,0 +1,19 @@
+  <unique>
+  <button onclick="savePageAsHTML()">Save Page as HTML</button>
+  <script>
+    function savePageAsHTML() {
+      var placeholder = document.querySelector('unique');
+      placeholder.parentNode.removeChild(placeholder);
+      var html = document.documentElement.outerHTML;
+      var filename = 'dyingfedi.html';
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/html;charset=utf-8,' + encodeURIComponent(html));
+      element.setAttribute('download', filename);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      document.body.appendChild(placeholder);
+    }
+  </script>
+  </unique>

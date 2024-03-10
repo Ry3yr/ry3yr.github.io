@@ -1,0 +1,117 @@
+
+<style type="text/css">
+  @font-face {
+    font-family: "My Custom Font";
+    src: url(https://alceawis.de/other/extra/font/GreatVibes-Regular.otf) format("truetype");
+  }
+
+  p.customfont {
+    font-family: "My Custom Font", Verdana, Tahoma;
+  }
+
+  .drag-drop-area {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    font-size: 18px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<p id="customFont" class="customfont" contenteditable="true">Hello world!</p>
+<input type="range" id="fontSizeSlider" min="10" max="50" value="16" step="2" onchange="changeFontSize()">
+<style id="customFontFace"></style>
+<script>
+  function changeFontSource(fontUrl) {
+    var fontFace = document.getElementById("customFontFace");
+    fontFace.innerHTML = "@font-face { font-family: 'My Custom Font'; src: url(" + fontUrl + ") format('truetype'); }";
+  }
+  function changeFontSize() {
+    var fontSize = document.getElementById("fontSizeSlider").value;
+    var customFont = document.getElementById("customFont");
+    customFont.style.fontSize = fontSize + "px";
+  }
+  function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = 'copy';
+  }
+  function handleDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    var file = event.dataTransfer.files[0];
+    var fontUrl = URL.createObjectURL(file);
+    changeFontSource(fontUrl);
+  }
+  function handleUrlInput() {
+    var fontUrl = document.getElementById("fontUrlInput").value;
+    changeFontSource(fontUrl);
+  }
+  function handleFileBrowse(event) {
+    var file = event.target.files[0];
+    var fontUrl = URL.createObjectURL(file);
+    changeFontSource(fontUrl);
+  }
+  // Function to handle the font selection from the dropdown
+  function handleFontSelection() {
+    var dropdown = document.getElementById("fontDropdown");
+    var selectedOption = dropdown.options[dropdown.selectedIndex];
+
+    var fontUrl = selectedOption.value;
+    var pretext = selectedOption.getAttribute("pretext");
+    var softkeyboardUrl = selectedOption.getAttribute("softkeyboard");
+
+    if (pretext) {
+      var customFont = document.getElementById("customFont");
+      customFont.innerText = pretext;
+    }
+
+    if (softkeyboardUrl) {
+      fetchSoftkeyboardContent(softkeyboardUrl);
+    }
+
+    changeFontSource(fontUrl);
+  }
+
+  function fetchSoftkeyboardContent(url) {
+    fetch(url)
+      .then(function (response) {
+        return response.text();
+      })
+      .then(function (data) {
+        var softkeyboardDiv = document.getElementById("softkeyboardDiv");
+        softkeyboardDiv.innerHTML = data;
+      })
+      .catch(function (error) {
+        console.log('Error fetching softkeyboard content:', error);
+      });
+  }
+</script>
+
+<select id="fontDropdown" onchange="handleFontSelection()">
+  <option value="other/extra/font/GreatVibes-Regular.otf" pretext="Great Vibes !">Great Vibes</option>
+  <option value="other/extra/font/learning_curve_regular_ot_ps.otf" pretext="Learning Curves">Learning Curve</option>
+
+  <option value="other/extra/font/others/heo.ttf" pretext="󱴻󱳍󱳳󱴰" softkeyboard="other/extra/font/0softkbs/heo.html">Heo</option>
+  <!-- Add more font options here -->
+</select>
+<hr>
+<div class="drag-drop-area" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+  <p>Drag and drop a font file here</p>
+</div>
+<label for="fontUrlInput">or enter a URL to a font:</label>
+<input type="text" id="fontUrlInput" onchange="handleUrlInput()">
+<!-- Add file browse input element -->
+<input type="file" id="fileBrowseInput" style="display: none;" onchange="handleFileBrowse(event)">
+<br>or pick a local file:
+<button onclick="document.getElementById('fileBrowseInput').click()">Browse</button>
+<div id="softkeyboardDiv"></div>
+
+</body>
+</html>
+
+<!---old---
+PHN0eWxlIHR5cGU9InRleHQvY3NzIj4KICAgIEBmb250LWZhY2UgewogICAgICAgIGZvbnQtZmFtaWx5OiAiTXkgQ3VzdG9tIEZvbnQiOwogICAgICAgIHNyYzogdXJsKGh0dHBzOi8vYWxjZWF3aXMuZGUvb3RoZXIvZXh0cmEvZm9udC9HcmVhdFZpYmVzLVJlZ3VsYXIub3RmKSBmb3JtYXQoInRydWV0eXBlIik7CiAgICB9CiAgICAKICAgIHAuY3VzdG9tZm9udCB7CiAgICAgICAgZm9udC1mYW1pbHk6ICJNeSBDdXN0b20gRm9udCIsIFZlcmRhbmEsIFRhaG9tYTsKICAgIH0KICAgIAogICAgLmRyYWctZHJvcC1hcmVhIHsKICAgICAgICBib3JkZXI6IDJweCBkYXNoZWQgI2NjYzsKICAgICAgICBwYWRkaW5nOiAyMHB4OwogICAgICAgIHRleHQtYWxpZ246IGNlbnRlcjsKICAgICAgICBmb250LXNpemU6IDE4cHg7CiAgICAgICAgY3Vyc29yOiBwb2ludGVyOwogICAgfQo8L3N0eWxlPgoKPHAgaWQ9ImN1c3RvbUZvbnQiIGNsYXNzPSJjdXN0b21mb250IiBjb250ZW50ZWRpdGFibGU9InRydWUiPkhlbGxvIHdvcmxkITwvcD4KPGlucHV0IHR5cGU9InJhbmdlIiBpZD0iZm9udFNpemVTbGlkZXIiIG1pbj0iMTAiIG1heD0iNTAiIHZhbHVlPSIxNiIgc3RlcD0iMiIgb25jaGFuZ2U9ImNoYW5nZUZvbnRTaXplKCkiPgo8c3R5bGUgaWQ9ImN1c3RvbUZvbnRGYWNlIj48L3N0eWxlPgoKPHNjcmlwdD4KICAgIGZ1bmN0aW9uIGNoYW5nZUZvbnRTb3VyY2UoZm9udFVybCkgewogICAgICAgIHZhciBmb250RmFjZSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJjdXN0b21Gb250RmFjZSIpOwoKICAgICAgICBmb250RmFjZS5pbm5lckhUTUwgPSAiQGZvbnQtZmFjZSB7IGZvbnQtZmFtaWx5OiAnTXkgQ3VzdG9tIEZvbnQnOyBzcmM6IHVybCgiICsgZm9udFVybCArICIpIGZvcm1hdCgndHJ1ZXR5cGUnKTsgfSI7CiAgICB9CgogICAgZnVuY3Rpb24gY2hhbmdlRm9udFNpemUoKSB7CiAgICAgICAgdmFyIGZvbnRTaXplID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImZvbnRTaXplU2xpZGVyIikudmFsdWU7CiAgICAgICAgdmFyIGN1c3RvbUZvbnQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiY3VzdG9tRm9udCIpOwoKICAgICAgICBjdXN0b21Gb250LnN0eWxlLmZvbnRTaXplID0gZm9udFNpemUgKyAicHgiOwogICAgfQoKICAgIGZ1bmN0aW9uIGhhbmRsZURyYWdPdmVyKGV2ZW50KSB7CiAgICAgICAgZXZlbnQucHJldmVudERlZmF1bHQoKTsKICAgICAgICBldmVudC5zdG9wUHJvcGFnYXRpb24oKTsKICAgICAgICBldmVudC5kYXRhVHJhbnNmZXIuZHJvcEVmZmVjdCA9ICdjb3B5JzsKICAgIH0KCiAgICBmdW5jdGlvbiBoYW5kbGVEcm9wKGV2ZW50KSB7CiAgICAgICAgZXZlbnQucHJldmVudERlZmF1bHQoKTsKICAgICAgICBldmVudC5zdG9wUHJvcGFnYXRpb24oKTsKCiAgICAgICAgdmFyIGZpbGUgPSBldmVudC5kYXRhVHJhbnNmZXIuZmlsZXNbMF07CiAgICAgICAgdmFyIGZvbnRVcmwgPSBVUkwuY3JlYXRlT2JqZWN0VVJMKGZpbGUpOwoKICAgICAgICBjaGFuZ2VGb250U291cmNlKGZvbnRVcmwpOwogICAgfQoKICAgIGZ1bmN0aW9uIGhhbmRsZVVybElucHV0KCkgewogICAgICAgIHZhciBmb250VXJsID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImZvbnRVcmxJbnB1dCIpLnZhbHVlOwoKICAgICAgICBjaGFuZ2VGb250U291cmNlKGZvbnRVcmwpOwogICAgfQo8L3NjcmlwdD4KCjxzZWxlY3QgaWQ9ImZvbnREcm9wZG93biIgb25jaGFuZ2U9ImNoYW5nZUZvbnRTb3VyY2UodGhpcy52YWx1ZSkiPgogICAgPG9wdGlvbiB2YWx1ZT0iaHR0cHM6Ly9hbGNlYXdpcy5kZS9vdGhlci9leHRyYS9mb250L0dyZWF0VmliZXMtUmVndWxhci5vdGYiPkdyZWF0IFZpYmVzPC9vcHRpb24+CiAgICA8b3B0aW9uIHZhbHVlPSJodHRwczovL2FsY2Vhd2lzLmRlL290aGVyL2V4dHJhL2ZvbnQvbGVhcm5pbmdfY3VydmVfcmVndWxhcl9vdF9wcy5vdGYiPkxlYXJuaW5nIEN1cnZlPC9vcHRpb24+CiAgICA8IS0tIEFkZCBtb3JlIGZvbnQgb3B0aW9ucyBoZXJlIC0tPgo8L3NlbGVjdD4KCjxocj4KCjxkaXYgY2xhc3M9ImRyYWctZHJvcC1hcmVhIiBvbmRyYWdvdmVyPSJoYW5kbGVEcmFnT3ZlcihldmVudCkiIG9uZHJvcD0iaGFuZGxlRHJvcChldmVudCkiPgogICAgPHA+RHJhZyBhbmQgZHJvcCBhIGZvbnQgZmlsZSBoZXJlPC9wPgo8L2Rpdj4KCjxsYWJlbCBmb3I9ImZvbnRVcmxJbnB1dCI+b3IgZW50ZXIgYSBVUkwgdG8gYSBmb250OjwvbGFiZWw+CjxpbnB1dCB0eXBlPSJ0ZXh0IiBpZD0iZm9udFVybElucHV0IiBvbmNoYW5nZT0iaGFuZGxlVXJsSW5wdXQoKSI+Cg==
+->
