@@ -1,0 +1,146 @@
+<details><summary>to be removed from pmd</summary>
+toon01.bmp<br>
+toon02.bmp<br>
+toon03.bmp<br>
+toon04.bmp<br>
+toon05.bmp<br>
+toon06.bmp<br>
+toon07.bmp<br>
+toon08.bmp<br>
+toon09.bmp<br>
+toon10.bmp<br>
+</details>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hex Pattern Search</title>
+</head>
+<body>
+  <input type="file" id="fileInput" />
+  <button onclick="searchHexPattern()">Search</button>
+  <pre id="output"></pre>
+
+  <div id="occurrencesContainer"></div>
+
+  <button onclick="checkChanges()">Submit</button>
+
+  <script>
+    const hexPatterns = [
+      "2E 70 6E 67",
+      "2E 62 6D 70"
+    ];
+
+    let occurrences = [];
+
+    function searchHexPattern() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        displayOutput('Please select a file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const fileData = new Uint8Array(event.target.result);
+        occurrences = [];
+
+        hexPatterns.forEach(function(hexPattern) {
+          const pattern = hexStringToByteArray(hexPattern.replace(/\s/g, ''));
+
+          let i = 0;
+          while (i < fileData.length) {
+            if (fileData[i] === pattern[0]) {
+              let match = true;
+
+              for (let j = 0; j < pattern.length; j++) {
+                if (fileData[i + j] !== pattern[j]) {
+                  match = false;
+                  break;
+                }
+              }
+
+              if (match) {
+                let startIndex = i - 1;
+                while (startIndex >= 0 && fileData[startIndex] !== 0x00) {
+                  startIndex--;
+                }
+
+                let endIndex = i + pattern.length;
+                while (endIndex < fileData.length && fileData[endIndex] !== 0x00) {
+                  endIndex++;
+                }
+
+                const characters = byteArrayToString(fileData.slice(startIndex + 1, endIndex));
+                occurrences.push({ index: i, characters });
+              }
+            }
+
+            i++;
+          }
+        });
+
+        displayOccurrences(hexPatterns, occurrences);
+      };
+
+      reader.onerror = function() {
+        displayOutput('Error reading the file.');
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function hexStringToByteArray(hexString) {
+      const byteArray = [];
+      for (let i = 0; i < hexString.length; i += 2) {
+        byteArray.push(parseInt(hexString.substr(i, 2), 16));
+      }
+      return byteArray;
+    }
+
+    function byteArrayToString(byteArray) {
+      let result = '';
+      for (let i = 0; i < byteArray.length; i++) {
+        const charCode = byteArray[i];
+        if (charCode >= 32 && charCode <= 126) {
+          result += String.fromCharCode(charCode);
+        }
+      }
+      return result;
+    }
+
+    function displayOccurrences(hexPatterns, occurrences) {
+      let output = '';
+      if (occurrences.length === 0) {
+        output = 'No occurrences found.';
+      } else {
+        output = '';
+        occurrences.forEach(function(occurrence) {
+          output += `Index: ${occurrence.index} ${occurrence.characters}<input type="text" value="${occurrence.characters}" data-initial-value="${occurrence.characters}"/>\n`;
+        });
+      }
+      displayOutput(output);
+    }
+
+    function displayOutput(message) {
+      const outputElement = document.getElementById('output');
+      outputElement.innerHTML = message;
+    }
+
+    function checkChanges() {
+      const textBoxes = document.querySelectorAll('input[type="text"]');
+      textBoxes.forEach(function(textBox) {
+        const initialValue = textBox.getAttribute('data-initial-value');
+        if (textBox.value !== initialValue) {
+          textBox.insertAdjacentHTML('afterend', '<span>CHANGED</span>');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
+
+<!--PCFET0NUWVBFIGh0bWw+CjxodG1sPgo8aGVhZD4KICA8dGl0bGU+SGV4IFBhdHRlcm4gU2VhcmNoPC90aXRsZT4KPC9oZWFkPgo8Ym9keT4KICA8aW5wdXQgdHlwZT0iZmlsZSIgaWQ9ImZpbGVJbnB1dCIgLz4KICA8YnV0dG9uIG9uY2xpY2s9InNlYXJjaEhleFBhdHRlcm4oKSI+U2VhcmNoPC9idXR0b24+CiAgPHByZSBpZD0ib3V0cHV0Ij48L3ByZT4KCiAgPGRpdiBpZD0ib2NjdXJyZW5jZXNDb250YWluZXIiPjwvZGl2PgoKICA8YnV0dG9uIG9uY2xpY2s9ImNoZWNrQ2hhbmdlcygpIj5TdWJtaXQ8L2J1dHRvbj4KCiAgPHNjcmlwdD4KICAgIGNvbnN0IGhleFBhdHRlcm5zID0gWwogICAgICAiMkUgNzAgNkUgNjciLAogICAgICAiMkUgNjIgNkQgNzAiCiAgICBdOwoKICAgIGxldCBvY2N1cnJlbmNlcyA9IFtdOwoKICAgIGZ1bmN0aW9uIHNlYXJjaEhleFBhdHRlcm4oKSB7CiAgICAgIGNvbnN0IGZpbGVJbnB1dCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdmaWxlSW5wdXQnKTsKICAgICAgY29uc3QgZmlsZSA9IGZpbGVJbnB1dC5maWxlc1swXTsKCiAgICAgIGlmICghZmlsZSkgewogICAgICAgIGRpc3BsYXlPdXRwdXQoJ1BsZWFzZSBzZWxlY3QgYSBmaWxlLicpOwogICAgICAgIHJldHVybjsKICAgICAgfQoKICAgICAgY29uc3QgcmVhZGVyID0gbmV3IEZpbGVSZWFkZXIoKTsKICAgICAgcmVhZGVyLm9ubG9hZCA9IGZ1bmN0aW9uKGV2ZW50KSB7CiAgICAgICAgY29uc3QgZmlsZURhdGEgPSBuZXcgVWludDhBcnJheShldmVudC50YXJnZXQucmVzdWx0KTsKICAgICAgICBvY2N1cnJlbmNlcyA9IFtdOwoKICAgICAgICBoZXhQYXR0ZXJucy5mb3JFYWNoKGZ1bmN0aW9uKGhleFBhdHRlcm4pIHsKICAgICAgICAgIGNvbnN0IHBhdHRlcm4gPSBoZXhTdHJpbmdUb0J5dGVBcnJheShoZXhQYXR0ZXJuLnJlcGxhY2UoL1xzL2csICcnKSk7CgogICAgICAgICAgbGV0IGkgPSAwOwogICAgICAgICAgd2hpbGUgKGkgPCBmaWxlRGF0YS5sZW5ndGgpIHsKICAgICAgICAgICAgaWYgKGZpbGVEYXRhW2ldID09PSBwYXR0ZXJuWzBdKSB7CiAgICAgICAgICAgICAgbGV0IG1hdGNoID0gdHJ1ZTsKCiAgICAgICAgICAgICAgZm9yIChsZXQgaiA9IDA7IGogPCBwYXR0ZXJuLmxlbmd0aDsgaisrKSB7CiAgICAgICAgICAgICAgICBpZiAoZmlsZURhdGFbaSArIGpdICE9PSBwYXR0ZXJuW2pdKSB7CiAgICAgICAgICAgICAgICAgIG1hdGNoID0gZmFsc2U7CiAgICAgICAgICAgICAgICAgIGJyZWFrOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgaWYgKG1hdGNoKSB7CiAgICAgICAgICAgICAgICBsZXQgc3RhcnRJbmRleCA9IGkgLSAxOwogICAgICAgICAgICAgICAgd2hpbGUgKHN0YXJ0SW5kZXggPj0gMCAmJiBmaWxlRGF0YVtzdGFydEluZGV4XSAhPT0gMHgwMCkgewogICAgICAgICAgICAgICAgICBzdGFydEluZGV4LS07CiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgbGV0IGVuZEluZGV4ID0gaSArIHBhdHRlcm4ubGVuZ3RoOwogICAgICAgICAgICAgICAgd2hpbGUgKGVuZEluZGV4IDwgZmlsZURhdGEubGVuZ3RoICYmIGZpbGVEYXRhW2VuZEluZGV4XSAhPT0gMHgwMCkgewogICAgICAgICAgICAgICAgICBlbmRJbmRleCsrOwogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGNvbnN0IGNoYXJhY3RlcnMgPSBieXRlQXJyYXlUb1N0cmluZyhmaWxlRGF0YS5zbGljZShzdGFydEluZGV4ICsgMSwgZW5kSW5kZXgpKTsKICAgICAgICAgICAgICAgIG9jY3VycmVuY2VzLnB1c2goeyBpbmRleDogaSwgY2hhcmFjdGVycyB9KTsKICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGkrKzsKICAgICAgICAgIH0KICAgICAgICB9KTsKCiAgICAgICAgZGlzcGxheU9jY3VycmVuY2VzKGhleFBhdHRlcm5zLCBvY2N1cnJlbmNlcyk7CiAgICAgIH07CgogICAgICByZWFkZXIub25lcnJvciA9IGZ1bmN0aW9uKCkgewogICAgICAgIGRpc3BsYXlPdXRwdXQoJ0Vycm9yIHJlYWRpbmcgdGhlIGZpbGUuJyk7CiAgICAgIH07CgogICAgICByZWFkZXIucmVhZEFzQXJyYXlCdWZmZXIoZmlsZSk7CiAgICB9CgogICAgZnVuY3Rpb24gaGV4U3RyaW5nVG9CeXRlQXJyYXkoaGV4U3RyaW5nKSB7CiAgICAgIGNvbnN0IGJ5dGVBcnJheSA9IFtdOwogICAgICBmb3IgKGxldCBpID0gMDsgaSA8IGhleFN0cmluZy5sZW5ndGg7IGkgKz0gMikgewogICAgICAgIGJ5dGVBcnJheS5wdXNoKHBhcnNlSW50KGhleFN0cmluZy5zdWJzdHIoaSwgMiksIDE2KSk7CiAgICAgIH0KICAgICAgcmV0dXJuIGJ5dGVBcnJheTsKICAgIH0KCiAgICBmdW5jdGlvbiBieXRlQXJyYXlUb1N0cmluZyhieXRlQXJyYXkpIHsKICAgICAgbGV0IHJlc3VsdCA9ICcnOwogICAgICBmb3IgKGxldCBpID0gMDsgaSA8IGJ5dGVBcnJheS5sZW5ndGg7IGkrKykgewogICAgICAgIGNvbnN0IGNoYXJDb2RlID0gYnl0ZUFycmF5W2ldOwogICAgICAgIGlmIChjaGFyQ29kZSA+PSAzMiAmJiBjaGFyQ29kZSA8PSAxMjYpIHsKICAgICAgICAgIHJlc3VsdCArPSBTdHJpbmcuZnJvbUNoYXJDb2RlKGNoYXJDb2RlKTsKICAgICAgICB9CiAgICAgIH0KICAgICAgcmV0dXJuIHJlc3VsdDsKICAgIH0KCiAgICBmdW5jdGlvbiBkaXNwbGF5T2NjdXJyZW5jZXMoaGV4UGF0dGVybnMsIG9jY3VycmVuY2VzKSB7CiAgICAgIGxldCBvdXRwdXQgPSAnJzsKICAgICAgaWYgKG9jY3VycmVuY2VzLmxlbmd0aCA9PT0gMCkgewogICAgICAgIG91dHB1dCA9ICdObyBvY2N1cnJlbmNlcyBmb3VuZC4nOwogICAgICB9IGVsc2UgewogICAgICAgIG91dHB1dCA9ICcnOwogICAgICAgIG9jY3VycmVuY2VzLmZvckVhY2goZnVuY3Rpb24ob2NjdXJyZW5jZSkgewogICAgICAgICAgb3V0cHV0ICs9IGBJbmRleDogJHtvY2N1cnJlbmNlLmluZGV4fSAke29jY3VycmVuY2UuY2hhcmFjdGVyc308aW5wdXQgdHlwZT0idGV4dCIgdmFsdWU9IiR7b2NjdXJyZW5jZS5jaGFyYWN0ZXJzfSIgZGF0YS1pbml0aWFsLXZhbHVlPSIke29jY3VycmVuY2UuY2hhcmFjdGVyc30iLz5cbmA7CiAgICAgICAgfSk7CiAgICAgIH0KICAgICAgZGlzcGxheU91dHB1dChvdXRwdXQpOwogICAgfQoKICAgIGZ1bmN0aW9uIGRpc3BsYXlPdXRwdXQobWVzc2FnZSkgewogICAgICBjb25zdCBvdXRwdXRFbGVtZW50ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ291dHB1dCcpOwogICAgICBvdXRwdXRFbGVtZW50LmlubmVySFRNTCA9IG1lc3NhZ2U7CiAgICB9CgogICAgZnVuY3Rpb24gY2hlY2tDaGFuZ2VzKCkgewogICAgICBjb25zdCB0ZXh0Qm94ZXMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCdpbnB1dFt0eXBlPSJ0ZXh0Il0nKTsKICAgICAgdGV4dEJveGVzLmZvckVhY2goZnVuY3Rpb24odGV4dEJveCkgewogICAgICAgIGNvbnN0IGluaXRpYWxWYWx1ZSA9IHRleHRCb3guZ2V0QXR0cmlidXRlKCdkYXRhLWluaXRpYWwtdmFsdWUnKTsKICAgICAgICBpZiAodGV4dEJveC52YWx1ZSAhPT0gaW5pdGlhbFZhbHVlKSB7CiAgICAgICAgICB0ZXh0Qm94Lmluc2VydEFkamFjZW50SFRNTCgnYWZ0ZXJlbmQnLCAnPHNwYW4+Q0hBTkdFRDwvc3Bhbj4nKTsKICAgICAgICB9CiAgICAgIH0pOwogICAgfQogIDwvc2NyaXB0Pgo8L2JvZHk+CjwvaHRtbD4=-->

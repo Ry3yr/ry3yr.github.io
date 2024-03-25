@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Extract Timestamps</title>
+</head>
+
+<body>
+Extract Timestamps from YT Videodescriptions<br>
+<br>
+  <label for="apiKey">API Key:</label>
+  <input type="password" id="apiKey">
+  <label for="videoUrl">YouTube Video URL:</label>
+  <input type="text" id="videoUrl" placeholder="yturl">
+  <input type="text" id="videolength" placeholder="videolength" style="width: 60px;">
+  <button onclick="extractTimestamps()">Extract Timestamps</button>
+  <br><br><textarea id="timestamps" rows="10" cols="50"></textarea>
+  <script>
+    function extractTimestamps() {
+      var apiKey = document.getElementById("apiKey").value;
+      var videoUrl = document.getElementById("videoUrl").value;
+      if (!apiKey || !videoUrl) {
+        alert("Please enter the API key and video URL.");
+        return;
+      }
+      var videoId = extractVideoId(videoUrl);
+      var apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${apiKey}`;
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          var description = data.items[0].snippet.description;
+          var timestampsAndTitles = extractTimestampsAndTitles(description);
+          var timestampsTextArea = document.getElementById("timestamps");
+          timestampsTextArea.value = timestampsAndTitles
+            .map(item => `${item.timestamp} ${item.title}`)
+            .join("\n");
+
+          var videoDuration = data.items[0].contentDetails.duration;
+          var videoLength = convertISO8601Duration(videoDuration);
+          var videoLengthInput = document.getElementById("videolength");
+          videoLengthInput.value = videoLength;
+        })
+        .catch(error => {
+          console.error("Error fetching video details:", error);
+          alert("Error fetching video details. Please check the API key and video URL.");
+        });
+    }
+
+    function extractTimestampsAndTitles(description) {
+      var regex = /(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)/g;
+      var results = [];
+      var match;
+      while ((match = regex.exec(description)) !== null) {
+        var timestamp = match[1];
+        var title = match[2];
+        results.push({ timestamp: timestamp, title: title });
+      }
+      return results;
+    }
+
+    function extractVideoId(url) {
+      var videoId = "";
+      var regexPatterns = [
+        /youtu\.be\/([\w-]+)/,
+        /youtube\.com\/watch\?v=([\w-]+)/,
+        /youtube\.com\/embed\/([\w-]+)/,
+        /youtube\.com\/v\/([\w-]+)/,
+        /youtube\.com\/watch\?.*v=([\w-]+)/
+      ];
+      for (var i = 0; i < regexPatterns.length; i++) {
+        var match = url.match(regexPatterns[i]);
+        if (match && match[1]) {
+          videoId = match[1];
+          break;
+        }
+      }
+      return videoId;
+    }
+
+    function convertISO8601Duration(duration) {
+      var match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+
+      var hours = match[1] ? parseInt(match[1]) : 0;
+      var minutes = match[2] ? parseInt(match[2]) : 0;
+      var seconds = match[3] ? parseInt(match[3]) : 0;
+
+      // Format the length as xx:xx
+      var formattedLength = "";
+      if (hours > 0) {
+        formattedLength += hours.toString().padStart(2, "0") + ":";
+      }
+      formattedLength += minutes.toString().padStart(2, "0") + ":";
+      formattedLength += seconds.toString().padStart(2, "0");
+
+      return formattedLength;
+    }
+  </script>
+</body>
+</html>
+
+<hr>
+<details><summary>Generate FFMPEG</summary>
+FFMPEG GEnerator
+  <h1>FFmpeg Command Generator</h1>
+  <!--<label for="timestamps">Timestamps:</label><br>
+  <textarea id="timestamps" rows="10" cols="50"></textarea><br><br>-->
+  <label for="sourcefilename">Source Filename:</label><br>
+  <input type="text" id="sourcefilename"><br><br>
+  <button id="submit">Generate Commands</button>
+ <button onclick="replaceText()">Replace Text</button></details><br><br>
+  <pre id="commands"></pre>
+  <script>
+    var timestampsTextarea = document.getElementById('timestamps');
+    var sourceFilenameTextbox = document.getElementById('sourcefilename');
+    var submitButton = document.getElementById('submit');
+    submitButton.addEventListener('click', function() {
+      var timestampsValue = timestampsTextarea.value;
+      var lines = timestampsValue.split('\n');
+      var sourceFilename = sourceFilenameTextbox.value;
+      var ffmpegCommands = [];
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var parts = line.split(' ');
+        var timestamp = parts[0];
+        var name = parts.slice(1).join(' ');
+        // Generate the FFmpeg command
+var ffmpegCommand = 'ffmpeg -i "' + sourceFilename + '" -ss ' + timestamp + ' -to ' + (i < lines.length - 1 ? lines[i + 1].split(' ')[0] : '') + ' -c copy "' + name + '.mp3"';
+        ffmpegCommands.push(ffmpegCommand);}
+      var commandsElement = document.getElementById('commands');
+      commandsElement.textContent = ffmpegCommands.join('\n');
+    });
+  </script>
+  <script>
+    function replaceText() {
+      var commandsElement = document.getElementById("commands");
+      var videolength = document.getElementById("videolength").value;
+        commandsElement.innerHTML = commandsElement.innerHTML.replace(/-to  -c/g, "-to " + videolength + " -c");}
+  </script>
+
+
+
+
+<!--v1--
+PGEgaHJlZj0iIj5ERU1PPC9hPjxicj48YnI+Cgo8IURPQ1RZUEUgaHRtbD4KPGh0bWw+CjxoZWFkPgogIDx0aXRsZT5FeHRyYWN0IFRpbWVzdGFtcHM8L3RpdGxlPgo8L2hlYWQ+Cgo8Ym9keT4KRXh0cmFjdCBUaW1lc3RhbXBzIGZyb20gWVQgVmlkZW9kZXNjcmlwdGlvbnM8YnI+Cjxicj4KICA8bGFiZWwgZm9yPSJhcGlLZXkiPkFQSSBLZXk6PC9sYWJlbD4KICA8aW5wdXQgdHlwZT0icGFzc3dvcmQiIGlkPSJhcGlLZXkiPgogIDxsYWJlbCBmb3I9InZpZGVvVXJsIj5Zb3VUdWJlIFZpZGVvIFVSTDo8L2xhYmVsPgogIDxpbnB1dCB0eXBlPSJ0ZXh0IiBpZD0idmlkZW9VcmwiPgogIDxidXR0b24gb25jbGljaz0iZXh0cmFjdFRpbWVzdGFtcHMoKSI+RXh0cmFjdCBUaW1lc3RhbXBzPC9idXR0b24+CiAgPGJyPjxicj48dGV4dGFyZWEgaWQ9InRpbWVzdGFtcHMiIHJvd3M9IjEwIiBjb2xzPSI1MCI+PC90ZXh0YXJlYT4KICA8c2NyaXB0PgpmdW5jdGlvbiBleHRyYWN0VGltZXN0YW1wcygpIHsKICB2YXIgYXBpS2V5ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImFwaUtleSIpLnZhbHVlOwogIHZhciB2aWRlb1VybCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJ2aWRlb1VybCIpLnZhbHVlOwogIGlmICghYXBpS2V5IHx8ICF2aWRlb1VybCkgewogICAgYWxlcnQoIlBsZWFzZSBlbnRlciB0aGUgQVBJIGtleSBhbmQgdmlkZW8gVVJMLiIpOwogICAgcmV0dXJuO30KICB2YXIgdmlkZW9JZCA9IGV4dHJhY3RWaWRlb0lkKHZpZGVvVXJsKTsKICB2YXIgYXBpVXJsID0gYGh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL3lvdXR1YmUvdjMvdmlkZW9zP3BhcnQ9c25pcHBldCZpZD0ke3ZpZGVvSWR9JmtleT0ke2FwaUtleX1gOwogIGZldGNoKGFwaVVybCkKICAgIC50aGVuKHJlc3BvbnNlID0+IHJlc3BvbnNlLmpzb24oKSkKICAgIC50aGVuKGRhdGEgPT4gewogICAgICB2YXIgZGVzY3JpcHRpb24gPSBkYXRhLml0ZW1zWzBdLnNuaXBwZXQuZGVzY3JpcHRpb247CiAgICAgIHZhciB0aW1lc3RhbXBzQW5kVGl0bGVzID0gZXh0cmFjdFRpbWVzdGFtcHNBbmRUaXRsZXMoZGVzY3JpcHRpb24pOwogICAgICB2YXIgdGltZXN0YW1wc1RleHRBcmVhID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoInRpbWVzdGFtcHMiKTsKICAgICAgdGltZXN0YW1wc1RleHRBcmVhLnZhbHVlID0gdGltZXN0YW1wc0FuZFRpdGxlcwogICAgICAgIC5tYXAoaXRlbSA9PiBgJHtpdGVtLnRpbWVzdGFtcH0gJHtpdGVtLnRpdGxlfWApCiAgICAgICAgLmpvaW4oIlxuIik7CiAgICB9KQogICAgLmNhdGNoKGVycm9yID0+IHsKICAgICAgY29uc29sZS5lcnJvcigiRXJyb3IgZmV0Y2hpbmcgdmlkZW8gZGV0YWlsczoiLCBlcnJvcik7CiAgICAgIGFsZXJ0KCJFcnJvciBmZXRjaGluZyB2aWRlbyBkZXRhaWxzLiBQbGVhc2UgY2hlY2sgdGhlIEFQSSBrZXkgYW5kIHZpZGVvIFVSTC4iKTt9KTt9CmZ1bmN0aW9uIGV4dHJhY3RUaW1lc3RhbXBzQW5kVGl0bGVzKGRlc2NyaXB0aW9uKSB7CiAgdmFyIHJlZ2V4ID0gLyhcZHsxLDJ9OlxkezJ9KD86OlxkezJ9KT8pXHMrKC4rKS9nOwogIHZhciByZXN1bHRzID0gW107CiAgdmFyIG1hdGNoOwogIHdoaWxlICgobWF0Y2ggPSByZWdleC5leGVjKGRlc2NyaXB0aW9uKSkgIT09IG51bGwpIHsKICAgIHZhciB0aW1lc3RhbXAgPSBtYXRjaFsxXTsKICAgIHZhciB0aXRsZSA9IG1hdGNoWzJdOwogICAgcmVzdWx0cy5wdXNoKHsgdGltZXN0YW1wOiB0aW1lc3RhbXAsIHRpdGxlOiB0aXRsZSB9KTt9CnJldHVybiByZXN1bHRzO30KZnVuY3Rpb24gZXh0cmFjdFZpZGVvSWQodXJsKSB7CiAgdmFyIHZpZGVvSWQgPSAiIjsKICB2YXIgcmVnZXhQYXR0ZXJucyA9IFsKICAgIC95b3V0dVwuYmVcLyhbXHctXSspLywKICAgIC95b3V0dWJlXC5jb21cL3dhdGNoXD92PShbXHctXSspLywKICAgIC95b3V0dWJlXC5jb21cL2VtYmVkXC8oW1x3LV0rKS8sCiAgICAveW91dHViZVwuY29tXC92XC8oW1x3LV0rKS8sCiAgICAveW91dHViZVwuY29tXC93YXRjaFw/Lip2PShbXHctXSspL107CiAgZm9yICh2YXIgaSA9IDA7IGkgPCByZWdleFBhdHRlcm5zLmxlbmd0aDsgaSsrKSB7CiAgICB2YXIgbWF0Y2ggPSB1cmwubWF0Y2gocmVnZXhQYXR0ZXJuc1tpXSk7CiAgICBpZiAobWF0Y2ggJiYgbWF0Y2hbMV0pIHsKICAgICAgdmlkZW9JZCA9IG1hdGNoWzFdOwogICAgICBicmVhazt9fQogIHJldHVybiB2aWRlb0lkO30KPC9zY3JpcHQ+Cgo8aHI+CjxkZXRhaWxzPjxzdW1tYXJ5PkdlbmVyYXRlIEZGTVBFRzwvc3VtbWFyeT4KRkZNUEVHIEdFbmVyYXRvcgogIDxoMT5GRm1wZWcgQ29tbWFuZCBHZW5lcmF0b3I8L2gxPgogIDwhLS08bGFiZWwgZm9yPSJ0aW1lc3RhbXBzIj5UaW1lc3RhbXBzOjwvbGFiZWw+PGJyPgogIDx0ZXh0YXJlYSBpZD0idGltZXN0YW1wcyIgcm93cz0iMTAiIGNvbHM9IjUwIj48L3RleHRhcmVhPjxicj48YnI+LS0+CiAgPGxhYmVsIGZvcj0ic291cmNlZmlsZW5hbWUiPlNvdXJjZSBGaWxlbmFtZTo8L2xhYmVsPjxicj4KICA8aW5wdXQgdHlwZT0idGV4dCIgaWQ9InNvdXJjZWZpbGVuYW1lIj48YnI+PGJyPgogIDxidXR0b24gaWQ9InN1Ym1pdCI+R2VuZXJhdGUgQ29tbWFuZHM8L2J1dHRvbj48YnI+PGJyPgogIDxwcmUgaWQ9ImNvbW1hbmRzIj48L3ByZT4KICA8c2NyaXB0PgogICAgdmFyIHRpbWVzdGFtcHNUZXh0YXJlYSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd0aW1lc3RhbXBzJyk7CiAgICB2YXIgc291cmNlRmlsZW5hbWVUZXh0Ym94ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3NvdXJjZWZpbGVuYW1lJyk7CiAgICB2YXIgc3VibWl0QnV0dG9uID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3N1Ym1pdCcpOwogICAgc3VibWl0QnV0dG9uLmFkZEV2ZW50TGlzdGVuZXIoJ2NsaWNrJywgZnVuY3Rpb24oKSB7CiAgICAgIHZhciB0aW1lc3RhbXBzVmFsdWUgPSB0aW1lc3RhbXBzVGV4dGFyZWEudmFsdWU7CiAgICAgIHZhciBsaW5lcyA9IHRpbWVzdGFtcHNWYWx1ZS5zcGxpdCgnXG4nKTsKICAgICAgdmFyIHNvdXJjZUZpbGVuYW1lID0gc291cmNlRmlsZW5hbWVUZXh0Ym94LnZhbHVlOwogICAgICB2YXIgZmZtcGVnQ29tbWFuZHMgPSBbXTsKICAgICAgZm9yICh2YXIgaSA9IDA7IGkgPCBsaW5lcy5sZW5ndGg7IGkrKykgewogICAgICAgIHZhciBsaW5lID0gbGluZXNbaV07CiAgICAgICAgdmFyIHBhcnRzID0gbGluZS5zcGxpdCgnICcpOwogICAgICAgIHZhciB0aW1lc3RhbXAgPSBwYXJ0c1swXTsKICAgICAgICB2YXIgbmFtZSA9IHBhcnRzLnNsaWNlKDEpLmpvaW4oJyAnKTsKICAgICAgICAvLyBHZW5lcmF0ZSB0aGUgRkZtcGVnIGNvbW1hbmQKdmFyIGZmbXBlZ0NvbW1hbmQgPSAnZmZtcGVnIC1pICInICsgc291cmNlRmlsZW5hbWUgKyAnIiAtc3MgJyArIHRpbWVzdGFtcCArICcgLXRvICcgKyAoaSA8IGxpbmVzLmxlbmd0aCAtIDEgPyBsaW5lc1tpICsgMV0uc3BsaXQoJyAnKVswXSA6ICcnKSArICcgLWMgY29weSAiJyArIG5hbWUgKyAnLm1wMyInOwogICAgICAgIGZmbXBlZ0NvbW1hbmRzLnB1c2goZmZtcGVnQ29tbWFuZCk7fQogICAgICB2YXIgY29tbWFuZHNFbGVtZW50ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2NvbW1hbmRzJyk7CiAgICAgIGNvbW1hbmRzRWxlbWVudC50ZXh0Q29udGVudCA9IGZmbXBlZ0NvbW1hbmRzLmpvaW4oJ1xuJyk7CiAgICB9KTsKICA8L3NjcmlwdD48L2RldGFpbHM+
+-->

@@ -1,0 +1,78 @@
+
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/min/dropzone.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/min/dropzone.min.js"></script>
+    <div id="myDropzone" class="dropzone"></div>
+    <div id="imageInfo"></div>
+    <script>
+        Dropzone.autoDiscover = false;
+        var myDropzone = new Dropzone("#myDropzone", {
+            url: "#",
+            autoProcessQueue: false,
+            maxFiles: 5,
+            acceptedFiles: "image/*",
+            init: function () {
+                var submitButton = document.querySelector("#submit");
+                this.on("addedfile", function (file) {
+                    processImage(file);});
+                submitButton.addEventListener("click", function () {
+                    myDropzone.processQueue();});}});
+        function processImage(file) {
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                var img = new Image();
+                img.onload = function () {
+                    var canvas = document.createElement("canvas");
+                    var context = canvas.getContext("2d");
+                    context.drawImage(img, 0, 0);
+                    var codec = img.src.split(";")[0].split(":")[1];
+                    var width = img.width;
+                    var height = img.height;
+                    var fileSize = file.size;
+                    var colorSpace = extractColorSpace(context);
+                    var bitDepth = extractBitDepth(context);
+                    var fileFormat = extractFileFormat(file);
+                    displayImageInfo(file, codec, width, height, fileSize, colorSpace, bitDepth, fileFormat);};
+                img.src = event.target.result;};
+            reader.readAsDataURL(file);}
+        function extractColorSpace(context) {
+            return context.getImageData(0, 0, 1, 1).colorSpace;}
+        function extractBitDepth(context) {
+            return context.getImageData(0, 0, 1, 1).data.length * 8;}
+        function extractFileFormat(file) {
+            var fileNameParts = file.name.split(".");
+            return fileNameParts[fileNameParts.length - 1];}
+
+function displayImageInfo(file, codec, width, height, fileSize, colorSpace, bitDepth, fileFormat) {
+    var infoDiv = document.getElementById("imageInfo");
+    var imageDiv = document.createElement("div");
+    var imgName = document.createElement("p");
+    var imgInfo = document.createElement("p");
+    imgName.innerHTML = "<hr><br>Image Name: " + file.name;
+
+    var thumbnail = document.createElement("img");
+    thumbnail.src = URL.createObjectURL(file);
+    thumbnail.width = 45;
+    thumbnail.height = 45;
+    imgInfo.innerHTML = "Image Info: Codec: " + codec + "<br>";
+    if (height % 2 !== 0) {
+        imgInfo.innerHTML += "<span style='color: red;'>Height: " + height + "px</span><br>";
+    } else {
+        imgInfo.innerHTML += "Height: " + height + "px<br>";
+    }
+
+    if (width % 2 !== 0) {
+        imgInfo.innerHTML += "<span style='color: red;'>Width: " + width + "px</span><br>";
+    } else {
+        imgInfo.innerHTML += "Width: " + width + "px<br>";
+    }
+
+    imgInfo.innerHTML += "File Size: " + fileSize + " bytes<br>Color Space: " + colorSpace + "<br>Bit Depth: " + bitDepth + " bits<br>File Format: " + fileFormat + "<br>";
+    imgInfo.appendChild(thumbnail);
+
+    imageDiv.appendChild(imgName);
+    imageDiv.appendChild(imgInfo);
+    infoDiv.appendChild(imageDiv);
+}
+    </script>
+</body>
+</html>

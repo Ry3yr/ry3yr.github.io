@@ -1,0 +1,292 @@
+PMX Compatible MMD Renderer. <span style="color: red;">(pressing a stage link the second time, messes up query strings. reload page then)</span><br>
+Adapted from: https://github.com/Momijinn/SampleWebMMD<br>
+Changes: https://github.com/Momijinn/SampleWebMMD/issues/1<br>
+<a target="_blank" href="https://ry3yr.github.io/SampleWebMMD-master.zip" style=color:blue>Download</a><br><br>
+
+<iframe src="https://alcea-wisteria.de/PHP/SampleWebMMD-master/
+" style="border:0px #ffffff none;" name="statusit" scrolling="auto" frameborder="0" marginheight="0px" marginwidth="0px" height="800px" width="100%" allowfullscreen></iframe>
+
+<details><plaintext>
+Download: https://ry3yr.github.io/SampleWebMMD-master.zip
+Src: https://github.com/Momijinn/SampleWebMMD
+
+  
+===/js/main.js =====
+
+let scene, renderer, camera, mesh, helper;
+let ready = false;
+const windowWidth = window.innerWidth;
+const windowHeight = window.innerHeight;
+const clock = new THREE.Clock();
+function getQueryStringValue(key) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(key);}
+const pmx = getQueryStringValue('pmx');
+const stage = getQueryStringValue('stage');
+let Pmx;
+let Stage;
+if (pmx) {Pmx = `./pmx/pronama/${pmx.trim()}`;
+} else {console.log("No PMX selected.");}
+if (stage) {Stage = `./stages${stage.trim()}`;
+} else {
+  console.log("No stage selected.");}
+if (!Pmx) {Pmx = `./pmx/pronama/AoiZaizen/AoiZaizen.pmx`;}
+if (!Stage) {Stage = "./stages/sorclair/sorclair.pmx";}
+const MotionObjects = [
+  {id: "001", pose: "001", VmdClip: null, AudioClip: false },
+  { id: "002", pose: "002", VmdClip: null, AudioClip: false },
+  { id: "003", pose: "003", VmdClip: null, AudioClip: false },];
+window.onload = () => {
+  Init();
+  LoadModeler();
+  Render();};
+function Init() {
+  document.getElementById("moveLeftButton").addEventListener("click", moveCameraLeft);
+  document.getElementById("moveRightButton").addEventListener("click", moveCameraRight);
+  document.getElementById("moveUpButton").addEventListener("click", moveCameraUp);
+  document.getElementById("moveDownButton").addEventListener("click", moveCameraDown);
+  document.getElementById("rotaterightButton").addEventListener("click", rotateCameraRight);
+  document.getElementById("rotateleftButton").addEventListener("click", rotateCameraLeft);
+  function moveCameraLeft() {camera.position.x -= 1;}
+  function moveCameraRight() {camera.position.x += 1;}
+  function moveCameraUp() {camera.position.y += 1;}
+  function moveCameraDown() {camera.position.y -= 1;}
+  function rotateCameraRight() {mesh.rotateY(Math.PI / 4);}
+  function rotateCameraLeft() {mesh.rotateY(-Math.PI / 4);}
+  scene = new THREE.Scene();
+  const ambient = new THREE.AmbientLight(0xeeeeee);
+  scene.add(ambient);
+  renderer = new THREE.WebGLRenderer({ alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0xcccccc, 0);
+  document.body.appendChild(renderer.domElement);
+  camera = new THREE.PerspectiveCamera(100, windowWidth / windowHeight, 1, 1000);
+  //camera.position.set(0, 19, 20);
+  camera.position.set(0, 19, 20);}
+async function LoadModeler() {
+  const loader = new THREE.MMDLoader();
+
+  function LoadPMX() {
+    return new Promise(resolve => {
+      loader.load(Pmx, object => {
+        mesh = object;
+        scene.add(mesh);
+        resolve(true);
+      },);});}
+  function LoadVMD(id) {
+    return new Promise(resolve => {
+      const path = "./vmd/" + id + ".vmd";
+      const val = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
+      loader.loadAnimation(path, mesh, vmd => {
+        vmd.name = id;
+        MotionObjects[val].VmdClip = vmd;
+        resolve(true);
+      },);});}
+  function LoadAudio(id) {
+    return new Promise(resolve => {
+      const path = "./audio/" + id + ".mp3";
+      const val = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
+      if (MotionObjects[val].AudioClip) {
+        new THREE.AudioLoader().load(path, buffer => {
+          const listener = new THREE.AudioListener();
+          const audio = new THREE.Audio(listener).setBuffer(buffer);
+          MotionObjects[val].AudioClip = audio;
+          resolve(true);
+        },);
+      } else {
+        resolve(false);}});}
+
+  const loadAdditionalPMX = () => {
+    return new Promise(resolve => {
+      loader.load(Stage, object => {
+        const additionalMesh = object;
+        scene.add(additionalMesh);
+        resolve(true);
+
+
+const loadAdditionalPMX = () => {
+  return new Promise(resolve => {
+    loader.load(Stage, object => {
+      const additionalMesh = object;
+      scene.add(additionalMesh);
+      resolve(true);
+    });
+  });
+};
+
+let path; //preperations for 001.vmd and 002.vmd
+try {path = `./stages${stage.trim()}`;} catch (e) {
+  path = '/default/default';}
+const lastIndex = path.lastIndexOf("/");
+const basePath = path.substring(0, lastIndex);
+const vmd1 = `${basePath}/001.vmd`;
+const vmd2 = `${basePath}/002.vmd`;
+console.log(vmd1);
+console.log(vmd2);
+
+
+let mixer;
+//Animate
+//const queryString = window.location.search;
+//const urlParams = new URLSearchParams(queryString);
+//const isAnimated = urlParams.get('animated') === 'yes';
+//if (isAnimated) {
+const url = window.location.href;
+const isAnimated = url.indexOf('animated') !== -1;
+if (isAnimated) {
+// Load Animation
+function createMixer() {
+  mixer = new THREE.AnimationMixer(object);
+}
+
+function playAnimation(animationClip) {
+  const action = mixer.clipAction(animationClip);
+  action.play();
+}
+
+loader.loadAnimation(vmd1, object, (animationClip) => {
+  createMixer();
+  playAnimation(animationClip);
+});
+
+loader.loadAnimation(vmd2, object, (animationClip) => {
+  playAnimation(animationClip);
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  const deltaTime = clock.getDelta();
+  if (mixer) {
+    mixer.update(deltaTime);
+  }
+  renderer.render(scene, camera);
+}
+
+animate();
+}
+
+
+      },);});};
+  await Promise.all([loadAdditionalPMX()]);
+  await LoadPMX();
+  await Promise.all(MotionObjects.map(async (MotionObject) => {return await LoadVMD(MotionObject.id);}));
+  await Promise.all(MotionObjects.map(async (MotionObject) => {return await LoadAudio(MotionObject.id);}));
+  VmdControl("loop", true);}
+VmdControl = (id, loop) => {const index = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
+  if (index === -1) {console.log("not Found ID");return;}
+  ready = false;
+  helper = new THREE.MMDAnimationHelper({ afterglow: 2.0, resetPhysicsOnLoop: true });
+  helper.add(mesh, {
+    animation: MotionObjects[index].VmdClip,
+    physics: false});
+  if (MotionObjects[index].AudioClip) {
+    MotionObjects[index].AudioClip.play();}
+  const mixer = helper.objects.get(mesh).mixer;
+  if (!loop) {
+    mixer.existingAction(MotionObjects[index].VmdClip).setLoop(THREE.LoopOnce);}
+  mixer.addEventListener("loop", (event) => {
+    console.log("loop");});
+  mixer.addEventListener("finished", (event) => {
+    console.log("finished");
+    VmdControl("loop", true);});
+  ready = true;}
+onProgress = (xhr) => {
+  if (xhr.lengthComputable) {const percentComplete = xhr.loaded / xhr.total * 100;
+    console.log(Math.round(percentComplete, 2) + '% downloaded');}}
+onError = (xhr) => {console.log("ERROR");}
+Render = () => {
+  requestAnimationFrame(Render);
+  renderer.clear();
+  renderer.render(scene, camera);
+if (ready) {helper.update(clock.getDelta());}}
+
+//Old-hardcoded--Pose-ClickEvent
+//PoseClickEvent = (id) => {
+//  switch (id) {
+//    case "pose1":
+//      VmdControl("001", true);
+//      break;
+//    case "pose2":
+//      VmdControl("002", false);
+//      break;
+//    case "pose3":
+//      VmdControl("003", false);
+//      break;
+//    default:
+//      VmdControl("001", true);
+//      break;}}
+
+//New-autogenerated--from--MotionObject-Array-Pose-ClickEvent
+const generatePoseClickEvent = (motionObjects) => {
+  const functionBody = motionObjects.map(function (motion) {
+    return "case '" + motion.pose + "':\n" +
+      "  VmdControl('" + motion.id + "', " + (motion.pose === "pose1") + ");\n" +
+      "  break;\n";
+  }).join("");
+  const poseClickEventFunction = new Function("id", "switch (id) { " + functionBody +
+    " default: VmdControl('001', true); break; }");
+  return poseClickEventFunction;
+};
+const PoseClickEvent = generatePoseClickEvent(MotionObjects);
+
+
+
+===/index.html==
+
+
+<div class="keyboard">
+    <button id="." style="background-color: transparent; border: none;color: transparent;">Move L3.__</button>
+    <button id="moveUpButton">Move Up</button><br>
+    <button id="moveLeftButton">Move Left</button>
+    <button id="moveDownButton">Move Down</button>
+    <button id="moveRightButton">Move Right</button>
+ <button id="." style="background-color: transparent; border: none;color: transparent;">.__</button>
+<button id="rotateleftButton">RotateLeft</button>
+<button id="rotaterightButton">RotateRight</button>
+<a target="_blank" href="https://www.reddit.com/r/mikumikudance" style=color:blue>r/MMD</a> 
+</div>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+</head>
+  <div class="pose">
+   <button type="button" value="001" onclick="PoseClickEvent(this.value)">vm1</button>
+    <button type="button" value="002" onclick="PoseClickEvent(this.value)">vm2</button>
+    <button type="button" value="003" onclick="PoseClickEvent(this.value)">vm3</button>
+<a href="?pmx=YusakuFujiki/yusaku.pmx">Yu</a>
+<a href="?pmx=AoiZaizen/AoiZaizen.pmx">Aoi</a> 
+<a href="?pmx=Xion/xion.pmx">Xion</a>
+<a href="?pmx=2b/na_2b_0418n.pmx">2B</a>
+  </div>
+  <div class="stage">
+<a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/herogarden/herogarden.pmx';window.location.href = updatedUrl;})()">herogarden</a>
+<a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/parkavenue/parkavenue.pmx';window.location.href = updatedUrl;})()">parkavenue</a>
+  </div>
+  <script src="./libs/three.js"></script>
+  <script src="./libs/mmdparser.min.js"></script>
+  <script src="./libs/ammo.min.js"></script>
+  <script src="./libs/TGALoader.js"></script>
+  <script src="./libs/MMDLoader.js"></script>
+  <script src="./libs/MMDAnimationHelper.js"></script>
+  <script src="./libs/OutlineEffect.js"></script>
+  <script src="./libs/CCDIKSolver.js"></script>
+  <script src="./libs/MMDPhysics.js"></script>
+  <!--<script src="./libs/OrbitControls.js"></script>-->
+  <!--<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/build/three.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/libs/mmdparser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ammo.js@0.0.10/ammo.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/loaders/TGALoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/loaders/MMDLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/animation/MMDAnimationHelper.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/effects/OutlineEffect.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/animation/CCDIKSolver.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/animation/MMDPhysics.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/jsm/controls/OrbitControls.js"></script>-->
+  <script src="./js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+  <button id="toggleButton">Download</button>
+  <script>
+    function toggleDownloadParam() {
+      var links = document.querySelectorAll('a[id="dld"]');
+      for (var i = 0; i < links.length; i++) {
+        var link = links[i];
+        if (link.href.indexOf('?') === -1) {
+         if (!link.href.includes('?download=yes')) {link.href += '?download=yes';}
+        } else {
+          if (!link.href.includes('?download=yes')) {link.href += '?download=yes';}
+        }
+      }
+    }
+    var toggleButton = document.getElementById('toggleButton');
+    toggleButton.addEventListener('click', function() {
+      if (toggleButton.classList.contains('on')) {
+        toggleButton.classList.remove('on');
+        toggleButton.textContent = 'Toggle';
+        toggleDownloadParam();
+      } else {
+        toggleButton.classList.add('on');
+        toggleButton.textContent = 'Toggle (On)';
+        toggleDownloadParam();
+      }
+    });
+  </script>
+
+  
+  <a href="example.html" id="dld">Download Link 1</a><br>

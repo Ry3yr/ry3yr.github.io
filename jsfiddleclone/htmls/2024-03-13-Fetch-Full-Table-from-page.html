@@ -1,0 +1,16 @@
+<script>
+  function fetchTable() {
+    fetch('2024-03-13-Favorite-Clothes-with-Generator.html')
+      .then(response => response.text())
+      .then(html => {
+        const tempElement = document.createElement('div');
+        tempElement.innerHTML = html;
+        const table = tempElement.querySelector('table');
+        const div = document.getElementById('tableContainer');
+        div.appendChild(table);
+      })
+  }
+  //document.addEventListener('DOMContentLoaded', fetchTable);
+</script>
+<button onclick="fetchTable()">Fetch Table</button>
+<div id="tableContainer"></div>

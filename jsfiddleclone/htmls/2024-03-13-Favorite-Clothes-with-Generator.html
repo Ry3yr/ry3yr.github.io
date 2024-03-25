@@ -1,0 +1,64 @@
+<table>
+<tr>
+<th>Image</th><th>Description</th><th>Source</th><th>Purchasable</th>
+</tr>
+<tr><td><a href="https://www.pixiv.net/en/artworks/116877725" target="_blank"><img src="https://medium-media.vgm.io/albums/84/55848/55848-1477525776.jpg" alt="Image" width="100" height="100"></a></td>
+<td>Pretty dress worn by the GodEater Girl<br> on the <a href="https://vgmdb.net/album/55848" target="_blank">Cover of the 5th Anniv CD</a></td>
+<td><a href="https://vgmdb.net/album/55848" target="_blank">SRC</a></td>
+<td>No</td>
+</tr>
+  <!-- Add more rows as needed -->
+<tr><td><a href="https://www.amazon.com/Cosplay-Automata-Costume-Kimono-Halloween/dp/B0BNVZJ6FL" target="_blank"><img src="https://m.media-amazon.com/images/I/61maeTQesuL._AC_SX569_.jpg" alt="Image" width="100" height="100"></a></td><td>2Bs Kimono (Switch DLC) <a href="https://vgmdb.net/album/55848" target="_blank">eBay</a></td>
+<td><a href="https://www.nintendo.de/DLC/NieR-Automata-6C2P4A118680823-2233414.html" target="_blank">SRC</a></td>
+<td>Yes</td>
+</tr>
+
+</table>
+
+<!---New_Entry_Generator-->
+
+<details><summary>(+)</summary>
+
+  <style>
+.entry{margin-bottom:10px}.entry input[type=text]{width:200px;margin-right:10px}.preview{border:1px solid #ccc;padding:10px;width:300px;height:100px}#outputTable{margin-top:20px;border-collapse:collapse}#outputTable td,#outputTable th{padding:5px;border:1px solid #ccc}
+  </style>
+  <form>
+    <div class="entry">
+      <input type="text" id="imageURL" placeholder="Image URL" oninput="updatePreview()">
+      <input type="text" id="imageLink" placeholder="Image Link URL" oninput="updatePreview()">
+      <input type="text" id="description" placeholder="Description" oninput="updatePreview()">
+      <input type="text" id="sourceLink" placeholder="Source Link URL" oninput="updatePreview()">
+      <select id="purchasable" onchange="updatePreview()">
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select></div></form>
+  <table id="outputTable"></table>
+  <textarea id="outputText" rows="10" cols="50" readonly></textarea>
+  <script>
+    function updatePreview() {
+      var imageURL = document.getElementById("imageURL").value;
+      var imageLink = document.getElementById("imageLink").value;
+      var description = document.getElementById("description").value;
+      var sourceLink = document.getElementById("sourceLink").value;
+      var purchasable = document.getElementById("purchasable").value;
+      var outputTable = document.getElementById("outputTable");
+      var outputText = document.getElementById("outputText");
+      var row = '<tr>'
+          + '<td><a href="' + imageLink + '" target="_blank"><img src="' + imageURL + '" alt="Image" width="50" height="50"></a></td>'
+          + '<td>' + description + '</td>'
+          + '<td><a href="' + sourceLink + '" target="_blank">SRC</a></td>'
+          + '<td>' + purchasable + '</td>'
+          + '</tr>';
+      outputTable.innerHTML = row;
+      var outputCode = '<tr>'
+          + '<td><a href="' + imageLink + '" target="_blank"><img src="' + imageURL + '" alt="Image" width="100" height="100"></a></td>'
+          + '<td>' + description + '</td>\n'
+          + '<td><a href="' + sourceLink + '" target="_blank">SRC</a></td>\n'
+          + '<td>' + purchasable + '</td>\n'
+          + '</tr>';
+      outputText.value = outputCode;
+    }
+  </script>
+</body>
+</html>
+</details>

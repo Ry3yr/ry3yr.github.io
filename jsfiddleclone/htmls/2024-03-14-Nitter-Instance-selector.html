@@ -1,0 +1,73 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<label for="nitterUrl"><a href=https://status.d420.de/#https://github.com/zedeus/nitter/issues/986 target=_blank>Nitter</a> URL:</label>
+<select id="nitterUrl">
+  <option value="https://nitter.privacydev.net/">https://nitter.privacydev.net/</option>
+  <option value="https://nitter.no-logs.com/">https://nitter.no-logs.com/</option>
+  <option value="https://nitter.poast.org/">https://nitter.poast.org/</option>
+  <option value="https://nitter.kavin.rocks/">https://nitter.kavin.rocks/ (noRSS)</option>
+</select>
+<input type="text" id="username" value="ryedai1">
+<input type="checkbox" id="renderRss" checked> Render RSS
+<input type="checkbox" id="openNewTab"> Open in new tab automatically
+<br>
+<button onclick="generateLink()">Generate Link</button>
+<br><br>
+<div id="linkOutput"></div>
+<div id="rssOutput"></div>
+<br>
+<br><br>
+
+<script>
+  function generateLink() {
+    var nitterUrl = document.getElementById("nitterUrl").value;
+    var username = document.getElementById("username").value;
+    var link = nitterUrl + username;
+    var linkOutput = document.getElementById("linkOutput");
+    var rsslink = nitterUrl + username + "/rss";
+    var rssOutput = $("#rssOutput");
+    var renderRss = document.getElementById("renderRss").checked;
+    var openNewTab = document.getElementById("openNewTab").checked;
+    
+    if (openNewTab) {
+      linkOutput.innerHTML = "<a href='" + link + "' target='_blank'>" + link + "</a>";
+      linkOutput.getElementsByTagName("a")[0].click();
+    } else {
+      linkOutput.innerHTML = "<a href='" + link + "'>" + link + "</a>";
+    }
+    
+    if (renderRss) {
+      var rssUrl = link + "/rss";
+      var rss2JsonUrl = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(rssUrl);
+      $.ajax(rss2JsonUrl, {
+        accepts: {
+          json: "application/json"
+        },
+        dataType: "json",
+        success: function (data) {
+          var items = data.items.slice(0, 10);
+          var rssHtml = "<ul>";
+          items.forEach(function (item) {
+            var title = item.title;
+            var description = item.description;
+            var pubDate = new Date(item.pubDate).toLocaleDateString();
+            var author = item.author;
+            var link = item.link;
+            rssHtml += "<li>";
+            rssHtml += "<h3><a href='" + link + "' target='_blank'>" + title + "</a></h3>";
+            rssHtml += "<p>" + description + "</p>";
+            rssHtml += "<p><strong>Date:</strong> " + pubDate + "</p>";
+            rssHtml += "<p><strong>Author:</strong> " + author + "</p>";
+            rssHtml += "</li>";
+          });
+          rssHtml += "</ul>";
+          rssOutput.html(rssHtml);
+        },
+        error: function () {
+          rssOutput.html("Error loading RSS feed.");
+        }
+      });
+    } else {
+      rssOutput.html(rsslink);
+    }
+  }
+</script>

@@ -1,0 +1,37 @@
+<form onsubmit="submitForm()">
+<input type="text" name="url" placeholder="Enter URL">
+<input id="submit" type="submit" value="Submit">
+</form>
+
+<!--Testfunction-->
+<script>function submitForm() {alert('Submitted!');}</script>
+
+
+
+<script>
+var urlParams = new URLSearchParams(window.location.search);
+var card = urlParams.get('card');
+if (card !== null && card !== '') {
+var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname; //findquerystrings
+//window.history.replaceState({}, document.title, newUrl); //removequerystrings (all)
+document.getElementsByName('url')[0].value = card;
+const submitButton = document.querySelector('input[type="submit"][value="Submit"]');
+submitButton.click();}
+</script>
+
+
+
+
+<!--special-idijot-solution--for-kids-who-hate-ampersand-and-only-need-one-querystring-
+<script>
+    var url = window.location.href;
+    var card = '';
+    if (url.includes('?card=')) {card = url.split('?card=')[1].replace(/#38;/g, '');}
+    if (card !== null && card !== '') {
+        var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        document.getElementsByName('url')[0].value = card;
+        document.getElementById('url').value = card;
+        document.getElementById('submit').click();
+}
+</script>-->

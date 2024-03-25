@@ -1,0 +1,32 @@
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>
+  <button onclick="captureScreenshot()">*click*</button>
+  <script>
+     function captureScreenshot() {
+      // Set the dimensions of the screenshot to the entire document, including content beyond the scrollbar
+      var width = document.documentElement.scrollWidth;
+      var height = document.documentElement.scrollHeight;
+
+      html2canvas(document.body, {
+        width: width,
+        height: height,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: document.documentElement.clientWidth,
+        windowHeight: document.documentElement.clientHeight
+      }).then(function(canvas) {
+        var screenshotImage = canvas.toDataURL();
+        var pageTitle = document.title;
+        var filename = pageTitle.replace(/[^\w\s]/gi, '');
+        var timestamp = new Date().getTime();
+        filename += '_' + timestamp;
+        //var link = document.createElement('a');
+        //link.href = screenshotImage;
+        //link.download = filename + '.png';
+        //link.click();
+        var newTab = window.open();
+        newTab.document.write('<img src="' + screenshotImage + '"/>');
+      });
+    }
+  </script>

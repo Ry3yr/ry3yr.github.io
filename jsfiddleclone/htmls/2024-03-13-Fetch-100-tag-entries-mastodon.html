@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div>
+    <label for="instance-url">Instance URL:</label>
+    <input type="text" id="instance-url" placeholder="Enter instance URL" value="https://">
+  </div>
+  <div>
+    <label for="tag">Tag:</label>
+    <input type="text" id="tag" placeholder="Enter tag">
+  </div>
+  <button onclick="fetchEntries()">Fetch Entries</button>
+  <hr>
+  <div id="entries"></div>
+  <script>
+    var initialFetchURL = 'https://mastodon.cloud/api/v1/timelines/tag/MastodonArt?limit=100';
+    fetchEntries();
+    function fetchEntries() {
+      var instanceURL = document.getElementById('instance-url').value;
+      var tag = document.getElementById('tag').value;
+      var apiUrl = initialFetchURL;
+      if (instanceURL && tag) {
+        apiUrl = instanceURL + '/api/v1/timelines/tag/' + tag + '?limit=100';
+      }
+      $.ajax({
+        url: apiUrl,
+        dataType: 'json',
+        success: function(data) {
+          displayEntries(data);
+        },
+        error: function(error) {
+          console.log('Error:', error);
+        }
+      });
+    }
+    function displayEntries(entries) {
+      var entriesDiv = document.getElementById('entries');
+      entriesDiv.innerHTML = '';
+      entries.forEach(function(entry) {
+        var entryHTML = '<div>';
+        entryHTML += '<p>' + entry.content + '</p>';
+        entryHTML += '<p>Author: ' + entry.account.display_name + '</p>';
+        entryHTML += '<p><a href="' + entry.url + '" target="_blank">View Toot</a></p>';
+        entryHTML += '<hr>';
+        entryHTML += '</div>';
+        entriesDiv.innerHTML += entryHTML;
+      });
+    }
+  </script>
+</body>
+</html>

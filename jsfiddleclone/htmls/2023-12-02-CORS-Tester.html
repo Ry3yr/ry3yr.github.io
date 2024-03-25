@@ -1,13 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-    iframe {
-      width: 500px;
-      height: 300px;
-      border: none;
-    }
-  </style>
+  <style>iframe {width: 500px;height: 300px;border: none;} </style>
   <script>
     function checkCORSStatus() {
       const url = document.getElementById('urlInput').value;
@@ -22,17 +16,11 @@
             result.innerHTML = '<strong>CORS is enabled for the URL.</strong><br>';
             result.innerHTML += 'Access-Control-Allow-Origin: ' + corsStatus + '<br>';
           } else {
-            result.innerHTML = '<strong>CORS is not enabled for the URL.</strong><br>';
-          }
-          
-          result.innerHTML += '<br><strong>Response Headers:</strong><br>' + headers;
-        }
-      };
+            result.innerHTML = '<strong>CORS is not enabled for the URL.</strong><br>';}
+          result.innerHTML += '<br><strong>Response Headers:</strong><br>' + headers;}};
       xhr.send();
-      
       const iframe = document.getElementById('iframe');
-      iframe.src = url;
-    }
+      iframe.src = url;}
   </script>
 </head>
 <body>
@@ -40,9 +28,36 @@
   <div>
     <label for="urlInput">Enter URL:</label>
     <input type="text" id="urlInput" placeholder="https://example.com" />
-    <button onclick="checkCORSStatus()">Check CORS Status</button>
+    <button onclick="checkCORSStatus()">Check CORS Status</button><button onclick="generateTextbox()">Source:</button><br>
   </div>
   <div id="result"></div>
   <iframe id="iframe"></iframe>
 </body>
 </html>
+
+
+<!---PageSourceFetch-->
+<script>
+function generateTextbox() {
+  var urlInput = document.getElementById('urlInput').value;
+
+  fetch(urlInput)
+    .then(function(response) {
+      return response.text();
+    })
+    .then(function(content) {
+      var textbox = document.createElement('textarea');
+      textbox.value = content;
+      textbox.rows = 50; // Set the number of rows
+      textbox.cols = 50;
+      textbox.value = content;
+      document.body.appendChild(textbox);
+    })
+    .catch(function(error) {
+      //console.log('Error:', error);
+var errorElement = document.createElement('p');
+  errorElement.textContent = 'Error: ' + error;
+  document.body.appendChild(errorElement);
+    });
+}
+</script>

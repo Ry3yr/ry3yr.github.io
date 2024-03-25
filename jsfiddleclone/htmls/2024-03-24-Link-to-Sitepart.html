@@ -1,0 +1,61 @@
+<a target="_blank" href="https://alceawis.de/sitepartdisplay.html?url=https%3A%2F%2Falceawis.de%2FHobbies&pattern1=Hobbies&pattern2=Tools" style=color:blue>Example</a><br><br>
+<details><summary>Create Link</summary>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Link to Sitepart</title>
+  <script>
+    function generateUrl() {
+      // Get the values from the textboxes
+      const url = document.getElementById("url").value;
+      const pattern1 = document.getElementById("pattern1").value;
+      const pattern2 = document.getElementById("pattern2").value;
+      const generatedUrl = `sitepartdisplay.html?url=${encodeURIComponent(url)}&pattern1=${(pattern1)}&pattern2=${(pattern2)}`;
+      const generatedUrlFin = `<a target="_blank" href="${generatedUrl}" style="color: blue">${generatedUrl}</a>`;
+      document.getElementById("generatedUrl").innerHTML = generatedUrlFin;
+      // Redirect to the generated URL
+      //window.open(generatedUrl, "_blank");
+    }
+  </script>
+</head>
+<body>
+  <h1>LinkToSitepart</h1>
+  <p>Enter the details below to generate the URL:</p>
+  <label for="url">URL:</label>
+  <input type="text" id="url" name="url">
+  <label for="pattern1">Pattern 1:</label>
+  <input type="text" id="pattern1" name="pattern1">
+  <label for="pattern2">Pattern 2:</label>
+  <input type="text" id="pattern2" name="pattern2">
+  <p>Generated URL: <span id="generatedUrl"></span></p>
+  <button onclick="generateUrl()">Generate URL</button>
+</body>
+</html>
+</details>
+
+
+
+  <div id="content"></div>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const url = urlParams.get("url");
+    const pattern1 = urlParams.get("pattern1");
+    const pattern2 = urlParams.get("pattern2");
+    fetch(url)
+      .then(response => response.text())
+      .then(data => {
+        const start = data.indexOf(pattern1) + pattern1.length;
+        const end = data.indexOf(pattern2);
+        const content = data.substring(start, end);
+        const tempElement = document.createElement("div");
+        tempElement.innerHTML = content;
+        const relativeUrls = tempElement.querySelectorAll("a[href], img[src]");
+        relativeUrls.forEach(url => {
+          const originalUrl = url.getAttribute("href") || url.getAttribute("src");
+          const absoluteUrl = new URL(originalUrl, window.location.href).href;
+          url.setAttribute("href", absoluteUrl);
+          url.setAttribute("src", absoluteUrl);});
+        document.getElementById("content").appendChild(tempElement);});
+  </script>
+</body>
+</html>

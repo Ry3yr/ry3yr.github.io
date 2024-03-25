@@ -1,0 +1,41 @@
+<!---Say cheeese !-->
+
+
+<p id="customFont" class="customfont" contenteditable="true">Hello world!</p>
+
+<!---Save_to image --->
+<button id="captureButton">*Cheese!!*</button>
+<div id="imageContainer"></div>
+<script>
+      const captureButton = document.getElementById('captureButton');
+      const imageContainer = document.getElementById('imageContainer');
+      captureButton.addEventListener('click', function() {
+      const paragraph = document.getElementById('customFont');
+      let content = paragraph.innerHTML;
+      content = content.replace(/<\/div>/g, ' ').replace(/<div>/g, ' ');
+      const paragraphComputedStyle = getComputedStyle(paragraph);
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = parseFloat(paragraphComputedStyle.width);
+      canvas.height = parseFloat(paragraphComputedStyle.height) + 50;
+      const computedStyle = getComputedStyle(paragraph);
+      context.font = computedStyle.font;
+      context.fillStyle = computedStyle.color;
+      const textMetrics = context.measureText(content);
+      const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+      const yCoordinate = (canvas.height - textHeight) / 2 + textMetrics.actualBoundingBoxAscent;
+      context.fillText(content, 0, yCoordinate);
+      canvas.toBlob(function(blob) {
+        while (imageContainer.firstChild) {
+          imageContainer.removeChild(imageContainer.firstChild);
+        }
+        const image = document.createElement('img');
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          image.src = reader.result;
+        };
+        reader.readAsDataURL(blob);
+        imageContainer.appendChild(image);
+      }, 'image/png');
+    });
+  </script>
