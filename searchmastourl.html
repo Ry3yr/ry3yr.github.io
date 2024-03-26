@@ -143,3 +143,10 @@
   </script>
 </body>
 </html>
+
+
+<details><summary>BOOKMARKLET</summary>
+
+
+<!----Mastodon----Fediverse--Bookmarklet--><a href="https://codepen.io/ryedai1/pen/NWJoeRW" target="_blank"><img src="https://donestech.net/files/noticies/xarxa-fediverse-mastodon.png" style="width:50px" alt="feditext">Reroute any mastodon/fedi link to your home instance</a><br><textarea id="feditext" rows="8" cols="80"></textarea><br><button onclick="openBookmarkDialogfeditext()">Add to Bookmark</button><button onclick="copyToClipboardfeditext()">Copy to Clipboard</button><script> var decodedStringfeditext = atob('amF2YXNjcmlwdDooZnVuY3Rpb24oKSB7CiAgdmFyIGVuY29kZWRVcmwgPSBlbmNvZGVVUklDb21wb25lbnQod2luZG93LmxvY2F0aW9uLmhyZWYpOwogIHZhciByZWRpcmVjdFVybCA9ICJodHRwczovL2FsY2VhLXdpc3RlcmlhLmRlL1BIUC8wZGVtby8yMDIzLTEwLTIyLU1hc3RvZG9uVG9vdFNlYXJjaC9zZWFyY2htYXN0b3VybC5waHA/c2VhcmNoPSIgKyBlbmNvZGVkVXJsICsgIiZwYlVybD1odHRwcyUzQSUyRiUyRnBiLnRvZG9uLmRlJmFwaWtleT1hcGlrZXloZXJlIjsKICB3aW5kb3cubG9jYXRpb24uaHJlZiA9IHJlZGlyZWN0VXJsOw==');function openBookmarkDialogfeditext() { var bookmarkName = prompt("Enter bookmark name:"); if (bookmarkName) { var bookmarkUrl = decodedStringfeditext; if (window.navigator.userAgent.indexOf("Chrome") !== -1 && chrome && chrome.bookmarks) { chrome.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }, function() { alert("Bookmark added: " + bookmarkName); }); } else if (window.navigator.userAgent.indexOf("Firefox") !== -1 && browser && browser.bookmarks) { browser.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }).then(function() { alert("Bookmark added: " + bookmarkName); }); } else { alert("Sorry, your browser does not support the bookmarking feature.");}}} function copyToClipboardfeditext() { var feditext = document.getElementById("feditext").value; var tempInput = document.createElement("input"); tempInput.value = feditext; document.body.appendChild(tempInput); tempInput.select(); tempInput.setSelectionRange(0, 99999); document.execCommand("copy"); document.body.removeChild(tempInput); alert("Text copied to clipboard: " + feditext);} document.getElementById("feditext").value = decodedStringfeditext;</script><hr>
+</details>
