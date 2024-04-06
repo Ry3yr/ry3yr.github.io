@@ -155,8 +155,8 @@ function fetchVideos(pageToken) {
             var totalDurationRow = document.createElement("tr");
             var totalDurationCell = document.createElement("td");
             totalDurationCell.setAttribute("colspan", "2");
-            totalDurationCell.textContent =
-              "Total Playtime: " + convertSecondsToDuration(totalDuration);
+            //totalDurationCell.textContent = "Total Playtime: " + convertSecondsToDuration(totalDuration);
+            totalDurationCell.textContent = "Total Playtime: " + convertSecondsToDuration(totalDuration) + " " + playlistUrl;
             totalDurationRow.appendChild(totalDurationCell);
             videoList.appendChild(totalDurationRow);
           })
