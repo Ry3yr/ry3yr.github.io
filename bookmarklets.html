@@ -1,4 +1,23 @@
 <title>Bookmarkets</title>
+<script src="jquery.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+    var baseUrl;
+    if (window.location.protocol === "file:") {
+        baseUrl = "file://" + window.location.pathname.match(/(.*)[\/\\]/)[1];
+    } else {
+        baseUrl = window.location.href.match(/(.*)[\/\\]/)[1];
+    }
+    $("#navbar").load(baseUrl + "/Navbar.html");
+    // Print the URL in the DOM
+    //var urlElement = $("<p>").text("URL: " + baseUrl + "/Navbar.html");
+    //$(".formClass").append(urlElement);
+});
+</script>
+<div class="formClass">
+    <div id="navbar">
+    </div>
+</div>
 
 <!----Mastodon----Fediverse--Bookmarklet-->
 <a href="https://codepen.io/ryedai1/pen/NWJoeRW" target="_blank"><img src="https://donestech.net/files/noticies/xarxa-fediverse-mastodon.png" style="width:50px" alt="feditext">Reroute any mastodon/fedi link to your home instance</a><br>
@@ -107,5 +126,73 @@ function openBookmarkDialogpinteresttext() {
 </script>
 <hr>
 
+<!----Pixiv-extract-art--Bookmarklet-->
+<a href="https://codepen.io/ryedai1/pen/ZEZprQY" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Pixiv_Icon.svg/1024px-Pixiv_Icon.svg.png" style="width:50px" alt="pixivimg">Extract pixiv imag (master.jpg) from pixiv url</a><br>
+<textarea id="pixivimg" rows="8" cols="80"></textarea><br>
+<button onclick="openBookmarkDialogpixivimg()">Add to Bookmark</button>
+<button onclick="copyToClipboardpixivimg()">Copy to Clipboard</button>
+<script>
+  var decodedStringpixivimg = atob('amF2YXNjcmlwdDooZnVuY3Rpb24oKSB7IHZhciBjdXJyZW50VXJsID0gZW5jb2RlVVJJQ29tcG9uZW50KHdpbmRvdy5sb2NhdGlvbi5ocmVmKTsgdmFyIGFwaVVybCA9ICdodHRwczovL2FsY2VhLXdpc3RlcmlhLmRlL1BIUC8wZGVtby8yMDI0LTAzLTE0LVBpeGl2VG9vbHMvMjAyMy0wMy0xNC1waXhpdi1zaW5nbGUtaW1nLWZldGNoL3BpeHYtc2luZ2xlLWltZy1mZXRjaC5waHA/cGl4aXZ1cmw9JzsgdmFyIHRhcmdldFVybCA9IGFwaVVybCArIGN1cnJlbnRVcmw7IHdpbmRvdy5vcGVuKHRhcmdldFVybCk7IH0pKCk7');
+function openBookmarkDialogpixivimg() {
+  var bookmarkName = prompt("Enter bookmark name:");
+  if (bookmarkName) {
+    var bookmarkUrl = decodedStringpixivimg;
+    if (window.navigator.userAgent.indexOf("Chrome") !== -1 && chrome && chrome.bookmarks) {
+      chrome.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }, function() {
+        alert("Bookmark added: " + bookmarkName);
+      });
+    } else if (window.navigator.userAgent.indexOf("Firefox") !== -1 && browser && browser.bookmarks) {
+      browser.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }).then(function() {
+        alert("Bookmark added: " + bookmarkName);
+      });
+    } else {
+      alert("Sorry, your browser does not support the bookmarking feature.");}}}
+  function copyToClipboardpixivimg() {
+    var pixivimg = document.getElementById("pixivimg").value;
+    var tempInput = document.createElement("input");
+    tempInput.value = pixivimg;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+    alert("Text copied to clipboard: " + pixivimg);}
+  document.getElementById("pixivimg").value = decodedStringpixivimg;
+</script>
+<hr>
 
 
+<!----Nicovideoextract---Bookmarklet-->
+<a href="https://codepen.io/ryedai1/pen/QWPdvmY" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Niconico%28Re%29_2.svg/512px-Niconico%28Re%29_2.svg.png?20220328180439" style="width:50px" alt="nicovideourl">Extract niconico vid desc</a><br>
+<textarea id="nicovideourl" rows="8" cols="80"></textarea><br>
+<button onclick="openBookmarkDialognicovideourl()">Add to Bookmark</button>
+<button onclick="copyToClipboardnicovideourl()">Copy to Clipboard</button>
+<script>
+  var decodedStringnicovideourl = atob('amF2YXNjcmlwdDooZnVuY3Rpb24oKSB7IHZhciBjdXJyZW50VXJsID0gZW5jb2RlVVJJQ29tcG9uZW50KHdpbmRvdy5sb2NhdGlvbi5ocmVmKTsgdmFyIGFwaVVybCA9ICdodHRwczovL2FsY2VhLXdpc3RlcmlhLmRlL1BIUC8wZGVtby8yMDI0LTAzLTE5LU5pY292aWRlby8yMDI0LTAzLTE5LU5pY29NZXRhRXh0cmFjdC9leHRyYWN0bmljby5waHA/bmljb3VybD0nOyB2YXIgdGFyZ2V0VXJsID0gYXBpVXJsICsgY3VycmVudFVybDsgd2luZG93Lm9wZW4odGFyZ2V0VXJsKTsgfSkoKTs=');
+function openBookmarkDialognicovideourl() {
+  var bookmarkName = prompt("Enter bookmark name:");
+  if (bookmarkName) {
+    var bookmarkUrl = decodedStringnicovideourl;
+    if (window.navigator.userAgent.indexOf("Chrome") !== -1 && chrome && chrome.bookmarks) {
+      chrome.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }, function() {
+        alert("Bookmark added: " + bookmarkName);
+      });
+    } else if (window.navigator.userAgent.indexOf("Firefox") !== -1 && browser && browser.bookmarks) {
+      browser.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }).then(function() {
+        alert("Bookmark added: " + bookmarkName);
+      });
+    } else {
+      alert("Sorry, your browser does not support the bookmarking feature.");}}}
+  function copyToClipboardnicovideourl() {
+    var nicovideourl = document.getElementById("nicovideourl").value;
+    var tempInput = document.createElement("input");
+    tempInput.value = nicovideourl;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+    alert("Text copied to clipboard: " + nicovideourl);}
+  document.getElementById("nicovideourl").value = decodedStringnicovideourl;
+</script>
+<hr>
