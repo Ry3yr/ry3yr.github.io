@@ -1,0 +1,103 @@
+<meta charset="utf-8">
+<!DOCTYPE html>
+<html>
+<head>
+Bin Space: 74.400.000 mm³<br><hr>
+  <script>
+    function calculateBinVolume(length, width, height) {
+      return length * width * height;
+    }
+    function calculateItemVolume(length, width, height) {
+      return length * width * height;
+    }
+    function checkItemsFitInBin() {
+      const binLength = parseInt(document.getElementById('bin-length').value);
+      const binWidth = parseInt(document.getElementById('bin-width').value);
+      const binHeight = parseInt(document.getElementById('bin-height').value);
+      const itemLength = parseInt(document.getElementById('item-length').value);
+      const itemWidth = parseInt(document.getElementById('item-width').value);
+      const itemHeight = parseInt(document.getElementById('item-height').value);
+      const itemCount = parseInt(document.getElementById('item-count').value);
+      //if (itemHeight > binHeight) {
+      if (itemHeight > binHeight || itemLength > binLength || itemWidth > binWidth) {
+        const resultElement = document.getElementById('result');
+        resultElement.innerHTML = "❌ Item height exceeds bin height. Items do not fit in bin.";
+        return;
+      }
+      const binVolume = calculateBinVolume(binLength, binWidth, binHeight);
+      const totalItemVolume = calculateItemVolume(itemLength, itemWidth, itemHeight) * itemCount;
+      const remainingSpace = binVolume - totalItemVolume;
+      if (remainingSpace >= 0) {
+        const spaceUsedPercentage = (totalItemVolume / binVolume) * 100;
+        const resultElement = document.getElementById('result');
+        resultElement.innerHTML = "✅ Items fit in bin. *<img src=https://media.tenor.com/tFFRfQ8RHZQAAAAi/dj-blob-party.gif width=25>*<br>" +
+          "Total space occupied by items: " + totalItemVolume + "<br>" +
+          "Remaining space in the bin: " + remainingSpace + "<br>" +
+          "Space used by items in percentage: " + spaceUsedPercentage + "%";
+      } else {
+        // Display the result
+        const resultElement = document.getElementById('result');
+        resultElement.innerHTML = "❌ Items do not fit in bin.";
+      }
+    }
+  </script>
+</head>
+<body>
+  <label for="bin-length">Bin Length:</label>
+  <input type="number" id="bin-length" value="600">
+  <label for="bin-width">Bin Width:</label>
+  <input type="number" id="bin-width" value="400">
+  <label for="bin-height">Bin Height:</label>
+  <input type="number" id="bin-height" value="310"><br><br>
+
+  <label for="item-length">Item Length:</label>
+  <input type="number" id="item-length" placeholder="Länge"><br>
+  <label for="item-width">Item Width:</label>
+  <input type="number" id="item-width" placeholder="Breite">  <br>
+  <label for="item-height">Item Height:</label>
+  <input type="number" id="item-height" placeholder="Höhe">  <br>
+  <label for="item-count">Number of Items:</label>
+  <input type="number" id="item-count" placeholder="Anzahl" required>
+<button onclick="addZeroToValues()">mm -› cm</button><br>
+
+<script>
+  function addZeroToValues() {
+    var lengthInput = document.getElementById("item-length");
+    var widthInput = document.getElementById("item-width");
+    var heightInput = document.getElementById("item-height");
+    var countInput = document.getElementById("item-count");
+    var lengthValue = lengthInput.value;
+    var widthValue = widthInput.value;
+    var heightValue = heightInput.value;
+    var countValue = countInput.value;
+  var lengthValue = lengthInput.value.replace(/[,\.]/g, "");
+  var widthValue = widthInput.value.replace(/[,\.]/g, "");
+  var heightValue = heightInput.value.replace(/[,\.]/g, "");
+
+    lengthValue = addZero(lengthValue);
+    widthValue = addZero(widthValue);
+    heightValue = addZero(heightValue);
+    countValue = addZero(countValue);
+    lengthInput.value = lengthValue;
+    widthInput.value = widthValue;
+    heightInput.value = heightValue;
+    //countInput.value = countValue;
+  }
+  function addZero(value) {
+    if (value === "") {
+      return "";
+    } else {
+      return value + "0";
+    }
+  }
+</script>
+
+
+
+  
+<button onclick="checkItemsFitInBin()"style="width: 200px; height: 50px; background-color: rgba(255, 0, 0, 0.5);">Check</button>
+
+
+  <p id="result"></p>
+</body>
+</html>

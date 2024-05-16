@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table { border-collapse: collapse; width: 100%; }
+td, th { border: 1px solid #000; padding: 8px; text-align: left; }
+.copy-button { margin-top: 10px; }
+</style>
+</head>
+<body>
+<h1>MMD Bone Renamer Tool</h1>
+
+<form id="parse-form">
+  <label for="csv-url">CSV URL:</label>
+  <input type="text" id="csv-url" value="https://ry3yr.github.io/mmdbonenames.csv">
+  <br><br>
+  <label for="input-text">Input Text:</label>
+  <br>
+  <textarea id="input-text" placeholder="Paste non-Japanese bone names here"></textarea>
+  <br>
+  <input type="submit" value="Submit">
+</form>
+<div class="fixed-div">
+  <button class="copy-button" onclick="copyColumnToClipboard(0)">Copy Old Names</button>
+  <button class="copy-button" onclick="copyColumnToClipboard(1)">Copy New Names</button>
+</div>
+
+<div id="output"></div>
+
+<script>
+function parseCSV(csvData) {
+  var lines = csvData.split("\n");
+  var result = [];
+  for (var i = 0; i < lines.length; i++) {
+    var currentLine = lines[i].split(",");
+    if (currentLine.length >= 2) {
+      var key = currentLine[0].replace(/"/g, "");
+      var value = currentLine[1].replace(/"/g, "");
+      result.push({ key: key, value: value });
+    }
+  }
+ 
+  return result;
+}
+
+document.getElementById("parse-form").addEventListener("submit", function(event) {
+  event.preventDefault();
+  
+  var csvUrl = document.getElementById("csv-url").value.trim();
+  
+  // Fetch CSV file from the provided URL
+  fetch(csvUrl)
+    .then(function(response) {
+      return response.text();
+    })
+    .then(function(data) {
+      var inputText = document.getElementById("input-text").value.trim();
+      var lines = inputText.split("\n");
+      
+      // Parse the CSV data
+      var parsedData = parseCSV(data);
+      
+      // Replace each line if a corresponding value exists
+      var tableContent = "<table><tr><th>Old Name</th><th>New Name</th></tr>";
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        var matchingValue = parsedData.find(function(item) {
+          return item.key === line;
+        });
+        
+        var oldName = line;
+        var newName = matchingValue ? matchingValue.value : "";
+        
+        tableContent += "<tr><td>" + oldName + "</td><td>" + newName + "</td></tr>";
+      }
+      tableContent += "</table>";
+      
+      document.getElementById("output").innerHTML = tableContent;
+      //$(".copy-button").remove(); //remove copy button before adding new one
+      //var copyButton = '<button class="copy-button" onclick="copyColumnToClipboard(0)">Copy Old Names</button>';
+      //copyButton += '<button class="copy-button" onclick="copyColumnToClipboard(1)">Copy New Names</button>';
+      //document.getElementById("output").insertAdjacentHTML("beforebegin", copyButton);
+    });
+});
+
+// Function to copy table column content to clipboard
+function copyColumnToClipboard(columnIndex) {
+  var table = document.querySelector("table");
+  var columnData = [];
+  
+  // Get the data from the specified column
+  var rows = table.getElementsByTagName("tr");
+  for (var i = 0; i < rows.length; i++) {
+    var cells = rows[i].getElementsByTagName("td");
+    if (cells.length > columnIndex) {
+      columnData.push(cells[columnIndex].innerText);
+    }
+  }
+  
+  // Copy the column data to the clipboard
+  var textarea = document.createElement("textarea");
+  textarea.textContent = columnData.join("\n");
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+  
+  //alert("Content copied to clipboard!");
+}
+</script>
+</body>
+</html>
+
+<!---v1--jquery--CjxzY3JpcHQgc3JjPSJodHRwczovL2NvZGUuanF1ZXJ5LmNvbS9qcXVlcnktMy42LjAubWluLmpzIj48L3NjcmlwdD4KPHN0eWxlPgp0YWJsZXtib3JkZXItY29sbGFwc2U6Y29sbGFwc2U7d2lkdGg6MTAwJX10ZCx0aHtib3JkZXI6MXB4IHNvbGlkICMwMDA7cGFkZGluZzo4cHg7dGV4dC1hbGlnbjpsZWZ0fS5jb3B5LWJ1dHRvbnttYXJnaW4tdG9wOjEwcHh9CiAgPC9zdHlsZT4KICA8c2NyaXB0PgogICAgJChkb2N1bWVudCkucmVhZHkoZnVuY3Rpb24oKSB7CiAgICAgIGZ1bmN0aW9uIHBhcnNlQ1NWKGNzdkRhdGEpIHsKICAgICAgICB2YXIgbGluZXMgPSBjc3ZEYXRhLnNwbGl0KCJcbiIpOwogICAgICAgIHZhciByZXN1bHQgPSBbXTsKICAgICAgICBmb3IgKHZhciBpID0gMDsgaSA8IGxpbmVzLmxlbmd0aDsgaSsrKSB7CiAgICAgICAgICB2YXIgY3VycmVudExpbmUgPSBsaW5lc1tpXS5zcGxpdCgiLCIpOwogICAgICAgICAgaWYgKGN1cnJlbnRMaW5lLmxlbmd0aCA+PSAyKSB7CiAgICAgICAgICAgIHZhciBrZXkgPSBjdXJyZW50TGluZVswXS5yZXBsYWNlKC8iL2csICIiKTsKICAgICAgICAgICAgdmFyIHZhbHVlID0gY3VycmVudExpbmVbMV0ucmVwbGFjZSgvIi9nLCAiIik7CiAgICAgICAgICAgIHJlc3VsdC5wdXNoKHsga2V5OiBrZXksIHZhbHVlOiB2YWx1ZSB9KTsKICAgICAgICAgIH0KICAgICAgICB9CiAgICAgICAKICAgICAgICByZXR1cm4gcmVzdWx0OwogICAgICB9CiAgICAgICQoIiNwYXJzZS1mb3JtIikuc3VibWl0KGZ1bmN0aW9uKGV2ZW50KSB7CiAgICAgICAgZXZlbnQucHJldmVudERlZmF1bHQoKTsKICAgICAgICAKICAgICAgICB2YXIgY3N2VXJsID0gJCgiI2Nzdi11cmwiKS52YWwoKS50cmltKCk7CiAgICAgICAgCiAgICAgICAgLy8gRmV0Y2ggQ1NWIGZpbGUgZnJvbSB0aGUgcHJvdmlkZWQgVVJMCiAgICAgICAgJC5nZXQoY3N2VXJsLCBmdW5jdGlvbihkYXRhKSB7CiAgICAgICAgICB2YXIgaW5wdXRUZXh0ID0gJCgiI2lucHV0LXRleHQiKS52YWwoKS50cmltKCk7CiAgICAgICAgICB2YXIgbGluZXMgPSBpbnB1dFRleHQuc3BsaXQoIlxuIik7CiAgICAgICAgICAKICAgICAgICAgIC8vIFBhcnNlIHRoZSBDU1YgZGF0YQogICAgICAgICAgdmFyIHBhcnNlZERhdGEgPSBwYXJzZUNTVihkYXRhKTsKICAgICAgICAgIAogICAgICAgICAgLy8gUmVwbGFjZSBlYWNoIGxpbmUgaWYgYSBjb3JyZXNwb25kaW5nIHZhbHVlIGV4aXN0cwogICAgICAgICAgdmFyIHRhYmxlQ29udGVudCA9ICI8dGFibGU+PHRyPjx0aD5PbGQgTmFtZTwvdGg+PHRoPk5ldyBOYW1lPC90aD48L3RyPiI7CiAgICAgICAgICBmb3IgKHZhciBpID0gMDsgaSA8IGxpbmVzLmxlbmd0aDsgaSsrKSB7CiAgICAgICAgICAgIHZhciBsaW5lID0gbGluZXNbaV0udHJpbSgpOwogICAgICAgICAgICB2YXIgbWF0Y2hpbmdWYWx1ZSA9IHBhcnNlZERhdGEuZmluZChmdW5jdGlvbihpdGVtKSB7CiAgICAgICAgICAgICAgcmV0dXJuIGl0ZW0ua2V5ID09PSBsaW5lOwogICAgICAgICAgICB9KTsKICAgICAgICAgICAgCiAgICAgICAgICAgIHZhciBvbGROYW1lID0gbGluZTsKICAgICAgICAgICAgdmFyIG5ld05hbWUgPSBtYXRjaGluZ1ZhbHVlID8gbWF0Y2hpbmdWYWx1ZS52YWx1ZSA6ICIiOwogICAgICAgICAgICAKICAgICAgICAgICAgdGFibGVDb250ZW50ICs9ICI8dHI+PHRkPiIgKyBvbGROYW1lICsgIjwvdGQ+PHRkPiIgKyBuZXdOYW1lICsgIjwvdGQ+PC90cj4iOwogICAgICAgICAgfQogICAgICAgICAgdGFibGVDb250ZW50ICs9ICI8L3RhYmxlPiI7CiAgICAgICAgICAKICAgICAgICAgICQoIiNvdXRwdXQiKS5odG1sKHRhYmxlQ29udGVudCk7CiAgICAgICAgICAkKCIuY29weS1idXR0b24iKS5yZW1vdmUoKTsgLy9yZW1vdmUgY29weSBidXR0b24gYmVmb3JlIGFkZGluZyBuZXcgb25lCiAgICAgICAgICAvLyBBZGQgY29weSBidXR0b25zCiAgICAgICAgICB2YXIgY29weUJ1dHRvbiA9ICc8YnV0dG9uIGNsYXNzPSJjb3B5LWJ1dHRvbiIgb25jbGljaz0iY29weUNvbHVtblRvQ2xpcGJvYXJkKDApIj5Db3B5IE9sZCBOYW1lczwvYnV0dG9uPic7CiAgICAgICAgICBjb3B5QnV0dG9uICs9ICc8YnV0dG9uIGNsYXNzPSJjb3B5LWJ1dHRvbiIgb25jbGljaz0iY29weUNvbHVtblRvQ2xpcGJvYXJkKDEpIj5Db3B5IE5ldyBOYW1lczwvYnV0dG9uPic7CiAgICAgICAgICAKICAgICAgICAgICQoIiNvdXRwdXQiKS5iZWZvcmUoY29weUJ1dHRvbik7CiAgICAgICAgfSk7CiAgICAgIH0pOwogICAgfSk7CiAgICAKICAgIC8vIEZ1bmN0aW9uIHRvIGNvcHkgdGFibGUgY29sdW1uIGNvbnRlbnQgdG8gY2xpcGJvYXJkCiAgICBmdW5jdGlvbiBjb3B5Q29sdW1uVG9DbGlwYm9hcmQoY29sdW1uSW5kZXgpIHsKICAgICAgdmFyIHRhYmxlID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcigidGFibGUiKTsKICAgICAgdmFyIGNvbHVtbkRhdGEgPSBbXTsKICAgICAgCiAgICAgIC8vIEdldCB0aGUgZGF0YSBmcm9tIHRoZSBzcGVjaWZpZWQgY29sdW1uCiAgICAgIHZhciByb3dzID0gdGFibGUuZ2V0RWxlbWVudHNCeVRhZ05hbWUoInRyIik7CiAgICAgIGZvciAodmFyIGkgPSAwOyBpIDwgcm93cy5sZW5ndGg7IGkrKykgewogICAgICAgIHZhciBjZWxscyA9IHJvd3NbaV0uZ2V0RWxlbWVudHNCeVRhZ05hbWUoInRkIik7CiAgICAgICAgaWYgKGNlbGxzLmxlbmd0aCA+IGNvbHVtbkluZGV4KSB7CiAgICAgICAgICBjb2x1bW5EYXRhLnB1c2goY2VsbHNbY29sdW1uSW5kZXhdLmlubmVyVGV4dCk7CiAgICAgICAgfQogICAgICB9CiAgICAgIAogICAgICAvLyBDb3B5IHRoZSBjb2x1bW4gZGF0YSB0byB0aGUgY2xpcGJvYXJkCiAgICAgIHZhciB0ZXh0YXJlYSA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoInRleHRhcmVhIik7CiAgICAgIHRleHRhcmVhLnRleHRDb250ZW50ID0gY29sdW1uRGF0YS5qb2luKCJcbiIpOwogICAgICBkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKHRleHRhcmVhKTsKICAgICAgdGV4dGFyZWEuc2VsZWN0KCk7CiAgICAgIGRvY3VtZW50LmV4ZWNDb21tYW5kKCJjb3B5Iik7CiAgICAgIGRvY3VtZW50LmJvZHkucmVtb3ZlQ2hpbGQodGV4dGFyZWEpOwogICAgICAKICAgICAgYWxlcnQoIkNvbnRlbnQgY29waWVkIHRvIGNsaXBib2FyZCEiKTsKICAgIH0KICA8L3NjcmlwdD4KPC9oZWFkPgo8Ym9keT4KICA8aDE+TU1EIEJvbmUgUmVuYW1lciBUb29sPC9oMT4KICAKICA8Zm9ybSBpZD0icGFyc2UtZm9ybSI+CiAgICA8bGFiZWwgZm9yPSJjc3YtdXJsIj5DU1YgVVJMOjwvbGFiZWw+CiAgICA8aW5wdXQgdHlwZT0idGV4dCIgaWQ9ImNzdi11cmwiIHZhbHVlPSJodHRwczovL3J5M3lyLmdpdGh1Yi5pby9tbWRib25lbmFtZXMuY3N2Ij4KICAgIDxicj48YnI+CiAgICA8bGFiZWwgZm9yPSJpbnB1dC10ZXh0Ij5JbnB1dCBUZXh0OjwvbGFiZWw+CiAgICA8YnI+CiAgICA8dGV4dGFyZWEgaWQ9ImlucHV0LXRleHQiIHBsYWNlaG9sZGVyPSJQYXN0ZSBub24gamFwYW5lc2UgYm9uZSBuYW1lcyBoZXJlIj48L3RleHRhcmVhPgogICAgPGJyPgogICAgPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IlN1Ym1pdCI+CiAgPC9mb3JtPgogIAogIDxkaXYgaWQ9Im91dHB1dCI+PC9kaXY+CjwvYm9keT4KPC9odG1sPg==
+-->

@@ -1,0 +1,153 @@
+ <meta charset="utf-8">
+<style>
+    #wheelOfFortune {
+      display: inline-flex;
+      position: relative;
+      overflow: hidden;
+    }
+    #wheel {display: block;}
+    #spin {
+      font: 1.0rem/0 sans-serif;
+      user-select: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30%;
+      height: 30%;
+      margin: -15%;
+      background: #000;
+      color: #fff;
+      box-shadow: 0 0 0 8px currentColor, 0 0px 15px 5px rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      transition: 0.8s;}
+    #spin::after {
+      content: "";
+      position: absolute;
+      top: -17px;
+      border: 10px solid transparent;
+      border-bottom-color: currentColor;
+      border-top: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="wheelOfFortune">
+    <canvas id="wheel" width="300" height="300"></canvas>
+    <div id="spin">SPIN</div>
+  </div>
+  <script>
+    const sectors = [
+      { color: "https://i.ibb.co/bzJzvBY/ishiseto.jpg", label: "イシズ・イシュタール" },
+      { color: "https://i.ibb.co/YpSBKpX/yunaoi.jpg", label: "ゆさあお" },
+      { color: "https://i.ibb.co/yB0jFVr/subnmis.jpg", label: "流星のロックマン" },
+      { color: "https://i.ibb.co/DfGxJGP/Screenshot-2024-04-14-16-01-48.jpg", label: "シオン(キングダムハーツ)" },
+      { color: "https://i.ibb.co/Yc3v4KS/Instruments.jpg", label: "instruments" }
+    ];
+    const rand = (m, M) => Math.random() * (M - m) + m;
+    const tot = sectors.length;
+    const elSpin = document.querySelector("#spin");
+    const ctx = document.querySelector("#wheel").getContext("2d");
+    const dia = ctx.canvas.width;
+    const rad = dia / 2;
+    const PI = Math.PI;
+    const TAU = 2 * PI;
+    const arc = TAU / tot;
+    const friction = 0.991;
+    const angVelMin = 0.002;
+    let angVelMax = 0;
+    let angVel = 0;
+    let ang = 0;
+    let isSpinning = false;
+    let isAccelerating = false;
+    let animFrame = null;
+    const getIndex = () => Math.floor(tot - ang / TAU * tot) % tot;
+const drawSector = (sector, i) => {
+  const angle = arc * i;
+  const img = new Image();
+  img.onload = function() {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(rad, rad);
+    ctx.arc(rad, rad, rad, angle, angle + arc);
+    ctx.closePath();
+    ctx.clip();
+    ctx.translate(rad, rad);
+    ctx.rotate(angle + arc / 2);
+    const scaleFactor = Math.min(dia / img.width, dia / img.height);
+    const scaledWidth = img.width * scaleFactor;
+    const scaledHeight = img.height * scaleFactor;
+    ctx.drawImage(img, -scaledWidth / 5, -scaledHeight / 5, scaledWidth, scaledHeight);
+    ctx.restore();
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#000";
+    ctx.font = "bold 30px sans-serif";
+    ctx.fillText(sector.label, 0, rad - 10);
+  };
+  img.src = sector.color;
+};
+    const rotate = () => {
+      const sector = sectors[getIndex()];
+      ctx.canvas.style.transform = `rotate(${ang - PI / 2}rad)`;
+      //elSpin.textContent = !angVel ? "SPIN" : sector.label;
+      elSpin.textContent = sector.label;
+    };
+    const frame = () => {
+      if (!isSpinning) return;
+      if (angVel >= angVelMax) isAccelerating = false;
+      if (isAccelerating) {
+        angVel ||= angVelMin;
+        angVel *= 1.06;
+      } else {
+        isAccelerating = false;
+        angVel *= friction;
+        if (angVel < angVelMin) {
+          isSpinning = false;
+          angVel = 0;
+          cancelAnimationFrame(animFrame);
+        }
+      }
+      ang += angVel;
+      ang %= TAU;
+      rotate();
+    };
+    const engine = () => {
+      frame();
+      animFrame = requestAnimationFrame(engine);
+    };
+    elSpin.addEventListener("click", () => {
+      if (isSpinning) return;
+      isSpinning = true;
+      isAccelerating = true;
+      angVelMax = rand(0.25, 0.40);
+      engine();
+    });
+    sectors.forEach(drawSector);
+    rotate();
+  </script>
+</body>
+
+<!--SelfUpdatingLink-->
+<a id="link" href="#" target="_blank">Link</a>
+<script>
+const spinDiv = document.getElementById("spin");
+const linkDiv = document.getElementById("link");
+
+// Create a new MutationObserver instance
+const observer = new MutationObserver((mutationsList) => {
+  for (let mutation of mutationsList) {
+    if (mutation.type === "childList" && mutation.target === spinDiv) {
+      const spinText = spinDiv.textContent;
+      const linkURL = `https://www.pixiv.net/en/users/75406576/artworks/${spinText}`;
+      linkDiv.href = linkURL;
+    }
+  }
+});
+observer.observe(spinDiv, { childList: true });
+setTimeout(() => {
+  spinDiv.textContent = "New Spin Text";
+}, 3000);
+</script>

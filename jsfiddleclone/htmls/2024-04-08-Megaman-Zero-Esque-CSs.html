@@ -1,0 +1,52 @@
+<!----Audio--->
+<audio id="audio"><source src="https://a.tumblr.com/tumblr_ojrn7aGBii1w2e2oyo1.mp3" type="audio/mpeg"></audio>
+<script>
+var html5_audiotypes={"mp3":"audio/mpeg","mp4":"audio/mp4","ogg":"audio/ogg","wav":"audio/wav"};function createsoundbite(e){var t=document.createElement("audio");if(t.canPlayType)for(var n=0;n<arguments.length;n++){var r=document.createElement("source");r.setAttribute("src",arguments[n]),arguments[n].match(/\.(\w+)$/i)&&r.setAttribute("type",html5_audiotypes[RegExp.$1]),t.appendChild(r)}return t.load(),t.playclip=function(){t.pause(),t.currentTime=0,t.play()},t}var mouseoversound=createsoundbite("/other/music/sfx/megaman/mmz4_option.mp3");var clicksound=createsoundbite("/other/music/sfx/megaman/mmz4_ok.mp3");
+document.getElementById("img").addEventListener("click", function(){
+document.getElementById("audio").play();
+});
+</script>
+<!----MMZ_CSS-->
+<style>
+body {
+background-color: #010245; /* Add this line to set the background color to blue */
+background-image: url(https://alceawis.de/other/music/sfx/megaman/mmz_t-n-b.gif), url(https://alceawis.de/other/music/sfx/megaman/mmz_l-n-r.gif);
+background-repeat: repeat-x, repeat-y;
+background-position: center top, right top;
+background-attachment: fixed;
+}
+body::before {
+content: "";
+position: fixed;
+bottom: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background-image: url(https://alceawis.de/other/music/sfx/megaman/mmz_l-n-r.gif);
+background-repeat: repeat-y;
+background-position: right bottom;
+transform: scaleX(-1);
+pointer-events: none; /* Add this line to allow interaction with elements behind */
+}
+body::after {
+content: "";
+position: fixed;
+bottom: 0;
+left: 0px;
+right: 0px;
+height: 100%;
+background-image: url(https://alceawis.de/other/music/sfx/megaman/mmz_t-n-b.gif);
+background-repeat: repeat-x;
+background-position: center top;
+transform: scaleY(-1);
+pointer-events: none; /* Add this line to allow interaction with elements behind */
+}
+button {
+background-color: #18FFF7;
+opacity: 0.5;
+color: white !important;
+}
+* {
+color: white !important;
+}
+</style>

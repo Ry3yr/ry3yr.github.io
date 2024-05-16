@@ -1,0 +1,24 @@
+
+  <input type="text" id="classInput" placeholder="Enter class name" value="label-text display_name"><br>
+  <textarea id="pasteInput" rows="5" placeholder="Paste HTML content here"></textarea>
+  <button id="extractButton" onclick="extractText()">Extract</button>
+  <div id="output"></div>
+  <script>
+    function extractText() {
+      var classInput = document.getElementById('classInput');
+      var className = classInput.value.trim();
+      var pasteInput = document.getElementById('pasteInput');
+      var htmlContent = pasteInput.value;
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(htmlContent, "text/html");
+      var elements = doc.getElementsByClassName(className);
+      var extractedText = '';
+      for (var i = 0; i < elements.length; i++) {
+        extractedText += elements[i].textContent + '<br>';
+      }
+      var outputDiv = document.getElementById('output');
+      outputDiv.innerHTML = extractedText;
+    }
+  </script>
+</body>
+</html>

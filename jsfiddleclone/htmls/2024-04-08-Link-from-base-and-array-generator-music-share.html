@@ -1,0 +1,25 @@
+
+  <select id="rollPicker">
+  </select>
+  <button onclick="generateLink()">Generate Link</button>
+  <br>
+  <div id="linkOutput"></div>
+  <script>
+    var encodedList = "MDAwIFs2NzUgTWJdIFRoZSBNZW50IFZlcnkgQmVzdAowIE5hbmEgT1NUCjAgUGFyYXN5dGUgT1NUCjBbblprXShIaXJveXVraVNhd2FubykKMEFwZXhfTGVnZW5kc19PU1QKMEFyY2FuYSBGYW1pZ2xpYSBPU1QKMEJsb29kc3RhaW5lZCBPU1QKMENhc3RsZXZhbmlhCjBDZWxlc3RlIE9TVAowQ2hhcmxvdHRlIE9TVAowQ2hpY29yeSBPU1QKMENocm9ubyBPU1RzCjBDaW5nCjBEYW5jZSB3aXRoIHRoZSBEZWFkCjBEQyBCZXN0IG9mIFsgTUJdCjBEZWFkbHkgUHJlbW9uaXRpb24gT1NUCjBEZWF0aCBOb3RlIFszNjVNQl0KMEUuWC4gVHJvb3BlcnMgT1NUCjBFc2NhcGUgdGhlIEZhdGUgW0Jlc3Qgb2ZdCjBGYWxsaW5nIGluIFJldmVyc2UKMEZGLUJlc3Qtb2YKMEZsb3dlciBTdW4gJiBSYWluIEJlc3RvZmYKMEZ1bGxfTW9vbl9Xb19TYWdhc2hpdGUKMEhhdmVuIE9yaWdpbmFsIFNvdW5kdHJhY2sKMEhpYmlrZSBFdXBob25pdW0gT3JpZ2luYWwgU291bmR0cmFjawowSG9zaGlOb1NhbWlkYXJlIE9TVAowSG9zaGlOb1NhbWlkYXJlT1NUCjBJbmF6dW1hIEVsZXZlbiBPU1QgQmVzdCBvZgowSm9zZWVfdG8gdG9yYV90b19zYWthbmFfdGFjaGkKMEthZ3V5YS1zYW1hIHdhIEtva3VyYXNldGFpIE9TVAowS2FpdG91IEpva2VyIE9TVAowS2FtaWthemUgS2FpdG91IEplYW5uZSBPU1QKMEthemUgZ2EgVHN1eW9rdSBGdWl0ZWlydQowS2lsbCBMYSBLaWxsIE9TVAowS2l6bmFpdmVyIE9TVAowS29lIG5vIEthdGFjaGkgT1NUCjBLdXJ6Z2VzYWd0CjBLdXp1IG5vIEhvbmthaSBPU1QKMExhemVyaGF3awowTGlua2luX1BhcmsKME1hY2hpbmUtRG9sbCB3YSBLaXp1dHN1a2FuYWkgT1NUCjBNYWRlIGluIEFieXNzIE9TVAowTWFnaWMgS2FpdG8gMTQxMiBPU1QKME1haG91a2EgS291a291IG5vIFJldHRvdXNlaSBPU1QKME1lZ2FtYW5fQmVzdF9PZmZzX1sxLjUgR0JdCjBNaXJhaSBOaWtraSBCZXN0IE9mIFs0MjNNQl0KME1pc2F0byBGdWt1ZW4KME11cmRlciBieSBOdW1iZXJzIE9TVAowTmFnaSBubyBBc3VrYXJhIE9TVAowTmFydXRvIE9TVAowTm9yYWdhbWlfT1NUCjBOb3JuOSBPU1QKMFJvY2ttYW5fRVhFCjBSeXUgZ2EgR290b2t1IE9TVAowUnl1dXNlaSBubyBSb2NrbWFuIE9TVAowU2FuZ2F0c3Ugbm8gTGlvbiBPU1QKMFNhdHN1cmlrdSBubyBUZW5zaGkgT3JpZ2luYWwgU291bmR0cmFjawowU2hpa2lfT1NUCjBTb21hIEJyaW5nZXIgT1NUCjBTcGVlZCBHcmFwaGVyIE9TVAowU3ViYXJhc2hpa2kgS29ubyBTZWthaQowU3dpdGNoZWQgT3JpZ2luYWwgU291bmR0cmFjawowVGV0c3V3YW4gQmlyZHkgT3JpZ2luYWwgU291bmR0cmFjawowVExvWgowVG9reW8gRVNQIE9yaWdpbmFsIFNvdW5kdHJhY2sKMFRvbW9rbyBLYXdhc2UKMFRyYWNlIC0gS2Fzb3VrZW4gbm8gT3Rva28gT1NUCjBUcmlja3N0ZXIgRWRvZ2F3YSBSYW5wbyBPU1QKMFVuZGVydGFsZSBPU1QKMFVzb3RzdWtpIEhpbWUgdG8gTW91bW9rdSBPdWppIE9TVAowVXRhZGEgSGlrYXJ1CjBWaW9sZXQgRXZlcmdhcmRlbiBPU1QKMFhlbm9fT1NUCjBab25lIG9mIHRoZSBFbmRlcnMgT1NUCkFqaW4gT1NUCkFydEF0dGFja19PU1QKQXp1cmUgU3RyaWtlciBHdW52b2x0Ckdob3N0IFRyaWNrIE9yaWdpbmFsIFNvdW5kdHJhY2sKR09EIEVBVEVSIE9TVApHeWFrdXRlbgpNaXNhdG8gRnVrdWVuIC0gQmVzdCBvZgpUb2t5byBHaG91bCBPU1QKWUdPX0Jlc3RfT2ZfWzE1MTBNQl0=";
+    function generateLink() {
+      var rollPicker = document.getElementById("rollPicker");
+      var selectedOption = rollPicker.options[rollPicker.selectedIndex].value;
+      var link = "https://my.link.de/share/folder#$/";
+      var finalLink = link + selectedOption;
+      var finalLink = '<a href="' + finalLink + '" target="_blank">' + finalLink + '</a>';
+      document.getElementById("linkOutput").innerHTML = finalLink;}
+    var decodedList = atob(encodedList);
+    var options = decodedList.split('\n');
+    var rollPicker = document.getElementById("rollPicker");
+    for (var i = 0; i < options.length; i++) {
+      var option = document.createElement("option");
+      option.value = options[i];
+      option.text = options[i];
+      rollPicker.appendChild(option);}
+  </script>
+

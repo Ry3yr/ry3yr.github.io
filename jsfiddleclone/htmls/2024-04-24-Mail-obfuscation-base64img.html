@@ -1,0 +1,23 @@
+  <script>
+    function generateEmailImages() {
+      var email = 'alceawisteria@proton.mailll';
+      var element = document.getElementById('email');
+      for (var i = 0; i < email.length; i++) {
+        var letter = email.charAt(i);
+        var imageElement = document.createElement('img');
+        imageElement.src = generateLetterImageBase64(letter);
+        element.appendChild(imageElement);}}
+    function generateLetterImageBase64(letter) {
+      var canvas = document.createElement('canvas');
+      canvas.width = 24;
+      canvas.height = 50;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 15px Arial';
+      ctx.fillText(letter, 10, 30);
+      return canvas.toDataURL();
+    }
+  </script>
+<body onload="generateEmailImages()">
+  <p><span id="email"></span></p>
+</body>

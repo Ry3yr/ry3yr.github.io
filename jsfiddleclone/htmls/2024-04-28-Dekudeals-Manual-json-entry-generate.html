@@ -1,0 +1,171 @@
+===info.html===
+
+    <script>
+        function createJSON() {
+            var name = document.getElementById("name").value;
+            var link = document.getElementById("link").value;
+            var addedAt = document.getElementById("addedAt").value;
+            var format = document.getElementById("format").value;
+            var pricePaid = document.getElementById("pricePaid").value;
+            var pricePaidCurrency = document.getElementById("pricePaidCurrency").value;
+            var gameSize = document.getElementById("gameSize").value;
+            var image = document.getElementById("image").value;
+
+            var jsonObject = {
+                "name": name,
+                "link": link,
+                "added_at": addedAt,
+                "format": format,
+                "price_paid": parseInt(pricePaid),
+                "price_paid_currency": pricePaidCurrency,
+                "gamesize": gameSize,
+                "image": image
+            };
+            var prettifiedJSON = JSON.stringify(jsonObject, null, 4);
+            document.getElementById("output").innerHTML = "<pre>" + prettifiedJSON + "</pre>";
+        }
+        window.onload = function() {
+    var now = new Date().toISOString().slice(0, 19) + "+00:00";
+    document.getElementById("addedAt").value = now;
+        }
+    </script>
+    <form onsubmit="event.preventDefault(); createJSON();">
+        <label for="name">name:</label>
+        <input type="text" id="name" required><br>
+        <label for="link">link:</label>
+        <input type="text" id="link" required><br>
+        <label for="addedAt">addedAt:</label>
+        <input type="text" id="addedAt" required><br>
+        <label for="format">format:</label>
+        <select id="format" required>
+            <option value="digital">digital</option>
+            <option value="physical">physical</option>
+        </select><br>
+        <label for="pricePaid">pricePaid:</label>
+        <input type="number" id="pricePaid" required><br>
+        <label for="pricePaidCurrency">pricePaidCurrency:</label>
+        <input type="text" id="pricePaidCurrency" value="EUR" required><br>
+        <label for="gameSize">gameSize:</label>
+        <input type="text" id="gameSize" required><br>
+        <label for="image">image:</label>
+        <input type="text" id="image" required><br>
+        <input type="submit" value="Submit">
+    </form>
+    <div id="output"></div>
+
+<!--Autofetch--values--from--php-->
+  <script>
+    window.addEventListener('DOMContentLoaded', (event) => {
+      // Parse the query strings from the URL
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+
+      // Get the values from the query strings
+      const name = urlParams.get('name');
+      const link = urlParams.get('link');
+      const addedAt = urlParams.get('addedAt');
+      const format = urlParams.get('format');
+      const pricePaid = urlParams.get('pricePaid');
+      const pricePaidCurrency = urlParams.get('pricePaidCurrency');
+      const gameSize = urlParams.get('gameSize');
+      const image = urlParams.get('image');
+      const url = urlParams.get('url');
+
+      // Populate the input fields with the values
+      document.getElementById('name').value = name;
+      document.getElementById('link').value = url;
+      document.getElementById('addedAt').value = addedAt;
+      document.getElementById('format').value = format;
+      document.getElementById('pricePaid').value = pricePaid;
+      document.getElementById('pricePaidCurrency').value = pricePaidCurrency;
+      document.getElementById('gameSize').value = gameSize;
+      document.getElementById('image').value = image;
+
+      document.getElementById("pricePaidCurrency").value = "EUR";
+      document.getElementById("format").value = "digital";
+    });
+  </script>
+
+
+<!---Fetch-DD--Link-->
+<br><br>
+  <form id="mydekuForm">
+    <input type="text" id="urlInput" placeholder="Enter URL">
+    <input type="submit" value="Submit">
+  </form>
+  <script>
+    document.getElementById("mydekuForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      var url = document.getElementById("urlInput").value;
+      var redirectUrl = "fetchinfo.php?url=" + encodeURIComponent(url);
+      window.location.href = redirectUrl;
+    });
+  </script>
+
+<!--php--
+=========fetchinfo.php===
+
+<?php
+// Check if the "url" query string parameter exists
+if (isset($_GET['url'])) {
+    // Get the URL value from the query string
+    $url = $_GET['url'];
+} else {
+    // Default URL if the "url" parameter is not provided
+    $url = "https://www.dekudeals.com/items/figment";
+}
+
+// Fetch the HTML content
+$html = file_get_contents($url);
+
+// Find the name using regular expressions
+$namePattern = "/<span class='display-5'>(.*?)<\/span>/";
+preg_match($namePattern, $html, $nameMatches);
+
+// Find the MSRP value using regular expressions
+$msrpPattern = '/<strong>MSRP:<\/strong>\s*([^<]+)/';
+preg_match($msrpPattern, $html, $msrpMatches);
+
+// Find the Download size value using regular expressions
+$downloadSizePattern = '/<strong>Download size:<\/strong>\s*([^<]+)/';
+preg_match($downloadSizePattern, $html, $downloadSizeMatches);
+
+// Find the og:image content using regular expressions
+$imagePattern = '/<meta content=\'(.*?)\' name=\'og:image\' property=\'og:image\'>/';
+preg_match($imagePattern, $html, $imageMatches);
+
+// Extract the name, MSRP value, Download size, and og:image content from the matches
+$name = !empty($nameMatches[1]) ? $nameMatches[1] : "Name not found";
+$msrpValue = !empty($msrpMatches[1]) ? trim($msrpMatches[1]) : "MSRP value not found";
+$downloadSize = !empty($downloadSizeMatches[1]) ? trim($downloadSizeMatches[1]) : "Download size not found";
+$imageUrl = !empty($imageMatches[1]) ? $imageMatches[1] : "og:image content not found";
+
+// Display the name, MSRP value, Download size, and og:image content
+echo "Name: " . $name . "<br>";
+echo "MSRP: " . $msrpValue . "<br>";
+echo "Download size: " . $downloadSize . "<br>";
+echo $imageUrl;
+
+// Generate the query string
+$queryString = http_build_query([
+    'name' => $name,
+    'pricePaid' => $msrpValue,
+    'gameSize' => $downloadSize,
+    'url' => $url,
+    'image' => $imageUrl
+]);
+
+// Generate the URL with the query string
+$targetUrl = "info.html?" . $queryString;
+?>
+
+<!-- Add the button -->
+<button onclick="sendToHtml()">Send to HTML</button>
+
+<!-- JavaScript function to send the variables as query strings -->
+<script>
+    function sendToHtml() {
+        // Redirect to the target URL
+        window.location.href = "<?php echo $targetUrl; ?>";
+    }
+</script>

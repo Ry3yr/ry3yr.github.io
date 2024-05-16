@@ -1,0 +1,71 @@
+<meta charset="utf-8">
+<script>
+function fetchValues() {
+const inputText = document.getElementById('inputText').value;
+const euroRegex = /-(\d+(?:,\d+)?)\s*EUR/g;
+const dateRegex = /^(?!.*Valuta).*\b\d{1,2}\.\s.*$/gm;
+const euroMatches = Array.from(inputText.matchAll(euroRegex), match => match[1]);
+const dateMatches = Array.from(inputText.matchAll(dateRegex), match => match[0]);
+let result = '<table>';
+result += '<tr><th>€</th><th>Date</th><th>Text</th></tr>';
+for (let i = 1; i < euroMatches.length; i++) {
+const startIndex = inputText.indexOf(euroMatches[i - 1]);
+const endIndex = inputText.indexOf(euroMatches[i], startIndex + euroMatches[i - 1].length);
+let textBetweenMatches = inputText.substring(startIndex + euroMatches[i - 1].length + 1, endIndex).trim();
+const truncatedText = textBetweenMatches.substring(0, 45);
+result += `<tr><td>${euroMatches[i]}€</td><td>${dateMatches[i].replace(/[•Valuata]/g, '')}</td><td>${truncatedText}</td></tr>`;
+}
+result += '</table>';
+document.getElementById('result').innerHTML = result;
+}
+</script>
+</head>
+<body>
+<textarea id="inputText" rows="10" cols="50" placeholder="Bank Saldo Fetch"></textarea><br>
+<button onclick="fetchValues()">Fetch Values</button><br>
+<div id="result"></div> <div id="output"></div>
+
+
+<button onclick="calculateTotals()">Calculate Subtotal</button>
+
+<script>
+function calculateTotals() {
+const divContent = document.getElementById('result').textContent;
+
+const lines = divContent.split('\n');
+
+let totalAll = 0;
+let totalNettoVMarkt = 0;
+
+for (let i = 0; i < lines.length; i++) {
+const line = lines[i];
+const euroValueMatch = line.match(/[0-9,]+\u20AC/);
+const vendorMatch = line.match(/Netto|V-MARKT/);
+
+if (euroValueMatch) {
+const euroValue = parseFloat(euroValueMatch[0]);
+totalAll += euroValue;
+}
+
+if (euroValueMatch && vendorMatch) {
+const euroValue = parseFloat(euroValueMatch[0]);
+totalNettoVMarkt += euroValue;
+}
+}
+
+console.log('Total All:', totalAll.toFixed(2) + '€');
+console.log('Total Netto + V-MARKT:', totalNettoVMarkt.toFixed(2) + '€');
+var outputElement = document.getElementById('output');
+var totalAllParagraph = document.createElement('p');
+totalAllParagraph.textContent = 'Total All: ' + totalAll.toFixed(2) + '€';
+outputElement.appendChild(totalAllParagraph);
+var totalNettoVMarktParagraph = document.createElement('p');
+totalNettoVMarktParagraph.textContent = 'Total Netto + V-MARKT: ' + totalNettoVMarkt.toFixed(2) + '€';
+outputElement.appendChild(totalNettoVMarktParagraph);
+}
+</script>
+
+</div>
+
+
+<!--PHNjcmlwdD4KZnVuY3Rpb24gZmV0Y2hWYWx1ZXMoKSB7CiAgY29uc3QgaW5wdXRUZXh0ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2lucHV0VGV4dCcpLnZhbHVlOwogIGNvbnN0IGV1cm9SZWdleCA9IC8tKFxkKyg/OixcZCspPylccypFVVIvZzsKICAvL2NvbnN0IGRhdGVSZWdleCA9IC9eLipcYlxkezEsMn1cLlxzLiokL2dtOwogIGNvbnN0IGRhdGVSZWdleCA9IC9eKD8hLipWYWx1dGEpLipcYlxkezEsMn1cLlxzLiokL2dtOwogIGNvbnN0IGV1cm9NYXRjaGVzID0gQXJyYXkuZnJvbShpbnB1dFRleHQubWF0Y2hBbGwoZXVyb1JlZ2V4KSwgbWF0Y2ggPT4gbWF0Y2hbMV0pOwogIGNvbnN0IGRhdGVNYXRjaGVzID0gQXJyYXkuZnJvbShpbnB1dFRleHQubWF0Y2hBbGwoZGF0ZVJlZ2V4KSwgbWF0Y2ggPT4gbWF0Y2hbMF0pOwogIAoKICBsZXQgcmVzdWx0ID0gJyc7CiAgCiAgZm9yIChsZXQgaSA9IDA7IGkgPCBldXJvTWF0Y2hlcy5sZW5ndGg7IGkrKykgewogICAgcmVzdWx0ICs9IGAke2V1cm9NYXRjaGVzW2ldfeKCrCAke2RhdGVNYXRjaGVzW2ldLnJlcGxhY2UoL1vigKJWYWx1YXRhXS9nLCAnJyl9PGJyPmA7CiAgfQogIAogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZXN1bHQnKS5pbm5lckhUTUwgPSByZXN1bHQ7Cn0KPC9zY3JpcHQ+CjwvaGVhZD4KPGJvZHk+Cjx0ZXh0YXJlYSBpZD0iaW5wdXRUZXh0IiByb3dzPSIxMCIgY29scz0iNTAiIHBsYWNlaG9sZGVyPSJCYW5rIFNhbGRvIEZldGNoIj48L3RleHRhcmVhPjxicj4KPGJ1dHRvbiBvbmNsaWNrPSJmZXRjaFZhbHVlcygpIj5GZXRjaCBWYWx1ZXM8L2J1dHRvbj48YnI+CjxkaXYgaWQ9InJlc3VsdCI+PC9kaXY+CgogIDxzY3JpcHQ+CiAgICBmdW5jdGlvbiBjYWxjdWxhdGVUb3RhbCgpIHsKICAgICAgdmFyIHJlc3VsdERpdiA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZXN1bHQnKTsKICAgICAgdmFyIGV1cm9WYWx1ZXMgPSByZXN1bHREaXYuaW5uZXJUZXh0LnNwbGl0KCdcbicpCiAgICAgICAgLmZpbHRlcihmdW5jdGlvbiAodmFsdWUpIHsKICAgICAgICAgIHJldHVybiB2YWx1ZS50cmltKCkgIT09ICcnOwogICAgICAgIH0pCiAgICAgICAgLm1hcChmdW5jdGlvbiAodmFsdWUpIHsKICAgICAgICAgIHJldHVybiBwYXJzZUZsb2F0KHZhbHVlLnRyaW0oKS5zcGxpdCgn4oKsJylbMF0ucmVwbGFjZSgnLCcsICcuJykpOwogICAgICAgIH0pOwogICAgICB2YXIgdG90YWxBbW91bnQgPSBldXJvVmFsdWVzLnJlZHVjZShmdW5jdGlvbiAoYWNjdW11bGF0b3IsIGN1cnJlbnRWYWx1ZSkgewogICAgICAgIHJldHVybiBhY2N1bXVsYXRvciArIGN1cnJlbnRWYWx1ZTsKICAgICAgfSwgMCk7CiAgICAgIHZhciB0b3RhbERpdiA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2RpdicpOwogICAgICB0b3RhbERpdi5pbm5lclRleHQgPSAnVG90YWwgQW1vdW50OiDigqwnICsgdG90YWxBbW91bnQudG9GaXhlZCgyKTsKICAgICAgZG9jdW1lbnQuYm9keS5hcHBlbmRDaGlsZCh0b3RhbERpdik7CiAgICAgIC8vRXhjbHVkZSByZWN1cnJpbmcuIHJlbnQsIGluZXQgZXRjCiAgICAgIHZhciBleGNsdWRlZFZhbHVlcyA9IFsyNzAuMDAsIDI0Ljk5LCAzLjAwLCA0OS4wMCwgMTYuOTQsIDM3Ljc5LCA5Ljk5XTsKICAgICAgdmFyIGdyb2Nlcmllc0Ftb3VudCA9IGV1cm9WYWx1ZXMuZmlsdGVyKGZ1bmN0aW9uICh2YWx1ZSkgewogICAgICAgIHJldHVybiAhZXhjbHVkZWRWYWx1ZXMuaW5jbHVkZXModmFsdWUpOwogICAgICB9KS5yZWR1Y2UoZnVuY3Rpb24gKGFjY3VtdWxhdG9yLCBjdXJyZW50VmFsdWUpIHsKICAgICAgICByZXR1cm4gYWNjdW11bGF0b3IgKyBjdXJyZW50VmFsdWU7CiAgICAgIH0sIDApOwogICAgICB2YXIgZ3JvY2VyaWVzRGl2ID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnZGl2Jyk7CiAgICAgIGdyb2Nlcmllc0Rpdi5pbm5lclRleHQgPSAnR3JvY2VyaWVzIEFtb3VudDog4oKsJyArIGdyb2Nlcmllc0Ftb3VudC50b0ZpeGVkKDIpOwogICAgICBkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGdyb2Nlcmllc0Rpdik7CiAgICB9CiAgPC9zY3JpcHQ+CiAgPGJ1dHRvbiBvbmNsaWNrPSJjYWxjdWxhdGVUb3RhbCgpIj5DYWxjdWxhdGUgVG90YWw8L2J1dHRvbj4=-->
