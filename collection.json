@@ -1,5 +1,23 @@
 {
     "items": [
+
+{
+ "name": "Hogwarts Legacy: Deluxe Edition", "link": "https://www.dekudeals.com/items/hogwarts-legacy-digital-deluxe-edition?format=digital", "added_at": "2024-06-08T13:29:28+00:00", "format": "digital", "price_paid": 3499, "price_paid_currency": "EUR", "gamesize": "15.729 GB", "image": "https://cdn.dekudeals.com/images/7430d30d28467f429bd74c85fbd2591ca4319242/w500.jpg" },
+{
+ "name": "Rune Factory 4 Special", "link": "https://www.dekudeals.com/items/rune-factory-4-special", "added_at": "2024-06-08T13:28:33+00:00", "format": "digital", "price_paid": 599, "price_paid_currency": "EUR", "gamesize": "5.234 GB", "image": "https://cdn.dekudeals.com/images/9542ce4540e44c8cf8e842f9cd5a80b0bded6e18/w500.jpg" },
+{
+ "name": "Comic Book Legends", "link": "https://www.dekudeals.com/items/comic-book-legends", "added_at": "2024-06-02T11:35:19+00:00", "format": "digital", "price_paid": 1300, "note": "XIII - ecks vs sever ballistic gba esque", "price_paid_currency": "EUR", "gamesize": "31.288 GB", "image": "https://cdn.dekudeals.com/images/986d0f809d351005521410baf2c8e0a0e7697103/w500.jpg" },
+{
+ "name": "Nintendo Switch Sports", "link": "https://www.dekudeals.com/items/nintendo-switch-sports", "added_at": "2024-06-02T09:39:07+00:00", "format": "digital", "price_paid": 3999, "price_paid_currency": "EUR", "gamesize": "3.021 GB", "image": "https://cdn.dekudeals.com/images/d3ae6cbd0aa422e6db3ccd295ed18f7dfb5e588b/w500.jpg" },
+{
+ "name": "Sumire", "link": "https://www.dekudeals.com/items/sumire", "added_at": "2024-06-02T03:29:15+00:00", "format": "digital", "price_paid": 259, "price_paid_currency": "EUR", "gamesize": "2.679 GB", "image": "https://cdn.dekudeals.com/images/829d4f5556cac883f9a813566c3dbeb6486c357c/w500.jpg" },
+{
+ "name": "Kingdom Come Deliverance: Royal Edition", "link": "https://www.dekudeals.com/items/kingdom-come-deliverance-royal-edition", "added_at": "2024-05-30T04:47:55+00:00", "format": "physical", "price_paid": 4500, "price_paid_currency": "EUR", "gamesize": "14.436 GB", "image": "https://cdn.dekudeals.com/images/ee391dcb89f8bac34cd7fe3d0e89ffaa9ed29b57/w500.jpg" },
+{
+ "name": "Little Kitty, Big City", "link": "https://www.dekudeals.com/items/little-kitty-big-city", "added_at": "2024-05-18T21:54:28+00:00", "format": "digital", "price_paid": 2499, "price_paid_currency": "EUR", "gamesize": "1.609 GB", "image": "https://cdn.dekudeals.com/images/0a6017fdf12dc443d4c5ffb36ccbaa3059a7abab/w500.jpg" },
+      { 
+"name": "Ring Fit Adventure", "link": "https://www.dekudeals.com/items/ringfit-adventure", "added_at": "2024-05-13T13:38:09+00:00", "format": "physical", "price_paid": 2900, "price_paid_currency": "EUR", "gamesize": "3.326 GB", "image": "https://cdn.dekudeals.com/images/faaf6366918bbfb3647c0221e4afdda7ecb7ebc2/w500.jpg?c=331.227.1339.1537" 
+        },
         {
             "name": ".hack//G.U. Last Recode",
             "link": "https://www.dekudeals.com/items/hackgu-last-recode",
@@ -61,7 +79,7 @@
             "format": "physical",
             "price_paid": 5500,
             "price_paid_currency": "EUR",
-            "note": "@netgames",
+            "note": "Terrible Wii Remake\nhttps://www.reddit.com/r/KotakuInAction/comments/19cso3q/the_recenlty_released_another_code_remake_has/?rdt=63606\nhttps://ibb.co/qJR7wW4\nhttps://i.ibb.co/sWFbr6D/Screenshot-20240305-105316-Brave.png\nhttps://pb.todon.de/@alcea/112034603497014648\nhttps://gamefaqs.gamespot.com/boards/426391-another-code-recollection/80712873 https://archive.ph/BaztS\n\n\n@netgames",
             "gamesize": " 5.225 GB",
             "image": "https://cdn.dekudeals.com/images/e049679db36df1f1a9b18b861bd6f5aaedf00e95/w500.jpg"
         },
@@ -74,8 +92,18 @@
             "price_paid": 100,
             "price_paid_currency": "EUR",
             "note": "EAID: 1Aoi9\n\nEssential",
-            "gamesize": " 23.85 GB",
+            "gamesize": " 24.96 GB",
             "image": "https://cdn.dekudeals.com/images/e6ec5d585530a1fed7a9889ce95f700a79b7a391/w500.jpg"
+        },
+        {
+            "name": "Apollo Justice: Ace Attorney Trilogy",
+            "link": "https://www.dekudeals.com/items/apollo-justice-ace-attorney-trilogy",
+            "added_at": "2024-04-17T14:58:13+00:00",
+            "format": "digital",
+            "price_paid": 1649,
+            "price_paid_currency": "EUR",
+            "gamesize": " 13.013 GB",
+            "image": "https://cdn.dekudeals.com/images/1996112e1880336eb4d7a21e691f289d718b4c90/w500.jpg"
         },
         {
             "name": "Assassin\u2019s Creed: The Rebel Collection",
@@ -105,7 +133,7 @@
             "price_paid": 2239,
             "price_paid_currency": "EUR",
             "note": "OnlineCap\nPhysAvailAlso (Japan)",
-            "gamesize": " 1.84 GB",
+            "gamesize": " 1.849 GB",
             "image": "https://cdn.dekudeals.com/images/8e725da1d3d1617b94d17eb7247d9510e2fcc455/w500.jpg"
         },
         {
@@ -117,6 +145,16 @@
             "price_paid_currency": "EUR",
             "gamesize": " 3.02 GB",
             "image": "https://cdn.dekudeals.com/images/216829570b3fb5b3b11f2be63de234a544dcedb6/w500.jpg"
+        },
+        {
+            "name": "Bayonetta Origins: Cereza and the Lost Demon",
+            "link": "https://www.dekudeals.com/items/bayonetta-origins-cereza-and-the-lost-demon",
+            "added_at": "2024-03-26T14:55:48+00:00",
+            "format": "physical",
+            "price_paid": 2400,
+            "price_paid_currency": "EUR",
+            "gamesize": " 3.197 GB",
+            "image": "https://cdn.dekudeals.com/images/fe6a910d4d83a2096c7c32a25d52eeb7ea8b2ea3/w500.jpg"
         },
         {
             "name": "Blazing Beaks",
@@ -204,7 +242,7 @@
             "format": "digital",
             "price_paid": 500,
             "price_paid_currency": "EUR",
-            "gamesize": " 1.034 GB",
+            "gamesize": " 1.032 GB",
             "image": "https://cdn.dekudeals.com/images/a846fda2908ab2f2423ce6539a65f6db57d72f68/w500.jpg"
         },
         {
@@ -218,6 +256,17 @@
             "image": "https://cdn.dekudeals.com/images/2f72b39bfeb187a84a5428b47753f5280f397669/w500.jpg"
         },
         {
+            "name": "CRYMACHINA",
+            "link": "https://www.dekudeals.com/items/crymachina",
+            "added_at": "2024-04-07T10:57:37+00:00",
+            "format": "digital",
+            "price_paid": 3200,
+            "price_paid_currency": "EUR",
+            "note": "Via ebay DLD Code",
+            "gamesize": " 3.824 GB",
+            "image": "https://cdn.dekudeals.com/images/a0c27d1e01aac853848aeca8d21b5f0194a9446a/w500.jpg"
+        },
+        {
             "name": "Death Road to Canada",
             "link": "https://www.dekudeals.com/items/death-road-to-canada",
             "added_at": "2021-02-24T16:55:28+00:00",
@@ -227,6 +276,16 @@
             "note": "PhysAvailAlso",
             "gamesize": " 210 MB",
             "image": "https://cdn.dekudeals.com/images/dde07c4954729519a69c76e84ca2ebd8cef39fe8/w500.jpg"
+        },
+        {
+            "name": "The DioField Chronicle Deluxe Edition",
+            "link": "https://www.dekudeals.com/items/the-diofield-chronicle-digital-deluxe-edition",
+            "added_at": "2024-04-25T18:48:32+00:00",
+            "format": "digital",
+            "price_paid": 2999,
+            "price_paid_currency": "EUR",
+            "gamesize": " 9.766 GB",
+            "image": "https://cdn.dekudeals.com/images/aecd9050997bd02e04e28123433f39e441e37542/w500.jpg"
         },
         {
             "name": "Duke Nukem 3D: 20th Anniversary World Tour",
@@ -244,9 +303,9 @@
             "link": "https://www.dekudeals.com/items/dying-light-platinum-edition",
             "added_at": "2023-10-21T13:11:26+00:00",
             "format": "digital",
-            "price_paid": 999,
+            "price_paid": 1000,
             "price_paid_currency": "EUR",
-            "note": "@Dai (US -eShop account)",
+            "note": "@dai us acc",
             "gamesize": " 16.504 GB",
             "image": "https://cdn.dekudeals.com/images/4de797e14b3d32a5d24618667c220234738f2c22/w500.jpg"
         },
@@ -262,6 +321,26 @@
             "image": "https://cdn.dekudeals.com/images/f196243005a35b9d297f5660dffd651c3789df40/w500.jpg"
         },
         {
+            "name": "Eiyuden Chronicle: Rising",
+            "link": "https://www.dekudeals.com/items/eiyuden-chronicle-rising",
+            "added_at": "2024-04-14T11:24:56+00:00",
+            "format": "digital",
+            "price_paid": 449,
+            "price_paid_currency": "EUR",
+            "gamesize": " 3.92 GB",
+            "image": "https://cdn.dekudeals.com/images/cee73db99f2383b6b1b6f3c6d387f14c1599e4cf/w500.jpg"
+        },
+        {
+            "name": "El Shaddai: Ascension of the Metatron HD Remaster",
+            "link": "https://www.dekudeals.com/items/el-shaddai-ascension-of-the-metatron-hd-remaster",
+            "added_at": "2024-04-28T19:34:23+00:00",
+            "format": "digital",
+            "price_paid": 1999,
+            "price_paid_currency": "EUR",
+            "gamesize": " 5.005 GB",
+            "image": "https://cdn.dekudeals.com/images/511982fcee619562829f624d2fdd0c702142075b/w500.jpg"
+        },
+        {
             "name": "Enter the Gungeon",
             "link": "https://www.dekudeals.com/items/enter-the-gungeon",
             "added_at": "2021-04-01T18:58:28+00:00",
@@ -271,6 +350,16 @@
             "note": "PhysAvailAlso",
             "gamesize": " 443 MB",
             "image": "https://cdn.dekudeals.com/images/3132f8a3b8a2e736dcb665bdb416432ab7d778ec/w500.jpg"
+        },
+        {
+            "name": "The Entropy Centre",
+            "link": "https://www.dekudeals.com/items/the-entropy-centre",
+            "added_at": "2024-04-17T14:49:00+00:00",
+            "format": "digital",
+            "price_paid": 999,
+            "price_paid_currency": "EUR",
+            "gamesize": " 5.438 GB",
+            "image": "https://cdn.dekudeals.com/images/9c09e489faf6e3f03befa92e34ebb4b806bb6bf8/w500.jpg"
         },
         {
             "name": "Final Fantasy VII & Final Fantasy VIII Remastered Twin Pack",
@@ -421,6 +510,16 @@
             "image": "https://cdn.dekudeals.com/images/0f1c5b6804f592f137f982b386455a1c4dccb0a2/w500.jpg"
         },
         {
+            "name": "KLONOA Phantasy Reverie Series",
+            "link": "https://www.dekudeals.com/items/klonoa-phantasy-reverie-series",
+            "added_at": "2024-04-17T14:48:43+00:00",
+            "format": "digital",
+            "price_paid": 999,
+            "price_paid_currency": "EUR",
+            "gamesize": " 6.328 GB",
+            "image": "https://cdn.dekudeals.com/images/5ac8f286a60a09628bf73bcad7bc25f014a48f8f/w500.jpg"
+        },
+        {
             "name": "The Legend of Zelda: Tears of the Kingdom",
             "link": "https://www.dekudeals.com/items/the-legend-of-zelda-tears-of-the-kingdom",
             "added_at": "2023-05-12T15:30:34+00:00",
@@ -474,6 +573,16 @@
             "note": "OnlineCapable",
             "gamesize": " 11.252 GB",
             "image": "https://cdn.dekudeals.com/images/7ae98b9b417e40b2ad6a9aef796da1512080bd3e/w500.jpg"
+        },
+        {
+            "name": "Mario Tennis Aces",
+            "link": "https://www.dekudeals.com/items/mario-tennis-aces",
+            "added_at": "2024-03-26T14:56:06+00:00",
+            "format": "physical",
+            "price_paid": 2400,
+            "price_paid_currency": "EUR",
+            "gamesize": " 2.432 GB",
+            "image": "https://cdn.dekudeals.com/images/68492e40a06697d10a6c4fe20b514ba94cc05d1d/w500.jpg"
         },
         {
             "name": "Mega Man Battle Network Legacy Collection",
@@ -546,7 +655,7 @@
         {
             "name": "NieR:Automata The End of YoRHa Edition",
             "link": "https://www.dekudeals.com/items/nier-automata-the-end-of-yorha-edition-switch",
-            "added_at": "2022-12-09T00:38:05+00:00",
+            "added_at": "2022-10-06T00:38:05+00:00",
             "status": "completed",
             "format": "physical",
             "price_paid": 3999,
@@ -623,7 +732,7 @@
         },
         {
             "name": "Pok\u00e9mon Scarlet",
-            "link": "https://www.dekudeals.com/items/pok\u00e9mon-scarlet",
+            "link": "https://www.dekudeals.com/items/pokemon-scarlet",
             "added_at": "2022-12-03T14:20:57+00:00",
             "format": "physical",
             "price_paid": 3000,
@@ -784,7 +893,7 @@
             "price_paid": 3999,
             "price_paid_currency": "EUR",
             "note": "Will never be cheaper digitally",
-            "gamesize": " 8.238 GB",
+            "gamesize": " 8.304 GB",
             "image": "https://cdn.dekudeals.com/images/91489e5764e9c5ee503ba851af0dc29a51186b8b/w500.jpg"
         },
         {
