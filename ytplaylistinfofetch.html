@@ -5,8 +5,11 @@
 
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Playlist Videos</title>
     <style>
         table {border-collapse: collapse; width: 100%}
         td, th {text-align: left; padding: 8px; border-bottom: 1px solid #ddd}
@@ -29,6 +32,7 @@
                 <th>Video Name</th>
                 <th>Playtime</th>
                 <th>Date</th>
+                <th>Exact Time of Upload</th>
             </tr>
         </thead>
         <tbody id="videoList"></tbody>
@@ -39,10 +43,24 @@
             var hours = (parseInt(match[1]) || 0);
             var minutes = (parseInt(match[2]) || 0);
             var seconds = (parseInt(match[3]) || 0);
-            return hours + "h " + minutes + "m " + seconds + "s";}
+            return hours + "h " + minutes + "m " + seconds + "s";
+        }
+
         function convertDate(date) {
             var isoDate = new Date(date);
-            return isoDate.toDateString();}
+            return isoDate.toDateString();
+        }
+
+        function convertExactTime(date) {
+            var isoDate = new Date(date);
+            var year = isoDate.getFullYear().toString().padStart(4, '0');
+            var month = (isoDate.getMonth() + 1).toString().padStart(2, '0');
+            var day = isoDate.getDate().toString().padStart(2, '0');
+            var hours = isoDate.getHours().toString().padStart(2, '0');
+            var minutes = isoDate.getMinutes().toString().padStart(2, '0');
+            return year + month + day + '' + hours + '' + minutes;
+        }
+
         document.getElementById("playlistForm").addEventListener("submit", function (event) {
             event.preventDefault();
             var playlistUrl = document.getElementById("playlistInput").value;
@@ -53,7 +71,8 @@
                 part: "snippet,contentDetails",
                 maxResults: 150,
                 playlistId: playlistId,
-                key: apiKey,};
+                key: apiKey,
+            };
             var url =
                 apiUrl +
                 "?" +
@@ -62,180 +81,264 @@
                         return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
                     })
                     .join("&");
-var videoList = document.getElementById("videoList");
-videoList.innerHTML = "";
-var videoItems = [];
-var totalDuration = 0; // Variable to store the total playtime
-var fetchPromises = []; // Array to store fetch promises
-var pageToken = ""; // Pagination token
 
-function fetchVideos(pageToken) {
-  var url =
-    "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&playlistId=" +
-    playlistId +
-    "&maxResults=50&key=" +
-    apiKey +
-    "&pageToken=" +
-    pageToken;
+            var videoList = document.getElementById("videoList");
+            videoList.innerHTML = "";
+            var videoItems = [];
+            var totalDuration = 0; // Variable to store the total playtime
+            var fetchPromises = []; // Array to store fetch promises
+            var pageToken = ""; // Pagination token
 
-  fetch(url)
-    .then((response) => response.json())
-    .then((data) => {
-      var nextPageToken = data.nextPageToken; // Get pagination token for the next page
+            function fetchVideos(pageToken) {
+                var url =
+                    "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&playlistId=" +
+                    playlistId +
+                    "&maxResults=50&key=" +
+                    apiKey +
+                    "&pageToken=" +
+                    pageToken;
 
-      data.items.forEach(function (item, index) {
-        var videoId = item.contentDetails.videoId;
-        var videoTitle = item.snippet.title;
-        var vId = item.contentDetails.videoId;
-        var durUrl =
-          "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" +
-          vId +
-          "&key=" +
-          apiKey;
+                fetch(url)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        var nextPageToken = data.nextPageToken; // Get pagination token for the next page
 
-        var fetchPromise = fetch(durUrl)
-          .then((response) => response.json())
-          .then((durationData) => {
-            var duration = durationData.items[0].contentDetails.duration;
-            var videoDuration = convertDuration(duration);
-            var videoDate = item.snippet.publishedAt;
-            var videoDateFormatted = convertDate(videoDate);
-            videoItems.push({
-              videoId: videoId,
-              videoTitle: videoTitle,
-              videoDuration: videoDuration,
-              videoDate: videoDateFormatted,
-              playlistIndex: index,
-            });
-            totalDuration += getDurationInSeconds(duration);
-          })
-          .catch((error) => {
-            console.log(error);
-            // Handle the error, e.g., display an error message for this video
-          });
+                        data.items.forEach(function (item, index) {
+                            var videoId = item.contentDetails.videoId;
+                            var videoTitle = item.snippet.title;
+                            var vId = item.contentDetails.videoId;
+                            var durUrl =
+                                "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" +
+                                vId +
+                                "&key=" +
+                                apiKey;
 
-        fetchPromises.push(fetchPromise);
-      });
+                            var fetchPromise = fetch(durUrl)
+                                .then((response) => response.json())
+                                .then((durationData) => {
+                                    var duration = durationData.items[0].contentDetails.duration;
+                                    var videoDuration = convertDuration(duration);
+                                    var videoDate = item.snippet.publishedAt;
+                                    var videoDateFormatted = convertDate(videoDate);
+                                    var videoExactTime = convertExactTime(videoDate);
+                                    videoItems.push({
+                                        videoId: videoId,
+                                        videoTitle: videoTitle,
+                                        videoDuration: videoDuration,
+                                        videoDate: videoDateFormatted,
+                                        videoExactTime: videoExactTime,
+                                        playlistIndex: index,
+                                    });
+                                    totalDuration += getDurationInSeconds(duration);
+                                })
+                                .catch((error) => {
+                                    console.log(error);
+                                    // Handle the error, e.g., display an error message for this video
+                                });
 
-      if (nextPageToken) {
-        // Fetch the next page if there is a pagination token
-        fetchVideos(nextPageToken);
-      } else {
-        // All pages have been fetched, proceed with processing the data
-        Promise.all(fetchPromises)
-          .then(() => {
-            if (document.getElementById("sortCheckbox").checked) {
-              // Sort by playlist order
-              videoItems.sort((a, b) => a.playlistIndex - b.playlistIndex);
-            } else {
-              // Sort by date
-              videoItems.sort(
-                (a, b) => new Date(a.videoDate) - new Date(b.videoDate)
-              );
+                            fetchPromises.push(fetchPromise);
+                        });
+
+                        if (nextPageToken) {
+                            // Fetch the next page if there is a pagination token
+                            fetchVideos(nextPageToken);
+                        } else {
+                            // All pages have been fetched, proceed with processing the data
+                            Promise.all(fetchPromises)
+                                .then(() => {
+                                    if (document.getElementById("sortCheckbox").checked) {
+                                        // Sort by playlist order
+                                        videoItems.sort((a, b) => a.playlistIndex - b.playlistIndex);
+                                    } else {
+                                        // Sort by date
+                                        videoItems.sort(
+                                            (a, b) => new Date(a.videoDate) - new Date(b.videoDate)
+                                        );
+                                    }
+
+                                    videoItems.forEach(function (video) {
+                                        var videoRow = document.createElement("tr");
+                                        var videoNameCell = document.createElement("td");
+                                        var videoNameLink = document.createElement("a");
+                                        videoNameLink.href =
+                                            "https://www.youtube.com/watch?v=" + video.videoId;
+                                        videoNameLink.target = "_blank";
+                                        videoNameLink.textContent = video.videoTitle;
+                                        videoNameCell.appendChild(videoNameLink);
+                                        videoRow.appendChild(videoNameCell);
+                                        var playtimeCell = document.createElement("td");
+                                        playtimeCell.textContent = video.videoDuration;
+                                        videoRow.appendChild(playtimeCell);
+                                        var dateCell = document.createElement("td");
+                                        dateCell.textContent = video.videoDate;
+                                        videoRow.appendChild(dateCell);
+                                        var exactTimeCell = document.createElement("td");
+                                        exactTimeCell.textContent = video.videoExactTime;
+                                        videoRow.appendChild(exactTimeCell);
+                                        videoList.appendChild(videoRow);
+                                    });
+
+                                    var totalDurationRow = document.createElement("tr");
+                                    var totalDurationCell = document.createElement("td");
+                                    totalDurationCell.setAttribute("colspan", "4");
+                                    totalDurationCell.innerHTML = "Total Playtime: " + convertSecondsToDuration(totalDuration) + " <a href='" + playlistUrl + "' target='_blank'>" + playlistUrl + "</a>";
+                                    totalDurationRow.appendChild(totalDurationCell);
+                                    videoList.appendChild(totalDurationRow);
+                                })
+                                .catch((error) => {
+                                    console.log(error);
+                                    var videoTable = document.getElementById("videoTable");
+                                    videoTable.innerHTML =
+                                        "An error occurred while fetching the video list.";
+                                });
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                        var videoTable = document.getElementById("videoTable");
+                        videoTable.innerHTML = "An error occurred while fetching the video list.";
+                    });
             }
 
-            videoItems.forEach(function (video) {
-              var videoRow = document.createElement("tr");
-              var videoNameCell = document.createElement("td");
-              var videoNameLink = document.createElement("a");
-              videoNameLink.href =
-                "https://www.youtube.com/watch?v=" + video.videoId;
-              videoNameLink.target = "_blank";
-              videoNameLink.textContent = video.videoTitle;
-              videoNameCell.appendChild(videoNameLink);
-              videoRow.appendChild(videoNameCell);
-              var playtimeCell = document.createElement("td");
-              playtimeCell.textContent = video.videoDuration;
-              videoRow.appendChild(playtimeCell);
-              var dateCell = document.createElement("td");
-              dateCell.textContent = video.videoDate;
-              videoRow.appendChild(dateCell);
-              videoList.appendChild(videoRow);
+            fetchVideos(pageToken);
+
+            function getDurationInSeconds(duration) {
+                var match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+                var hours = parseInt(match[1]) || 0;
+                var minutes = parseInt(match[2]) || 0;
+                var seconds = parseInt(match[3]) || 0;
+                return hours * 3600 + minutes * 60 + seconds;
+            }
+
+            function convertSecondsToDuration(seconds) {
+                var hours = Math.floor(seconds / 3600);
+                var minutes = Math.floor((seconds % 3600) / 60);
+                var secs = seconds % 60;
+                return (
+                    hours.toString().padStart(2, "0") + "h " +
+                    minutes.toString().padStart(2, "0") + "m " +
+                    secs.toString().padStart(2, "0") + "s"
+                );
+            }
+        });
+
+        function copyTableToClipboard() {
+            var table = document.getElementById("videoTable");
+            var tableHtml = table.outerHTML;
+            var tempElement = document.createElement("textarea");
+            tempElement.value = tableHtml;
+            document.body.appendChild(tempElement);
+            tempElement.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempElement);
+            alert("Table copied to clipboard as HTML!");
+        }
+
+        var copyButton = document.createElement("button");
+        copyButton.textContent = "Copy Table";
+        copyButton.addEventListener("click", copyTableToClipboard);
+        document.body.appendChild(copyButton);
+
+        function reorderRowsByDate() {
+            var table = document.getElementById("videoTable");
+            var tbody = table.querySelector("#videoList");
+            var rows = Array.from(tbody.getElementsByTagName("tr"));
+            var tableData = rows.map(function (row) {
+                return Array.from(row.getElementsByTagName("td")).map(function (cell) {
+                    if (cell.hasChildNodes() && cell.firstChild.nodeName === "A") {
+                        return cell.innerHTML; // Preserve link structure
+                    } else {
+                        return cell.textContent;
+                    }
+                });
             });
 
-            var totalDurationRow = document.createElement("tr");
-            var totalDurationCell = document.createElement("td");
-            totalDurationCell.setAttribute("colspan", "2");
-            //totalDurationCell.textContent = "Total Playtime: " + convertSecondsToDuration(totalDuration);
-            //totalDurationCell.textContent = "Total Playtime: " + convertSecondsToDuration(totalDuration) + " " + playlistUrl;
-            totalDurationCell.innerHTML = "Total Playtime: " + convertSecondsToDuration(totalDuration) + " <a href='" + playlistUrl + "' target='_blank'>" + playlistUrl + "</a>";
-            totalDurationRow.appendChild(totalDurationCell);
-            videoList.appendChild(totalDurationRow);
-          })
-          .catch((error) => {
-            console.log(error);
-            var videoTable = document.getElementById("videoTable");
-            videoTable.innerHTML =
-              "An error occurred while fetching the video list.";
-          });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      var videoTable = document.getElementById("videoTable");
-      videoTable.innerHTML = "An error occurred while fetching the video list.";
-    });
-}
+            tableData.sort(function (a, b) {
+                var dateA = new Date(a[2]);
+                var dateB = new Date(b[2]);
+                return dateA - dateB;
+            });
 
-fetchVideos(pageToken);
-        function getDurationInSeconds(duration) {
-            var match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-            var hours = parseInt(match[1]) || 0;
-            var minutes = parseInt(match[2]) || 0;
-            var seconds = parseInt(match[3]) || 0;
-            return hours * 3600 + minutes * 60 + seconds;}
-            function convertSecondsToDuration(seconds) {
-            var hours = Math.floor(seconds / 3600);
-            var minutes = Math.floor((seconds % 3600) / 60);
-            var secs = seconds % 60;
-            return (
-           hours.toString().padStart(2, "0") +"h " +minutes.toString().padStart(2, "0") +"m " +secs.toString().padStart(2, "0") +"s");}})
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName("td");
+                for (var j = 0; j < cells.length; j++) {
+                    // Restore link structure if necessary
+                    if (tableData[i][j].includes("<a href=")) {
+                        cells[j].innerHTML = tableData[i][j];
+                    } else {
+                        cells[j].textContent = tableData[i][j];
+                    }
+                }
+            }
+        }
+        var reorderButton = document.createElement("button");
+        reorderButton.textContent = "Reorder by Date";
+        reorderButton.addEventListener("click", reorderRowsByDate);
+        document.body.appendChild(reorderButton);
     </script>
-</body>
-</html>
-<!---https://stackoverflow.com/questions/15596753/how-do-i-get-video-durations-with-youtube-api-version-3--->
+
+<button onclick="reorderRowsByVideoName()">Reorder by Video Name</button>
 <script>
-function copyTableToClipboard() {
-    var table = document.getElementById("videoTable");
-    var tableHtml = table.outerHTML;
-    var tempElement = document.createElement("textarea");
-    tempElement.value = tableHtml;
-    document.body.appendChild(tempElement);
-    tempElement.select();
-    document.execCommand("copy");
-    document.body.removeChild(tempElement);
-    alert("Table copied to clipboard as HTML!");}
-var copyButton = document.createElement("button");
-copyButton.textContent = "Copy Table";
-copyButton.addEventListener("click", copyTableToClipboard);
-document.body.appendChild(copyButton);
+function reorderRowsByVideoName() {
+  var table = document.getElementById("videoTable");
+  var tbody = table.querySelector("#videoList");
+  var rows = Array.from(tbody.getElementsByTagName("tr"));
+  var tableData = rows.map(function(row) {
+    return Array.from(row.getElementsByTagName("td")).map(function(cell) {
+      if (cell.hasChildNodes() && cell.firstChild.nodeName === "A") {
+        return cell.innerHTML;
+      } else {
+        return cell.textContent;
+      }
+    });
+  });
+  tableData.sort(function(a, b) {
+    var nameA = a[0].toLowerCase();
+    var nameB = b[0].toLowerCase();
+    if (nameA < nameB) return -1;
+    if (nameA > nameB) return 1;
+    return 0;
+  });
+  for (var i = 0; i < rows.length; i++) {
+    var cells = rows[i].getElementsByTagName("td");
+    for (var j = 0; j < cells.length; j++) {
+      if (tableData[i][j].includes("<a href=")) {
+        cells[j].innerHTML = tableData[i][j];
+      } else {
+        cells[j].textContent = tableData[i][j];
+      }
+    }
+  }
+}
 </script>
 
-
-<button onclick="reorderRowsByDate()">Reorder by Date</button>
+<button onclick="reorderRowsByUploadTime()">Reorder by Exact Time of Upload</button>
 <script>
-    function reorderRowsByDate() {
-        var table = document.getElementById("videoTable");
-        var tbody = table.querySelector("#videoList");
-        var rows = Array.from(tbody.getElementsByTagName("tr"));
-        var tableData = rows.map(function(row) {
-            return Array.from(row.getElementsByTagName("td")).map(function(cell) {
-                if (cell.hasChildNodes() && cell.firstChild.nodeName === "A") {
-                    return cell.innerHTML; // Preserve link structure
-                } else {
-                    return cell.textContent;}});});
-        tableData.sort(function(a, b) {
-            var dateA = new Date(a[2]);
-            var dateB = new Date(b[2]);
-            return dateA - dateB;});
-        for (var i = 0; i < rows.length; i++) {
-            var cells = rows[i].getElementsByTagName("td");
-            for (var j = 0; j < cells.length; j++) {
-                // Restore link structure if necessary
-                if (tableData[i][j].includes("<a href=")) {
-                    cells[j].innerHTML = tableData[i][j];
-                } else {
-                    cells[j].textContent = tableData[i][j];
-                }}}}
+function reorderRowsByUploadTime() {
+  var table = document.getElementById("videoTable");
+  var tbody = table.querySelector("#videoList");
+  var rows = Array.from(tbody.getElementsByTagName("tr"));
+  
+  // Extract the rows and their corresponding timestamps
+  var tableData = rows.map(function(row) {
+    // Assuming the timestamp is in the last cell of each row
+    var cells = row.getElementsByTagName("td");
+    var timestamp = cells[cells.length - 1].textContent.trim();
+    return {
+      row: row,
+      time: parseInt(timestamp)
+    };
+  });
+
+  // Sort the rows by the timestamp
+  tableData.sort(function(a, b) {
+    return a.time - b.time;
+  });
+
+  // Reorder the rows in the table body
+  tableData.forEach(function(data) {
+    tbody.appendChild(data.row);
+  });
+}
 </script>
 
