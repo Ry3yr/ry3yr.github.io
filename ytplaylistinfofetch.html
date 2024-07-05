@@ -1,5 +1,6 @@
 
 
+
 <a target="_blank" href="https://ry3yr.github.io/yt" style=color:gray>YT Link Relay</a><br><a target="_blank" href="https://ry3yr.github.io/ytsearch">YT General Search</a><br><a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/ytchannelsearch-dkpr.html">YTChannel Search</a><br><a target="_blank" href="https://ry3yr.github.io/ytstudio">YTStudio Overview</a><br><a target="_blank" href="ytplaylists.html" style=color:blue>ytplaylists</a><br>
 
 
@@ -156,7 +157,8 @@ function fetchVideos(pageToken) {
             var totalDurationCell = document.createElement("td");
             totalDurationCell.setAttribute("colspan", "2");
             //totalDurationCell.textContent = "Total Playtime: " + convertSecondsToDuration(totalDuration);
-            totalDurationCell.textContent = "Total Playtime: " + convertSecondsToDuration(totalDuration) + " " + playlistUrl;
+            //totalDurationCell.textContent = "Total Playtime: " + convertSecondsToDuration(totalDuration) + " " + playlistUrl;
+            totalDurationCell.innerHTML = "Total Playtime: " + convertSecondsToDuration(totalDuration) + " <a href='" + playlistUrl + "' target='_blank'>" + playlistUrl + "</a>";
             totalDurationRow.appendChild(totalDurationCell);
             videoList.appendChild(totalDurationRow);
           })
