@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Code Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <h1 id="qr-text"></h1>
+  <div id="qr-code"></div>
+
+  <script>
+    // Get the 'qr' parameter from the URL
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Display the 'qr' parameter as an <h1> element
+    const qrText = getQueryParam('qr');
+    if (qrText) {
+      document.getElementById('qr-text').textContent = qrText;
+
+      // Generate and display the QR code
+      new QRCode(document.getElementById('qr-code'), {
+        text: qrText,
+        width: 400,
+        height: 400,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+  </script>
+</body>
+</html>
+
+
+<!------WITHOUT--EXT--library--->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Code Generator</title>
+</head>
+<body>
+  <h1 id="qr-text"></h1>
+  <canvas id="qr-code" width="400" height="400"></canvas>
+  <script>
+    // Get the 'qr' parameter from the URL
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Function to generate QR code on a canvas
+    function generateQRCode(text) {
+      // Function to convert text to binary
+      function textToBinary(text) {
+        return text.split('').map(char => char.charCodeAt(0).toString(2).padStart(8, '0')).join('');
+      }
+
+      // Function to draw the QR code on the canvas
+      function drawQRCode(canvas, binaryData) {
+        const ctx = canvas.getContext('2d');
+        const size = canvas.width;
+        const moduleSize = size / 21;
+
+        // Draw the QR code modules
+        for (let x = 0; x < 21; x++) {
+          for (let y = 0; y < 21; y++) {
+            if (binaryData[(y * 21) + x] === '1') {
+              ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize);
+            }
+          }
+        }
+      }
+
+      // Convert text to binary
+      const binaryData = textToBinary(text);
+
+      // Get the canvas element and draw the QR code
+      const canvas = document.getElementById('qr-code');
+      drawQRCode(canvas, binaryData);
+    }
+
+    // Display the 'qr' parameter as an <h1> element
+    const qrText = getQueryParam('qr');
+    if (qrText) {
+      document.getElementById('qr-text').textContent = qrText;
+
+      // Generate the QR code
+      generateQRCode(qrText);
+    }
+  </script>
+</body>
+</html>
