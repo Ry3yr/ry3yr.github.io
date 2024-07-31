@@ -1,0 +1,145 @@
+To convert unit8 and arrays of such nature from javascript console back into human readable form:<br>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Unit8 Array Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    textarea {
+      padding: 10px;
+      font-size: 16px;
+      width: 400px;
+      height: 150px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #output {
+      margin-top: 20px;
+      font-size: 18px;
+      white-space: pre-wrap;
+    }
+  </style<!DOCTYPE html>
+<html>
+<head>
+  <title>Unit8 Array Converter</title>
+  <style>
+    /* Same CSS as before */
+  </style>
+</head>
+<body>
+  <h1>Unit8 Array Converter</h1>
+  <textarea id="input-text" placeholder="Enter a unit8 array in one of the following formats:
+1. Array of numbers: [60, 33, 68, 79, ...]
+2. Typed Array: new Uint8Array([60, 33, 68, 79, ...])
+3. ArrayBuffer: new ArrayBuffer(16) with individual values set
+4. DataView: new DataView(new ArrayBuffer(16)) with individual values set
+5. JavaScript object with numeric keys: { '0': 60, '1': 33, '2': 68, '3': 79, ... }"></textarea>
+  <button onclick="convertArray()">Convert</button>
+  <div id="output"></div>
+
+  <script>
+    function convertArray() {
+      const inputText = document.getElementById("input-text").value.trim();
+      try {
+        let unit8Array;
+        
+        // Try parsing as a regular array of numbers
+        try {
+          unit8Array = JSON.parse(inputText);
+          if (Array.isArray(unit8Array) && unit8Array.every(Number.isInteger) && unit8Array.every(value => value >= 0 && value <= 255)) {
+            unit8Array = new Uint8Array(unit8Array);
+          } else {
+            unit8Array = null;
+          }
+        } catch (error) {
+          unit8Array = null;
+        }
+        
+        // Try parsing as a Uint8Array
+        if (!unit8Array) {
+          try {
+            if (inputText.startsWith('new Uint8Array')) {
+              unit8Array = eval(inputText);
+            } else {
+              unit8Array = null;
+            }
+          } catch (error) {
+            unit8Array = null;
+          }
+        }
+        
+        // Try parsing as an ArrayBuffer
+        if (!unit8Array) {
+          try {
+            if (inputText.startsWith('new ArrayBuffer')) {
+              const buffer = eval(inputText);
+              if (buffer instanceof ArrayBuffer) {
+                unit8Array = new Uint8Array(buffer);
+              } else {
+                unit8Array = null;
+              }
+            } else {
+              unit8Array = null;
+            }
+          } catch (error) {
+            unit8Array = null;
+          }
+        }
+        
+        // Try parsing as a DataView
+        if (!unit8Array) {
+          try {
+            if (inputText.startsWith('new DataView')) {
+              const view = eval(inputText);
+              if (view instanceof DataView) {
+                const buffer = view.buffer;
+                unit8Array = new Uint8Array(buffer);
+              } else {
+                unit8Array = null;
+              }
+            } else {
+              unit8Array = null;
+            }
+          } catch (error) {
+            unit8Array = null;
+          }
+        }
+        
+        // Try parsing as a JavaScript object with numeric keys
+        if (!unit8Array) {
+          try {
+            const obj = JSON.parse(inputText);
+            if (typeof obj === 'object' && obj !== null && Object.keys(obj).every(key => /^\d+$/.test(key) && obj[key] >= 0 && obj[key] <= 255)) {
+              const values = Object.values(obj);
+              unit8Array = new Uint8Array(values);
+            } else {
+              unit8Array = null;
+            }
+          } catch (error) {
+            unit8Array = null;
+          }
+        }
+        
+        if (unit8Array) {
+          const readableText = new TextDecoder().decode(unit8Array);
+          document.getElementById("output").textContent = readableText;
+        } else {
+          document.getElementById("output").textContent = "Error: Invalid input. Please enter a valid unit8 array.";
+        }
+      } catch (error) {
+        document.getElementById("output").textContent = "Error: Invalid input. Please enter a valid unit8 array.";
+      }
+    }
+  </script>
+</body>
+</html>

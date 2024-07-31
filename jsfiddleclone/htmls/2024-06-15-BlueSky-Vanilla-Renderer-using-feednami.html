@@ -1,0 +1,48 @@
+<script src="https://storage.googleapis.com/feednami-static/js/feednami-client-v1.0.1.js"></script>
+<script>
+function fetchRssFeed(feedUrl) {
+feednami.load(feedUrl, function(result) {
+if (result.error) {
+console.error('Error fetching RSS feed:', result.error);
+} else {
+const entries = result.feed.entries;
+displayBlueSkyEmbeds(entries);
+}
+});
+}
+
+// Function to display BlueSkya embeds
+function displayBlueSkyEmbeds(feedItems) {
+feedItems.forEach(item => {
+const link = item.link;
+const lastSlashPos = link.lastIndexOf('/');
+const postId = link.substring(lastSlashPos + 1);
+
+let guidValue = item.guid;
+let didPrefix = 'did:plc:';
+if (!guidValue.startsWith('http')) {
+const startPos = guidValue.indexOf('plc:') + 4;
+const endPos = guidValue.indexOf('/app.bsky');
+const guidPart = guidValue.substring(startPos, endPos);
+guidValue = `at://${didPrefix}${guidPart}/app.bsky.feed.post/${postId}`;
+}
+
+const embed = document.createElement('blockquote');
+embed.classList.add('bluesky-embed');
+embed.setAttribute('data-bluesky-uri', guidValue);
+embed.setAttribute('data-bluesky-cid', '');
+document.body.appendChild(embed);
+});
+
+// Load the BlueSkya embed script
+const embedScript = document.createElement('script');
+embedScript.async = true;
+embedScript.src = 'https://embed.bsky.app/static/embed.js';
+embedScript.charset = 'utf-8';
+document.body.appendChild(embedScript);
+}
+
+// Example usage
+const feedUrl = new URL(window.location.href).searchParams.get('bskyurl') || 'https://bsky.app/profile/did:plc:nc45m3kcywjhyr4tgsbmea64/rss';
+fetchRssFeed(feedUrl);
+</script>

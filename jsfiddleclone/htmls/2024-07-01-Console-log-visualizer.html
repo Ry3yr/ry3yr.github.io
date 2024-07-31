@@ -1,0 +1,81 @@
+<!--https://github.com/gh-canon/stack-snippet-console-https://stackoverflow.com/questions/62422123/display-browser-console-in-html-page-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Console Output Display</title>
+  <style>
+    .console-output {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 55%;
+      overflow-y: auto;
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap; /* Allows text to wrap and show entire log entry */
+    }
+    .log { color: #fff; }
+    .error { color: #f44336; }
+    .warn { color: #ff9800; }
+    .info { color: #2196f3; }
+    .debug { color: #9e9e9e; }
+  </style>
+</head>
+<body>
+  <script>
+    function dumpConsoleToDOM() {
+      const consoleMethods = ['log', 'error', 'warn', 'info', 'debug'];
+      consoleMethods.forEach(method => {
+        const originalMethod = console[method];
+        console[method] = function(...args) {
+          originalMethod.apply(console, args);
+          const consoleOutput = Array.from(args || [])
+            .map(item => {
+              if (typeof item === 'object') {
+                return `<div class="${method}">${serializeObject(item)}</div>`;
+              } else {
+                return `<div class="${method}">${item}</div>`;
+              }
+            })
+            .join('');
+          const consoleDiv = document.createElement('div');
+          consoleDiv.classList.add('console-output');
+          consoleDiv.innerHTML = consoleOutput;
+          document.body.appendChild(consoleDiv);
+        };
+      });
+    }
+
+    function serializeObject(obj) {
+      if (obj instanceof Error) {
+        return `${obj.name}: ${obj.message}\n${obj.stack}`;
+      } else if (obj instanceof ProgressEvent) {
+        return `ProgressEvent: {\n  isTrusted: ${obj.isTrusted},\n  lengthComputable: ${obj.lengthComputable},\n  loaded: ${obj.loaded},\n  total: ${obj.total},\n  type: '${obj.type}',\n  target: ${obj.target ? obj.target.constructor.name : 'null'}\n}`;
+      } else {
+        return JSON.stringify(obj, null, 2);
+      }
+    }
+
+    dumpConsoleToDOM();
+
+  </script>
+</body>
+</html>
+
+
+
+
+Console log will be displayed below.
+<button onclick="consoleLog()">Click me</button>
+
+<script>
+function consoleLog() {
+  console.log("Button was clicked!");
+}
+</script>

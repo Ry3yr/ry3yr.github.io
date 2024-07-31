@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filter Headers</title>
+  <style>
+    .extracted {
+      margin-bottom: 10px;
+    }
+    .title {
+      background-color: #f1f1f1;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      display: none; /* Hide all titles by default */
+    }
+    .title.contains-complex {
+      display: block; /* Show only titles with the class "contains-complex" */
+    }
+    .content {
+      display: none;
+      padding: 10px;
+      background-color: #fff;
+      position: relative;
+    }
+    .content.show {
+      display: block;
+    }
+    .copy-button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      padding: 5px 10px;
+      border: none;
+      background-color: #ddd;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="dropdown">
+    <select id="dropdownMenu" onchange="changeDropdownSelection()">
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Autohotkey/Commands.txt">Autohotkey</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Android-Keyevents.txt">AndroidKeyevents</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/DOS/Commands.txt">DOS</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/FFMPEG_Commands.txt">FFMPEG</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Commands_ImageMagick.txt">Imagemagick</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Sox_CMDS.txt">Sox</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/HTML_Codes.txt" selected>HTML</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/PHP.txt">PHP</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/NodeJS.txt">NodeJS</option>
+      <option value="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/Python.txt">Python</option>
+    </select>
+  </div>
+  <div id="output"></div>
+  <button id="copyAllTitles" class="copy-all-button">Copy All Titles</button>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const url = document.getElementById("dropdownMenu").value;
+      changeDropdownSelection(url);
+    });
+
+    function toggleContent(titleElement) {
+      const contentElement = titleElement.nextElementSibling;
+      contentElement.classList.toggle("show");
+    }
+
+    function copyContent(contentElement) {
+      const text = contentElement.innerText.trim();
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          console.log('Content copied to clipboard:', text);
+        })
+        .catch((error) => {
+          console.error('Failed to copy content to clipboard:', error);
+        });
+    }
+
+    function changeDropdownSelection() {
+      const dropdown = document.getElementById('dropdownMenu');
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const fileTextParam = urlParams.get('filetext');
+      if (fileTextParam !== null) {
+        dropdown.value = fileTextParam;
+      }
+      const selectedValue = dropdown.value;
+
+      if (fileTextParam) {
+        dropdown.disabled = true;
+      }
+
+      fetch(selectedValue)
+        .then((response) => response.text())
+        .then((data) => {
+          const container = document.getElementById('output');
+          container.innerHTML = '';
+          const lines = data.split('\n');
+          const filteredLines = [];
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('---------')) {
+              if (i > 0) {
+                filteredLines.push(lines[i - 1]);
+              }
+            }
+          }
+
+          const contentLines = data.split(/---------+/);
+          contentLines.shift();
+
+          filteredLines.forEach((line, index) => {
+            const extractedElement = document.createElement("div");
+            extractedElement.className = "extracted";
+
+            const titleElement = document.createElement("div");
+            titleElement.className = "title";
+            titleElement.innerText = line;
+            titleElement.addEventListener("click", () => toggleContent(titleElement));
+
+            // Add a class if the title contains the word "complex"
+            if (line.includes('complex')) {
+              titleElement.classList.add('contains-complex');
+            }
+
+            extractedElement.appendChild(titleElement);
+
+            const contentElement = document.createElement("div");
+            contentElement.className = "content";
+            contentElement.innerText = contentLines[index].trim();
+            extractedElement.appendChild(contentElement);
+
+            const copyButton = document.createElement("button");
+            copyButton.innerText = "Copy";
+            copyButton.className = "copy-button";
+            copyButton.addEventListener("click", () => copyContent(contentElement));
+            contentElement.appendChild(copyButton);
+
+            const counterElement = document.createElement("span");
+            counterElement.className = "counter";
+            counterElement.innerText = (filteredLines.length - index) + ". ";
+            titleElement.prepend(counterElement);
+
+            container.appendChild(extractedElement);
+          });
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+
+    document.getElementById('copyAllTitles').addEventListener('click', function() {
+      // Gather all titles
+      const titles = Array.from(document.querySelectorAll('.title.contains-complex')).map(title => title.innerText.trim()).join('\n');
+
+      // Copy to clipboard
+      navigator.clipboard.writeText(titles)
+        .then(() => {
+          console.log('All titles copied to clipboard:', titles);
+        })
+        .catch((error) => {
+          console.error('Failed to copy all titles to clipboard:', error);
+        });
+    });
+  </script>
+</body>
+</html>
+
+
+<!----Code--Complexity--Text-Block-->
+<!--
+Instead of noting down the most complex coding problems I've <a target="_blank" href="https://mastodon.social/tag/CodeAlcea">encountered</a> <a target="_blank" href="https://yusaao.com/tag/codeao#https://pb.todon.de/tag/CodeAlcea">sofar</a>,<br>
+I'll instead wrote another code to list them for me.<br>
+Currently this list is unordered, and I may include a lil "comment" (via more program code, what else ?).<br><br>
+The "complexity" number is chosen after a bit of deliberation (altho technically, if I encounter harder problems, I might have to reconsider ? especially if we scale /10).<br>
+<br>
+Some will appear empty, for now. That might or might not change (Altho JS/PHP/Python are my main languages)
+
+<br><br>
+-Alcea<br>
+
+
+<object type="text/html" data="https://alceawis.de/other/extra/scripts/rendercodetxt_complex.html
+" style="border:0px #ffffff none;" name="statusit" scrolling="auto" frameborder="0" marginheight="0px" marginwidth="0px" height="1000px" width="100%" allowfullscreen></object>

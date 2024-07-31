@@ -1,0 +1,85 @@
+<plaintext>
+==index.html==
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intercept All Requests</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+<script>
+async function loadZipAndCreateFileMap() {
+const response = await fetch('https://alcea-wisteria.de/z_files/alceawis.de.zip');
+const blob = await response.blob();
+const zip = await JSZip.loadAsync(blob);
+const fileMap = {};
+
+const filePromises = [];
+zip.forEach((relativePath, zipEntry) => {
+const filePromise = zipEntry.async('blob').then(blob => {
+fileMap['/' + relativePath] = blob;
+});
+filePromises.push(filePromise);
+});
+
+await Promise.all(filePromises);
+return fileMap;
+}
+
+if ('serviceWorker' in navigator) {
+loadZipAndCreateFileMap().then(fileMap => {
+navigator.serviceWorker.register('/service-worker.js').then(registration => {
+console.log('Service Worker registered with scope:', registration.scope);
+
+navigator.serviceWorker.ready.then(swRegistration => {
+const channel = new MessageChannel();
+channel.port1.onmessage = event => {
+if (event.data === 'SW_READY') {
+swRegistration.active.postMessage({
+type: 'FILE_MAP',
+fileMap: fileMap
+});
+fetch('index.html').then(response => response.text()).then(html => {
+document.body.innerHTML = html;
+});
+}
+};
+swRegistration.active.postMessage('INIT', [channel.port2]);
+});
+}).catch(error => {
+console.log('Service Worker registration failed:', error);
+});
+});
+}
+</script>
+</head>
+<body>
+<h1>Loading...</h1>
+</body>
+</html>
+
+
+=== service-worker.js==
+
+let fileMap = {};
+
+self.addEventListener('message', event => {
+if (event.data === 'INIT') {
+event.ports[0].postMessage('SW_READY');
+} else if (event.data.type === 'FILE_MAP') {
+fileMap = event.data.fileMap;
+}
+});
+
+self.addEventListener('fetch', event => {
+const url = new URL(event.request.url);
+console.log('Intercepted request:', event.request);
+if (fileMap[url.pathname]) {
+event.respondWith(
+Promise.resolve(fileMap[url.pathname]).then(blob => new Response(blob))
+);
+} else {
+event.respondWith(fetch(event.request));
+}
+});

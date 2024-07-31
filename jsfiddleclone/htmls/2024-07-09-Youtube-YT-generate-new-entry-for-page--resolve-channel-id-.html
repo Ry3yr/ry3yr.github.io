@@ -1,0 +1,180 @@
+<!----Generate New YT Entry--->
+<body>
+    <div>
+        <label for="channel-url-input">Channel URL:</label>
+        <input type="text" id="channel-url-input" oninput="fillVideo()">
+        <label for="channel-id-input">&nbsp;&nbsp;&nbsp;&nbsp;Channel ID</label>
+        <input type="text" id="channel-id-input" oninput="fillVideo()" placeholder="optional">
+    </div>
+    <div>
+        <label for="channel-image-input">Channel Img URL:</label>
+        <input type="text" id="channel-image-input" oninput="fillVideo()">
+    </div>
+    <div>
+        <label for="channel-name-input">Channel Name:</label>
+        <input type="text" id="channel-name-input" oninput="fillVideo()">
+    </div>
+    <div>
+        <label for="video-url-input">Video URL:</label>
+        <input type="text" id="video-url-input" oninput="fillVideo()">
+    </div>
+    <div>
+        <label for="video-title-input">Video Title:</label>
+        <input type="text" id="video-title-input" oninput="fillVideo()">
+    </div>
+    <br><br>
+    <div style="display: flex;">
+        <div>
+            <label for="html-output">HTML Output:</label>
+            <textarea id="html-output"></textarea>
+        </div>
+        <div id="preview-container" style="margin-left: 50px;"></div>
+    </div>
+    <script>
+function fillVideo() {
+                        let channelId = document.getElementById("channel-id-input").value.trim();
+			let channelUrl = document.getElementById("channel-url-input").value.trim();
+			let channelImage = document.getElementById("channel-image-input").value.trim();
+			let channelName = document.getElementById("channel-name-input").value.trim();
+			let videoUrl = document.getElementById("video-url-input").value.trim();
+			let videoTitle = document.getElementById("video-title-input").value.trim();
+
+    // Create elements for channel link and image
+    let channelLink = document.createElement("a");
+    channelLink.href = channelUrl;
+    let channelImageElement = document.createElement("img");
+    channelImageElement.alt = "Channel Image";
+    channelImageElement.src = channelImage;
+    channelImageElement.height = 50;
+    channelImageElement.width = 50;
+    channelLink.appendChild(channelImageElement);
+
+    // Create element for channel name
+    let channelNameElement = document.createElement("span");
+    channelNameElement.textContent = channelName;
+
+    // Create element for video link and title
+    let videoLink = document.createElement("a");
+    videoLink.href = videoUrl;
+    let videoTitleElement = document.createElement("span");
+    videoTitleElement.textContent = videoTitle;
+
+    // Create container for the video elements
+    let videoContainer = document.createElement("div");
+    videoContainer.appendChild(channelLink);
+    videoContainer.appendChild(channelNameElement);
+    videoContainer.appendChild(document.createElement("br"));
+
+    // Create [LATEST] button
+    let channelButton = document.createElement("button");
+    channelButton.type = "button";
+    channelButton.textContent = "[LATEST]";
+    // Assuming channelId is defined somewhere
+    channelButton.setAttribute("onclick", "document.getElementById('channel-id').value='" + channelId + "'");
+
+    // Append button and video link to the video container
+    videoContainer.appendChild(channelButton);
+    videoContainer.appendChild(videoLink);
+    videoLink.appendChild(videoTitleElement);
+
+    // Get HTML string from videoContainer
+    let htmlString = videoContainer.outerHTML;
+
+    // Display HTML string in the output textarea
+    let htmlOutput = document.getElementById("html-output");
+    if (htmlOutput) {
+        htmlOutput.value = htmlString;
+    }
+
+    // Display videoContainer in the preview area
+    let previewContainer = document.getElementById("preview-container");
+    if (previewContainer) {
+        previewContainer.innerHTML = "";
+        previewContainer.appendChild(videoContainer.cloneNode(true));
+    }
+}
+
+    </script>
+</body>
+</html>
+<!----Resolve--ChannelID--->
+<details><summary>Resolve YT ChannelID</summary>
+    <!--<input type="text" id="channel-url-input" placeholder="Enter YouTube URL">-->
+<button type="button" onclick="resolveChannelId()">Get Channel ID</button>
+    <!--<button id="notargetblank" onclick="resolveChannelId()">Get Channel ID</button>-->
+    <p id="channel-id-output"></p>
+(From "Channel URL:" field.)
+    <script>
+        function getApiKey() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('apikey') || 'YOUR_DEFAULT_YOUTUBE_API_KEY_HERE';
+        }
+        async function resolveChannelId() {
+            const apiKey = getApiKey();
+            const urlInput = document.getElementById('channel-url-input').value;
+            const output = document.getElementById('channel-id-output');
+            let channelId = '';
+            try {
+                channelId = await getChannelId(apiKey, urlInput);
+                //output.textContent = `Channel ID: ${channelId}`;
+                 output.innerHTML = `<a href="#" onclick="fillInput('${channelId}'); return false;">${channelId}</a>`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        async function getChannelId(apiKey, urlInput) {
+            const url = new URL(urlInput);
+            let channelId = '';
+            const videoId = url.searchParams.get('v');
+            if (videoId) {
+                channelId = await getChannelIdFromVideo(apiKey, videoId);
+            } else {
+                if (url.hostname === 'www.youtube.com' || url.hostname === 'youtube.com') {
+                    const path = url.pathname;
+                    if (path.startsWith('/channel/')) {
+                        channelId = path.substring('/channel/'.length);
+                    } else if (path.startsWith('/user/')) {
+                        const username = path.substring('/user/'.length);
+                        channelId = await getChannelIdFromUsername(apiKey, username);
+                    } else if (path.startsWith('/c/')) {
+                        const customUrl = path.substring('/c/'.length);
+                        channelId = await getChannelIdFromCustomUrl(apiKey, customUrl);
+                    } else {
+                        throw new Error('Unsupported YouTube URL - did you forget the apikey= queryparameter ?');
+                    }
+                } else {
+                    throw new Error('Invalid YouTube URL - did you forget the apikey= queryparameter ?');
+                }
+            }
+
+            return channelId;
+        }
+        async function getChannelIdFromVideo(apiKey, videoId) {
+            const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`);
+            const data = await response.json();
+            if (data.items && data.items.length > 0) {
+                return data.items[0].snippet.channelId;
+            } else {
+                throw new Error('Video not found - did you forget the apikey= queryparameter ?');
+            }
+        }
+        async function getChannelIdFromUsername(apiKey, username) {
+            const response = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forUsername=${username}&key=${apiKey}`);
+            const data = await response.json();
+            if (data.items && data.items.length > 0) {
+                return data.items[0].id;
+            } else {
+                throw new Error('Username not found - did you forget the apikey= queryparameter ?');
+            }
+        }
+
+        async function getChannelIdFromCustomUrl(apiKey, customUrl) {
+            const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${customUrl}&key=${apiKey}`);
+            const data = await response.json();
+            if (data.items && data.items.length > 0) {
+                return data.items[0].snippet.channelId;
+            } else {
+                throw new Error('Custom URL not found - did you forget the apikey= queryparameter ?');
+            }
+        }
+    </script></details>

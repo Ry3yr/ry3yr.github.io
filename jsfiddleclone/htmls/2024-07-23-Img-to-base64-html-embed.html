@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Download as HTML</title>
+</head>
+<body>
+    <h1>Upload an Image and embed into *.html</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <br><br>
+    <label for="linkInput">Link (optional):</label>
+    <input type="url" id="linkInput" placeholder="https://example.com">
+    <br><br>
+    <button id="downloadBtn">Download HTML</button>
+
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', function () {
+            const fileInput = document.getElementById('imageInput');
+            const linkInput = document.getElementById('linkInput');
+            const file = fileInput.files[0];
+            const link = linkInput.value;
+
+            if (!file) {
+                alert('Please upload an image first.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = function () {
+                const base64String = reader.result;
+                let htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image</title>
+</head>
+<body>
+                `;
+                if (link) {
+                    htmlContent += `<a href="${link}" target="_blank">`;
+                }
+                htmlContent += `<img src="${base64String}" style="width: 100%;">`;
+                if (link) {
+                    htmlContent += `</a>`;
+                }
+                htmlContent += `
+</body>
+</html>
+                `;
+
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'image.html';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            reader.readAsDataURL(file);
+        });
+    </script>
+</body>
+</html>

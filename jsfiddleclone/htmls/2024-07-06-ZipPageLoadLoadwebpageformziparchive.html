@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JSZip Example</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script>
+    // Check if JSZip is available, otherwise load local copy
+    if (typeof JSZip === 'undefined') {
+      document.write('<script src="jszip.min.js"><\/script>');
+    }
+    
+    document.addEventListener("DOMContentLoaded", async function () {
+      const url = "https://alcea-wisteria.de/z_files/alceawis.de.zip";
+      const fileListElement = document.getElementById("file-list");
+
+      function sanitizeFileName(fileName) {
+        return fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+      }
+
+      async function getFileType(fileName) {
+        const extension = fileName.split('.').pop().toLowerCase();
+        switch (extension) {
+          case 'html':
+          case 'htm':
+            return 'text/html';
+          case 'css':
+            return 'text/css';
+          case 'js':
+            return 'application/javascript';
+          case 'json':
+            return 'application/json';
+          case 'png':
+            return 'image/png';
+          case 'jpg':
+          case 'jpeg':
+            return 'image/jpeg';
+          case 'gif':
+            return 'image/gif';
+          case 'svg':
+            return 'image/svg+xml';
+          default:
+            return 'application/octet-stream';
+        }
+      }
+
+      async function processScriptContent(content, fileMap) {
+        fileMap.forEach(({ relativePath, absolutePath }) => {
+          const regex = new RegExp(relativePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+          content = content.replace(regex, absolutePath);
+        });
+
+        content = content.replace(/fetch\(['"]([^'"]+)['"]\)/g, (match, p1) => {
+          const file = fileMap.find(entry => entry.relativePath === p1);
+          if (file) {
+            return `fetch('${file.absolutePath}')`;
+          } else {
+            return match;
+          }
+        });
+
+        content = content.replace(/['"]([^'"]+\.(json|xml|csv|txt|png|jpg|jpeg|gif|svg))['"]/g, (match, p1) => {
+          const file = fileMap.find(entry => entry.relativePath === p1);
+          if (file) {
+            return `'${file.absolutePath}'`;
+          } else {
+            return match;
+          }
+        });
+
+        return content;
+      }
+
+      async function loadHtmlContent(content, fileMap) {
+        let modifiedContent = content;
+        fileMap.forEach(({ relativePath, absolutePath }) => {
+          const regex = new RegExp(relativePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+          modifiedContent = modifiedContent.replace(regex, absolutePath);
+        });
+
+        const tempElement = document.createElement('div');
+        tempElement.innerHTML = modifiedContent;
+
+        tempElement.querySelectorAll('iframe').forEach(iframe => {
+          const src = iframe.getAttribute('src');
+          const file = fileMap.find(entry => entry.relativePath === src);
+          if (file) {
+            iframe.setAttribute('src', file.absolutePath);
+          }
+        });
+
+        tempElement.querySelectorAll('a').forEach(anchor => {
+          const href = anchor.getAttribute('href');
+          if (href && !href.startsWith('http')) {
+            const file = fileMap.find(entry => entry.relativePath === href);
+            if (file) {
+              anchor.setAttribute('href', file.absolutePath);
+              anchor.setAttribute('target', '_self');
+            }
+          }
+        });
+
+        const scriptPromises = [];
+        tempElement.querySelectorAll('script').forEach(script => {
+          const src = script.getAttribute('src');
+          if (src) {
+            const file = fileMap.find(entry => entry.relativePath === src);
+            if (file) {
+              const newScript = document.createElement('script');
+              newScript.src = file.absolutePath;
+              newScript.type = 'application/javascript';
+              script.replaceWith(newScript);
+            }
+          } else {
+            scriptPromises.push(new Promise(async (resolve) => {
+              const scriptContent = await processScriptContent(script.textContent, fileMap);
+              const newScript = document.createElement('script');
+              newScript.textContent = scriptContent;
+              script.replaceWith(newScript);
+              resolve();
+            }));
+          }
+        });
+
+        await Promise.all(scriptPromises);
+
+        document.open();
+        document.write(tempElement.innerHTML);
+        document.close();
+      }
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch the zip file.");
+
+        const blob = await response.blob();
+        const zip = await JSZip.loadAsync(blob);
+
+        const fileMap = [];
+        for (const [relativePath, file] of Object.entries(zip.files)) {
+          if (!file.dir) {
+            const fileContent = await file.async("blob");
+            const fileType = await getFileType(relativePath);
+            const objectUrl = URL.createObjectURL(new Blob([fileContent], { type: fileType }));
+            fileMap.push({ relativePath, absolutePath: objectUrl });
+          }
+        }
+
+        fileListElement.textContent = fileMap.map(entry => entry.relativePath).join("\n");
+
+        const indexPath = "Games.html";
+        const indexFile = fileMap.find(entry => entry.relativePath === indexPath);
+        if (indexFile) {
+          try {
+            const response = await fetch(indexFile.absolutePath);
+            const indexContent = await response.text();
+            await loadHtmlContent(indexContent, fileMap);
+          } catch (error) {
+            console.error(`Error loading ${indexPath} from object URL. Trying to load from zip blob.`);
+            console.error(error);
+
+            // Log individual filename refetched
+            console.log(`Refetching ${indexFile.relativePath} from zip blob.`);
+            const indexContent = await indexFile.blob();
+            const textContent = await new Response(indexContent).text();
+            await loadHtmlContent(textContent, fileMap);
+          }
+        } else {
+          throw new Error(`${indexPath} not found in the zip file.`);
+        }
+
+      } catch (error) {
+        fileListElement.textContent = "Error: " + error.message;
+      }
+    });
+  </script>
+</head>
+<body>
+  <h1>JSZip Example</h1>
+  <pre id="file-list"></pre>
+</body>
+</html>

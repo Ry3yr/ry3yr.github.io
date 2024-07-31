@@ -1,0 +1,181 @@
+
+ <div id="feed"></div>
+  <script>
+    function getQueryStringParams(url) {
+      const params = {};
+      const urlParams = new URLSearchParams(url);
+      for (const [key, value] of urlParams) {
+        params[key] = value;
+      }
+      return params;
+    }
+    // Get the query parameters from the URL
+    const queryParams = getQueryStringParams(window.location.search);
+    //const instance = queryParams.instance || "sapphic.engineer";
+    //const userid = queryParams.userid || "peng";
+          const instance = queryParams.instance || "sapphic.engineer";
+          const userid = queryParams.userid || "peng";
+    function replaceEmojis(content, customEmojis) {
+      customEmojis.forEach(customEmoji => {
+        const shortcode = customEmoji.shortcode;
+        const url = customEmoji.url;
+        const shortcodePattern = new RegExp(':' + shortcode + ':', 'g');
+        const emojiTag = '<img src="' + url + '" alt="' + shortcode + '" width="20px">';
+        content = content.replace(shortcodePattern, emojiTag);
+      });
+      return content;
+    }
+    // Function to fetch data from the selected API URL
+    function fetchData(apiUrl) {
+      const accessToken = 'your-access-token';
+      fetch(apiUrl, {
+        headers: {
+          'Authorization': 'Bearer ' + accessToken
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Clear the feed before appending new content
+        document.getElementById('feed').innerHTML = '';
+        data.forEach(status => {
+          let content = replaceEmojis(status.content, customEmojis);
+          let media = '';
+          let avatar = '';
+          let tootLink = '';
+           // Check for YouTube video link
+           const youtubeRegex = /https?:\/\/(www\.)?(m\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/;
+           const invidiousRegex = /https?:\/\/(www\.)?(m\.)?super8\.absturztau\.be\/watch\?v=([-a-zA-Z0-9_]{11})/;
+            const youtubeMatch = status.content.match(youtubeRegex) || status.content.match(invidiousRegex);
+             if (youtubeMatch) {
+            // Extract video ID from YouTube link
+            const videoId = youtubeMatch[3];
+            // Create embedded player for YouTube video
+            //media = `<div><iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+            media = `<div><iframe width="560" height="315" src="https://super8.absturztau.be/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+          } else {
+            // Check for Pixiv artwork link
+            const pixivRegex = /https?:\/\/(?:www\.)?pixiv\.net\/(?:en\/)?artworks\/(\d+)/;
+            const pixivMatch = status.content.match(pixivRegex);
+            if (pixivMatch) {
+              // Extract artwork ID from Pixiv link
+              const artworkId = pixivMatch[1];
+              // Create image preview for Pixiv artwork
+              media = `<div><img src="https://embed.pixiv.net/decorate.php?illust_id=${artworkId}&mode=sns-automator" width="50%"></div>`;
+            } else {
+              const tenorRegex = /https?:\/\/(?:www\.)?tenor\.com\/view\/[a-zA-Z0-9-]+-(\d+)/;
+              const tenorMatch = status.content.match(tenorRegex);
+              if (tenorMatch) {
+                // Extract Tenor.com video ID
+                const videoId = tenorMatch[1];
+                // Create embedded player for Tenor.com video
+                media = `<div><iframe src="https://tenor.com/embed/${videoId}" frameborder="0" allowfullscreen="true" width="100%" height="400px"></iframe></div>`;
+              } else {
+                // Check for Dailymotion video link
+                const dailymotionRegex = /https?:\/\/(www\.)?dailymotion\.com\/video\/([a-zA-Z0-9_-]+)/;
+                const dailymotionMatch = status.content.match(dailymotionRegex);
+                if (dailymotionMatch) {
+                const videoId = dailymotionMatch[2];
+                media = `<div><iframe frameborder="0" width="480" height="270" src="https://www.dailymotion.com/embed/video/${videoId}?autoplay=0" allowfullscreen allow="autoplay"></iframe></div>`;
+                }else{
+               // Check for Vidlii video link
+               const vidliiRegex = /https?:\/\/(www\.)?(m\.)?vidlii\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
+               const vidliiMatch = status.content.match(vidliiRegex);
+                if (vidliiMatch) {
+                const videoId = vidliiMatch[3];
+                media = `<iframe allowfullscreen src="https://www.vidlii.com/embed?v=${videoId}" frameborder="0" width="640" height="360"></iframe><br>`;
+                }else{
+                // Check Soundcloud Link
+               const soundcloudRegex = /https?:\/\/(m\.)?soundcloud\.com\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+)/;
+                const soundcloudMatch = status.content.match(soundcloudRegex);
+                if (soundcloudMatch) {
+                const soundcloudUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudMatch[0]
+                 )}&color=0066cc&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+                 //media = `<iframe width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay" src="${soundcloudUrl}"></iframe>`;
+                 media = `<iframe allowfullscreen src="${status.url}/embed" class="mastodon-embed" style="max-width: 100%; border: 0" width="600" height=400"></iframe><script src="embed.js" async><\/\script><br>`;
+                 } else {
+                // Check for imgbb image URLs in the status content
+                const imageRegex = /(https?:\/\/(?:www\.)?i\.ibb\.co\/[^ ]+\.(?:jpg|png|gif|bmp|webp))/g;
+                const imageMatches = status.content.match(imageRegex);
+                if (imageMatches) {
+                  media += '<div>';
+                  imageMatches.forEach(url => {
+                    media += '<img src="' + url + '" width="50%"><br>';
+                  });
+                  media += '</div>';
+                 } else {
+                //Check Deviantart Link
+                const deviantartRegex = /https?:\/\/(www\.)?deviantart\.com\/([a-zA-Z0-9_-]+)\/art\/([a-zA-Z0-9_-]+)/;
+                const deviantartMatch = status.content.match(deviantartRegex);
+                if (deviantartMatch) {
+                  media = `<iframe src="${status.url}/embed" class="mastodon-embed" style="max-width: 100%; border: 0" width="600" height=400"></iframe><script src="embed.js" async><\/\script><br>`;
+                } else {
+                    // Check for OneDrive URLs in the status content
+                    const onedriveRegex = /(https:\/\/onedrive\.live\.com\/embed\?resid=[^ ]+)/g;
+                    const onedriveMatches = status.content.match(onedriveRegex);
+                    if (onedriveMatches) {
+                      media += '<div>';
+                      onedriveMatches.forEach(url => {
+                      media += '<iframe src="' + url + '" width="500px" height="300px" frameborder="0"></iframe><br>';
+                      });
+                      media += '</div>';
+                  }
+                }
+              }
+            }
+          }
+       }
+     }
+  }
+}
+          // Check for video and audio attachments
+          if (status.media_attachments.length > 0) {
+            media = '<div>';
+            status.media_attachments.forEach(attachment => {
+              if (attachment.type === 'image') {
+                media += '<img src="' + attachment.url + '" width="50%"><br>';
+              } else if (attachment.type === 'video') {
+                media += '<video src="' + attachment.url + '" controls width="50%"></video><br>';
+              } else if (attachment.type === 'audio') {
+                media += '<audio src="' + attachment.url + '" controls></audio><br>';
+              }
+            });
+            media += '</div>';
+          }
+          // Check for spoiler tag
+          if (status.url.includes('activity')) {
+            avatar = '<!--<details><summary>Avatar (spoiler)</summary><img src="' + status.account.avatar + '" width="100px"></details>--><br>';
+            tootLink = '<!--<details><summary>View (spoiler)</summary><a href="' + status.url + '" target="_blank">Click here to view activity</a></details>-->';
+          } else {
+            avatar = '<img src="' + status.account.avatar + '" width="100px"><br>';
+            tootLink = '<a href="' + status.url + '" target="_blank">View</a>';
+          }
+          // Get the date of the status
+          const date = new Date(status.created_at);
+          // Append content to feed
+          const contentHtml = `<div>${content}</div>`;
+          const statusHtml = `${contentHtml}${media}${avatar}${tootLink}&nbsp;${date.toLocaleString()}<hr>`;
+          document.getElementById('feed').innerHTML += statusHtml;
+        });
+      })
+      .catch(error => console.error(error));
+    }
+    // Add emoji renderer
+    const emojiEndpoint = `https://${instance}/api/v1/custom_emojis`;
+    fetch(emojiEndpoint)
+      .then(response => response.json())
+      .then(customEmojis => {
+        // Store custom emojis for later use
+        window.customEmojis = customEmojis;
+        // Event listener for radio button change
+        const radioButtons = document.querySelectorAll('input[name="apiUrl"]');
+        radioButtons.forEach(radioButton => {
+          radioButton.addEventListener('change', function() {
+            const selectedApiUrl = this.value;
+            fetchData(selectedApiUrl);
+          });
+        });
+        // Initial fetch using the default API URL
+        const defaultApiUrl = `https://${instance}/api/v1/accounts/${userid}/statuses`;
+        fetchData(defaultApiUrl);
+      });
+  </script>

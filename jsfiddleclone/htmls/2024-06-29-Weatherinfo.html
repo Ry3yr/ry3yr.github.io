@@ -1,0 +1,30 @@
+<meta charset="utf-8">
+<div id="weather-info">Loading weather information...</div>
+<div id="error-message" style="color: red;"></div>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const latitude = urlParams.has('lat') ? parseFloat(urlParams.get('lat')) : 48.3667;
+  const longitude = urlParams.has('long') ? parseFloat(urlParams.get('long')) : 10.9;
+  const country = urlParams.has('country') ? urlParams.get('country') : 'Germany';
+  const weatherDescriptionLookup = [
+    'Clear sky', 'Partly cloudy', 'Partly cloudy', 'Partly cloudy', 'Fog', 'Fog', 'Fog', 'Drizzle', 'Rain', 'Rain', 'Thunderstorm', 'Thunderstorm', 'Snow', 'Snow', 'Snow', 'Snow', 'Snow', 'Sleet', 'Dust', 'Dust', 'Dust', 'Dust', 'Strong wind', 'Strong wind', 'Unknown'
+  ];
+  const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=Europe%2FBerlin`;
+  const geoapifyUrl = `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&format=json&limit=1`;
+
+  Promise.all([
+    fetch(geoapifyUrl).then(response => response.json()),
+    fetch(openMeteoUrl).then(response => response.json())
+  ])
+    .then(([geoapifyData, openMeteoData]) => {
+      const cityName = geoapifyData.results?.[0]?.city || 'Unknown';
+      const weatherCode = openMeteoData.current_weather.weathercode;
+      const weatherDescriptionText = weatherDescriptionLookup[weatherCode] || 'Unknown';
+      const weatherInfo = document.getElementById('weather-info');
+      weatherInfo.textContent = `${country}: • ${openMeteoData.current_weather.temperature}°C •${weatherDescriptionText}`;
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('error-message').textContent = 'Error retrieving weather information: ' + error.message;
+    });
+</script>

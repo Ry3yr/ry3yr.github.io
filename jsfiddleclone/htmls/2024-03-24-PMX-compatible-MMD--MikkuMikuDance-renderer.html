@@ -11,232 +11,366 @@ Download: https://ry3yr.github.io/SampleWebMMD-master.zip
 Src: https://github.com/Momijinn/SampleWebMMD
 
   
-===/js/main.js =====
 
-let scene, renderer, camera, mesh, helper;
-let ready = false;
+
+====main.js===
+
+let scene, renderer, camera, mesh, mesh2;
+let hasLoaded = false;
+let mixer1, mixer2, clock, cameraAnimation;
 const windowWidth = window.innerWidth;
 const windowHeight = window.innerHeight;
-const clock = new THREE.Clock();
 function getQueryStringValue(key) {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(key);}
+  return urlParams.get(key);
+}
 const pmx = getQueryStringValue('pmx');
-const stage = getQueryStringValue('stage');
+const vmdpath = getQueryStringValue('vmd') || "bts-bestofme";
+const pmx2 = getQueryStringValue('pmx2') || "AoiZaizen/AoiZaizen.pmx";
+const cameraId = getQueryStringValue('camera');
+const stage = getQueryStringValue('stage') || "/sorclair/sorclair.pmx";
 let Pmx;
-let Stage;
-if (pmx) {Pmx = `./pmx/pronama/${pmx.trim()}`;
-} else {console.log("No PMX selected.");}
-if (stage) {Stage = `./stages${stage.trim()}`;
+let Pmx2;
+
+if (pmx) {
+  Pmx = `./pmx/pronama/${pmx.trim()}`;
+  console.log(`PMX: ${pmx.trim()}`);
 } else {
-  console.log("No stage selected.");}
+  console.log("No PMX selected.");
+}
+if (pmx2) {
+  Pmx2 = `./pmx/pronama/${pmx2.trim()}`;
+  console.log(`PMX2: ${pmx2.trim()}`);
+} else {
+  console.log("No PMX2 selected.");
+}
+let StagePath = stage ? `./stages/${stage.trim()}` : './stages/sorclair/sorclair.pmx';
+if (pmx) {
+  Pmx = `./pmx/pronama/${pmx.trim()}`;console.log(`PMX: ${pmx.trim()}`);} else {console.log("No PMX selected.");}
+  if (pmx2) {Pmx2 = `./pmx/pronama/${pmx2.trim()}`;console.log(`PMX2: ${pmx2.trim()}`);} else {console.log("No PMX2 selected.");}
+  if (StagePath) {StagePath = `./stages${stage.trim()}`;} else {StagePath = './stages/sorclair/sorclair.pmx';}
+  console.log('StagePath:', StagePath);
+  if (StagePath) {
+  const loader = new THREE.MMDLoader();
+  const lastIndex = StagePath.lastIndexOf("/");
+  const basePath = StagePath.substring(0, lastIndex);
+  const vmd1Path = `${basePath}/001.vmd`;
+  const vmd2Path = `${basePath}/002.vmd`;
+  loader.load(StagePath, (stageObject) => {
+    var ambientLight = new THREE.AmbientLight(0xffffff, 1.0); //hardcoded
+    scene.add(ambientLight);
+    scene.add(stageObject);
+    const mixer = new THREE.AnimationMixer(stageObject);
+    loader.loadAnimation(vmd1Path, stageObject, (vmd1Clip) => {
+      vmd1Clip.name = "001";
+      console.log(`Loaded VMD: ${vmd1Path}`);
+      const motionObject1 = MotionObjects.find(obj => obj.id === "001");
+      if (motionObject1) {
+        motionObject1.VmdClip = vmd1Clip;
+        const action1 = mixer.clipAction(vmd1Clip);
+        action1.play();
+      } else {
+        console.warn(`Motion object with id "001" not found.`);
+      }
+    }, onProgress, onError);
+    loader.loadAnimation(vmd2Path, stageObject, (vmd2Clip) => {
+      vmd2Clip.name = "002";
+      console.log(`Loaded VMD: ${vmd2Path}`);
+      const motionObject2 = MotionObjects.find(obj => obj.id === "002");
+      if (motionObject2) {
+        motionObject2.VmdClip = vmd2Clip;
+        const action2 = mixer.clipAction(vmd2Clip);
+        action2.play();
+      } else {
+        console.warn(`Motion object with id "002" not found.`);
+      }
+    }, onProgress, onError);
+    const clock = new THREE.Clock();
+    const animate = () => {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      mixer.update(delta);
+      renderer.render(scene, camera);
+    };
+    animate();
+  }, onProgress, onError);
+} else {console.warn('No valid stage path found.');}
+//if (!Stage) {Stage = stage ? `stages${stage}` : '/sorclair/sorclair.pmx';}
 if (!Pmx) {Pmx = `./pmx/pronama/AoiZaizen/AoiZaizen.pmx`;}
-if (!Stage) {Stage = "./stages/sorclair/sorclair.pmx";}
+console.log('StagePath:', StagePath);
 const MotionObjects = [
-  {id: "001", pose: "001", VmdClip: null, AudioClip: false },
-  { id: "002", pose: "002", VmdClip: null, AudioClip: false },
-  { id: "003", pose: "003", VmdClip: null, AudioClip: false },];
+  { id: "001", pose: "001", VmdClip: null, AudioClip: false },
+];
 window.onload = () => {
   Init();
-  LoadModeler();
-  Render();};
-function Init() {
-  document.getElementById("moveLeftButton").addEventListener("click", moveCameraLeft);
-  document.getElementById("moveRightButton").addEventListener("click", moveCameraRight);
-  document.getElementById("moveUpButton").addEventListener("click", moveCameraUp);
-  document.getElementById("moveDownButton").addEventListener("click", moveCameraDown);
-  document.getElementById("rotaterightButton").addEventListener("click", rotateCameraRight);
-  document.getElementById("rotateleftButton").addEventListener("click", rotateCameraLeft);
-  function moveCameraLeft() {camera.position.x -= 1;}
-  function moveCameraRight() {camera.position.x += 1;}
-  function moveCameraUp() {camera.position.y += 1;}
-  function moveCameraDown() {camera.position.y -= 1;}
-  function rotateCameraRight() {mesh.rotateY(Math.PI / 4);}
-  function rotateCameraLeft() {mesh.rotateY(-Math.PI / 4);}
-  scene = new THREE.Scene();
-  const ambient = new THREE.AmbientLight(0xeeeeee);
-  scene.add(ambient);
-  renderer = new THREE.WebGLRenderer({ alpha: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0xcccccc, 0);
-  document.body.appendChild(renderer.domElement);
-  camera = new THREE.PerspectiveCamera(100, windowWidth / windowHeight, 1, 1000);
-  //camera.position.set(0, 19, 20);
-  camera.position.set(0, 19, 20);}
-async function LoadModeler() {
-  const loader = new THREE.MMDLoader();
-
-  function LoadPMX() {
-    return new Promise(resolve => {
-      loader.load(Pmx, object => {
-        mesh = object;
-        scene.add(mesh);
-        resolve(true);
-      },);});}
-  function LoadVMD(id) {
-    return new Promise(resolve => {
-      const path = "./vmd/" + id + ".vmd";
-      const val = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
-      loader.loadAnimation(path, mesh, vmd => {
-        vmd.name = id;
-        MotionObjects[val].VmdClip = vmd;
-        resolve(true);
-      },);});}
-  function LoadAudio(id) {
-    return new Promise(resolve => {
-      const path = "./audio/" + id + ".mp3";
-      const val = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
-      if (MotionObjects[val].AudioClip) {
-        new THREE.AudioLoader().load(path, buffer => {
-          const listener = new THREE.AudioListener();
-          const audio = new THREE.Audio(listener).setBuffer(buffer);
-          MotionObjects[val].AudioClip = audio;
-          resolve(true);
-        },);
-      } else {
-        resolve(false);}});}
-
-  const loadAdditionalPMX = () => {
-    return new Promise(resolve => {
-      loader.load(Stage, object => {
-        const additionalMesh = object;
-        scene.add(additionalMesh);
-        resolve(true);
-
-
-const loadAdditionalPMX = () => {
-  return new Promise(resolve => {
-    loader.load(Stage, object => {
-      const additionalMesh = object;
-      scene.add(additionalMesh);
-      resolve(true);
+  LoadStage().then(() => {
+    LoadModels().then(() => {
     });
   });
 };
-
-let path; //preperations for 001.vmd and 002.vmd
-try {path = `./stages${stage.trim()}`;} catch (e) {
-  path = '/default/default';}
-const lastIndex = path.lastIndexOf("/");
-const basePath = path.substring(0, lastIndex);
-const vmd1 = `${basePath}/001.vmd`;
-const vmd2 = `${basePath}/002.vmd`;
-console.log(vmd1);
-console.log(vmd2);
-
-
-let mixer;
-//Animate
-//const queryString = window.location.search;
-//const urlParams = new URLSearchParams(queryString);
-//const isAnimated = urlParams.get('animated') === 'yes';
-//if (isAnimated) {
-const url = window.location.href;
-const isAnimated = url.indexOf('animated') !== -1;
-if (isAnimated) {
-// Load Animation
-function createMixer() {
-  mixer = new THREE.AnimationMixer(object);
+function Init() {
+  document.getElementById("moveLeftButton").addEventListener("click", () => { camera.position.x -= 1; });
+  document.getElementById("moveRightButton").addEventListener("click", () => { camera.position.x += 1; });
+  document.getElementById("moveUpButton").addEventListener("click", () => { camera.position.y += 1; });
+  document.getElementById("moveDownButton").addEventListener("click", () => { camera.position.y -= 1; });
+  document.getElementById("rotaterightButton").addEventListener("click", () => { mesh.rotateY(Math.PI / 4); });
+  document.getElementById("rotateleftButton").addEventListener("click", () => { mesh.rotateY(-Math.PI / 4); });
+  scene = new THREE.Scene();
+  renderer = new THREE.WebGLRenderer({ alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+  camera = new THREE.PerspectiveCamera(100, windowWidth / windowHeight, 1, 1000);
+  camera.position.set(0, 19, 20);
+  clock = new THREE.Clock();
+}
+function LoadStage() {
+  return new Promise((resolve, reject) => {
+    const loader = new THREE.MMDLoader();
+    loader.load(StagePath, (stageObject) => {
+      resolve();
+    }, onProgress, reject);
+  });
 }
 
-function playAnimation(animationClip) {
-  const action = mixer.clipAction(animationClip);
-  action.play();
-}
 
-loader.loadAnimation(vmd1, object, (animationClip) => {
-  createMixer();
-  playAnimation(animationClip);
-});
 
-loader.loadAnimation(vmd2, object, (animationClip) => {
-  playAnimation(animationClip);
-});
 
-function animate() {
-  requestAnimationFrame(animate);
-  const deltaTime = clock.getDelta();
-  if (mixer) {
-    mixer.update(deltaTime);
+
+let animate;
+function startAnimation() {
+   document.getElementById('readystate').innerHTML = 'Camera(localstorage): ready - ' + localStorage.getItem('vmd') + ' <a href="javascript:location.reload(true)">Reload</a>';
+  if (!animate) {
+    console.error('Animation function not initialized.');
+    return;
   }
-  renderer.render(scene, camera);
+  animate(); // Start the animation loop
+}
+document.getElementById('play').addEventListener('click', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const vmdValue = urlParams.get('vmd') || "bts-bestofme";
+    if (!vmdValue) {
+        console.log('No vmd parameter found in the URL');
+        return false;}
+    console.log('vmdValue from URL:', vmdValue);
+    const audioPath = `audio/${vmdValue}.mp3`;
+    const audioListener = new THREE.AudioListener();
+    const audio = new THREE.Audio(audioListener);
+    const audioLoader = new THREE.AudioLoader();
+    try {
+        const audioBuffer = await new Promise((resolve, reject) => {
+            audioLoader.load(audioPath, resolve, onAudioLoadProgress, reject);
+        });
+        audio.setBuffer(audioBuffer);
+        audio.setLoop(true); // Set to true if audio should loop
+        audio.setVolume(1.0); // Adjust volume as needed
+        audio.play();
+        console.log('Audio loaded and playing:', audioPath);
+    } catch (error) {
+        console.error('Error loading audio:', error);
+        document.getElementById('readystate').textContent = "Error loading Audio";
+
+        return false;
+    }
+    function onAudioLoadProgress(xhr) {
+        if (xhr.lengthComputable) {
+            const percentComplete = (xhr.loaded / xhr.total) * 100;
+            console.log('Audio load progress:', percentComplete.toFixed(2) + '%');
+}}
+
+
+  try {
+    startAnimation();
+  } catch (error) {
+    console.error('Error loading models:', error);
+  }
+});
+async function LoadModels() {
+  const loader = new THREE.MMDLoader();
+  function LoadPMX(path) {
+    return new Promise(resolve => {
+      loader.load(path, (object) => {
+        resolve(object);
+      }, onProgress, onError);
+    });
+  }
+  async function LoadVMDAnimation(mesh, id) {
+    function getQueryStringParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+    const vmdId = getQueryStringParameter('vmd') || 'bts-bestofme';
+    const vmdPath = `./vmd/${vmdId}.vmd`;
+    localStorage.setItem('vmd', vmdId);
+    return new Promise((resolve, reject) => {
+      loader.loadAnimation(vmdPath, mesh, (vmdClip) => {
+        vmdClip.name = vmdId;
+        resolve(vmdClip);
+      }, onProgress, reject);
+    });
+  }
+async function LoadCameraAnimation(camera) {
+  let camid;
+  if (new URLSearchParams(window.location.search).has('camera')) {
+    camid = new URLSearchParams(window.location.search).get('camera');
+  } else if (new URLSearchParams(window.location.search).has('vmd')) {
+    camid = new URLSearchParams(window.location.search).get('vmd');
+  } else {
+    camid = localStorage.getItem('camid');
+    if (!camid) {
+      camid = 'bts-bestofme';
+    }
+  }
+  const cameraVmdPath = "./camera/" + camid + ".vmd";
+  try {
+    const vmdClip = await new Promise((resolve, reject) => {
+      loader.loadAnimation(cameraVmdPath, camera, (vmdClip) => {
+        vmdClip.name = camid; // Set the name to the loaded camid
+        resolve(vmdClip);
+      }, onProgress, reject);
+    });
+    return vmdClip;
+  } catch (error) {
+    console.error('Error loading camera animation:', error);
+    throw error; // Re-throw the error to propagate it
+  }
+}
+  async function LoadModel1() {
+    const mesh = await LoadPMX(Pmx);
+    scene.add(mesh);
+    const vmdClip = await LoadVMDAnimation(mesh, "001");
+    const helper = new THREE.MMDAnimationHelper({ afterglow: 1.0 });
+    const mmd = { mesh: mesh, animation: vmdClip };
+    helper.add(mmd.mesh, {
+      animation: mmd.animation,
+      physics: true
+    });
+    return { mesh: mesh, helper: helper };
+  }
+  async function LoadModel2() {
+    if (Pmx2) {
+      const mesh2 = await LoadPMX(Pmx2);
+      mesh2.position.x += 15;
+      scene.add(mesh2);
+      const vmdClip = await LoadVMDAnimation(mesh2, "002");
+      const helper = new THREE.MMDAnimationHelper({ afterglow: 1.0 });
+      const mmd = { mesh: mesh2, animation: vmdClip };
+      helper.add(mmd.mesh, {
+        animation: mmd.animation,
+        physics: true
+      });
+      return { mesh: mesh2, helper: helper };
+    }
+  }
+
+  const { mesh: mesh1, helper: helper1 } = await LoadModel1();
+  const { mesh: mesh2, helper: helper2 } = await LoadModel2();
+const fov = 45; // Define the field of view
+const aspect = window.innerWidth / window.innerHeight; // Define the aspect ratio
+const near = 1; // Define the near clipping plane
+const far = 1000; // Define the far clipping plane
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  const cameraVmdClip = await LoadCameraAnimation(camera);
+  const cameraHelper = new THREE.MMDAnimationHelper();
+  cameraHelper.add(camera, {
+    animation: cameraVmdClip
+  });
+  const clock = new THREE.Clock();
+
+
+
+  animate = () => {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    helper1.update(delta);
+    if (helper2) helper2.update(delta);
+    cameraHelper.update(delta); // Update camera animation
+    renderer.render(scene, camera);
+  };
 }
 
-animate();
+
+
+
+
+function onProgress(xhr) {
+  if (xhr.lengthComputable) {
+    const percentComplete = xhr.loaded / xhr.total * 100;
+    console.log(Math.round(percentComplete) + '% downloaded');
+document.getElementById('readystate').innerHTML = Math.round(percentComplete) + '% downloaded (if stuck, click <a href="audio" target="_blank">here</a>) ' + 'Camera: ready -  ' + localStorage.getItem('camid');
+  }
+}
+function onError(xhr) {
+  console.error("Error loading resource:", xhr);
+document.getElementById('readystate').textContent = "Error loading resource: " + xhr.statusText;
+
 }
 
 
-      },);});};
-  await Promise.all([loadAdditionalPMX()]);
-  await LoadPMX();
-  await Promise.all(MotionObjects.map(async (MotionObject) => {return await LoadVMD(MotionObject.id);}));
-  await Promise.all(MotionObjects.map(async (MotionObject) => {return await LoadAudio(MotionObject.id);}));
-  VmdControl("loop", true);}
-VmdControl = (id, loop) => {const index = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
-  if (index === -1) {console.log("not Found ID");return;}
-  ready = false;
-  helper = new THREE.MMDAnimationHelper({ afterglow: 2.0, resetPhysicsOnLoop: true });
-  helper.add(mesh, {
-    animation: MotionObjects[index].VmdClip,
-    physics: false});
-  if (MotionObjects[index].AudioClip) {
-    MotionObjects[index].AudioClip.play();}
-  const mixer = helper.objects.get(mesh).mixer;
-  if (!loop) {
-    mixer.existingAction(MotionObjects[index].VmdClip).setLoop(THREE.LoopOnce);}
-  mixer.addEventListener("loop", (event) => {
-    console.log("loop");});
-  mixer.addEventListener("finished", (event) => {
-    console.log("finished");
-    VmdControl("loop", true);});
-  ready = true;}
-onProgress = (xhr) => {
-  if (xhr.lengthComputable) {const percentComplete = xhr.loaded / xhr.total * 100;
-    console.log(Math.round(percentComplete, 2) + '% downloaded');}}
-onError = (xhr) => {console.log("ERROR");}
-Render = () => {
-  requestAnimationFrame(Render);
-  renderer.clear();
-  renderer.render(scene, camera);
-if (ready) {helper.update(clock.getDelta());}}
-
-//Old-hardcoded--Pose-ClickEvent
-//PoseClickEvent = (id) => {
-//  switch (id) {
-//    case "pose1":
-//      VmdControl("001", true);
-//      break;
-//    case "pose2":
-//      VmdControl("002", false);
-//      break;
-//    case "pose3":
-//      VmdControl("003", false);
-//      break;
-//    default:
-//      VmdControl("001", true);
-//      break;}}
-
-//New-autogenerated--from--MotionObject-Array-Pose-ClickEvent
-const generatePoseClickEvent = (motionObjects) => {
-  const functionBody = motionObjects.map(function (motion) {
-    return "case '" + motion.pose + "':\n" +
-      "  VmdControl('" + motion.id + "', " + (motion.pose === "pose1") + ");\n" +
-      "  break;\n";
-  }).join("");
-  const poseClickEventFunction = new Function("id", "switch (id) { " + functionBody +
-    " default: VmdControl('001', true); break; }");
-  return poseClickEventFunction;
-};
-const PoseClickEvent = generatePoseClickEvent(MotionObjects);
+    fullscreenButton.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        //document.body.requestFullscreen();
+        renderer.domElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
 
 
 
-===/index.html==
 
+
+===========index.htm.======
+
+<!--GeneratePmx2Links-->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pmx2linksContainer = document.getElementById('pmx2links');
+    const links = document.querySelectorAll('a[href*="?pmx="]');
+    links.forEach(link => {
+        let originalHref = link.getAttribute('href');
+        let newHref = originalHref.replace('?pmx=', '?pmx2=');
+        const newLink = document.createElement('a');
+        newLink.textContent = link.textContent; // Copy the text content
+        newLink.setAttribute('href', newHref);  // Set the modified href
+        newLink.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default action (navigation)
+            let currentUrl = window.location.href;
+            let newUrl;
+            if (currentUrl.includes('?')) {
+                newUrl = currentUrl + '&' + newHref.split('?')[1]; // Append new query string
+            } else {
+                newUrl = currentUrl + '?' + newHref.split('?')[1]; // Append new query string
+            }
+            window.location.href = newUrl;
+        });
+        pmx2linksContainer.appendChild(newLink);
+    });
+});
+</script>
+
+<div id="readystate">...If vmd will cause keychar err, use https://www.mediafire.com/file/9olqch9pazq3fzd/AnimationSmoother.rar...</div>
+<button onclick="togglePhysicsAndReload()">Toggle Physics</button>
+<script>
+  function togglePhysicsAndReload() {
+    var physicsAreOn = localStorage.getItem("physicsareon");
+    if (physicsAreOn) {
+      localStorage.removeItem("physicsareon");
+    } else {
+      localStorage.setItem("physicsareon", "true");}
+    location.reload();}
+  var physicsAreOn = localStorage.getItem("physicsareon");
+  if (physicsAreOn) {
+    document.querySelector("button").textContent = "Physics On";
+  } else {
+    document.querySelector("button").textContent = "Physics Off";}
+</script>
+<!--<button onclick="clonePMX()">Clone PMX</button>-->
 
 <div class="keyboard">
-    <button id="." style="background-color: transparent; border: none;color: transparent;">Move L3.__</button>
+    <button id="." onclick="togglePhysicsAndReload()" style="background-color: transparent; border: none;color: transparent;">Move L3.__</button>
     <button id="moveUpButton">Move Up</button><br>
     <button id="moveLeftButton">Move Left</button>
     <button id="moveDownButton">Move Down</button>
@@ -244,8 +378,56 @@ const PoseClickEvent = generatePoseClickEvent(MotionObjects);
  <button id="." style="background-color: transparent; border: none;color: transparent;">.__</button>
 <button id="rotateleftButton">RotateLeft</button>
 <button id="rotaterightButton">RotateRight</button>
-<a target="_blank" href="https://www.reddit.com/r/mikumikudance" style=color:blue>r/MMD</a> 
+<a target="_blank" href="https://www.youtube.com/playlist?list=PLBva3abEZvyT-_ajETBGeOCGBA_AFBT5Z#https://www.reddit.com/r/mikumikudance" style=color:blue>r/MMD</a> <a target="_blank" href="https://codepen.io/ryedai1/pens/tags/?selected_tag=mikumikudance" style=color:gray>(tools)</a>
+(<a target="_blank" href="https://ry3yr.github.io/SampleWebMMD-master.zip" style=color:blue>src-DLD</a>) <!--<a target="_blank" href="http://10.10.10.254/data/UsbDisk1/Volume1/SampleWebMMD-master/index.html?pmx=YusakuFujiki/yusaku.pmx&stage=/livestageclub/livestageclubanimated.pmx&vmd=bts-dna" style=color:blue>Offline-TripMate</a>(<a target="_blank" href="https://alceawis.de/qrgen.html?qr=http://10.10.10.254/data/UsbDisk1/Volume1/SampleWebMMD-master/index.html?pmx=YusakuFujiki/yusaku.pmx&stage=/livestageclub/livestageclubanimated.pmx&vmd=bts-dna" style=color:blue>qr</a>)-->
 </div>
+<details>
+<input type="text" id="buttonvmdInput" value="001" style="width: 100px;">
+<button type="button" onclick="copyToClipboard()">Copy</button>
+<button type="button" onclick="updateQueryStringParameter('vmd', document.getElementById('buttonvmdInput').value);checkfile();">cstm</button>
+<button type="button" onclick="localStorage.setItem('camid', document.getElementById('buttonvmdInput').value); PoseClickEvent(document.getElementById('buttonvmdInput').value);">cstm+cam</button>
+<input type="checkbox" id="checkboxSendToPHP">
+<label for="checkboxSendToPHP">Send to PHP</label>
+<!--CopytoClipboard---Code----->
+<script>
+  function copyToClipboard() {
+    var inputText = document.getElementById("buttonvmdInput").value;
+    var outputText = '{ id: "' + inputText + '", pose: "' + inputText + '", VmdClip: null, AudioClip: false },';
+
+    if (document.getElementById("checkboxSendToPHP").checked) {
+      // Send the output text to mainvmdwrite.php
+      var url = "mainvmdwrite.php";
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          alert("Text sent to mainvmdwrite.php!");
+        }};
+      xhr.send("outputText=" + encodeURIComponent(outputText));
+    } else {
+      navigator.clipboard.writeText(outputText)
+        .then(function() {
+          alert("Text copied to clipboard!");})
+        .catch(function(error) {
+          console.error("Error copying text: ", error);
+        });}}
+</script>
+</details>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.self !== window.top) {
+      var copyButton = document.querySelector('button[onclick="copyToClipboard()"]');
+      copyButton.disabled = true;
+      copyButton.addEventListener('mouseover', function() {
+        var tooltip = document.createElement('span');
+        tooltip.innerText = 'Disabled by CORS Policy';tooltip.style.position = 'absolute';tooltip.style.backgroundColor = '#000';tooltip.style.color = '#fff';tooltip.style.padding = '5px';
+        tooltip.style.borderRadius = '4px';tooltip.style.fontSize = '12px';tooltip.style.visibility = 'visible';tooltip.style.top = copyButton.offsetTop + copyButton.offsetHeight + 'px';
+        tooltip.style.left = copyButton.offsetLeft + 'px';document.body.appendChild(tooltip);});
+      copyButton.addEventListener('mouseout', function() {
+        var tooltip = document.querySelector('span');
+        tooltip.parentNode.removeChild(tooltip);});}});
+</script>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -253,18 +435,171 @@ const PoseClickEvent = generatePoseClickEvent(MotionObjects);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
 </head>
-  <div class="pose">
-   <button type="button" value="001" onclick="PoseClickEvent(this.value)">vm1</button>
-    <button type="button" value="002" onclick="PoseClickEvent(this.value)">vm2</button>
-    <button type="button" value="003" onclick="PoseClickEvent(this.value)">vm3</button>
+
+
+
+<div class="pose">
+    <!--<button type="button" value="001" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);">vm1</button>-->
+    <!--<button type="button" value="001" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);">vm1</button>-->
+    <button type="button" value="001" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);location.reload();">vm1</button>
+    <button type="button" value="002" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);location.reload();">vm2</button>
+    <button type="button" value="003" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);location.reload();">vm3(camoff)</button>
+    <button type="button" value="004walknthink" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);location.reload();">vm4</button>
+    <button type="button" value="005hard-carry" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);location.reload();">tst(audio)</button>
+    <button type="button" value="bts-bestofme" onclick="updateQueryStringParameter('vmd', this.value); localStorage.setItem('camid', this.value);location.reload();">best(audio)</button>
+</div>
+<details><summary>All Motions</summary><div class="file-buttons" id="file-buttons"></div></details>
+<script>
+    function updateQueryStringParameter(key, value) {
+        var url = new URL(window.location.href);
+        var params = new URLSearchParams(url.search);
+        params.set(key, value);
+        url.search = params.toString();
+        history.replaceState(null, '', url.toString());}
+</script>
+
+<!--<button id="loadButton" value="./vmd/002.vmd">Load VMD File</button>-->
 <a href="?pmx=YusakuFujiki/yusaku.pmx">Yu</a>
 <a href="?pmx=AoiZaizen/AoiZaizen.pmx">Aoi</a> 
 <a href="?pmx=Xion/xion.pmx">Xion</a>
+<a href="?pmx=9s/9s.pmx">9s</a>
 <a href="?pmx=2b/na_2b_0418n.pmx">2B</a>
+<a href="?pmx=TLoZ_Zelda_(Scholar)/zelda_scholar.pmx">BOTW Zelda</a>
+<a href="?pmx=TLoZ_Zelda_(Skyward_Sword)/Zelda_(Skyward_Sword).pmx">SW Zelda</a>
+<a href="?pmx=TLoZ_Link_BOTW)/linkbotw.pmx">BOTW Link</a>
+<a href="?pmx=kh_roxas/kh_roxas.pmx">Roxas</a>
+<a href="?pmx=off/off.pmx">-[OFF]-</a>
+<button class="off-button" onclick="window.location.href='?pmx=YusakuFujiki/yusaku.pmx&pmx2=AoiZaizen/AoiZaizen.pmx';" style="background-color: #ffcccc; border: #ff9999; border-radius: 8px; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; transition-duration: 0.4s;">yusaao</button>
+<button class="off-button" onclick="window.location.href='?pmx=Xion%2Fxion.pmx&pmx2=Roxas%2Froxas.pmx';" style="background-color: #ffcccc; border: #ff9999; border-radius: 8px; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; transition-duration: 0.4s;">Xion&Rox</button>
+
   </div>
+<details><summary>2ndChara</summary><div id="pmx2links"></div></details>
+<button id="play" onclick="" style="background-color: pink; background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.25) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.25) 75%, transparent 75%, transparent); background-size: 20px 20px; border: none; color: white; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 5px; box-shadow: 0 0 10px rgba(255, 105, 180, 0.5); cursor: pointer; transition: transform 0.3s;" title="Spacebar">Play Animation and Audio</button>  <button id="fullscreenButton" title="F10">Fullscreen</button>
+
+
+
+<!----Check VMD File--Existance--->
+<!--<button id="checkFileButton" onclick="checkfile()">Check File</button>-->
+<script>
+        function getQueryStringParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);}
+        async function checkFileExistence(filePath) {
+            try {
+                const response = await fetch(filePath, { method: 'HEAD' });
+                if (response.ok) {
+                    console.log(`File exists: ${filePath}`);
+                    document.getElementById('readystate').textContent = `File exists: ${filePath}`;
+                    location.reload();
+                } else {
+                    console.log(`File does not exist (404): ${filePath}`);
+                    document.getElementById('readystate').textContent = `File doesn't exist: ${filePath}`;}
+            } catch (error) {
+                console.error(`Error fetching file: ${error}`);
+                document.getElementById('readystate').textContent = `Error fetching file: ${error}`;}}
+        function checkfile() {
+            const vmd = getQueryStringParameter('vmd');
+            if (vmd) {
+                const filePath = `./vmd/${vmd}.vmd`;
+                checkFileExistence(filePath);
+            } else {
+                console.log('No vmd parameter found in the query string.');
+                document.getElementById('readystate').textContent = 'No vmd parameter found in the query string.';}}
+const domContentLoadedHandler = () => {
+    checkfile();
+};
+</script>
+
+<!--AudioPlayback--ThreeJS-ver-->
+<script>
+async function playAnimationAndAudio() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const vmdValue = urlParams.get('vmd');
+    
+    if (!vmdValue) {
+        console.log('No vmd parameter found in the URL');
+        return false;
+    }
+    
+    console.log('vmdValue from URL:', vmdValue);
+    
+    const audioPath = `audio/${vmdValue}.mp3`;
+    const audioListener = new THREE.AudioListener();
+    const audio = new THREE.Audio(audioListener);
+    const audioLoader = new THREE.AudioLoader();
+    
+    // Load audio file
+    try {
+        const audioBuffer = await new Promise((resolve, reject) => {
+            audioLoader.load(audioPath, resolve, onAudioLoadProgress, reject);
+        });
+        audio.setBuffer(audioBuffer);
+        audio.setLoop(true); // Set to true if audio should loop
+        audio.setVolume(1.0); // Adjust volume as needed
+        audio.play();
+        console.log('Audio loaded and playing:', audioPath);
+    } catch (error) {
+        console.error('Error loading audio:', error);
+        return false;
+    }
+    
+    // Function to handle audio load progress (optional)
+    function onAudioLoadProgress(xhr) {
+        if (xhr.lengthComputable) {
+            const percentComplete = (xhr.loaded / xhr.total) * 100;
+            console.log('Audio load progress:', percentComplete.toFixed(2) + '%');
+        }
+    }
+    const clock = new THREE.Clock();
+    function update() {
+        const delta = clock.getDelta();
+    }
+    update();
+    return true;
+}
+
+</script>
+
+
+
+
+
+<!--AudioPlayback--non-ThreeJS-ver-->
+<!--
+<script>
+function playAnimationAndAudio() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var vmdValue = urlParams.get('vmd');
+    if (vmdValue) {
+        var audioPath = 'audio/' + vmdValue + '.mp3';
+        if (window.audioElement && !window.audioElement.paused) {
+            window.audioElement.currentTime = 0;
+        } else {
+           setTimeout(500);
+           window.audioElement = new Audio(audioPath);
+           audioElement.loop =  true;
+        }
+        window.audioElement.play();
+        console.log('Animation triggered');
+    } else {
+        console.log('No vmd parameter found in the URL');}}
+</script>
+-->
+
+
   <div class="stage">
 <a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/herogarden/herogarden.pmx';window.location.href = updatedUrl;})()">herogarden</a>
 <a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/parkavenue/parkavenue.pmx';window.location.href = updatedUrl;})()">parkavenue</a>
+<a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/livestageclub/livestageclubanimated.pmx';window.location.href = updatedUrl;})()">LiveStage</a>
+<a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/h2cu09/h2cu09.pmx';window.location.href = updatedUrl;})()">h2cu09</a>
+<a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/SciFi_Cube/SciFi_Cube.pmx';window.location.href = updatedUrl;})()">SciFi_Cube</a>
+<a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/(\?|&)stage=([^&]*)/g, '') + (currentUrl.indexOf('?') > -1 ? '&' : '?') +'stage=/kh_twilighttown/kh_station_plaza/Station_Plaza.pmx';window.location.href = updatedUrl;})()">TwilightTownStation</a>
+<a href="javascript:(function() {var currentUrl = window.location.href;var updatedUrl = currentUrl.replace(/([?&])stage=[^&]*/g, '$1').replace(/(&|\?)$/, '');var newStageParam = encodeURIComponent('/kh_twtnw/Memory\'s_Skyscraper/Memory\'s_Skyscraper.pmx');updatedUrl += (updatedUrl.indexOf('?') > -1 ? '&' : '?') + 'stage=' + newStageParam;window.location.href = updatedUrl;})()">TWTNW Skyscraper</a>
+
+
+
+
+
   </div>
   <script src="./libs/three.js"></script>
   <script src="./libs/mmdparser.min.js"></script>
@@ -272,21 +607,84 @@ const PoseClickEvent = generatePoseClickEvent(MotionObjects);
   <script src="./libs/TGALoader.js"></script>
   <script src="./libs/MMDLoader.js"></script>
   <script src="./libs/MMDAnimationHelper.js"></script>
-  <script src="./libs/OutlineEffect.js"></script>
+  <script src="./libs/mmd-loader.min.js"></script>
   <script src="./libs/CCDIKSolver.js"></script>
   <script src="./libs/MMDPhysics.js"></script>
-  <!--<script src="./libs/OrbitControls.js"></script>-->
+  <!--<script src="./libs/Vmd.js"></script>
+  <script src="./libs/VmdFileParser.js"></script>-->
   <!--<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/build/three.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/libs/mmdparser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ammo.js@0.0.10/ammo.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/loaders/TGALoader.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/loaders/MMDLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/animation/MMDAnimationHelper.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/effects/OutlineEffect.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/animation/CCDIKSolver.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/animation/MMDPhysics.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/jsm/controls/OrbitControls.js"></script>-->
-  <script src="./js/main.js"></script>
+
+
+<script src="./js/main.js"></script>
 </body>
 </html>
+
+
+
+<!----Mark--used-button--green-->
+<script>
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    var vmdValue = urlParams.get('vmd');
+    var buttons = document.querySelectorAll("button");
+    for (var i = 0; i < buttons.length; i++) {if (buttons[i].value === vmdValue) {buttons[i].style.backgroundColor = "lightgreen";}}
+});
+</script>
+
+
+<!--AllMotions-show---onlineCompOnly--->
+  <script>
+const fileDir = './vmd';
+function listFiles() {
+  const fileButtonsContainer = document.getElementById('file-buttons');
+  fetch(fileDir)
+    .then(response => response.text())
+    .then(data => {
+      const doc = new DOMParser().parseFromString(data, 'text/html');
+      const files = [...doc.getElementsByTagName('a')];
+      files
+        .map(file => file.textContent.trim())
+        .filter(fileName => fileName.endsWith('.vmd'))
+        .forEach(fileName => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.value = fileName;
+          button.textContent = fileName.replace('.vmd', '');
+          button.onclick = () => {
+            updateQueryStringParameter('vmd', fileName.replace('.vmd', ''));
+            location.reload();};
+          fileButtonsContainer.appendChild(button);});})
+    .catch(error => {
+      console.error('Error listing files:', error);
+    });}
+function updateQueryStringParameter(key, value) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(key, value);
+  window.history.replaceState({}, '', url.toString());}
+window.addEventListener('load', listFiles);
+  </script>
+
+
+<!--keyboard-shortcuts--f10--spacebar-->
+   <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'F10') {
+                    event.preventDefault(); // Prevent default action (fullscreen mode)
+                    renderer.domElement.requestFullscreen()}});
+            document.addEventListener('keydown', function(event) {
+                if (event.key === ' ') { // Spacebar key
+                    event.preventDefault(); // Prevent default action (scrolling the page)
+                    document.getElementById('play').click();}});});
+</script>
+
+

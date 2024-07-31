@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mastodon Post Privacy with Emoji Picker, Search, and URL Display</title>
+<style>
+body {
+font-family: Arial, sans-serif;
+margin: 20px;
+display: flex;
+}
+.container {
+max-width: 600px;
+margin-left: 20px;
+}
+label {
+display: block;
+margin-top: 10px;
+}
+input[type="text"], textarea, input[type="button"], select {
+padding: 10px;
+font-size: 16px;
+margin-bottom: 10px;
+display: block;
+width: calc(100% - 22px); /* Full width minus padding and border */
+}
+textarea {
+height: 100px;
+resize: vertical;
+}
+input[type="button"] {
+background-color: #007bff;
+color: white;
+border: none;
+cursor: pointer;
+}
+input[type="button"]:hover {
+background-color: #0056b3;
+}
+.status {
+margin-top: 20px;
+font-weight: bold;
+}
+.emoji-picker {
+width: 200px;
+margin-right: 20px;
+display: flex;
+flex-direction: column;
+}
+.emoji-picker input {
+margin-bottom: 10px;
+padding: 5px;
+}
+.emoji-picker button {
+background: none;
+border: none;
+font-size: 24px;
+cursor: pointer;
+padding: 5px;
+margin: 2px;
+}
+.emoji-picker button:hover {
+background-color: #f0f0f0;
+}
+.emoji-item {
+display: inline-block;
+}
+.post-url {
+margin-top: 20px;
+}
+</style>
+</head>
+<body>
+<div class="emoji-picker" id="emoji-picker">
+<h3>Emoji Picker</h3>
+<input type="text" id="emoji-search" placeholder="Search emojis..." oninput="filterEmojis()" />
+<!-- Emoji buttons will be inserted here dynamically -->
+</div>
+
+<div class="container">
+<h1>Create Mastodon Post</h1>
+<p>Enter your Mastodon instance URL and access token, then write your post and select the visibility.</p>
+
+<label for="instance-url">Mastodon Instance URL:</label>
+<input type="text" id="instance-url" placeholder="https://mastodon.instance" />
+
+<label for="access-token">Access Token:</label>
+<input type="text" id="access-token" placeholder="Your Access Token" />
+
+<label for="post-content">Post Content:</label>
+<textarea id="post-content" placeholder="Write your post here"></textarea>
+
+<label for="post-visibility">Post Visibility:</label>
+<select id="post-visibility">
+<option value="public">Public</option>
+<option value="unlisted">Unlisted</option>
+<option value="private" selected>Private</option>
+<option value="direct">Direct</option>
+</select>
+
+<input type="button" value="Create Post" onclick="createPost()" />
+
+<div class="status" id="status"></div>
+<div class="post-url" id="post-url"></div>
+</div>
+
+<script>
+let emojis = [];
+
+// Function to parse query parameters
+function getQueryParams() {
+const params = new URLSearchParams(window.location.search);
+return {
+url: params.get('url') || '',
+apikey: params.get('apikey') || ''
+};
+}
+
+// Pre-fill fields based on query parameters
+function prefillFields() {
+const queryParams = getQueryParams();
+document.getElementById('instance-url').value = queryParams.url;
+document.getElementById('access-token').value = queryParams.apikey;
+if (queryParams.url && queryParams.apikey) {
+loadEmojis(queryParams.url, queryParams.apikey);
+}
+}
+
+// Function to load emojis from Mastodon instance
+async function loadEmojis(instanceUrl, accessToken) {
+try {
+const response = await fetch(`${instanceUrl}/api/v1/custom_emojis`, {
+headers: {
+'Authorization': `Bearer ${accessToken}`
+}
+});
+if (!response.ok) {
+throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
+}
+emojis = await response.json();
+displayEmojis(emojis);
+} catch (error) {
+console.error('Error loading emojis:', error);
+document.getElementById('status').textContent = 'Error loading emojis. Check console for details.';
+}
+}
+
+// Function to display emojis
+function displayEmojis(emojiList) {
+const emojiPicker = document.getElementById('emoji-picker');
+const emojiContainer = document.getElementById('emoji-container') || document.createElement('div');
+emojiContainer.id = 'emoji-container';
+emojiContainer.innerHTML = ''; // Clear previous emojis
+
+emojiList.forEach(emoji => {
+const button = document.createElement('button');
+button.innerHTML = emoji.shortcode ? emoji.shortcode.replace(/:/g, '') : emoji.url; // Display shortcode or URL
+button.title = emoji.shortcode || 'Emoji'; // Tooltip
+button.className = 'emoji-item';
+button.onclick = () => insertEmoji(emoji.shortcode);
+emojiContainer.appendChild(button);
+});
+
+if (!document.getElementById('emoji-container')) {
+emojiPicker.appendChild(emojiContainer);
+}
+}
+
+// Function to filter emojis based on search input
+function filterEmojis() {
+const searchQuery = document.getElementById('emoji-search').value.toLowerCase();
+const filteredEmojis = emojis.filter(emoji => emoji.shortcode.toLowerCase().includes(searchQuery));
+displayEmojis(filteredEmojis);
+}
+
+// Function to insert emoji into the post content
+function insertEmoji(emoji) {
+const postContentArea = document.getElementById('post-content');
+postContentArea.value += `:${emoji}:`; // Format emoji shortcode for Mastodon
+postContentArea.focus(); // Optional: Focus the textarea after inserting
+}
+
+// Function to create a post
+async function createPost() {
+const mastodonInstance = document.getElementById('instance-url').value.trim();
+const accessToken = document.getElementById('access-token').value.trim();
+const postContent = document.getElementById('post-content').value.trim();
+const postVisibility = document.getElementById('post-visibility').value;
+
+const apiEndpoint = `${mastodonInstance}/api/v1/statuses`;
+const data = {
+status: postContent,
+visibility: postVisibility
+};
+
+// Basic validation
+if (!mastodonInstance || !accessToken || !postContent) {
+document.getElementById('status').textContent = 'Please provide all required fields: Mastodon instance URL, access token, and post content.';
+return;
+}
+
+try {
+const response = await fetch(apiEndpoint, {
+method: 'POST',
+headers: {
+'Authorization': `Bearer ${accessToken}`,
+'Content-Type': 'application/json'
+},
+body: JSON.stringify(data)
+});
+
+// Log response for debugging
+console.log('Response status:', response.status);
+console.log('Response headers:', response.headers);
+const result = await response.json();
+console.log('Response data:', result);
+
+if (!response.ok) {
+throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
+}
+
+// Display post URL
+const postUrl = result.url; // Assuming `url` is returned in the response
+document.getElementById('status').textContent = 'Post created successfully!';
+document.getElementById('post-url').innerHTML = `View your post <a href=${postUrl} target=_blank>${postUrl}</a> <a href=https://alceawis.de/mtdtootdisplay.html?url=${postUrl}&apikey=${accessToken} target=_blank>»</a>`;
+
+
+
+} catch (error) {
+document.getElementById('status').textContent = 'Error creating post. Check console for details.';
+console.error('Error:', error);
+}
+}
+
+// Call prefillFields on page load
+window.onload = prefillFields;
+</script>
+</body>
+</html>
+

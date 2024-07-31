@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mastodon Account Statuses</title>
+</head>
+<body>
+  <h1>Mastodon Account Statuses</h1>
+
+  <div class="info-line">
+    <div id="userName"></div>
+    <div id="userStatuses"></div>
+  </div>
+  <div id="instanceStatuses"></div>
+  <div id="userPercentage"></div>
+
+  <script>
+    // Get the query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const instanceUrl = urlParams.get('instanceUrl') || 'https://mastodon.animexx.de';
+    const userId = urlParams.get('userId') || '111676830721936824';
+
+    // Fetch user account information
+    fetch(`${instanceUrl}/api/v1/accounts/${userId}`)
+      .then(response => response.json())
+      .then(userData => {
+        const {acct} = userData;
+        const userNameDiv = document.getElementById('userName');
+        userNameDiv.textContent = `Username: @${acct}`;
+
+        // Display the user's status count
+        const userStatusesDiv = document.getElementById('userStatuses');
+        userStatusesDiv.textContent = `The user has ${userData.statuses_count} statuses.`;
+
+        // Fetch instance information
+        return fetch(`${instanceUrl}/api/v1/instance`);
+      })
+      .then(response => response.json())
+      .then(instanceData => {
+        const {status_count: instanceStatusesCount} = instanceData.stats;
+        const instanceStatusesDiv = document.getElementById('instanceStatuses');
+        instanceStatusesDiv.textContent = `${instanceUrl} has ${instanceStatusesCount} total statuses.`;
+
+        // Calculate and display the user's percentage of instance posts
+        const userStatusesCount = parseInt(document.getElementById('userStatuses').textContent.match(/\d+/)[0]);
+        const userPercentage = (userStatusesCount / instanceStatusesCount * 100).toFixed(2);
+        const userPercentageDiv = document.getElementById('userPercentage');
+        userPercentageDiv.textContent = `${document.getElementById('userName').textContent.split(': ')[1]} is responsible for ${userPercentage}% of the posts on this instance.`;
+      })
+      .catch(error => console.error(error));
+  </script>
+</body>
+</html>
+
+<!------------>
+<br><br>
+<form id="inputForm">
+  <label for="userId">User ID:</label>
+  <input type="text" id="userId" name="userId" required>
+  <label for="instanceUrl">Instance URL:</label>
+  <input type="text" id="instanceUrl" name="instanceUrl" required>
+  <button type="submit">Submit</button>
+</form>
+
+<script>
+  document.getElementById('inputForm').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const newInstanceUrl = document.getElementById('instanceUrl').value;
+    const newUserId = document.getElementById('userId').value;
+    const newUrl = `?instanceUrl=${newInstanceUrl}&userId=${newUserId}`;
+    window.location.href = window.location.pathname + newUrl;
+  });
+</script>

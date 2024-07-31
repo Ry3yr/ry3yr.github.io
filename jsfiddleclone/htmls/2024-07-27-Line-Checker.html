@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Line Checker</h1> 
+<a target="_blank" href="https://ry3yr.github.io/OSTR/release/other/Computerstuff/Commands/rendercodetxt.html">ry3yr/ostr (backup)</a> <-> <a target="_blank" href="https://alceawis.de/other/extra/scripts/rendercodetxt.html">Alceawis</a>
+    <textarea id="inputText1" placeholder="Enter your text here..."></textarea>
+    <textarea id="inputText2" placeholder="Enter your text here..."></textarea>
+    <button onclick="cleanLines()">Clean</button>
+
+    <script>
+        function cleanLines() {
+            const textAreas = [document.getElementById('inputText1'), document.getElementById('inputText2')];
+            textAreas.forEach(textArea => {
+                const lines = textArea.value.split('\n');
+                const cleanedLines = lines.map(line => line.replace(/^\d+\.\s*/, ''));
+                textArea.value = cleanedLines.join('\n');
+            });
+        }
+    </script>
+
+
+<!---Check Function--->
+  <button onclick="compareTexts()">Compare</button>
+    <div id="results"></div>
+
+    <script>
+        function compareTexts() {
+            const text1 = document.getElementById('inputText1').value.split('\n');
+            const text2 = document.getElementById('inputText2').value.split('\n');
+
+            const totalLines1 = text1.length;
+            const totalLines2 = text2.length;
+
+            let matchingLinesCount = 0;
+            let differingLines = [];
+
+            text1.forEach((line1, index1) => {
+                let foundMatch = false;
+                text2.forEach((line2) => {
+                    if (line1 === line2) {
+                        foundMatch = true;
+                    }
+                });
+                if (foundMatch) {
+                    matchingLinesCount++;
+                } else {
+                    differingLines.push(`Line ${index1 + 1}: "${line1}"`);
+                }
+            });
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <p>Total lines in Box 1: ${totalLines1}</p>
+                <p>Total lines in Box 2: ${totalLines2}</p>
+                <p>Number of matching lines: ${matchingLinesCount}</p>
+                <p>Lines that differ:</p>
+                <ul>${differingLines.map(line => `<li>${line}</li>`).join('')}</ul>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<meta charset="UTF-8">
+  <form id="searchForm">
+    <label for="apiUrl">Mastodon API URL:</label>
+    <input type="text" id="apiUrl" name="apiUrl">
+    <br>
+    <label for="tag1">Hashtag 1:</label>
+    <input type="text" id="tag1" name="tag1">
+    <label for="tag2">Hashtag 2:</label>
+    <input type="text" id="tag2" name="tag2">
+    <label for="tag3">Hashtag 3:</label>
+    <input type="text" id="tag3" name="tag3">
+<details>
+    <label for="tag4">Hashtag 4:</label>
+    <input type="text" id="tag4" name="tag4">
+    <label for="tag5">Hashtag 5:</label>
+    <input type="text" id="tag5" name="tag5">
+    <label for="tag6">Hashtag 6:</label>
+    <input type="text" id="tag6" name="tag6">
+    <label for="tag7">Hashtag 7:</label>
+    <input type="text" id="tag7" name="tag7">
+    <label for="tag8">Hashtag 8:</label>
+    <input type="text" id="tag8" name="tag8">
+    <label for="tag9">Hashtag 9:</label>
+    <input type="text" id="tag9" name="tag9">
+    <label for="tag10">Hashtag 10:</label>
+    <input type="text" id="tag10" name="tag10">
+</details>
+    <button type="submit">Count Statuses</button>
+  </form>
+  <div id="statusCounts"></div>
+  <div id="errorMessage" style="color: red;"></div>
+
+  <script>
+    // Get the current URL
+    const url = new URL(window.location.href);
+
+    // Get the query parameters
+    const apiUrl = url.searchParams.get('instance') || 'https://pb.todon.de/api/v1/timelines/tag/';
+    const tag1 = url.searchParams.get('hashtag01') || 'CurrListeningAlcea';
+    const tag2 = url.searchParams.get('hashtag02') || 'CodeAlcea';
+    const tag3 = url.searchParams.get('hashtag03') || 'DoodlesAlcea';
+    const tag4 = url.searchParams.get('hashtag04') || '';
+    const tag5 = url.searchParams.get('hashtag05') || '';
+    const tag6 = url.searchParams.get('hashtag06') || '';
+    const tag7 = url.searchParams.get('hashtag07') || '';
+    const tag8 = url.searchParams.get('hashtag08') || '';
+    const tag9 = url.searchParams.get('hashtag09') || '';
+    const tag10 = url.searchParams.get('hashtag10') || '';
+
+    // Prefill the form fields
+    document.getElementById('apiUrl').value = apiUrl;
+    document.getElementById('tag1').value = tag1;
+    document.getElementById('tag2').value = tag2;
+    document.getElementById('tag3').value = tag3;
+    document.getElementById('tag4').value = tag4;
+    document.getElementById('tag5').value = tag5;
+    document.getElementById('tag6').value = tag6;
+    document.getElementById('tag7').value = tag7;
+    document.getElementById('tag8').value = tag8;
+    document.getElementById('tag9').value = tag9;
+    document.getElementById('tag10').value = tag10;
+
+    const searchForm = document.getElementById('searchForm');
+    const statusCountsElement = document.getElementById('statusCounts');
+    const errorMessageElement = document.getElementById('errorMessage');
+
+    searchForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      statusCountsElement.innerHTML = '';
+      errorMessageElement.textContent = '';
+
+      // Get the values of the filled-in hashtag fields
+      const hashtags = [
+        document.getElementById('tag1').value,
+        document.getElementById('tag2').value,
+        document.getElementById('tag3').value,
+        document.getElementById('tag4').value,
+        document.getElementById('tag5').value,
+        document.getElementById('tag6').value,
+        document.getElementById('tag7').value,
+        document.getElementById('tag8').value,
+        document.getElementById('tag9').value,
+        document.getElementById('tag10').value
+      ].filter(tag => tag.trim() !== '');
+
+      // Process the filled-in hashtags
+      hashtags.forEach(tag => countStatuses(apiUrl, tag, tag));
+    });
+
+    function countStatuses(apiUrl, tag, tagName) {
+      const fullUrl = `${apiUrl}${tag}`;
+      let totalCount = 0;
+      let nextLink = null;
+
+      function extractLinkUrl(linkHeader, rel) {
+        if (!linkHeader) return null;
+        let links = linkHeader.split(',');
+        for (let i = 0; i < links.length; i++) {
+          let link = links[i].trim();
+          if (link.indexOf(`rel="${rel}"`) !== -1) {
+            let url = link.substring(link.indexOf('<') + 1, link.indexOf('>'));
+            return url;
+          }
+        }
+        return null;
+      }
+
+      function fetchEntities() {
+        let url = nextLink || fullUrl;
+
+        return fetch(url, {
+          headers: {
+            'Authorization': 'Bearer token'
+          }
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json().then(data => {
+              totalCount += data.length;
+              let statusCountElement = document.getElementById(`status-count-${tagName}`);
+              if (!statusCountElement) {
+                statusCountElement = document.createElement('div');
+                statusCountElement.id = `status-count-${tagName}`;
+                statusCountsElement.appendChild(statusCountElement);
+              }
+              statusCountElement.textContent = `*${tagName}: ${totalCount}`;
+
+              let linkHeader = response.headers.get('Link');
+              nextLink = extractLinkUrl(linkHeader, 'next');
+
+              if (nextLink) {
+                return fetchEntities();
+              } else {
+                console.log(`Total status count for ${tag}: ${totalCount}`);
+              }
+            });
+          } else {
+            console.error(`Error fetching data: ${response.status}`);
+            errorMessageElement.textContent = `Error fetching data for hashtag "${tag}": ${response.status}`;
+            throw new Error(`Error fetching data: ${response.status}`);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          errorMessageElement.textContent = `Error fetching data for hashtag "${tag}": ${error.message}`;
+        });
+      }
+
+      fetchEntities();
+    }
+  </script>
+</body>
+</html>

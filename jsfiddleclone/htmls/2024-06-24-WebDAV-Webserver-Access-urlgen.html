@@ -1,0 +1,23 @@
+<!--https://stackoverflow.com/questions/26545126/ithit-ajax-file-browser-active-directory-webdav-auto-login-->
+  <h1>WebDAV Server Access</h1>
+  <form>
+    <label for="webDavServerPath">WebDAV Server Path:</label>
+    <input type="text" id="webDavServerPath" value="webdav.hidrive.strato.com"><br>
+    <label for="username">Username:</label>
+    <input type="text" id="username"><br>
+    <label for="password">Password:</label>
+    <input type="password" id="password"><br>
+    <button type="button" onclick="openWebDavLogin()">Access WebDAV Server</button>
+  </form>
+  <script>
+    function openWebDavLogin() {
+      var webDavServerPath = document.getElementById("webDavServerPath").value;
+      var username = document.getElementById("username").value;
+      var password = document.getElementById("password").value;
+      // Construct the login URL with the username and password
+      //var loginUrl = `${webDavServerPath}?mode=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+      var loginUrl = `${encodeURIComponent(username)}:${encodeURIComponent(password)}@${webDavServerPath}`;
+      // Open the WebDAV login in a new tab
+      window.open(loginUrl, '_blank');
+    }
+  </script>
