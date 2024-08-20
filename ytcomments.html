@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fetch YouTube Comments</title>
+    <style>
+        .blocked {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- HTML form for API key and channel selection -->
+    <form id="commentForm" method="POST">
+        <label for="api_key">API Key:</label>
+        <input type="text" name="api_key" id="api_key" value="">
+        <label for="channel_id">Channel:</label>
+        <select id="channel_id" name="channel_id" required>
+            <option value="UCrltGih11A_Nayz6hG5XtIw">Diarykeeper</option>
+            <option value="UCmIpOnd5BVx5Si2hp0WNKZw" selected>Repeekyraid_Cero</option>
+            <option value="UC-5ooQ1hSQ-uM8Mu4dLko4Q">AGB</option>
+            <option value="UCD7mRBujyxUResQ6jiiGypQ">PB</option>
+        </select>
+        <button type="submit">Fetch Comments</button>
+    </form>
+    <!-- Container to display the fetched comments -->
+    <div id="commentsContainer"></div>
+    <script>
+        const form = document.getElementById('commentForm');
+        const commentsContainer = document.getElementById('commentsContainer');
+
+        // Retrieve blocked users from localStorage
+        let blockedUsers = JSON.parse(localStorage.getItem('ytusersblocked')) || [];
+
+        // Function to add a username to blocked users and update localStorage
+        function blockUser(username) {
+            if (!blockedUsers.includes(username)) {
+                blockedUsers.push(username);
+                localStorage.setItem('ytusersblocked', JSON.stringify(blockedUsers));
+                // Hide the comment if it's already displayed
+                document.querySelectorAll(`.comment[data-author="${username}"]`).forEach(comment => {
+                    comment.classList.add('blocked');
+                });
+            }
+        }
+
+        // Function to hide comments from blocked users
+        function hideBlockedComments() {
+            blockedUsers.forEach(username => {
+                document.querySelectorAll(`.comment[data-author="${username}"]`).forEach(comment => {
+                    comment.classList.add('blocked');
+                });
+            });
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const apiKey = document.getElementById('api_key').value;
+            const channelId = document.getElementById('channel_id').value;
+            const apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&allThreadsRelatedToChannelId=${channelId}&maxResults=10&order=time&key=${apiKey}`;
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const comments = data.items;
+                // Clear previous comments
+                commentsContainer.innerHTML = '';
+                // Display the fetched comments
+                comments.forEach((comment) => {
+                    const snippet = comment.snippet.topLevelComment.snippet;
+                    const author = snippet.authorDisplayName;
+                    const text = snippet.textDisplay;
+                    const videoId = snippet.videoId;
+                    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                    const commentElement = document.createElement('div');
+                    commentElement.classList.add('comment');
+                    commentElement.dataset.author = author;
+                    commentElement.innerHTML = `
+                        <p><strong><a href="#" class="username">${author}</a></strong>: ${text}</p>
+                        <p>From Video: <a href="${videoUrl}" target="_blank">${videoUrl}</a></p>
+                    `;
+                    commentsContainer.appendChild(commentElement);
+                });
+
+                // Add click event to usernames
+                document.querySelectorAll('.username').forEach(usernameElement => {
+                    usernameElement.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        const username = event.target.innerText;
+                        // Confirm before blocking the user
+                        const confirmed = confirm(`Are you sure you want to block comments from ${username}?`);
+                        if (confirmed) {
+                            blockUser(username);
+                        }
+                    });
+                });
+
+                // Hide comments from blocked users after they are added to the DOM
+                hideBlockedComments();
+
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+            }
+        });
+
+        // Hide comments from blocked users on page load
+        hideBlockedComments();
+
+    </script>
+</body>
+</html>
