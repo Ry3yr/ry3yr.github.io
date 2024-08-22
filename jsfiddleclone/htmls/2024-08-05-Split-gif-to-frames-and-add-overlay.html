@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIF Frame Splitter with Overlay</title>
+    <style>
+        .frame {
+            display: inline-block;
+            margin: 5px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <label for="gifInput">Upload GIF:</label>
+    <input type="file" id="gifInput" />
+    
+    <label for="overlayInput">Upload Overlay Image:</label>
+    <input type="file" id="overlayInput" />
+    
+    <div id="framesContainer"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/gif-frames@1.0.0/dist/gif-frames.min.js"></script>
+    <script>
+        let overlayImage = null;
+
+        document.getElementById('overlayInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Read the file as a data URL
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    overlayImage = img;
+                    processGif(); // Trigger GIF processing after overlay is loaded
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('gifInput').addEventListener('change', function(event) {
+            if (overlayImage === null) {
+                //alert("Please upload the overlay image first.");
+                return;
+            }
+            processGif();
+        });
+
+        function processGif() {
+            const file = document.getElementById('gifInput').files[0];
+            if (!file) return;
+
+            // Read the GIF file as a data URL
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const gifUrl = e.target.result;
+
+                // Use gif-frames to extract frames
+                gifFrames({ url: gifUrl, frames: 'all', outputType: 'canvas' })
+                    .then(function(frameData) {
+                        const framesContainer = document.getElementById('framesContainer');
+                        framesContainer.innerHTML = ''; // Clear previous frames
+
+                        frameData.forEach(function(frame) {
+                            const canvas = frame.getImage();
+                            const ctx = canvas.getContext('2d');
+                            
+                            if (overlayImage) {
+                                // Draw the overlay image on top of the frame
+                                ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
+                            }
+
+                            const img = document.createElement('img');
+                            img.src = canvas.toDataURL();
+                            img.classList.add('frame');
+                            framesContainer.appendChild(img);
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Error extracting frames:', error);
+                    });
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+<button id="createGifButton">Create Animated GIF</button>
+<div id="errorMessages"></div>
+
+
+<script>
+document.getElementById('createGifButton').addEventListener('click', async function() {
+    // Clear previous error messages
+    const errorMessages = document.getElementById('errorMessages');
+    errorMessages.textContent = '';
+
+    // Fetch all images on the page
+    const images = document.getElementsByTagName('img');
+    
+    if (images.length === 0) {
+        errorMessages.textContent = "No images found to create a GIF.";
+        return;
+    }
+
+    // Initialize a new GIF object
+    const gif = new GIF({
+        workers: 2,
+        quality: 10
+    });
+
+    try {
+        // Convert each image to a canvas and add it to the GIF
+        for (const img of images) {
+            await new Promise((resolve) => {
+                if (img.complete) {
+                    addImageToGif(img);
+                    resolve();
+                } else {
+                    img.onload = () => {
+                        addImageToGif(img);
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        errorMessages.textContent = `Error loading image: ${img.src}`;
+                        resolve(); // Resolve the promise to continue processing
+                    };
+                }
+            });
+        }
+
+        // Add each image to the GIF
+        function addImageToGif(img) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            gif.addFrame(canvas, { delay: 500 }); // Adjust delay as needed
+        }
+
+        // When the GIF is finished, create a download link
+        gif.on('finished', function(blob) {
+            const gifUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = gifUrl;
+            link.download = 'animated.gif';
+            link.textContent = 'Download your GIF';
+            document.body.appendChild(link);
+        });
+
+        // Start the GIF rendering process
+        gif.render();
+    } catch (error) {
+        // Handle any unexpected errors
+        errorMessages.textContent = `An error occurred: ${error.message}`;
+    }
+});
+
+</script>

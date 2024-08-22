@@ -1,0 +1,157 @@
+A lil loader for showcasing models I made on my <a target="_blank" href="https://alceawis.de/modelsmine.html">Website</a>.<br>
+Was initially meant to load from zip. But threejs sucks at zip<br><br><hr>
+<details><summary>#Note</summary>, it seems that mmdloader and mmdparser need to be a specific version otherwise threejs throws many errors... or it loads the model nad fails the vmd parse...</details>
+
+    <iframe id="url-iframe" scrolling="no" src="https://alceawisteria.codeberg.page/models/MisoraHibiki.html" style="width: 50%; height: 100%; border: none;"></iframe>
+
+
+
+<details>
+<plaintext>
+  <script src="three.js"></script>
+  <script src="jszip.min.js"></script>
+  <script src="mmdparser.min.js"></script>
+  <script src="ammo.min.js"></script>
+  <script src="TGALoader.js"></script>
+  <script src="MMDLoader.js"></script>
+  <script src="MMDAnimationHelper.js"></script>
+  <!--<script src="OutlineEffect.js"></script>-->
+  <script src="CCDIKSolver.js"></script>
+  <script src="MMDPhysics.js"></script>
+  <script>
+let scene, renderer, camera, mesh, helper;
+let ready = false;
+const windowWidth = window.innerWidth;
+const windowHeight = window.innerHeight;
+const clock = new THREE.Clock();
+const Pmx = "./pmx/MisoraHibiki/MisoraHibiki.pmx";
+const MotionObjects = [
+  { id: "001", VmdClip: null, AudioClip: false },
+];
+window.onload = () => {
+  Init();
+  LoadModeler();
+  Render();
+}
+Init = () => {
+  scene = new THREE.Scene();
+  const ambient = new THREE.AmbientLight(0xeeeeee);
+  scene.add(ambient);
+  renderer = new THREE.WebGLRenderer({ alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0xcccccc, 0);
+  document.body.appendChild(renderer.domElement);
+  camera = new THREE.PerspectiveCamera(40, windowWidth / windowHeight, 1, 1000);
+  camera.position.set(0, 19, 50);
+}
+LoadModeler = async () => {
+  const loader = new THREE.MMDLoader();
+  LoadPMX = () => {
+    return new Promise(resolve => {
+      loader.load(Pmx, (object) => {
+        mesh = object;
+        scene.add(mesh);
+
+        resolve(true);
+      }, onProgress, onError);
+    });
+  }
+  LoadVMD = (id) => {
+    return new Promise(resolve => {
+      const path = "./" + id + ".vmd";
+      const val = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
+
+      loader.loadAnimation(path, mesh, (vmd) => {
+        vmd.name = id;
+
+        MotionObjects[val].VmdClip = vmd;
+        VmdControl("001", true); //automatically load 001 motion
+        resolve(true);
+      }, onProgress, onError);
+    });
+  }
+  LoadAudio = (id) => {
+    return new Promise(resolve => {
+      const path = "./audio/" + id + ".mp3";
+      const val = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
+
+      if (MotionObjects[val].AudioClip) {
+        new THREE.AudioLoader().load(path, (buffer) => {
+          const listener = new THREE.AudioListener();
+          const audio = new THREE.Audio(listener).setBuffer(buffer);
+          MotionObjects[val].AudioClip = audio;
+
+          resolve(true);
+        }, onProgress, onError);
+      } else {
+        resolve(false);
+      }
+    });
+  }
+  await LoadPMX();
+  await Promise.all(MotionObjects.map(async (MotionObject) => {
+    return await LoadVMD(MotionObject.id);
+  }));
+  await Promise.all(MotionObjects.map(async (MotionObject) => {
+    return await LoadAudio(MotionObject.id);
+  }));
+  VmdControl("loop", true);
+}
+VmdControl = (id, loop) => {
+  const index = MotionObjects.findIndex(MotionObject => MotionObject.id == id);
+  if (index === -1) {
+    console.log("not Found ID");
+    return;
+  }
+  ready = false;
+  helper = new THREE.MMDAnimationHelper({ afterglow: 2.0, resetPhysicsOnLoop: true });
+  helper.add(mesh, {
+    animation: MotionObjects[index].VmdClip,
+    physics: false
+  });
+  if (MotionObjects[index].AudioClip) {
+    MotionObjects[index].AudioClip.play();
+  }
+  const mixer = helper.objects.get(mesh).mixer;
+  if (!loop) {
+    mixer.existingAction(MotionObjects[index].VmdClip).setLoop(THREE.LoopOnce);
+  }
+  mixer.addEventListener("loop", (event) => {
+    console.log("loop");
+  });
+  mixer.addEventListener("finished", (event) => {
+    console.log("finished");
+    VmdControl("loop", true);
+  });
+
+  ready = true;
+}
+onProgress = (xhr) => {
+  if (xhr.lengthComputable) {
+    const percentComplete = xhr.loaded / xhr.total * 100;
+    console.log(Math.round(percentComplete, 2) + '% downloaded');
+  }
+}
+onError = (xhr) => {
+  console.log("ERROR");
+}
+Render = () => {
+  requestAnimationFrame(Render);
+  renderer.clear();
+  renderer.render(scene, camera);
+  if (ready) {
+    helper.update(clock.getDelta());
+  }
+}
+PoseClickEvent = (id) => {
+  switch (id) {
+    case "001":
+      VmdControl("001", true);
+      break;
+    default:
+      VmdControl("loop", true);
+      break;
+  }
+}
+</script>

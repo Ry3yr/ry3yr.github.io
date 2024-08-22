@@ -1,0 +1,106 @@
+   <meta charset="UTF-8">
+    <h2>Letters and Digits to Numbers Converter</h2>
+    <input type="text" id="inputText" placeholder="Enter letters and digits">
+    <label for="mode">Select Mode:</label>
+    <select id="mode">
+        <option value="1-26">1-26 (a=1, b=2, ..., z=26)</option>
+        <option value="1-0">1-0 Repeating (a=1, b=2, ..., j=0, k=1, ...)</option>
+    </select>
+    <button onclick="convertToNumbers()">Convert to Numbers</button>
+    <p id="outputText"></p>
+    <h2>Numbers to Letters Converter</h2>
+    <input type="text" id="inputNumbers" placeholder="Enter numbers separated by spaces">
+    <!--<label for="reverseMode">Select Mode:</label>
+    <select id="reverseMode">
+        <option value="1-26">1-26 (1=a, 2=b, ..., 26=z)</option>
+        <option value="1-0">1-0 Repeating (1=a, 2=b, ..., 0=j, k=1, ...)</option>
+    </select>-->
+    <button onclick="convertToLetters()">Convert to Letters</button>
+    <button onclick="transferText()">Transfer</button>
+    <script>
+        function transferText() {
+            var outputText = document.getElementById('outputText').innerText;
+            document.getElementById('inputNumbers').value = outputText;
+        }
+    </script>
+    <p id="outputLetters"></p>
+    <script>
+        const numberToLetterTable = {
+            0: ['j', 't'],
+            1: ['a', 'k', 'u'],
+            2: ['b', 'l', 'v'],
+            3: ['c', 'm', 'w'],
+            4: ['d', 'n', 'x'],
+            5: ['e', 'o', 'y'],
+            6: ['f', 'p', 'z'],
+            7: ['g', 'q'],
+            8: ['h', 'r'],
+            9: ['i', 's']
+        };
+        const letterToNumberTable = {
+            'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6,
+            'g': 7, 'h': 8, 'i': 9, 'j': 0, 'k': 1, 'l': 2,
+            'm': 3, 'n': 4, 'o': 5, 'p': 6, 'q': 7, 'r': 8,
+            's': 9, 't': 0, 'u': 1, 'v': 2, 'w': 3, 'x': 4,
+            'y': 5, 'z': 6
+        };
+        function convertToNumbers() {
+            const input = document.getElementById('inputText').value.toLowerCase();
+            const mode = document.getElementById('mode').value;
+            let output = '';
+            if (mode === '1-26') {
+                for (let i = 0; i < input.length; i++) {
+                    const char = input[i];
+                    if (char >= 'a' && char <= 'z') {
+                        output += (char.charCodeAt(0) - 'a'.charCodeAt(0) + 1) + ' ';
+                    } else if (char >= '0' && char <= '9') {
+                        output += char + ' ';
+                    } else {
+                        output += char + ' ';
+                    }
+                }
+            } else if (mode === '1-0') {
+                for (let i = 0; i < input.length; i++) {
+                    const char = input[i];
+                    if (char >= 'a' && char <= 'z') {
+                        output += letterToNumberTable[char] + ' ';
+                    } else if (char >= '0' && char <= '9') {
+                        output += char + ' ';
+                    } else {
+                        output += char + ' ';
+                    }
+                }
+            }
+            document.getElementById('outputText').innerText = output.trim();
+        }
+        function convertToLetters() {
+            const input = document.getElementById('inputNumbers').value.trim().split(/\s+/);
+            const mode = document.getElementById('mode').value;
+            let output = '';
+            if (mode === '1-26') {
+                for (const num of input) {
+                    const n = parseInt(num, 10);
+                    if (n >= 1 && n <= 26) {
+                        // Mode 1-26: Numbers to letters
+                        output += String.fromCharCode(n + 'a'.charCodeAt(0) - 1);
+                    } else {
+                        output += '?';
+                    }
+                }
+                document.getElementById('outputLetters').innerText = output.trim();
+            } else if (mode === '1-0') {
+                let possibilities = [''];
+                for (const num of input) {
+                    const currentOptions = numberToLetterTable[parseInt(num)] || [];
+                    const newPossibilities = [];
+                    for (const possibility of possibilities) {
+                        for (const letter of currentOptions) {
+                            newPossibilities.push(possibility + letter);
+                        }
+                    }
+                    possibilities = newPossibilities;
+                }
+                document.getElementById('outputLetters').innerText = possibilities.join(', ');
+            }
+        }
+    </script>

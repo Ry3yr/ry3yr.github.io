@@ -1,0 +1,126 @@
+drag and drop song, enter new desired duration, press button, bam (oh and a lil chipmunk button, incase you wanna go full nightcore)<br><br>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Speed Adjuster</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            width: 300px;
+            text-align: center;
+        }
+        #file-info {
+            margin-top: 10px;
+        }
+        #ffmpeg-command {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div id="drop-zone">Drop your audio file here</div>
+<div id="file-info"></div>
+<input type="text" id="new-length" placeholder="New length (mm:ss) or Speed Factor" />
+<label><input type="checkbox" id="speed-mode" /> Speed Mode (2x means twice as fast playback)</label>
+<button onclick="generateFFmpegCommand()">Generate FFmpeg Command</button>
+<button onclick="addAserateFilter()">Chip</button>
+<div id="ffmpeg-command"></div>
+
+<script>
+    let audioFile;
+    let originalDuration;
+    let command = '';
+
+    document.getElementById('drop-zone').addEventListener('dragover', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = 'copy';
+    });
+
+    document.getElementById('drop-zone').addEventListener('drop', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        audioFile = event.dataTransfer.files[0];
+        if (audioFile) {
+            document.getElementById('file-info').innerText = `File: ${audioFile.name}`;
+            const audio = new Audio(URL.createObjectURL(audioFile));
+            audio.addEventListener('loadedmetadata', function() {
+                originalDuration = audio.duration;
+                const minutes = Math.floor(originalDuration / 60);
+                const seconds = Math.floor(originalDuration % 60);
+                document.getElementById('file-info').innerText += `\nOriginal Duration: ${minutes}:${seconds.toString().padStart(2, '0')} (${originalDuration.toFixed(2)} seconds)`;
+            });
+        }
+    });
+
+    function generateFFmpegCommand() {
+        const newLength = document.getElementById('new-length').value;
+        const speedMode = document.getElementById('speed-mode').checked;
+        if (!audioFile || !newLength || !originalDuration) {
+            alert('Please drop an audio file and enter the new length or speed factor.');
+            return;
+        }
+
+        let baseCommand;
+
+        if (speedMode) {
+            const speedFactor = parseFloat(newLength);
+            if (isNaN(speedFactor) || speedFactor <= 0) {
+                alert('Please enter a valid speed factor.');
+                return;
+            }
+            if (speedFactor > 2 || speedFactor < 0.5) {
+                const sqrtFactor = Math.sqrt(speedFactor);
+                baseCommand = `ffmpeg -i "${audioFile.name}" -filter:a "atempo=${sqrtFactor},atempo=${sqrtFactor}"`;
+            } else {
+                baseCommand = `ffmpeg -i "${audioFile.name}" -filter:a "atempo=${speedFactor}"`;
+            }
+        } else {
+            const [newMinutes, newSeconds] = newLength.split(':').map(Number);
+            const newDuration = (newMinutes * 60) + newSeconds;
+            const speedFactor = originalDuration / newDuration;
+
+            if (speedFactor > 2 || speedFactor < 0.5) {
+                const sqrtFactor = Math.sqrt(speedFactor);
+                baseCommand = `ffmpeg -i "${audioFile.name}" -filter:a "atempo=${sqrtFactor},atempo=${sqrtFactor}"`;
+            } else {
+                baseCommand = `ffmpeg -i "${audioFile.name}" -filter:a "atempo=${speedFactor}"`;
+            }
+        }
+
+        command = baseCommand + ' output.mp3';
+        document.getElementById('ffmpeg-command').innerText = command;
+    }
+
+    function addAserateFilter() {
+        if (!command) {
+            alert('Please generate the FFmpeg command first.');
+            return;
+        }
+        const aserateFilter = 'asetrate=44100';
+        command = command.replace(' output.mp3', `,${aserateFilter} output.mp3`);
+        document.getElementById('ffmpeg-command').innerText = command;
+    }
+</script>
+
+</body>
+</html>

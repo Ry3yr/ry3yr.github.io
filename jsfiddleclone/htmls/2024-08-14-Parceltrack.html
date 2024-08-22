@@ -1,0 +1,129 @@
+Parceltrack 
+-----------------
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parceltrack</title>
+    <style>
+        .input-group {
+            margin-bottom: 10px;
+        }
+        input {
+            margin-right: 5px;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+            margin-bottom: 10px;
+        }
+        .link {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<h1> Parcel Track</h1>
+<body>
+    <div id="container">
+    </div>
+    <button id="addButton">Add New</button>
+    <button id="saveButton">Save</button>
+    <button id="loadButton">WhereIsMyPackage ?!</button>
+    <div id="output" class="output">
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('container');
+            const addButton = document.getElementById('addButton');
+            const saveButton = document.getElementById('saveButton');
+            const loadButton = document.getElementById('loadButton');
+            const output = document.getElementById('output');
+            function createInputGroup(number = '', service = '') {
+                const div = document.createElement('div');
+                div.classList.add('input-group');
+                const numberInput = document.createElement('input');
+                numberInput.type = 'text';
+                numberInput.placeholder = 'Number';
+                numberInput.value = number;
+                const serviceInput = document.createElement('input');
+                serviceInput.type = 'text';
+                serviceInput.placeholder = 'dhl hermes dpd';
+                serviceInput.value = service;
+                div.appendChild(numberInput);
+                div.appendChild(serviceInput);
+                container.appendChild(div);
+            }
+            function loadFromLocalStorage() {
+                const savedData = JSON.parse(localStorage.getItem('inputGroups'));
+                if (savedData) {
+                    savedData.forEach(group => {
+                        createInputGroup(group.number, group.service);
+                    });
+                } else {
+                    createInputGroup();
+                }
+            }
+            function saveToLocalStorage() {
+                const inputGroups = [];
+                document.querySelectorAll('.input-group').forEach(group => {
+                    const number = group.children[0].value;
+                    const service = group.children[1].value;
+                    inputGroups.push({ number, service });
+                });
+                localStorage.setItem('inputGroups', JSON.stringify(inputGroups));
+                //alert('Data saved to local storage!');
+            }
+            // Load and render URLs or iframes based on the parcel provider
+            function renderURLs() {
+                output.innerHTML = '';
+                const savedData = JSON.parse(localStorage.getItem('inputGroups'));
+                if (savedData) {
+                    savedData.forEach(group => {
+                        const { number, service } = group;
+                        let iframeUrl = '';
+                        let url = '';
+                        if (service.toLowerCase() === 'hermes') {
+                            iframeUrl = `https://parcelsapp.com/de/tracking/${number}`;
+                            url = `https://www.myhermes.de/empfangen/sendungsverfolgung/sendungsinformation#${number}`;
+                        } else if (service.toLowerCase() === 'dpd') {
+                            iframeUrl = `https://parcelsapp.com/de/tracking/${number}`;
+                            url = `https://dpd.com/track?number=${number}`;
+                        } else if (service.toLowerCase() === 'dhl') {
+                            iframeUrl = `https://parcelsapp.com/de/tracking/${number}`;
+                            url = `https://www.dhl.de/de/privatkunden/pakete-empfangen/verfolgen.html?piececode=${number}`;
+                        } else {
+                            url = `https://example.com/?number=${number}`;
+                        }
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.textContent = `${service}: ${url}`;
+                        link.target = '_blank';
+                        link.classList.add('link');
+                        output.appendChild(link);
+
+                        // If it's one of the three services, display the iframe below the link
+                        if (iframeUrl) {
+                            const iframe = document.createElement('iframe');
+                            iframe.src = iframeUrl;
+                            output.appendChild(iframe);
+                        }
+                    });
+                }
+            }
+
+            // Add event listeners
+            addButton.addEventListener('click', () => createInputGroup());
+            saveButton.addEventListener('click', saveToLocalStorage);
+            loadButton.addEventListener('click', renderURLs);
+
+            // Load data when the page loads
+            loadFromLocalStorage();
+        });
+    </script>
+
+
