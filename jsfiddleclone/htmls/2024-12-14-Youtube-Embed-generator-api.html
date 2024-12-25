@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Embed Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input, textarea {
+            width: 100%;
+            margin-top: 5px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        iframe {
+            margin-top: 20px;
+        }
+        textarea {
+            height: 100px;
+        }
+        .copy-btn {
+            margin-top: 10px;
+            background-color: #28a745;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube Embed Generator</h1>
+    <label for="apiKey">API Key:</label>
+    <input type="text" id="apiKey" placeholder="Enter your YouTube API Key">
+
+    <label for="youtubeUrl">YouTube URL:</label>
+    <input type="text" id="youtubeUrl" placeholder="Enter YouTube URL">
+
+    <button id="generateEmbed">Generate Embed</button>
+
+    <h2>Video Details</h2>
+    <p><strong>Name:</strong> <span id="videoName">N/A</span></p>
+    <p><strong>Video Link:</strong> <a id="videoLink" href="#" target="_blank">N/A</a></p>
+
+    <h2>Embed Preview</h2>
+    <iframe id="videoEmbed" width="560" height="315" frameborder="0" allowfullscreen></iframe>
+
+    <h2>Embed Code</h2>
+    <textarea id="embedCode" readonly></textarea>
+    <button class="copy-btn" id="copyEmbed">Copy to Clipboard</button>
+
+    <script>
+        document.getElementById('generateEmbed').addEventListener('click', function() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
+            const videoIdMatch = youtubeUrl.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/) ||
+                                 youtubeUrl.match(/(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+)/);
+
+            if (!apiKey) {
+                alert("Please enter your YouTube API Key.");
+                return;
+            }
+
+            if (!videoIdMatch || !videoIdMatch[1]) {
+                alert("Invalid YouTube URL.");
+                return;
+            }
+
+            const videoId = videoIdMatch[1];
+            const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Error fetching video details. Check your API key or video ID.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const video = data.items[0];
+                    if (!video) {
+                        alert("No video found for the provided URL.");
+                        return;
+                    }
+
+                    const videoName = video.snippet.title;
+                    const videoLink = `https://www.youtube.com/watch?v=${videoId}`;
+                    const embedCode = `<b>${videoName}</b>\n<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+
+                    // Update the page with video details
+                    document.getElementById('videoName').textContent = videoName;
+                    document.getElementById('videoLink').textContent = videoLink;
+                    document.getElementById('videoLink').href = videoLink;
+                    document.getElementById('videoEmbed').src = `https://www.youtube.com/embed/${videoId}`;
+                    document.getElementById('embedCode').textContent = embedCode;
+                })
+                .catch(error => {
+                    alert(error.message);
+                });
+        });
+
+        document.getElementById('copyEmbed').addEventListener('click', function() {
+            const embedCode = document.getElementById('embedCode');
+            embedCode.select();
+            embedCode.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand('copy');
+            alert("Embed code copied to clipboard!");
+        });
+    </script>
+</body>
+</html>

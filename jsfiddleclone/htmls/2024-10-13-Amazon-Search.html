@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        function generateUrl() {
+            const protocol = document.getElementById('protocol').value;
+            const domain = document.getElementById('domain').value;
+            const path = document.getElementById('path').value;
+            const k = document.getElementById('k').value;
+            const s = document.getElementById('s').value;
+            const page = document.getElementById('page').value;
+            const lowPrice = document.getElementById('lowPrice').value;
+            const highPrice = document.getElementById('highPrice').value;
+            const url = `${protocol}://${domain}${path}?k=${encodeURIComponent(k)}&s=${encodeURIComponent(s)}&page=${page}&low-price=${lowPrice}&high-price=${highPrice}`;
+            document.getElementById('result').innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
+        }
+    </script>
+</head>
+<body>
+    <h1>AmazonSearch</h1>
+    <label for="k">Search Query (k):</label>
+    <input type="text" id="k" value=""><br><br><br>
+    <label for="protocol">Protocol:</label>
+    <input type="text" id="protocol" value="https"><br>
+    <label for="domain">Domain:</label>
+    <input type="text" id="domain" value="www.amazon.de"><br>
+    <label for="path">Path:</label>
+    <input type="text" id="path" value="/s"><br>
+    <label for="s">Sort (s):</label>
+    <input type="text" id="s" value="price-asc-rank"><br>
+    <label for="page">Page Number:</label>
+    <input type="number" id="page" value="1"><br>
+    <label for="lowPrice">Low Price:</label>
+    <input type="number" id="lowPrice" value=""><br>
+    <label for="highPrice">High Price:</label>
+    <input type="number" id="highPrice" value=""><br>
+    <button onclick="generateUrl()">Generate URL</button>
+    <div id="result"></div>
+</body>
+</html>

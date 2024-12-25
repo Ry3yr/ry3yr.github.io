@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Generator with Custom Prefix</title>
+</head>
+<body>
+    <h1>Generate Numbered Links</h1>
+    <form id="linkForm">
+        <label for="baseUrlField">Base URL:</label>
+        <input type="text" id="baseUrlField" placeholder="Enter Base URL (e.g., https://gogoanime3.cc)" required>
+        <br><br>
+        <label for="prefixField">Prefix Before Number:</label>
+        <input type="text" id="prefixField" placeholder="Enter prefix (e.g., /layton-mystery-tanteisha-katri-no-nazotoki-file-episode-)" required>
+        <br><br>
+        <label for="numberField">Number of Links:</label>
+        <input type="number" id="numberField" placeholder="Enter number" min="1" required>
+        <br><br>
+        <button type="button" onclick="generateLinks()">Generate Links</button>
+    </form>
+    <h2>Generated Links:</h2>
+    <div id="result"></div>
+    <br>
+    <button id="copyPlain" onclick="copyPlainText()" disabled>Copy Plain Text</button>
+    <button id="copyHTML" onclick="copyHTMLText()" disabled>Copy HTML</button>
+
+    <script>
+        let generatedLinks = [];
+
+        function generateLinks() {
+            const baseUrl = document.getElementById('baseUrlField').value;
+            const prefix = document.getElementById('prefixField').value;
+            const count = parseInt(document.getElementById('numberField').value);
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = ''; // Clear previous results
+            generatedLinks = [];
+
+            if (!baseUrl || !prefix || !count || isNaN(count)) {
+                alert('Please provide valid input.');
+                return;
+            }
+
+            // Generate and display links
+            for (let i = 1; i <= count; i++) {
+                const fullUrl = `${baseUrl}${prefix}${i}`;
+                generatedLinks.push(fullUrl);
+
+                const link = document.createElement('a');
+                link.href = fullUrl;
+                link.textContent = fullUrl;
+                link.target = '_blank';
+                resultDiv.appendChild(link);
+                resultDiv.appendChild(document.createElement('br'));
+            }
+
+            // Enable copy buttons
+            document.getElementById('copyPlain').disabled = false;
+            document.getElementById('copyHTML').disabled = false;
+        }
+
+        function copyPlainText() {
+            if (generatedLinks.length === 0) {
+                alert('No links to copy!');
+                return;
+            }
+
+            const plainText = generatedLinks.join('\n');
+            navigator.clipboard.writeText(plainText).then(() => {
+                alert('Plain text copied to clipboard!');
+            }).catch(err => {
+                console.error('Error copying plain text:', err);
+            });
+        }
+
+        function copyHTMLText() {
+            if (generatedLinks.length === 0) {
+                alert('No links to copy!');
+                return;
+            }
+
+            const htmlLinks = generatedLinks.map(link => `<a href="${link}" target="_blank">${link}</a>`).join('\n');
+            navigator.clipboard.writeText(htmlLinks).then(() => {
+                alert('HTML links copied to clipboard!');
+            }).catch(err => {
+                console.error('Error copying HTML:', err);
+            });
+        }
+    </script>
+</body>
+</html>

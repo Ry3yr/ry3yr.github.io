@@ -1,0 +1,49 @@
+Restriction:<br>
+* Need to be logged in<br>
+* max of 50 links<br>
+* wil not require oauth, but a logged in user<br><hr>
+
+<!--https://webapps.stackexchange.com/questions/120451/how-to-create-a-playlist-form-a-list-of-links-not-from-bookmarks-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+  <label for="youtubeLinks">YouTube Links (one per line):</label><br>
+  <textarea id="youtubeLinks" rows="10" cols="50" placeholder="Enter YouTube video links, one per line"></textarea><br><br>
+
+  <button id="createPlaylistBtn">Create Playlist URL</button>
+
+  <div id="result" style="margin-top: 20px;"></div>
+
+  <script>
+    function extractVideoId(url) {
+      const regex = /[?&]v=([^&]+)/; 
+      const match = url.match(regex);
+      return match ? match[1] : null; 
+    }
+
+    document.getElementById('createPlaylistBtn').addEventListener('click', function() {
+      const youtubeLinks = document.getElementById('youtubeLinks').value.split('\n').map(link => link.trim());
+      const videoIds = youtubeLinks.map(extractVideoId).filter(id => id !== null);
+
+      if (videoIds.length === 0) {
+        document.getElementById('result').innerText = "Please enter valid YouTube video links.";
+        return;
+      }
+
+      // Limit to 50 videos as per YouTube's restriction
+      const limitedVideoIds = videoIds.slice(0, 50);
+      const playlistUrl = `https://www.youtube.com/watch_videos?video_ids=${limitedVideoIds.join(',')}&disable_polymer=true`;
+
+      document.getElementById('result').innerHTML = `
+        <p>Here is your playlist URL:</p>
+        <a href="${playlistUrl}" target="_blank">${playlistUrl}</a>
+      `;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <button onclick="fillInput('UCmIpOnd5BVx5Si2hp0WNKZw')">repeekyraid</button>
+    <button onclick="fillInput('UCrltGih11A_Nayz6hG5XtIw')">dkpr</button>
+    <button onclick="fillInput('UC-5ooQ1hSQ-uM8Mu4dLko4Q')">cea</button>
+    <script>function fillInput(channelId) {document.getElementById('channelId').value = channelId;}</script><br><br>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Channel Video Stats</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <label for="apiKey">API Key:</label>
+    <input type="text" id="apiKey" placeholder="Enter YouTube API Key">
+    <br>
+    <label for="channelId">Channel ID:</label>
+    <input type="text" id="channelId" placeholder="Enter Channel ID">
+    <br>
+    <button id="fetchData">Fetch Video Data</button>
+    <canvas id="uploadChart" width="400" height="200"></canvas>
+    <div id="videoLinks"></div>
+    <script>
+        const fetchDataButton = document.getElementById('fetchData');
+        const ctx = document.getElementById('uploadChart').getContext('2d');
+        const videoLinksDiv = document.getElementById('videoLinks');
+        let chartInstance;
+        let weeklyVideosMap = {};
+        fetchDataButton.addEventListener('click', async () => {
+            const apiKey = document.getElementById('apiKey').value;
+            const channelId = document.getElementById('channelId').value;
+            if (!apiKey || !channelId) {
+                alert('Please provide both API key and Channel ID.');
+                return;
+            }
+
+            const videoData = await fetchAllVideos(apiKey, channelId);
+            const weeklyData = groupVideosByWeek(videoData);
+            displayLineChart(weeklyData);
+        });
+        async function fetchAllVideos(apiKey, channelId) {
+            let videoData = [];
+            let nextPageToken = '';
+            const maxResults = 50;
+
+            do {
+                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet&order=date&type=video&maxResults=${maxResults}&pageToken=${nextPageToken}`);
+                const data = await response.json();
+
+                if (data.items) {
+                    data.items.forEach(item => {
+                        videoData.push({
+                            title: item.snippet.title,
+                            url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+                            publishedAt: new Date(item.snippet.publishedAt)
+                        });
+                    });
+                }
+
+                nextPageToken = data.nextPageToken;
+            } while (nextPageToken);
+
+            return videoData;
+        }
+
+        function groupVideosByWeek(videoData) {
+            const weeks = {};
+
+            videoData.forEach(video => {
+                const startOfWeek = new Date(video.publishedAt.setDate(video.publishedAt.getDate() - video.publishedAt.getDay())); // Start of week (Sunday)
+                const weekKey = startOfWeek.toISOString().split('T')[0];
+
+                if (!weeks[weekKey]) {
+                    weeks[weekKey] = [];
+                }
+                weeks[weekKey].push(video);
+            });
+
+            weeklyVideosMap = weeks; // Store this map for reference when a point is clicked
+
+            return Object.keys(weeks).sort().map(weekKey => ({
+                week: weekKey,
+                count: weeks[weekKey].length
+            }));
+        }
+
+        function displayLineChart(weeklyData) {
+            const labels = weeklyData.map(data => data.week);
+            const dataCounts = weeklyData.map(data => data.count);
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Videos Uploaded per Week',
+                        data: dataCounts,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3 // Smoothens the line
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Weeks'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Videos Uploaded'
+                            }
+                        }
+                    },
+                    onClick: (e) => {
+                        const points = chartInstance.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                        if (points.length) {
+                            const pointIndex = points[0].index;
+                            const week = chartInstance.data.labels[pointIndex];
+                            displayVideosForWeek(week);
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayVideosForWeek(week) {
+            const videos = weeklyVideosMap[week];
+            if (!videos) {
+                videoLinksDiv.innerHTML = '<p>No videos for this week.</p>';
+                return;
+            }
+
+            const videoLinksHtml = videos.map(video => `<a href="${video.url}" target="_blank">${video.title}</a><br>`).join('');
+            videoLinksDiv.innerHTML = videoLinksHtml;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Embed Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #embed {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #debug {
+            margin-top: 20px;
+            color: red;
+        }
+        #htmlCode {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Twitter Embed Generator</h1>
+    <input type="text" id="twitterUrl" placeholder="Enter Twitter URL" size="50">
+    <button id="embedButton">Embed Tweet</button>
+
+    <div id="embed"></div>
+    <div id="debug"></div>
+    <div id="htmlCode"></div>
+
+    <script>
+        // Correct Base64 encoded HTML template
+        const base64EmbedTemplate = `
+            PGRpdiBpZD0iZW1iZWQiPjwvZGl2PjxibG9ja3F1b3RlIGNsYXNzPSJ0d2l0dGVyLXR3ZWV0IiBkYXRh
+            LWRudD0idHJ1ZSIgYWxpZ249ImNlbnRlciI+PHAgbGFuZz0iZW4iIGRpcj0idHJyIj5JdCYjMzc7cyBw
+            cmV0dHkgYXdlc29tZSBob3cgZGFuY2luZyBtYWtlcyByb2JvdHMgbGVzcyBpbnRpbWlkYXRpbmcuIExv
+            b2tpbmcgZm9yd2FyZCB0byBzZWVpbmcgbW9yZSBub250cml2aWFsIE1hY2hpbmUgTGVhcm5pbmcgb24g
+            dGhlc2Ugcm9ib3RzLiBDcmVkaXQ6IEJvc3RvbiBEeW5hbWljcy4gPGEgaHJlZj0iaHR0cHM6Ly90d2l0
+            dGVyLmNvbS9SZXphX1phZGVoL3N0YXR1cy8ke3R3ZWV0SWR9P3JlZl9zcmM9dHdzcmMlNUR0Znc+PC9h
+            PiZuYnNwOyBSZXphIFphZGVoIEBSZXphX1phZGVoPC9ibG9ja3F1b3RlPjxzY3JpcHQgYXN5bmMgc3Jj
+            PSJodHRwczovL3BsYXRmb3JtLnR3aXR0ZXIuY29tL3dpZGdldHMuanMiIGNoYXJzZXQ9InV0Zi04Ij48
+            L3NjcmlwdD4=`;
+
+        // Decode Base64
+        function decodeBase64(base64) {
+            return decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
+
+        document.getElementById('embedButton').addEventListener('click', function() {
+            const url = document.getElementById('twitterUrl').value;
+            const tweetId = extractTweetId(url);
+            const debugDiv = document.getElementById('debug');
+            const htmlCodeDiv = document.getElementById('htmlCode');
+            debugDiv.innerHTML = ""; // Clear previous debug info
+            document.getElementById('embed').innerHTML = ""; // Clear previous embed
+            htmlCodeDiv.innerHTML = ""; // Clear previous HTML code
+
+            try {
+                if (tweetId) {
+                    // Decode the Base64 template and insert the tweet ID
+                    let embedHtml = decodeBase64(base64EmbedTemplate);
+                    embedHtml = embedHtml.replace('${tweetId}', tweetId);  // Replace placeholder with actual ID
+
+                    document.getElementById('embed').innerHTML = embedHtml;
+
+                    // Display the decoded HTML code
+                    htmlCodeDiv.innerText = embedHtml.trim();
+
+                    // Load Twitter widgets script asynchronously
+                    if (!document.getElementById('twitter-wjs')) {
+                        const script = document.createElement('script');
+                        script.id = 'twitter-wjs';
+                        script.src = 'https://platform.twitter.com/widgets.js';
+                        script.async = true;
+                        script.charset = 'utf-8';
+                        document.body.appendChild(script);
+                    } else {
+                        // If script already loaded, re-parse the embeds
+                        twttr.widgets.load();
+                    }
+                } else {
+                    throw new Error('Invalid Twitter URL format.');
+                }
+            } catch (error) {
+                debugDiv.innerHTML = `Error: ${error.message}`;
+            }
+        });
+
+        function extractTweetId(url) {
+            const regex = /\/status\/(\d+)/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        }
+
+        // Check for tweeturl in the URL and pre-fill input
+        function prefillTweetUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tweetUrl = urlParams.get('tweeturl');
+            if (tweetUrl) {
+                document.getElementById('twitterUrl').value = tweetUrl;
+                // Trigger the button click to embed the tweet automatically
+                document.getElementById('embedButton').click();
+            }
+        }
+
+        // Run the pre-fill function on page load
+        window.onload = prefillTweetUrl;
+    </script>
+
+</body>
+</html>
