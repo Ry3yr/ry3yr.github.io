@@ -1,0 +1,51 @@
+ergoproxy_rel_mayer * (2024|12|24) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-ReL-Mayer-1137714602" style=color:blue>tDL</a> Combining mesh (vrm2pmx) and blendshapes (vroidplaypark) = perfect pmx export !
+tloz_hw_link *(2024|12|24) Somehow adding the eye control bone glitches link's right hand side index and pinky finger. So I left it out
+pl_katrielle * (2024|12|23) <a target="_blank" href=https://www.deviantart.com/aoimatsuri/art/1137278608>DL</a> Texture-only-Blendshapes were a no go for vrm so I had to make a new head in VROID...
+sonic_maria * (2024|12|22)
+gt_sissl * (2024|12|22)
+ffvii_cloud_strife * (2024|12|21)
+sonic_spring_cream * (2024|12|21) Cream ! (I had to go Collada (Noesis) -> Blender -> CATS -> MMD Tools -> VroidPlayPark... and use another head for cream (cause the og had no bones !)
+ac_ash *(2024|12|21)
+tg_juuzousuzuya *(2024|12|21)
+aonoex_rinokumura *(2024|12|20) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/1136422449" style=color:blue>DL</a> Rin from AoNoEx
+blessonline_lorien * (2024|12|20) First (<a target="_blank" href="https://m.youtube.com/watch?v=QmSq7VsHjJE" style=color:blue>unity vrm export</a>)
+blankcity_foxy * (2024|12|16) bone export via pmx_conv1.3, then into pmx2vrm then in blender (CATS, MMDToolConv) and back into pmx. FIN !
+fxiii_hope * (2024|12|16) 
+fxiii_lightning * (2024|12|15) Demo model for the workflow <a target="_blank" href="https://www.youtube.com/watch?v=fnawoxXDaAE&feature=youtu.be" style=color:blue>video</a>
+nier_akeha * (2024|12|15) finally a model that has bone-blendshape morphs AND was able to convert back from pmx to vrm. phew !
+Xion_khiii * (2024|12|14)
+2bkimono * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-2b-kimono-1084566265">DL</a>
+2b_kimono
+AkinaUesugia * <a target="_blank" href="https://deviantart.com/aoikurayami1/art/MMD-Connie-and-Viktor-Akina-n-HikaruUesugia-1093034789">DL</a>
+Albus * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Albus-n-Shanoa-Castlevania-OrderOfEcclesia-1093037509">DL</a>
+Allie * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Allie-1095378027">DL</a>
+AoiZaizen * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/Aoi-Zaizen-MMD-1091581433#deviantart.com/aoikurayami1/art/MMD-Holly-Aoi-1116442180">DL</a>
+astralchain_akirahoward_fem * <a target="_blank" href="https://deviantart.com/aoikurayami1/art/2024-10-19-MMD-Akira-Howard-Astral-Chain-1112102036">DL</a>
+ChiakiNagoya
+DaiFinFish
+dc_akaishuichi
+dc_akemimiyano
+dn_minorutanaka * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Minoru-Tanaka-1117176745">DL</a>
+GodEater_Shio
+gy_trucywright * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Trucy-Wright-1097334440">DL</a>
+HikaruUesugi * <a target="_blank" href="https://deviantart.com/aoikurayami1/art/MMD-Connie-and-Viktor-Akina-n-HikaruUesugia-1093034789">DL</a>
+KokomiTeruhashi
+LunaShirogane
+MaronKusakabe * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-Maron-Kusakabe-1082970012">DL</a>
+MisoraHibiki * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MisoraHibiki-MMD-1081725651">DL</a>
+mp_zerosuitsamus * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Zero-Suit-Samus-1101246674">DL</a>
+PatriciaWoods
+RachelGardner
+Raetsel
+rexe_iris
+reynatis_sari * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/WIP-MMD-Sari-Nijishima-Reynatis-1117081746">DL</a>
+Shanoa * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Albus-n-Shanoa-Castlevania-OrderOfEcclesia-1093037509">DL</a>
+ShokaSakurane
+TLoZ_Totk_QueenSonja
+VoidWalkerWraith
+yozora
+Zelda_Skywardsword
+zoe_miyona * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Myona-Alderan-1101601016">DL</a>
+blender_scripts * Software - Blender py script collection
+create_pmx_icon * Software <a target="_blank" href="https://ry3yr.github.io/create_pmx_icon.zip" style=color:blue>DL</a>
+fbx_tex_embed_(blender_sendto) * Software <a target="_blank" href="https://web.archive.org/web/20241222050619/https://yusaao.org/bowlroll/models/fbx_tex_embed_(blender_sendto).zip" style=color:blue>DL</a> to easily be able to embed a fbx's textures into a new fbx. (for Accurig!)

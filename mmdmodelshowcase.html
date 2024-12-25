@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Display Model URLs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 20px;
+    }
+    #output {
+      white-space: pre-wrap;
+      font-family: monospace;
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .iframe-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    iframe {
+      width: 1200px;
+      height: 700px;
+      border: none;
+    }
+    button {
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #modelName {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .unavailable {
+      color: red;
+    }
+    .available {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <details><summary>Model URLs</summary>
+    <div id="output">Loading...</div>
+  </details>
+
+  <div class="iframe-container">
+    <button id="prevButton">Previous</button>
+    <div id="iframe-container"></div>
+    <button id="nextButton">Next</button>
+  </div>
+
+  <div class="iframe-container">
+    <button id="nextAvailableButton">Next Available</button>
+  </div>
+
+  <div id="modelName"></div>
+
+  <script>
+    let modelUrls = [];
+    let checkUrls = [];
+    let modelNames = [];
+    let urlStatuses = []; // To store the availability of each URL
+    let currentIndex = 0;
+
+    // Function to check if a URL is reachable
+    async function checkUrl(url) {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    // Function to check all URLs and store their statuses
+    async function checkAllUrls() {
+      const checks = checkUrls.map(url => checkUrl(url));
+      urlStatuses = await Promise.all(checks);
+    }
+
+    // Function to update the iframe and model name display
+    function updateIframe() {
+      if (modelUrls.length > 0) {
+        const iframeContainer = document.getElementById('iframe-container');
+        iframeContainer.innerHTML = ''; // Clear previous iframe
+
+        const modelNameDisplay = document.getElementById('modelName');
+        const url = modelUrls[currentIndex];
+        const name = modelNames[currentIndex];
+
+        // Update the model name display
+        if (urlStatuses[currentIndex]) {
+          const iframe = document.createElement('iframe');
+          iframe.src = url;
+          iframeContainer.appendChild(iframe);
+
+          modelNameDisplay.textContent = name;
+          modelNameDisplay.className = 'available'; // Green for available
+        } else {
+          modelNameDisplay.innerHTML = `${name} - <span class="unavailable">not available</span>`;
+          modelNameDisplay.className = 'unavailable'; // Red for unavailable
+        }
+      }
+    }
+
+    // Fetch the model list and initialize everything
+    fetch('https://yusaao.org/bowlroll/list.txt')
+      .then(response => response.text())
+      .then(async text => {
+        const lines = text.split('\n');
+
+        modelNames = lines.map(line => {
+          const match = line.match(/^\S+/);
+          return match ? match[0] : null;
+        }).filter(name => name !== null);
+
+        // Generate the iframe and availability check URLs
+        modelUrls = modelNames.map(name => 
+          `https://alcea-wisteria.de/PHP/SampleWebMMD-master/0loader.html?pmx=pmx/pronama/${name}/${name}.pmx`
+        );
+
+        checkUrls = modelNames.map(name => 
+          `https://alcea-wisteria.de/PHP/SampleWebMMD-master/pmx/pronama/${name}/${name}.pmx`
+        );
+
+        // Check all URLs and store their statuses
+        await checkAllUrls();
+
+        // Update the output to show URLs and statuses
+        const outputText = modelUrls.map((url, index) => {
+          const status = urlStatuses[index] ? 'Available' : 'Not Available';
+          return `${url} - ${status}`;
+        }).join('\n');
+
+        document.getElementById('output').textContent = outputText;
+
+        if (modelUrls.length > 0) {
+          updateIframe();
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching the file:', error);
+        document.getElementById('output').textContent = 'Error loading the file.';
+      });
+
+    // Event listener for "Previous" button
+    document.getElementById('prevButton').addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateIframe();
+      }
+    });
+
+    // Event listener for "Next" button
+    document.getElementById('nextButton').addEventListener('click', () => {
+      if (currentIndex < modelUrls.length - 1) {
+        currentIndex++;
+        updateIframe();
+      }
+    });
+
+    // Event listener for "Next Available" button
+    document.getElementById('nextAvailableButton').addEventListener('click', () => {
+      // Look for the next available model
+      let nextAvailableIndex = currentIndex + 1;
+      while (nextAvailableIndex < modelUrls.length && !urlStatuses[nextAvailableIndex]) {
+        nextAvailableIndex++;
+      }
+
+      // If a valid next available model is found, update the iframe
+      if (nextAvailableIndex < modelUrls.length) {
+        currentIndex = nextAvailableIndex;
+        updateIframe();
+      }
+    });
+  </script>
+</body>
+</html>
