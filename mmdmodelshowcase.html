@@ -184,3 +184,292 @@
   </script>
 </body>
 </html>
+
+
+<details><summary>Src "0loader"</summary><plaintext>
+
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+</head>
+<body>
+<button id="zoomInButton" style="position: absolute; top: 10px; right: 20px; font-size: 24px; padding: 20px; background-color: #f44336; color: white; border: none; border-radius: 10px;">-</button>
+<button id="zoomOutButton" style="position: absolute; top: 50px; right: 20px; font-size: 24px; padding: 20px; background-color: #008CBA; color: white; border: none; border-radius: 10px;">+</button>
+
+  <!--<div class="pose"><input type="button" value="pose2" onclick="PoseClickEvent(this.value)"></div>-->
+  <script src="./libs/three.js"></script>
+  <!--<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r106/examples/js/libs/mmdparser.min.js"></script>-->
+  <script src="./libs/mmdparser-obsolete.min.js"></script>
+  <script src="./libs/ammo.min.js"></script>
+  <script src="./libs/TGALoader.js"></script>
+  <script src="./libs/MMDLoader.js"></script>
+  <script src="./libs/MMDAnimationHelper.js"></script>
+  <script src="./libs/CCDIKSolver.js"></script>
+  <script src="./libs/MMDPhysics.js"></script>
+  <script>
+  let scene, renderer, camera, mesh, helper;
+  let ready = false;
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+  const clock = new THREE.Clock();
+  const urlParams = new URLSearchParams(window.location.search);
+  const modelPath = urlParams.get('pmx') || './pmx/pronama/AoiZaizen/AoiZaizen.pmx'; // Default model path
+  const vmdPath = urlParams.get('vmd') || 'bts-bestofme'; // Default VMD path (without extension)
+  let isMouseDown = false;
+  let previousMousePosition = { x: 0, y: 0 };
+
+  // Parameters for camera orbit
+  let theta = Math.PI / 4;  // Rotation angle (around Y axis)
+  let phi = Math.PI / 4;    // Rotation angle (around X axis)
+  let radius = 50;          // Camera distance from the origin (model)
+  
+  // Variables to store touch positions
+  let isTouching = false;
+  let touchStart = { x: 0, y: 0 };
+  
+  // Variables for pinch-to-zoom
+  let initialPinchDistance = null;
+
+
+  window.onload = () => {
+    Init();
+    LoadModeler();
+    Render();
+
+    // Set up zoom buttons
+    document.getElementById("zoomInButton").addEventListener("click", () => {
+      zoomCamera(1);  // Zoom in
+    });
+    document.getElementById("zoomOutButton").addEventListener("click", () => {
+      zoomCamera(-1); // Zoom out
+    });
+  };
+
+
+  Init = () => {
+    scene = new THREE.Scene();
+    const ambient = new THREE.AmbientLight(0xeeeeee);
+    scene.add(ambient);
+    renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0xcccccc, 0);
+    document.body.appendChild(renderer.domElement);
+    camera = new THREE.PerspectiveCamera(40, windowWidth / windowHeight, 1, 1000);
+
+    // Initial camera position
+    updateCameraPosition();
+
+    // Mouse event listeners for rotation
+    document.addEventListener('mousedown', onMouseDown, false);
+    document.addEventListener('mousemove', onMouseMove, false);
+    document.addEventListener('mouseup', onMouseUp, false);
+
+    // Touch event listeners for rotation and pinch-to-zoom
+    document.addEventListener('touchstart', onTouchStart, false);
+    document.addEventListener('touchmove', onTouchMove, false);
+    document.addEventListener('touchend', onTouchEnd, false);
+  };
+
+  // Function to zoom the camera in or out
+  zoomCamera = (direction) => {
+    radius += direction * 5; // Adjust the zoom speed (5 units per button press)
+
+    // Prevent zooming too close or too far
+    radius = Math.max(10, Math.min(radius, 200)); // Adjust min/max zoom distance
+
+    // Update camera position based on the new radius
+    updateCameraPosition();
+  };
+
+  // Mouse interaction functions
+  onMouseDown = (event) => {
+    isMouseDown = true;
+    previousMousePosition = {
+      x: event.clientX,
+      y: event.clientY
+    };
+  };
+
+  onMouseMove = (event) => {
+    if (!isMouseDown) return;
+
+    const deltaX = event.clientX - previousMousePosition.x;
+    const deltaY = event.clientY - previousMousePosition.y;
+
+    // Update the angles based on mouse movement
+    theta -= deltaX * 0.005;  // Rotate around Y-axis
+    phi -= deltaY * 0.005;    // Invert rotation around X-axis (subtract instead of add)
+
+    // Prevent the camera from flipping upside down
+    phi = Math.max(Math.min(phi, Math.PI / 2), -Math.PI / 2);
+
+    // Update camera position based on new angles
+    updateCameraPosition();
+
+    // Update previous mouse position
+    previousMousePosition = {
+      x: event.clientX,
+      y: event.clientY
+    };
+  };
+
+  onMouseUp = () => {
+    isMouseDown = false;
+  };
+
+  // Touch interaction functions
+  onTouchStart = (event) => {
+    if (event.touches.length === 1) {
+      // Start touch rotation
+      isTouching = true;
+      touchStart = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY
+      };
+    } else if (event.touches.length === 2) {
+      // Start pinch-to-zoom
+      initialPinchDistance = getPinchDistance(event);
+    }
+  };
+
+  onTouchMove = (event) => {
+    if (event.touches.length === 1 && isTouching) {
+      // Rotate based on touch movement
+      const deltaX = event.touches[0].clientX - touchStart.x;
+      const deltaY = event.touches[0].clientY - touchStart.y;
+
+      // Update the angles based on touch movement
+      theta -= deltaX * 0.005;  // Rotate around Y-axis
+      phi -= deltaY * 0.005;    // Invert rotation around X-axis (subtract instead of add)
+
+      // Prevent the camera from flipping upside down
+      phi = Math.max(Math.min(phi, Math.PI / 2), -Math.PI / 2);
+
+      // Update camera position based on new angles
+      updateCameraPosition();
+
+      // Update touch start position
+      touchStart = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY
+      };
+    } else if (event.touches.length === 2 && initialPinchDistance !== null) {
+      // Pinch-to-zoom: Calculate new pinch distance
+      const newPinchDistance = getPinchDistance(event);
+      const distanceChange = newPinchDistance - initialPinchDistance;
+
+      // Zoom in or out based on pinch distance change
+      radius += distanceChange * 0.1;  // Adjust zoom speed
+
+      // Prevent zooming too close or too far
+      radius = Math.max(10, Math.min(radius, 200));
+
+      // Update camera position based on new zoom (radius)
+      updateCameraPosition();
+
+      // Update initial pinch distance for next move
+      initialPinchDistance = newPinchDistance;
+    }
+  };
+
+  onTouchEnd = () => {
+    isTouching = false;
+    initialPinchDistance = null;
+  };
+
+  // Helper function to calculate the distance between two touch points
+  getPinchDistance = (event) => {
+    const touch1 = event.touches[0];
+    const touch2 = event.touches[1];
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  updateCameraPosition = () => {
+    // Update camera position using spherical coordinates (radius, theta, phi)
+    camera.position.x = radius * Math.sin(phi) * Math.cos(theta);
+    camera.position.y = radius * Math.cos(phi);
+    camera.position.z = radius * Math.sin(phi) * Math.sin(theta);
+
+    // Make sure the camera always looks at the center of the scene (the origin)
+    camera.lookAt(scene.position);
+  };
+
+  LoadModeler = async () => {
+    const loader = new THREE.MMDLoader();
+    LoadPMX = () => {
+      return new Promise(resolve => {
+        loader.load(modelPath, (object) => {
+          mesh = object;
+
+          // Move the model down along the Y-axis by a specific value (e.g., -10)
+          mesh.position.y = -10;  // Adjust this value to move the model down or up
+
+          scene.add(mesh);
+          resolve(true);
+        }, onProgress, onError);
+      });
+    }
+    LoadVMD = (vmd) => {
+      return new Promise(resolve => {
+        const path = `./vmd/${vmd}.vmd`; // Correct VMD path format
+        loader.loadAnimation(path, mesh, (vmdClip) => {
+          vmdClip.name = vmd;
+          VmdControl(vmd, vmdClip);
+          resolve(true);
+        }, onProgress, onError);
+      });
+    }
+    await LoadPMX();
+    await LoadVMD(vmdPath);
+  }
+
+  VmdControl = (id, vmdClip, loop = true) => {
+    ready = false;
+    helper = new THREE.MMDAnimationHelper({ afterglow: 2.0, resetPhysicsOnLoop: true });
+    helper.add(mesh, {
+      animation: vmdClip,
+      physics: false
+    });
+    if (vmdClip) {
+      const mixer = helper.objects.get(mesh).mixer;
+      if (!loop) {
+        mixer.existingAction(vmdClip).setLoop(THREE.LoopOnce);
+      }
+      mixer.addEventListener("loop", () => {
+        console.log("loop");
+      });
+      mixer.addEventListener("finished", () => {
+        console.log("finished");
+        VmdControl(id, vmdClip, true);
+      });
+    }
+    ready = true;
+  }
+
+  onProgress = (xhr) => {
+    if (xhr.lengthComputable) {
+      const percentComplete = (xhr.loaded / xhr.total) * 100;
+      console.log(Math.round(percentComplete, 2) + '% downloaded');
+    }
+  }
+
+  onError = (xhr) => {
+    console.log("ERROR");
+  }
+
+  Render = () => {
+    requestAnimationFrame(Render);
+    renderer.clear();
+    renderer.render(scene, camera);
+
+    if (ready) {
+      helper.update(clock.getDelta());
+    }
+  }
+</script>
+
