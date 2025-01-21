@@ -1,0 +1,100 @@
+<!-- last--used--shorthands -->
+<style>
+    img.emoji { width: 25px; height: 25px; object-fit: contain; cursor: pointer; }
+</style>
+
+<div id="shorthand-images"></div>
+<!---<textarea id="textbox" rows="4" cols="50" placeholder="Selected shorthand will appear here"></textarea>-->
+
+<script>
+    async function fetchAndProcessJSON() {
+        try {
+            const response = await fetch('https://alceawis.de/other/extra/scripts/fakesocialmedia/data_alcea.json');
+            const data = await response.json();
+            const shorthands = extractShorthands(data);
+            displayShorthandImages(shorthands);
+        } catch (error) {
+            console.error('Error fetching or processing JSON:', error);
+        }
+    }
+
+    function extractShorthands(data) {
+        const shorthandPattern = /:\w+:/g;
+        let shorthands = new Set();
+        function searchInObject(obj) {
+            for (let key in obj) {
+                if (typeof obj[key] === 'string') {
+                    const matches = obj[key].match(shorthandPattern);
+                    if (matches) {
+                        matches.forEach(match => shorthands.add(match));
+                    }
+                } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                    searchInObject(obj[key]);
+                }
+            }
+        }
+        searchInObject(data);
+        return Array.from(shorthands);
+    }
+
+    function displayShorthandImages(shorthands) {
+        const container = document.getElementById('shorthand-images');
+        const textbox = document.getElementById('textbox');
+        shorthands.forEach(shorthand => {
+            const shorthandKey = shorthand.replace(/:/g, ''); // Remove colons from shorthand
+            const imgUrl = `https://alcea-wisteria.de/z_files/emoji/${shorthandKey}.gif`;
+            const imgElement = document.createElement('img');
+            imgElement.src = imgUrl;
+            imgElement.alt = shorthandKey;
+            imgElement.title = shorthand;
+            imgElement.classList.add('emoji');
+            imgElement.onerror = () => {
+                imgElement.src = "";
+                imgElement.alt = "";
+            };
+            imgElement.onclick = () => {
+                // Send the selected shorthand to the parent window
+                parent.postMessage({ type: 'shorthandSelected', shorthand: shorthand }, '*');
+                textbox.value += shorthand + " ";  // Update the textarea in the iframe too
+            };
+            container.appendChild(imgElement);
+        });
+    }
+
+    // Fetch the JSON and process the data
+    fetchAndProcessJSON();
+
+    // Listen for messages from the parent window
+    window.addEventListener('message', (event) => {
+        // Ensure the message is from the parent
+        if (event.origin !== window.location.origin) return;
+
+        if (event.data.type === 'changeBackgroundColor') {
+            // Change background color based on the parent's message
+            document.body.style.backgroundColor = event.data.color;
+        }
+    });
+</script>
+
+<details><summary>ListenerCode4Parentiframe</summary><plaintext>
+<iframe src="/other/extra/scripts/fakesocialmedia/lastshorthands.html" id="iframe" width="600" height="100"></iframe> <br><hr>
+<script>
+    window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) {
+            return;
+        }
+        // If the iframe sends a shorthand selection message...
+        if (event.data.type === 'shorthandSelected') {
+            const textbox = document.getElementById('textbox');
+            textbox.value += event.data.shorthand + " ";
+        }
+    });
+    document.getElementById('parentBtn').addEventListener('click', () => {
+        const iframe = document.getElementById('iframe');
+        iframe.contentWindow.postMessage({
+            type: 'changeBackgroundColor',
+            color: 'lightgreen'
+        }, '*');
+    });
+</script>
+<textarea id="textbox" name="textbox" rows="4" cols="50"></textarea>

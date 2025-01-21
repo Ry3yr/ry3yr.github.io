@@ -1,0 +1,46 @@
+<h1>So whats 100%?</h1>
+   <meta charset="UTF-8">
+    If <input type="number" id="number" placeholder="number">
+    <input type="text" id="unit" value="minutes"> is 
+    <input type="number" id="percent" placeholder="-"> %<br><br>
+    <button onclick="calculate()">Calculate</button>
+    <p id="result"></p>
+    <script>
+        function calculate() {
+            var number = parseFloat(document.getElementById("number").value);
+            var unit = document.getElementById("unit").value;
+            var percent = parseFloat(document.getElementById("percent").value);
+            if (isNaN(number) || isNaN(percent) || unit === "") {
+                document.getElementById("result").innerText = "Please enter valid values!";
+                return;
+            }
+            var result = (number * 100) / percent;
+            document.getElementById("result").innerText = `then ${result} ${unit} is 100%.`;
+        }
+    </script>
+<hr>
+
+
+ <h1>This of that % calc</h1>
+ <input type="number" id="textfield1perc" placeholder="amount"> of 
+  <input type="number" id="textfield2perc" placeholder="amount"><br><br>
+  <button onclick="calculatePercentage()">Calculate Percentage</button><br><br>
+  <p id="resultperc"></p>
+
+  <script>
+    function calculatePercentage() {
+      var value1 = document.getElementById('textfield1perc').value;
+      var value2 = document.getElementById('textfield2perc').value;
+
+      if(value2 == 0) {
+        document.getElementById('result').innerText = 'Value 2 cannot be zero.';
+      } else if(value1 && value2) {
+        var percentage = (value1 / value2) * 100;
+        document.getElementById('resultperc').innerText = 'Percentage: ' + percentage.toFixed(2) + '%';
+      } else {
+        document.getElementById('resultperc').innerText = 'Please enter both values.';
+      }
+    }
+  </script>
+</body>
+</html>

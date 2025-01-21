@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!DOCTYPE html>
+<html lang="en">
+    <style>
+        .steps-container { display: flex; justify-content: space-between; padding: 10px; }
+        .step { background-color: #f2f2f2; padding: 15px; border-radius: 8px; width: 22%; text-align: center; transition: background-color 0.3s; }
+        .step a, .step button { color: #007BFF; text-decoration: none; font-weight: bold; margin-top: 10px; display: block; }
+        .step button { background-color: #007BFF; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; }
+        .step.completed { background-color: #28a745; }
+        .step-number { font-size: 18px; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="steps-container">
+        <div class="step" id="step-1"><div class="step-number">1</div><a href="https://accounts.nintendo.com/" target="_blank" onclick="markAsCompleted(event, 'step-1')">Login</a></div>
+        <div class="step" id="step-2"><div class="step-number">2</div><a href="https://ec.nintendo.com/my/transactions/1" target="_blank" onclick="markAsCompleted(event, 'step-2')">View Transactions</a></div>
+        <div class="step" id="step-3"><div class="step-number">3</div><a href="https://ec.nintendo.com/api/my/transactions?limit=100&offset=0" target="_blank" onclick="markAsCompleted(event, 'step-3')">Fetch Data</a></div>
+        <div class="step" id="step-4"><div class="step-number">4</div><button onclick="fillFromClipboard()">Paste</button></div>
+    </div>
+    <script>
+        function markAsCompleted(e, id) { e.preventDefault(); document.getElementById(id).classList.add('completed'); setTimeout(() => window.open(e.target.href, '_blank'), 300); }
+        function fillFromClipboard() { alert("Paste functionality triggered."); }
+    </script>
+
+<hr><br>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    button {
+      margin-right: 10px;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>eShop Purchases</h1>
+  <textarea id="jsonInput" placeholder="Paste your JSON here"></textarea>
+  <button onclick="formatTable()">Format Table</button>
+  <button onclick="removeZeroAmounts()">Remove Entries with 0,00 Amount</button>
+  <!--<button onclick="fillFromClipboard()">Fill from Clipboard</button>-->
+  <table id="outputTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Amount</th>
+        <th>Type</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+  <script>
+    let currentData = [];
+    function formatTable() {
+      const input = document.getElementById("jsonInput").value;
+      const tableBody = document.querySelector("#outputTable tbody");
+      tableBody.innerHTML = "";
+      try {
+        const jsonData = JSON.parse(input);
+        const transactions = jsonData.transactions;
+        currentData = transactions;
+        transactions.forEach(transaction => {
+          const row = document.createElement("tr");
+          const nameCell = document.createElement("td");
+          nameCell.textContent = transaction.title || "N/A";
+          row.appendChild(nameCell);
+          const amountCell = document.createElement("td");
+          amountCell.textContent = transaction.amount ? transaction.amount.formatted_value : "N/A";
+          row.appendChild(amountCell);
+          const typeCell = document.createElement("td");
+          typeCell.textContent = transaction.transaction_type || "N/A";
+          row.appendChild(typeCell);
+          const dateCell = document.createElement("td");
+          dateCell.textContent = transaction.date || "N/A";
+          row.appendChild(dateCell);
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        alert("Invalid JSON format. Please check your input.");
+      }
+    }
+    function removeZeroAmounts() {
+      const tableBody = document.querySelector("#outputTable tbody");
+      tableBody.innerHTML = "";
+      // Filter out entries where the formatted value is "0,00 €" or equivalent
+      const filteredData = currentData.filter(transaction => {
+        const amount = transaction.amount ? transaction.amount.formatted_value : null;
+        return amount && !amount.trim().startsWith("0,00");
+      });
+      filteredData.forEach(transaction => {
+        const row = document.createElement("tr");
+        const nameCell = document.createElement("td");
+        nameCell.textContent = transaction.title || "N/A";
+        row.appendChild(nameCell);
+        const amountCell = document.createElement("td");
+        amountCell.textContent = transaction.amount ? transaction.amount.formatted_value : "N/A";
+        row.appendChild(amountCell);
+        const typeCell = document.createElement("td");
+        typeCell.textContent = transaction.transaction_type || "N/A";
+        row.appendChild(typeCell);
+        const dateCell = document.createElement("td");
+        dateCell.textContent = transaction.date || "N/A";
+        row.appendChild(dateCell);
+        tableBody.appendChild(row);
+      });
+      currentData = filteredData;
+    }
+    async function fillFromClipboard() {
+      try {
+        const clipboardText = await navigator.clipboard.readText();
+        document.getElementById("jsonInput").value = clipboardText;
+      } catch (err) {
+        alert("Failed to read clipboard content. Please ensure the clipboard contains valid JSON.");
+        console.error("Clipboard error: ", err);
+      }
+    }
+  </script>
+</body>
+</html>

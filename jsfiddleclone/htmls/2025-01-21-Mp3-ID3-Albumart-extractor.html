@@ -1,0 +1,52 @@
+
+    <input type="file" id="fileInput" accept="audio/mp3" />
+    <div id="albumArtContainer">
+        <img id="albumArt" src="" alt="Album Art" style="max-widh: 300px;" />
+        <p id="imageFileName"></p> <!-- Display the file name -->
+    </div>
+    <br>
+
+    <!-- Details/ Spoiler Section for ID3 Tags -->
+    <details id="id3Details">
+        <summary>Click to view ID3 tags</summary>
+        <div id="id3TagContent"></div>
+    </details>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.js"></script>
+    <script type="text/javascript">
+        var jsmediatags = window.jsmediatags;
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            if (file) {
+                document.getElementById('imageFileName').textContent = "File name: " + file.name;
+                jsmediatags.read(file, {
+                    onSuccess: function(tag) {
+                        console.log(tag);
+                        if (tag.tags && tag.tags.picture) {
+                            var imageData = tag.tags.picture;
+                            var base64String = "";
+                            for (var i = 0; i < imageData.data.length; i++) {
+                                base64String += String.fromCharCode(imageData.data[i]);
+                            }
+                            var base64Image = "data:" + imageData.format + ";base64," + window.btoa(base64String);
+                            document.getElementById("albumArt").src = base64Image;
+                        }
+                        var id3TagContent = document.getElementById("id3TagContent");
+                        id3TagContent.innerHTML = `
+                            <strong>Title:</strong> ${tag.tags.title || 'N/A'}<br>
+                            <strong>Artist:</strong> ${tag.tags.artist || 'N/A'}<br>
+                            <strong>Album:</strong> ${tag.tags.album || 'N/A'}<br>
+                            <strong>Year:</strong> ${tag.tags.year || 'N/A'}<br>
+                            <strong>Genre:</strong> ${tag.tags.genre || 'N/A'}<br>
+                            <strong>Track:</strong> ${tag.tags.track || 'N/A'}<br>
+                            <strong>Composer:</strong> ${tag.tags.composer || 'N/A'}<br>
+                            <strong>Publisher:</strong> ${tag.tags.publisher || 'N/A'}<br>
+                        `;
+                    },
+                    onError: function(error) {
+                        console.log(error);
+                    }
+                });
+            }
+        });
+    </script>

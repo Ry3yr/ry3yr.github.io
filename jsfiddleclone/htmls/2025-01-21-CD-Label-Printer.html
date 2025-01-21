@@ -1,0 +1,167 @@
+<a target="_blank" href="https://www.ebay.de/itm/126333019567#https://www.topstick-labels.com/fileadmin/Buero-Zuhause/Content/TopStick/productimages/8696_EBD_1.jpg" style=color:blue>UseWith</a> *<a target="_blank" href="https://www.herma.co.uk/office-home/free-software/label-assistant-online-standalone/label-assistant-online-standalone/?tx_hermaeao_pi1%5barticle_id%5d=8696" style=color:blue>Online Assistant</a><hr><br>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Template Maker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .upload-buttons {
+            margin: 20px;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 210mm;
+            height: 297mm;
+            margin-top: 20px;
+            border: 1px solid #000;
+        }
+
+        .label {
+            position: absolute;
+            width: 117mm;
+            height: 117mm;
+            border: 1px solid #ccc;
+            overflow: hidden; 
+            border-radius: 50%; 
+        }
+
+        .label1 {
+            top: 21.5mm;
+            left: 46.5mm;
+        }
+
+        .label2 {
+            top: 158.5mm;
+            left: 46.5mm;
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Label Template Maker</h1>
+    <div class="container">
+        <div class="upload-buttons">
+            <input type="file" id="image1" accept="image/*">
+            <input type="file" id="image2" accept="image/*">
+        </div>
+        <div id="canvas-container">
+            <div id="label1" class="label label1">
+                <img id="img1" src="" alt="Label 1">
+            </div>
+            <div id="label2" class="label label2">
+                <img id="img2" src="" alt="Label 2">
+            </div>
+        </div>
+        <div class="button-container">
+            <button id="download">Download as Image</button>
+        </div>
+        <canvas id="finalCanvas" width="793" height="1122"></canvas>
+    </div>
+
+    <script>
+        const imageInput1 = document.getElementById('image1');
+        const imageInput2 = document.getElementById('image2');
+        const img1 = document.getElementById('img1');
+        const img2 = document.getElementById('img2');
+        const downloadButton = document.getElementById('download');
+        const finalCanvas = document.getElementById('finalCanvas');
+        const ctx = finalCanvas.getContext('2d');
+
+        function updateImage(input, imgElement) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imgElement.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        imageInput1.addEventListener('change', () => updateImage(imageInput1, img1));
+        imageInput2.addEventListener('change', () => updateImage(imageInput2, img2));
+
+        function drawCanvas() {
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+            const mmToPx = 3.779527559;
+            const labelWidth = 117 * mmToPx;
+            const labelHeight = 117 * mmToPx;
+
+            const img1Element = document.getElementById('img1');
+            const label1X = 46.5 * mmToPx;
+            const label1Y = 21.5 * mmToPx;
+            if (img1Element.src) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(
+                    label1X + labelWidth / 2,
+                    label1Y + labelHeight / 2,
+                    labelWidth / 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.clip();
+                ctx.drawImage(img1Element, label1X, label1Y, labelWidth, labelHeight);
+                ctx.restore();
+            }
+
+            const img2Element = document.getElementById('img2');
+            const label2X = 46.5 * mmToPx;
+            const label2Y = 158.5 * mmToPx;
+            if (img2Element.src) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(
+                    label2X + labelWidth / 2,
+                    label2Y + labelHeight / 2,
+                    labelWidth / 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.clip();
+                ctx.drawImage(img2Element, label2X, label2Y, labelWidth, labelHeight);
+                ctx.restore();
+            }
+        }
+
+        downloadButton.addEventListener('click', () => {
+            drawCanvas();
+            const link = document.createElement('a');
+            link.download = 'label-template.png';
+            link.href = finalCanvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>

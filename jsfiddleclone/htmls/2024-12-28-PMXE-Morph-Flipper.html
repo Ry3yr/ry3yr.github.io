@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip PMXE Morph Axes</title>
+</head>
+<body>
+    <h1>Flip PMXE Morph Axes</h1>
+    <textarea id="input" rows="10" cols="60" placeholder="Paste your PMXE morph data here..."></textarea><br>
+    <button onclick="flip('x')">Flip X-Axis</button>
+    <button onclick="flip('y')">Flip Y-Axis</button>
+    <button onclick="flip('z')">Flip Z-Axis</button>
+    <button onclick="saveToCSV()">Save to CSV</button>
+    <h2>Flipped Output:</h2>
+    <textarea id="output" rows="10" cols="60" readonly></textarea>
+
+    <script>
+        function flip(axis) {
+            const input = document.getElementById("input").value;
+            const lines = input.split("\n");
+
+            const flippedLines = lines.map(line => {
+                // Check if the line starts with "PmxVertexMorph"
+                if (!line.startsWith("PmxVertexMorph")) {
+                    return line; // Return the line unchanged if it doesn't start with "PmxVertexMorph"
+                }
+
+                // Split the line into parts (assumed comma-separated)
+                const parts = line.split(",");
+                if (parts.length < 6) return line; // Ignore lines that don't have enough data
+
+                // Extract X, Y, Z coordinates
+                const x = parseFloat(parts[3]);
+                const y = parseFloat(parts[4]);
+                const z = parseFloat(parts[5]);
+
+                // Flip the specified coordinate
+                if (axis === 'x') parts[3] = (-x).toString();
+                if (axis === 'y') parts[4] = (-y).toString();
+                if (axis === 'z') parts[5] = (-z).toString();
+
+                return parts.join(","); // Reconstruct the line
+            });
+
+            // Join the processed lines and update the output textarea
+            document.getElementById("output").value = flippedLines.join("\n");
+        }
+
+        function saveToCSV() {
+            const output = document.getElementById("output").value;
+            const blob = new Blob([output], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "flipped_morph.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
