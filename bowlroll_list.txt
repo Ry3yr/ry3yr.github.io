@@ -1,4 +1,67 @@
-ergoproxy_rel_mayer * (2024|12|24) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-ReL-Mayer-1137714602" style=color:blue>tDL</a> Combining mesh (vrm2pmx) and blendshapes (vroidplaypark) = perfect pmx export !
+dn_misaamane_(coda) * (2025|02|17) [VROID]  <a target="_blank" href="https://web.archive.org/web/20250217205448/https://yusaao.org/bowlroll/models/dn_misaamane_(coda).zip" style=color:blue>DL</a>
+platinumend_saki * (2025|02|17) [VROID] 
+sonic_cream_(vroid-hybrid) * (2025|02|16) A hybrid creamteherabbit version (head: vroid, mesh, sonicdreamtem)
+sonic_cream_(dreamteam) * (2025|02|16) Bah. Cream is always such a drag to work on. Can't make the eyes close properly...
+wikipetan * (2025|02|14) [VROID] 
+platinumend_mirai * (2025|02|13) [VROID] 
+hananoikuntokoinoyamai_hotaruhinase * (2025|02|12)
+platinumend_nasse * (2025|02|12) [VROID]  PlatinumEnd
+ygodm_amelda * (2025|02|11) [VROID] <a target="_blank" href="https://web.archive.org/web/20250211203624/https://yusaao.org/bowlroll/models/ygodm_amelda.zip" style=color:blue>DL</a> Amelda from DOMA (WakingTheDragons) yugioh Arc
+ygodm_ishizuishtar * (2025|02|11) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/Ygodm-Ishizu-ishtar-MMD-1158419514#https://web.archive.org/web/20250211162347/https://yusaao.org/bowlroll/models/ygodm_ishizuishtar.zip" style=color:blue>DL</a> Lil hybrid ishizu model (body: ygo frontlines, face: vroid)
+rnr_bly * (2025|02|11) Bly aka Burai feom RyuuseiNoRockman / MegamanStarforce (from XDIVE)
+ygo5ds_carlynagisa_(ds) * (2025|02|10) [VROID]  <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/1157710188#https://web.archive.org/web/20250211022036/https://yusaao.org/bowlroll/models/ygo5ds_carlynagisa_(ds).zip" style=color:blue>DL</a> As extracting models from tag force 4 is a pain.. I remade her from scratch.. (100th model !)
+ajin_yuutosaki * (2025|02|09) [VROID]  <a target="_blank" href="https://web.archive.org/web/20250209022249/https://yusaao.org/bowlroll/models/ajin_yuutosaki.zip" style=color:blue>DL</a>
+RMZ_Passy * (2025|02|08) [VROID] 
+RMZ_Zero_(DV) * (2025|02|07)
+RMZ_Ciel_pinkdress * (2025|02|07) <a target="_blank" href="https://web.archive.org/web/20250207125531/https://yusaao.org/bowlroll/models/RMZ_Ciel_pinkdress.zip" style=color:blue>DL</a> Ciel model based on an old pixiv artwork of mine
+AoiZaizen_CeaHoodie * (2025|02|06)
+sandland_beelzebub * (2025|02|06)
+mirainikki_yunogasai_(eternaltimenspace) * - (2025|02|05) [VROID]  <a target="_blank" href="https://web.archive.org/web/20250206053119/https://yusaao.org/bowlroll/models/mirainikki_yunogasai_(eternaltimenspace).zip" style=color:blue>DL</a> Final Yuno Gasai
+RMZ_zero_mythos * (2025|02|04) [VROID]  <a target="_blank" href="https://web.archive.org/web/20250204201619/https://yusaao.org/bowlroll/models/RMZ_zero_mythos.zip" style=color:blue>DL</a> A lil Rockman Zero Mythos model
+mirainikki_yukiteruamano * (2025|02|03) [VROID] 
+sonic_shadow * (2025|02|03) Shaodw the Edgehog
+mashle_mash * (2025|02|03)
+mashle_margaret * (2025|02|03) [VROID]  A lils Margret (MASHLE) model made in vroid. Y not.
+ps5r_joker_(exvius) * (2025|02|01) Joker from Persona5 (FF Exvius version)
+AoiZaizen_AerithGainsboroughVer * (2025|02|05) The Aerith to the Cloud in terms of VRAINS
+YusakuFujiki_CloudStrifeVer * (2025|02|01) <a target="_blank" href="https://web.archive.org/web/20250201125523/https://yusaao.org/bowlroll/models/YusakuFujiki_CloudStrifeVer.zip" style=color:blue>DL</a> A YusakuFujiki (CloudStrife) Advent Children version. Pretty !
+ffviiac_cloudstrife * (2025|01|31) face done in vroid, body from sbu advent children ver.
+sonic_creamtherabbit_(sf-style) * - (2025|01|30)
+stellarblade_lily * - (2025|01|26) [VROID] 
+suda51_sumiokodai * - (2025|01|22) [VROID]  "We have SumioMondo at home"
+dn_L * - (2025|01|15)
+umineko_beatrice * - (2025|01|14)  [VROID] <a target="_blank" href="https://web.archive.org/https://yusaao.org/bowlroll/models/umineko_beatrice.zip" style=color:blue>DL</a> 3 hour vroid <a target="_blank" href="https://youtu.be/xP7pQvw2xmM" style=color:blue>marathon</a>
+dfc-izelaire * - (2025|01|13) an AES key, UEViewer, a GTFL Export (textures) and psk export later and she is here. phew
+ffvi_terra_magitech * - (2025|01|12)
+neria * - (2025|01|11) - 1st unreal engine model.. And a real fail,  From<a target="_blank" href="https://youtu.be/Q7LvwX0JV8Q" style=color:blue>accurig acting up</a>', to hair being vertex stuck to the body,<br> and the vrm export not working.. <b> maybe remove longhair b4 accurig n readd later in pmxe?</b>
+nier_9salt * - (2025|01|10)
+itt_may * - (2025|01|09)
+dgmn_renamon * - (2025|01|07) A three finger model ?!!
+bunny_scylla_(bewitching) * - (2025|01|06)
+dn_lightyagami_casual * - (2025|01|06)
+dn_lightyagami * - (2025|01|06) accurig & faceit
+toi_iria * (2025|01|05) Iria form TalesOfInnocence (recyling the fake texture blendshapes from ange)
+kh_xion * (2025|01|05) A lil Xion model made in Vroid Studio (added LunarEclipse via VRMOne tool) [VROID] 
+cper_lucy * (2025|01|05) Lucy (CyberPunkEdgeRunners) based on a model I found on Sketchfab. Rigging her was noot fun.
+ffvii_cloudstrife-ac * (2025|01|04) Based on the nexusmod FFVIIR mod (PMX2VRM flipped up the eyeball weights.. <br>had to reExport in unity for em to look good...
+tloz_linkle * (2025|01|03) A lil linkle model. Accurig for body. Rest in PMXE
+toi_ange * (2025|01|03) First model that combines semi-texture blendshape (mouth) and sculpt blendshape (eyes))<br>FaceIt cannot work with anime faces.the mouth will not work (FF Brave Eyivus models were fine, as theyhad a mouthgap
+toi_rucamilda * (2025|01|02)
+ffvii_cloud * (2025|01|02) Done via accurig (body) and FaceIt (face)
+ffvii_aerith * (2025|01|01) Face-Blendshapes done via FaceIT, body via accurig<br> had to create "close eyes" blendshapes in PMXE as FaceIT flips those up always.. wat.
+reynatis_moa * (2025|01|01) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-Reynatis-Moa-1140990991" style=color:blue>DL</a> Moa from reynatis. Had the same eye issue as sari.. <br>and vrm-blendshape&texture editors CRASH on edit. nice. Bet her umbrella ist he issu :) (Readded rigged hands to complete the model (via accurig))
+nier_adam * (2025|01|01) Made face features with <a target="_blank" href="https://m.youtube.com/watch?v=Y6UB7i0byck" style=color:blue>FaceIT</a> (Blender) Body rig still incomplete, vroid one works fine tho. odd huh.
+acr_ash * (2024|12|31) FaceIt was not having the "face". And I accidentaly have the head mesh duplicated now.. grrreat.<br> You'd think having to sculpt the blinking and mouth move by hand was enough...
+drakengard_zero * (2024|12|31) Zero from Drakengard. Her right eye was so busted I had to replicate the left and use it as right (behind the flower) ugh
+twewy_nekusakuraba * (2024|12|31) Looks like PMX2VRM needs T-Pose stance models <a href=https://i.ibb.co/MPq6xgK/Screenshot-2024-12-31-02-16-39.jpg target=_blank>so it can work</a> ? (A-Pose models will err "Cannot read model")
+haven_yu * (2024|12|30) Yu from "HAVEN" - had to disable some tex from the fbx.<br>Again, the pmx2vrm caused excess hearteyes etc. which I disabled via transparent texture replace
+rnr_subaruhoshikawa * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/1140136162" style=color:blue>DL</a> (2024|12|30) [VROID]  Had to use DSSC and replace the heart etc emotes after adding hair in pmx.
+nier_kaine *(2024|12|29) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/1139725150" style=color:blue>DL</a> pmx2vrm makes the vrm work
+apex_alter * (2024|12|28) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-Alter-1139299694" style=color:blue>DL</a> Getting the .cast file work together with the .obj was a bit meh. But putting em ontop of e.o. and exporting into fbx in blender helped
+tott_rubianatwick *  (2024|12|26) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-Rubia-Natwick-n-Caius-Qualls-1138594636" style=color:blue>DL</a>
+tott_caiusqualls * (2024|12|26) <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-Rubia-Natwick-n-Caius-Qualls-1138594636" style=color:blue>DL</a> Based on TalesOfRay version
+gy_barokvanzieks *  (2024|12|25) <a target=_blank" href=https://www.deviantart.com/aoimatsuri/art/1138252614>DL</a> Barok had way too many hand- meshes. Dang.
+ergoproxy_rel_mayer * (2024|12|24) [VROID]  <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-ReL-Mayer-1137714602" style=color:blue>tDL</a> Combining mesh (vrm2pmx) and blendshapes (vroidplaypark) = perfect pmx export !
 tloz_hw_link *(2024|12|24) Somehow adding the eye control bone glitches link's right hand side index and pinky finger. So I left it out
 pl_katrielle * (2024|12|23) <a target="_blank" href=https://www.deviantart.com/aoimatsuri/art/1137278608>DL</a> Texture-only-Blendshapes were a no go for vrm so I had to make a new head in VROID...
 sonic_maria * (2024|12|22)
@@ -14,38 +77,37 @@ fxiii_hope * (2024|12|16)
 fxiii_lightning * (2024|12|15) Demo model for the workflow <a target="_blank" href="https://www.youtube.com/watch?v=fnawoxXDaAE&feature=youtu.be" style=color:blue>video</a>
 nier_akeha * (2024|12|15) finally a model that has bone-blendshape morphs AND was able to convert back from pmx to vrm. phew !
 Xion_khiii * (2024|12|14)
-2bkimono * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-2b-kimono-1084566265">DL</a>
+2bkimono * [VROID] <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-2b-kimono-1084566265">DL</a>
 2b_kimono
-AkinaUesugia * <a target="_blank" href="https://deviantart.com/aoikurayami1/art/MMD-Connie-and-Viktor-Akina-n-HikaruUesugia-1093034789">DL</a>
+AkinaUesugia * [VROID] <a target="_blank" href="https://deviantart.com/aoikurayami1/art/MMD-Connie-and-Viktor-Akina-n-HikaruUesugia-1093034789">DL</a>
 Albus * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Albus-n-Shanoa-Castlevania-OrderOfEcclesia-1093037509">DL</a>
-Allie * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Allie-1095378027">DL</a>
-AoiZaizen * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/Aoi-Zaizen-MMD-1091581433#deviantart.com/aoikurayami1/art/MMD-Holly-Aoi-1116442180">DL</a>
+Allie * [VROID]  <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Allie-1095378027">DL</a>
+AoiZaizen * [VROID] <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/Aoi-Zaizen-MMD-1091581433#deviantart.com/aoikurayami1/art/MMD-Holly-Aoi-1116442180">DL</a> (ygo) Aoi from Yu-GiOh! VRAINS
 astralchain_akirahoward_fem * <a target="_blank" href="https://deviantart.com/aoikurayami1/art/2024-10-19-MMD-Akira-Howard-Astral-Chain-1112102036">DL</a>
-ChiakiNagoya
-DaiFinFish
-dc_akaishuichi
-dc_akemimiyano
-dn_minorutanaka * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Minoru-Tanaka-1117176745">DL</a>
-GodEater_Shio
+ChiakiNagoya * [VROID] 
+DaiFinFish * [VROID] 
+dc_akaishuichi * [VROID] 
+dc_akemimiyano * [VROID] 
+dn_minorutanaka * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Minoru-Tanaka-1117176745">DL</a> [VROID] 
+GodEater_Shio * [VROID] 
 gy_trucywright * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Trucy-Wright-1097334440">DL</a>
-HikaruUesugi * <a target="_blank" href="https://deviantart.com/aoikurayami1/art/MMD-Connie-and-Viktor-Akina-n-HikaruUesugia-1093034789">DL</a>
-KokomiTeruhashi
-LunaShirogane
-MaronKusakabe * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-Maron-Kusakabe-1082970012">DL</a>
-MisoraHibiki * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MisoraHibiki-MMD-1081725651">DL</a>
+HikaruUesugi * <a target="_blank" href="https://deviantart.com/aoikurayami1/art/MMD-Connie-and-Viktor-Akina-n-HikaruUesugia-1093034789">DL</a> [VROID] 
+KokomiTeruhashi * [VROID] 
+LunaShirogane * [VROID] 
+MaronKusakabe * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-Maron-Kusakabe-1082970012">DL</a> [VROID] 
+MisoraHibiki * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MisoraHibiki-MMD-1081725651">DL</a> [VROID] 
 mp_zerosuitsamus * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Zero-Suit-Samus-1101246674">DL</a>
-PatriciaWoods
-RachelGardner
-Raetsel
-rexe_iris
+PatriciaWoods * <a target="_blank" href="https://web.archive.org/web/20250106181935/https://yusaao.org/bowlroll/models/PatriciaWoods.zip" style=color:blue>DL</a>
+RachelGardner * [VROID] 
+Raetsel * [VROID] 
+rexe_iris * [VROID] 
 reynatis_sari * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/WIP-MMD-Sari-Nijishima-Reynatis-1117081746">DL</a>
-Shanoa * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Albus-n-Shanoa-Castlevania-OrderOfEcclesia-1093037509">DL</a>
-ShokaSakurane
+Shanoa * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Albus-n-Shanoa-Castlevania-OrderOfEcclesia-1093037509">DL</a> [VROID] 
+ShokaSakurane * <a target="_blank" href="https://www.deviantart.com/aoimatsuri/art/MMD-ShokaSakurane-1142023255" style=color:blue>DL</a> [VROID] 
 TLoZ_Totk_QueenSonja
 VoidWalkerWraith
 yozora
-Zelda_Skywardsword
-zoe_miyona * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Myona-Alderan-1101601016">DL</a>
+Zelda_Skywardsword * [VROID] 
+zoe_miyona * <a target="_blank" href="https://www.deviantart.com/aoikurayami1/art/MMD-Myona-Alderan-1101601016">DL</a> [VROID] 
 blender_scripts * Software - Blender py script collection
 create_pmx_icon * Software <a target="_blank" href="https://ry3yr.github.io/create_pmx_icon.zip" style=color:blue>DL</a>
-fbx_tex_embed_(blender_sendto) * Software <a target="_blank" href="https://web.archive.org/web/20241222050619/https://yusaao.org/bowlroll/models/fbx_tex_embed_(blender_sendto).zip" style=color:blue>DL</a> to easily be able to embed a fbx's textures into a new fbx. (for Accurig!)
