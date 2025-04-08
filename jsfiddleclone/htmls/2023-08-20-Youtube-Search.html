@@ -17,14 +17,28 @@
 <body>
     <label for="api_key">API Key:</label>
     <input type="text" id="api_key" required><br><br>
+
     <label for="search_query">Search Query:</label>
     <input type="text" id="search_query" required><br><br>
+
     <label for="max_results">Max Results:</label>
     <input type="number" id="max_results" min="1" max="50" value="50" required><br><br>
+
     <input type="checkbox" id="show_additional_info">
-    <label for="show_additional_info">Show Additional Info</label><br><br>
+    <label for="show_additional_info">Show Additional Info</label><br>
+
+    <input type="checkbox" id="filter_shorts">
+    <label for="filter_shorts">Filter Out Shorts</label><br>
+
+    <input type="radio" name="sort_order" id="sort_newest" value="newest" checked>
+    <label for="sort_newest">Newest First</label>
+
+    <input type="radio" name="sort_order" id="sort_oldest" value="oldest">
+    <label for="sort_oldest">Oldest First</label><br><br>
+
     <button onclick="searchYouTube()">Search</button>
     <br><br>
+
     <div id="results"></div>
 
     <script>
@@ -33,61 +47,122 @@
             var searchQuery = document.getElementById('search_query').value;
             var maxResults = document.getElementById('max_results').value;
             var showAdditionalInfo = document.getElementById('show_additional_info').checked;
+            var filterShorts = document.getElementById('filter_shorts').checked;
+            var sortOrder = document.querySelector('input[name="sort_order"]:checked').value;
 
             var apiUrl = 'https://www.googleapis.com/youtube/v3/search';
-            var requestUrl = apiUrl + '?part=snippet&maxResults=' + maxResults + '&q=' + encodeURIComponent(searchQuery) + '&key=' + apiKey;
+            var requestUrl = apiUrl + '?part=snippet&maxResults=' + maxResults + '&q=' + encodeURIComponent(searchQuery) + '&key=' + apiKey + '&type=video&order=date';
 
             fetch(requestUrl)
                 .then(function(response) {
                     return response.json();
                 })
                 .then(function(data) {
+                    var videos = data.items;
+
+                    // Sort if needed
+                    videos.sort(function(a, b) {
+                        var dateA = new Date(a.snippet.publishedAt);
+                        var dateB = new Date(b.snippet.publishedAt);
+                        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                    });
+
                     var resultsDiv = document.getElementById('results');
                     resultsDiv.innerHTML = '';
 
-                    data.items.forEach(function(item) {
+                    var videoDetailsPromises = videos.map(function(item) {
                         if (item.id.kind === 'youtube#video') {
-                            var videoId = item.id.videoId;
-                            var title = item.snippet.title;
-                            var link = 'https://www.youtube.com/watch?v=' + videoId;
-
-                            var titleElement = document.createElement('p');
-                            titleElement.textContent = 'Title: ' + title;
-
-                            if (showAdditionalInfo) {
-                                var channelId = item.snippet.channelId;
-                                var channelTitle = item.snippet.channelTitle;
-                                var uploadDate = item.snippet.publishedAt;
-
-                                var channelElement = document.createElement('p');
-                                channelElement.classList.add('additional-info');
-                                channelElement.textContent = 'Channel: ' + channelTitle + ' (ID: ' + channelId + ')';
-
-                                var uploadDateElement = document.createElement('p');
-                                uploadDateElement.classList.add('additional-info');
-                                uploadDateElement.textContent = 'Upload Date: ' + uploadDate;
-
-                                resultsDiv.appendChild(channelElement);
-                                resultsDiv.appendChild(uploadDateElement);
-                            }
-
-                            var linkElement = document.createElement('a');
-                            linkElement.href = link;
-                            linkElement.textContent = 'Link';
-                            linkElement.target = '_blank'; // Add target="_blank" attribute
-
-                            resultsDiv.appendChild(titleElement);
-                            resultsDiv.appendChild(linkElement);
-                            resultsDiv.appendChild(document.createElement('br'));
+                            return fetchVideoDetails(item.id.videoId, apiKey, showAdditionalInfo, filterShorts, resultsDiv);
                         }
                     });
+
+                    // Wait for all video details to be fetched
+                    Promise.all(videoDetailsPromises)
+                        .then(function() {
+                            // Render results after fetching all video details
+                        })
+                        .catch(function(error) {
+                            console.log('Error:', error);
+                        });
                 })
                 .catch(function(error) {
                     console.log('Error:', error);
                 });
         }
 
-        // Prefill API Key if present in the URL
+        function fetchVideoDetails(videoId, apiKey, showAdditionalInfo, filterShorts, resultsDiv) {
+            var videoDetailsUrl = 'https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=' + videoId + '&key=' + apiKey;
+
+            return fetch(videoDetailsUrl)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(videoData) {
+                    var video = videoData.items[0];
+                    var duration = parseDuration(video.contentDetails.duration);
+                    var title = video.snippet.title;
+                    var channelTitle = video.snippet.channelTitle;
+                    var publishDate = video.snippet.publishedAt;
+                    var link = 'https://www.youtube.com/watch?v=' + videoId;
+
+                    // Filter out shorts or videos with a duration less than 61 seconds
+                    if ((filterShorts && (title.toLowerCase().includes('shorts') || link.includes('/shorts/'))) || duration < 62) {
+                        return;
+                    }
+
+                    var titleElement = document.createElement('p');
+                    titleElement.textContent = 'Title: ' + title;
+
+                    if (showAdditionalInfo) {
+                        var channelElement = document.createElement('p');
+                        channelElement.classList.add('additional-info');
+                        channelElement.textContent = 'Channel: ' + channelTitle;
+
+                        var dateElement = document.createElement('p');
+                        dateElement.classList.add('additional-info');
+                        dateElement.textContent = 'Upload Date: ' + publishDate;
+
+                        var durationElement = document.createElement('p');
+                        durationElement.classList.add('additional-info');
+                        durationElement.textContent = 'Duration: ' + duration + ' seconds';
+
+                        resultsDiv.appendChild(channelElement);
+                        resultsDiv.appendChild(dateElement);
+                        resultsDiv.appendChild(durationElement);
+                    }
+
+                    var linkElement = document.createElement('a');
+                    linkElement.href = link;
+                    linkElement.textContent = 'Link';
+                    linkElement.target = '_blank';
+
+                    var copyButton = document.createElement('button');
+                    copyButton.textContent = 'Copy';
+                    copyButton.style.backgroundColor = 'transparent';
+                    copyButton.style.border = 'none';
+                    copyButton.addEventListener('click', function() {
+                        var textToCopy = '#CurrListeningAlcea\n' + title + '\n' + link;
+                        navigator.clipboard.writeText(textToCopy).catch(console.error);
+                    });
+
+                    resultsDiv.appendChild(titleElement);
+                    resultsDiv.appendChild(linkElement);
+                    resultsDiv.appendChild(copyButton);
+                    resultsDiv.appendChild(document.createElement('br'));
+                });
+        }
+
+        function parseDuration(duration) {
+            // Duration format is ISO 8601 (e.g., PT1H2M30S)
+            var regex = /PT(\d+H)?(\d+M)?(\d+S)?/;
+            var matches = regex.exec(duration);
+            var hours = parseInt(matches[1]) || 0;
+            var minutes = parseInt(matches[2]) || 0;
+            var seconds = parseInt(matches[3]) || 0;
+
+            return hours * 3600 + minutes * 60 + seconds;
+        }
+
         window.onload = function() {
             var urlParams = new URLSearchParams(window.location.search);
             var apiKey = urlParams.get('apikey');
