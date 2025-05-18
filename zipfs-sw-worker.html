@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ZIP-FS Demo</title>
+  <style>
+    body { font-family: monospace; white-space: pre-wrap; background: #222; color: #eee; padding: 1rem; }
+    #log { max-height: 30vh; overflow-y: auto; border: 1px solid #555; padding: 1rem; background: #111; }
+    iframe { 
+      width: 100%; 
+      height: 60vh; 
+      border: 2px solid #555; 
+      margin-top: 1rem; 
+      background: white; 
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <h1>ZIP-FS Demo Logs</h1>
+  <pre id="log">Loading logs...\n</pre>
+
+  <iframe id="zipfs-iframe" src="/index.html" title="ZIPFS index.html"></iframe>
+
+  <script>
+    const logEl = document.getElementById('log');
+    function log(...args) {
+      const msg = '[ZIPFS] ' + args.join(' ');
+      console.log(msg);
+      logEl.textContent += msg + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    if ('serviceWorker' in navigator) {
+      log('Registering Service Worker...');
+      navigator.serviceWorker.register('/zipfs-sw.js').then(reg => {
+        log('Service Worker registration succeeded:', reg);
+        log('Service Worker state:', reg.active?.state || reg.installing?.state || 'unknown');
+
+        if (!navigator.serviceWorker.controller) {
+          log('Page not yet controlled. Reload to activate Service Worker.');
+        }
+
+        navigator.serviceWorker.oncontrollerchange = () => {
+          log('Controller changed. Page is now controlled by Service Worker.');
+          // Reload the iframe to get the latest controlled content
+          document.getElementById('zipfs-iframe').contentWindow.location.reload();
+        };
+      }).catch(err => {
+        log('Service Worker registration failed:', err);
+      });
+
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data?.type === 'SW_LOG') {
+          log(event.data.text);
+        }
+      });
+    } else {
+      log('Service Workers not supported in this browser.');
+    }
+  </script>
+</body>
+</html>
