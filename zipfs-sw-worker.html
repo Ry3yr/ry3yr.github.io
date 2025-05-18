@@ -14,13 +14,23 @@
       background: white; 
       color: black;
     }
+    a.link-root {
+      display: inline-block;
+      margin-top: 1rem;
+      color: #6cf;
+      text-decoration: underline;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h1>ZIP-FS Demo Logs</h1>
   <pre id="log">Loading logs...\n</pre>
 
-  <iframe id="zipfs-iframe" src="/index.html" title="ZIPFS index.html"></iframe>
+  <!-- Friendly URL link -->
+  <a href="/root" target="zipfs-iframe" class="link-root">Open Root (/root)</a>
+
+  <iframe id="zipfs-iframe" src="/root" title="ZIPFS root" name="zipfs-iframe"></iframe>
 
   <script>
     const logEl = document.getElementById('log');
@@ -38,12 +48,13 @@
         log('Service Worker state:', reg.active?.state || reg.installing?.state || 'unknown');
 
         if (!navigator.serviceWorker.controller) {
-          log('Page not yet controlled. Reload to activate Service Worker.');
+          log('Page not yet controlled. Please reload the page manually to activate Service Worker.');
+          // No auto reload here
         }
 
         navigator.serviceWorker.oncontrollerchange = () => {
           log('Controller changed. Page is now controlled by Service Worker.');
-          // Reload the iframe to get the latest controlled content
+          // Reload iframe on controller change
           document.getElementById('zipfs-iframe').contentWindow.location.reload();
         };
       }).catch(err => {

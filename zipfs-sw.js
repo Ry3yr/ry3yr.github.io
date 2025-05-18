@@ -2,8 +2,8 @@ importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
 
 const ZIP_URL = 'https://ry3yr.github.io/alceawis.de.zip';
 const files = new Map();
+let zipReady = false;
 
-// Helper: send logs to SW console + page via postMessage
 function swLog(...args) {
   const message = '[ZIPFS SW] ' + args.join(' ');
   console.log(message);
@@ -34,6 +34,7 @@ self.addEventListener('activate', event => {
       const entries = Object.values(zip.files);
       for (const entry of entries) {
         if (entry.dir) continue;
+        // Strip first directory component if present:
         const path = '/' + entry.name.split('/').slice(1).join('/');
         const content = await entry.async('uint8array');
         files.set(path, content);
@@ -41,6 +42,7 @@ self.addEventListener('activate', event => {
         count++;
       }
 
+      zipReady = true;
       swLog('unzip done –', count, 'files');
       return self.clients.claim();
     }).catch(err => {
@@ -53,7 +55,18 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   let path = url.pathname;
 
-  if (path === '/') path = '/index.html';
+  // Map friendly URLs to /index.html
+  if (path === '/' || path === '/root' || path === '/home') {
+    path = '/index.html';
+  }
+
+  if (!zipReady) {
+    event.respondWith(new Response(
+      '<h1>Service Worker ZIP still loading...</h1><p>Please reload after a moment.</p>',
+      { headers: { 'Content-Type': 'text/html' }, status: 503 }
+    ));
+    return;
+  }
 
   const file = files.get(path);
   if (file) {
@@ -61,6 +74,12 @@ self.addEventListener('fetch', event => {
     swLog('Serving', path, 'as', type);
     event.respondWith(new Response(file, {
       headers: { 'Content-Type': type }
+    }));
+  } else {
+    swLog('File not found in ZIP:', path);
+    event.respondWith(new Response('<h1>404 Not Found</h1>', {
+      headers: { 'Content-Type': 'text/html' },
+      status: 404
     }));
   }
 });
