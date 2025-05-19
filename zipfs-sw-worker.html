@@ -30,15 +30,23 @@
   <!-- Friendly URL link -->
   <a href="/root" target="zipfs-iframe" class="link-root">Open Root (/root)</a>
 
-  <iframe id="zipfs-iframe" src="/root" title="ZIPFS root" name="zipfs-iframe"></iframe>
+  <!-- Leave iframe src blank initially -->
+  <iframe id="zipfs-iframe" title="ZIPFS root" name="zipfs-iframe"></iframe>
 
   <script>
     const logEl = document.getElementById('log');
+    const iframe = document.getElementById('zipfs-iframe');
+
     function log(...args) {
       const msg = '[ZIPFS] ' + args.join(' ');
       console.log(msg);
       logEl.textContent += msg + '\n';
       logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function loadIframe() {
+      log('Setting iframe src to /root');
+      iframe.src = '/root';
     }
 
     if ('serviceWorker' in navigator) {
@@ -48,14 +56,16 @@
         log('Service Worker state:', reg.active?.state || reg.installing?.state || 'unknown');
 
         if (!navigator.serviceWorker.controller) {
-          log('Page not yet controlled. Please reload the page manually to activate Service Worker.');
-          // No auto reload here
+          log('Page not yet controlled. Reloading in 500ms...');
+          setTimeout(() => location.reload(), 500);
+        } else {
+          // SW already controlling → safe to load iframe
+          loadIframe();
         }
 
         navigator.serviceWorker.oncontrollerchange = () => {
-          log('Controller changed. Page is now controlled by Service Worker.');
-          // Reload iframe on controller change
-          document.getElementById('zipfs-iframe').contentWindow.location.reload();
+          log('Controller changed. Reloading page...');
+          location.reload();
         };
       }).catch(err => {
         log('Service Worker registration failed:', err);

@@ -1,104 +1,106 @@
+/*  zipfs-sw.js  */
 importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
 
 const ZIP_URL = 'https://ry3yr.github.io/alceawis.de.zip';
-const files = new Map();
-let zipReady = false;
+const files   = new Map();
+
+/* Promise that resolves when the ZIP has finished loading */
+let zipReadyResolve;
+const zipReadyPromise = new Promise(res => { zipReadyResolve = res; });
 
 function swLog(...args) {
-  const message = '[ZIPFS SW] ' + args.join(' ');
-  console.log(message);
-  self.clients.matchAll().then(clients => {
-    for (const client of clients) {
-      client.postMessage({ type: 'SW_LOG', text: message });
-    }
-  });
+  const msg = '[ZIPFS SW] ' + args.join(' ');
+  console.log(msg);
+  self.clients.matchAll().then(clients =>
+    clients.forEach(c => c.postMessage({ type: 'SW_LOG', text: msg }))
+  );
 }
 
-self.addEventListener('install', event => {
-  swLog('installing...');
+/* ----- install ----------------------------------------------------------- */
+self.addEventListener('install', () => {
+  swLog('Installing…');
   self.skipWaiting();
 });
 
+/* ----- activate: download + unzip --------------------------------------- */
 self.addEventListener('activate', event => {
-  swLog('activate → downloading ZIP...');
+  swLog('Activating → downloading ZIP…');
   event.waitUntil(
-    fetch(ZIP_URL, { mode: 'cors' }).then(async r => {
+    (async () => {
+      const r = await fetch(ZIP_URL, { mode: 'cors' });
       swLog('ZIP fetch status:', r.status);
       if (!r.ok) throw new Error('ZIP fetch failed');
+
       const buf = await r.arrayBuffer();
+      swLog('Unzipping…');
+      const zip   = await JSZip.loadAsync(buf);
+      let   count = 0;
 
-      swLog('unzip starting...');
-      const zip = await JSZip.loadAsync(buf);
-      let count = 0;
-
-      const entries = Object.values(zip.files);
-      for (const entry of entries) {
+      for (const entry of Object.values(zip.files)) {
         if (entry.dir) continue;
-        // Strip first directory component if present:
-        const path = '/' + entry.name.split('/').slice(1).join('/');
+        const path    = '/' + entry.name.split('/').slice(1).join('/');
         const content = await entry.async('uint8array');
         files.set(path, content);
-        swLog('→', path, `(${content.length} bytes)`);
+        swLog('→', path, `(${content.length} bytes)`);
         count++;
       }
 
-      zipReady = true;
-      swLog('unzip done –', count, 'files');
-      return self.clients.claim();
-    }).catch(err => {
-      swLog('ZIP load failed:', err);
-    })
+      swLog('Unzip done –', count, 'files');
+      zipReadyResolve();
+      await self.clients.claim();
+    })().catch(err => swLog('ZIP load failed:', err))
   );
 });
 
+/* ----- fetch ------------------------------------------------------------- */
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  /* 1️⃣  Let cross‑origin requests go to the network untouched */
+  if (url.origin !== self.location.origin) return;
+
+  /* 2️⃣  Friendly URLs: “/”, “/root”, “/home” → “/index.html” */
   let path = url.pathname;
+  if (path === '/' || path === '/root' || path === '/home') path = '/index.html';
 
-  // Map friendly URLs to /index.html
-  if (path === '/' || path === '/root' || path === '/home') {
-    path = '/index.html';
-  }
+  event.respondWith(
+    (async () => {
+      /* Wait until the ZIP is ready */
+      await zipReadyPromise;
 
-  if (!zipReady) {
-    event.respondWith(new Response(
-      '<h1>Service Worker ZIP still loading...</h1><p>Please reload after a moment.</p>',
-      { headers: { 'Content-Type': 'text/html' }, status: 503 }
-    ));
-    return;
-  }
+      const file = files.get(path);
+      if (file) {
+        swLog('Serving', path, 'from ZIP');
+        return new Response(file, { headers: { 'Content-Type': guessType(path) } });
+      }
 
-  const file = files.get(path);
-  if (file) {
-    const type = guessType(path);
-    swLog('Serving', path, 'as', type);
-    event.respondWith(new Response(file, {
-      headers: { 'Content-Type': type }
-    }));
-  } else {
-    swLog('File not found in ZIP:', path);
-    event.respondWith(new Response('<h1>404 Not Found</h1>', {
-      headers: { 'Content-Type': 'text/html' },
-      status: 404
-    }));
-  }
+      /* 3️⃣  Same‑origin file not in ZIP → fall back to network */
+      swLog('Not in ZIP, fetching from network:', path);
+      try {
+        return await fetch(event.request);
+      } catch (err) {
+        swLog('Network fetch failed:', err);
+        return new Response('<h1>Offline & not cached</h1>', {
+          headers: { 'Content-Type': 'text/html' },
+          status : 503
+        });
+      }
+    })()
+  );
 });
 
-function guessType(path) {
-  return path.endsWith('.html') ? 'text/html'
-    : path.endsWith('.js') ? 'application/javascript'
-    : path.endsWith('.css') ? 'text/css'
-    : path.endsWith('.json') ? 'application/json'
-    : path.endsWith('.png') ? 'image/png'
-    : path.endsWith('.jpg') || path.endsWith('.jpeg') ? 'image/jpeg'
-    : path.endsWith('.svg') ? 'image/svg+xml'
-    : 'application/octet-stream';
+/* ----- helpers ----------------------------------------------------------- */
+function guessType(p) {
+  return p.endsWith('.html')             ? 'text/html'            :
+         p.endsWith('.js')               ? 'application/javascript':
+         p.endsWith('.css')              ? 'text/css'             :
+         p.endsWith('.json')             ? 'application/json'     :
+         p.endsWith('.png')              ? 'image/png'            :
+         p.endsWith('.jpg')||p.endsWith('.jpeg') ? 'image/jpeg'    :
+         p.endsWith('.svg')              ? 'image/svg+xml'        :
+         'application/octet-stream';
 }
 
-// Error catching
-self.addEventListener('error', e => {
-  swLog('error:', e.message, e.filename, e.lineno, e.colno);
-});
-self.addEventListener('unhandledrejection', e => {
-  swLog('unhandled promise rejection:', e.reason);
-});
+/* Optional error logging */
+self.addEventListener('error',             e => swLog('Error:', e.message));
+self.addEventListener('unhandledrejection',e => swLog('Unhandled rejection:', e.reason));
