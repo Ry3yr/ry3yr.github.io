@@ -27,8 +27,10 @@
   <h1>ZIP-FS Demo Logs</h1>
   <pre id="log">Loading logs...\n</pre>
 
+  <!-- Friendly URL link -->
   <a href="/root" target="zipfs-iframe" class="link-root">Open Root (/root)</a>
 
+  <!-- Leave iframe src blank initially -->
   <iframe id="zipfs-iframe" title="ZIPFS root" name="zipfs-iframe"></iframe>
 
   <script>
@@ -50,12 +52,14 @@
     if ('serviceWorker' in navigator) {
       log('Registering Service Worker...');
       navigator.serviceWorker.register('/zipfs-sw.js').then(reg => {
-        log('Service Worker registered:', reg);
+        log('Service Worker registration succeeded:', reg);
+        log('Service Worker state:', reg.active?.state || reg.installing?.state || 'unknown');
 
         if (!navigator.serviceWorker.controller) {
-          log('WARNING: Service Worker not controlling page yet. Reloading in 500ms...');
+          log('Page not yet controlled. Reloading in 500ms...');
           setTimeout(() => location.reload(), 500);
         } else {
+          // SW already controlling → safe to load iframe
           loadIframe();
         }
 

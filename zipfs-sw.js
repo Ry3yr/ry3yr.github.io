@@ -1,8 +1,10 @@
-importScripts('jszip.min.js');
+/*  zipfs-sw.js  */
+importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
 
 const ZIP_URL = 'https://ry3yr.github.io/alceawis.de.zip';
-const files = new Map();
+const files   = new Map();
 
+/* Promise that resolves when the ZIP has finished loading */
 let zipReadyResolve;
 const zipReadyPromise = new Promise(res => { zipReadyResolve = res; });
 
@@ -20,39 +22,33 @@ self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-/* ----- activate ---------------------------------------------------------- */
+/* ----- activate: download + unzip --------------------------------------- */
 self.addEventListener('activate', event => {
-  swLog('Activating and claiming clients immediately');
+  swLog('Activating → downloading ZIP…');
   event.waitUntil(
     (async () => {
-      await self.clients.claim();
-      swLog('Clients claimed, now downloading ZIP');
-      try {
-        const r = await fetch(ZIP_URL, { mode: 'cors' });
-        swLog('ZIP fetch status:', r.status);
-        if (!r.ok) throw new Error('ZIP fetch failed');
+      const r = await fetch(ZIP_URL, { mode: 'cors' });
+      swLog('ZIP fetch status:', r.status);
+      if (!r.ok) throw new Error('ZIP fetch failed');
 
-        const buf = await r.arrayBuffer();
-        swLog('Unzipping…');
-        const zip = await JSZip.loadAsync(buf);
-        let count = 0;
+      const buf = await r.arrayBuffer();
+      swLog('Unzipping…');
+      const zip   = await JSZip.loadAsync(buf);
+      let   count = 0;
 
-        for (const entry of Object.values(zip.files)) {
-          if (entry.dir) continue;
-          const path = '/' + entry.name; // Use full name, no slice
-          const content = await entry.async('uint8array');
-          files.set(path, content);
-          swLog('→', path, `(${content.length} bytes)`);
-          count++;
-        }
-
-        swLog('Unzip done –', count, 'files');
-        zipReadyResolve();
-      } catch (err) {
-        swLog('ZIP load failed:', err);
-        zipReadyResolve(); // Resolve anyway so fetch handlers don't hang
+      for (const entry of Object.values(zip.files)) {
+        if (entry.dir) continue;
+        const path    = '/' + entry.name.split('/').slice(1).join('/');
+        const content = await entry.async('uint8array');
+        files.set(path, content);
+        swLog('→', path, `(${content.length} bytes)`);
+        count++;
       }
-    })()
+
+      swLog('Unzip done –', count, 'files');
+      zipReadyResolve();
+      await self.clients.claim();
+    })().catch(err => swLog('ZIP load failed:', err))
   );
 });
 
@@ -60,39 +56,37 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
+  /* 1️⃣  Let cross‑origin requests go to the network untouched */
   if (url.origin !== self.location.origin) return;
 
+  /* 2️⃣  Friendly URLs: “/”, “/root”, “/home” → “/index.html” */
   let path = url.pathname;
   if (path === '/' || path === '/root' || path === '/home') path = '/index.html';
 
-  event.respondWith((async () => {
-    await zipReadyPromise;
+  event.respondWith(
+    (async () => {
+      /* Wait until the ZIP is ready */
+      await zipReadyPromise;
 
-    const file = files.get(path);
-    if (file) {
-      swLog('Serving', path, 'from ZIP');
-      return new Response(file, { headers: { 'Content-Type': guessType(path) } });
-    }
+      const file = files.get(path);
+      if (file) {
+        swLog('Serving', path, 'from ZIP');
+        return new Response(file, { headers: { 'Content-Type': guessType(path) } });
+      }
 
-    if (path === '/index.html') {
-      swLog('ERROR: /index.html not found in ZIP, returning error page');
-      return new Response('<h1>Error: index.html not found in ZIP and cannot load from network.</h1>', {
-        status: 503,
-        headers: { 'Content-Type': 'text/html' }
-      });
-    }
-
-    swLog('Not in ZIP, fetching from network:', path);
-    try {
-      return await fetch(event.request);
-    } catch (err) {
-      swLog('Network fetch failed:', err);
-      return new Response('<h1>Offline & not cached</h1>', {
-        status: 503,
-        headers: { 'Content-Type': 'text/html' }
-      });
-    }
-  })());
+      /* 3️⃣  Same‑origin file not in ZIP → fall back to network */
+      swLog('Not in ZIP, fetching from network:', path);
+      try {
+        return await fetch(event.request);
+      } catch (err) {
+        swLog('Network fetch failed:', err);
+        return new Response('<h1>Offline & not cached</h1>', {
+          headers: { 'Content-Type': 'text/html' },
+          status : 503
+        });
+      }
+    })()
+  );
 });
 
 /* ----- helpers ----------------------------------------------------------- */
