@@ -1,6 +1,6 @@
 importScripts('jszip.min.js');
 
-const ZIP_URL = 'alceawis.de.zip';
+const ZIP_URL = 'https://ry3yr.github.io/alceawis.de.zip';
 const files = new Map();
 
 let zipReadyResolve;
