@@ -1,0 +1,87 @@
+ <title>Dehumidifier Calculator</title>
+</head>
+<body>
+  <h2>Dehumidifier Time Calculator</h2>
+
+  <label>Start RH (%): <input type="number" id="startRH" value="55"></label><br>
+  <label>Target RH (%): <input type="number" id="targetRH" value="45"></label><br>
+  <label>Room Area (m²): <input type="number" id="area" value="18"></label><br>
+  <label>Ceiling Height (m): <input type="number" id="height" value="2.5"></label><br>
+  <label>Rated Capacity (L/day at ideal conditions): <input type="number" id="capacity" value="10"></label><br>
+  <label>Power (W): <input type="number" id="power" value="165"></label><br>
+  <label>Airflow (m³/h): <input type="number" id="airflow" value="265"></label><br>
+  <label>People in Room: <input type="number" id="people" value="1"></label><br><br>
+
+  <button onclick="calculateRealisticTime()">Calculate Time</button>
+
+  <h3 id="result"></h3>
+
+  <script>
+    function simulateTime(startRH, targetRH, volume, maxVapor, baseRateLPerHour, humanLPerHour) {
+      let totalTimeHours = 0;
+      let currentRH = startRH;
+
+      while (currentRH > targetRH && totalTimeHours < 48) {
+        const absCurrent = maxVapor * (currentRH / 100);
+        const absNext = maxVapor * ((currentRH - 1) / 100);
+        const deltaL = ((absCurrent - absNext) * volume) / 1000;
+
+        const rhEfficiency = Math.min(1, Math.max(0.3, (currentRH - 35) / 25));
+        const effectiveRate = baseRateLPerHour * rhEfficiency - humanLPerHour;
+
+        if (effectiveRate <= 0) return Infinity;
+
+        const timeStep = deltaL / effectiveRate;
+        totalTimeHours += timeStep;
+        currentRH -= 1;
+      }
+
+      return totalTimeHours;
+    }
+
+    function calculateRealisticTime() {
+      const startRH = parseFloat(document.getElementById('startRH').value);
+      const targetRH = parseFloat(document.getElementById('targetRH').value);
+      const area = parseFloat(document.getElementById('area').value);
+      const height = parseFloat(document.getElementById('height').value);
+      const capacityLDay = parseFloat(document.getElementById('capacity').value);
+      const powerW = parseFloat(document.getElementById('power').value);
+      const airflow = parseFloat(document.getElementById('airflow').value);
+      const people = parseInt(document.getElementById('people').value);
+
+      const volume = area * height;
+      const maxVapor = 17.3;
+      const idealRate = capacityLDay / 24;
+
+      const rhFactor = (startRH - 30) / (80 - 30);
+      const tempFactor = 20 / 30;
+      const airflowFactor = Math.min(1, airflow / 300);
+      const realWorldEfficiency = Math.max(0.3, rhFactor * tempFactor * airflowFactor);
+      const baseRateLPerHour = idealRate * realWorldEfficiency;
+
+      const humanMoisturePerHour = people * 0.05;
+      const timeWithHumans = simulateTime(startRH, targetRH, volume, maxVapor, baseRateLPerHour, humanMoisturePerHour);
+      const timeWithoutHumans = simulateTime(startRH, targetRH, volume, maxVapor, baseRateLPerHour, 0);
+
+      if (!isFinite(timeWithHumans)) {
+        document.getElementById('result').innerText = 
+          `Remove external humidity sources.Reaching humidity levels with current gear is impossible`;
+        return;
+      }
+
+      const totalMinutes = timeWithHumans * 60;
+      const extraTime = timeWithHumans - timeWithoutHumans;
+      const perPersonTime = people > 0 ? extraTime / people : 0;
+
+      let message = `Estimated Time: ${timeWithHumans.toFixed(2)} hours (${totalMinutes.toFixed(0)} minutes)`;
+
+      if (people > 0) {
+        message += `<br>ExtraSources +${extraTime.toFixed(2)} hours total`;
+        message += `<br>Each person adds approx. ${perPersonTime.toFixed(2)} hours`;
+      }
+
+      document.getElementById('result').innerHTML = message;
+    }
+  </script>
+</body>
+</html>

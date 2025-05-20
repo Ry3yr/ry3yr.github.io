@@ -1,0 +1,26 @@
+[
+    {
+        "date": "2025-04-30",
+        "time": "10.30.00",
+        "text": "Terrible day \"Yuno\"",
+        "color": "lightpink"
+    },
+    {
+        "date": "2025-05-26",
+        "time": "09.16.10",
+        "text": "Test",
+        "color": "lightgreen"
+    },
+    {
+        "date": "2025-05-18",
+        "time": "09.24.53",
+        "text": "Nothiiiing !",
+        "color": "lightyellow"
+    },
+    {
+        "date": "2025-05-14",
+        "time": "09.25.26",
+        "text": "last",
+        "color": "lightblue"
+    }
+]

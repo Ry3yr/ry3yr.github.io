@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Full Year Calendar with Events</title>
+<style>
+body { margin: 20px; font-family: Arial, sans-serif; background: #f0f0f0; }
+.wrapper { display: flex; gap: 30px; align-items: flex-start; }
+.calendar-wrap { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,0,0,.1); }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.calendar-header button { padding: 5px 10px; background: #2196f3; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+.calendar-header span { font-size: 1.2em; font-weight: bold; }
+.days { display: grid; grid-template-columns: repeat(7, 40px); gap: 5px; justify-content: center; }
+.weekday { font-weight: bold; background: #eee; padding: 5px 0; border-radius: 4px; text-align: center; }
+.day { padding: 5px 0; border-radius: 4px; text-align: center; cursor: pointer; }
+.day.today { background: #2196f3; color: #fff; }
+.events-wrap { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,0,0,.1); width: 300px; max-height: 500px; overflow-y: auto; }
+.events-wrap h3 { margin-top: 0; }
+.date-group { margin-bottom: 12px; }
+.date-group h4 { margin: 0 0 4px; font-size: 1em; border-bottom: 1px solid #ddd; padding-bottom: 2px; }
+.event-item { margin-left: 10px; font-size: .9em; }
+details { margin-top: 12px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; justify-content: center; align-items: center; }
+.modal-content { background: #fff; padding: 20px; border-radius: 8px; position: relative; width: 260px; }
+#closeModal { position: absolute; top: 6px; right: 10px; cursor: pointer; font-size: 20px; }
+.modal-content input, .modal-content select { width: 100%; padding: 6px; margin: 6px 0; }
+.modal-content button { padding: 6px 12px; background: #2196f3; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+#weekLegend div { margin-top: 4px; font-size: .85em; }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+<!-- CALENDAR -->
+<div class="calendar-wrap">
+<div class="calendar-header">
+<button onclick="changeMonth(-1)">&laquo;</button>
+<span id="monthYear"></span>
+<button onclick="changeMonth(1)">&raquo;</button>
+</div>
+<div class="days" id="calendar"></div>
+<div id="weekLegend"></div>
+</div>
+
+<!-- EVENTS -->
+<div class="events-wrap">
+<h3>Events – This Month</h3>
+<div id="eventsList"></div>
+</div>
+</div>
+
+<!-- ADD EVENT MODAL -->
+<div id="eventModal" class="modal">
+<div class="modal-content">
+<span id="closeModal">&times;</span>
+<h3>Add Event</h3>
+<form id="eventForm">
+<p id="eventDateLabel"></p>
+<input type="time" id="eventTime" required step="1">
+<input type="text" id="eventText" placeholder="Event description" required>
+<label for="eventColor">Color:</label>
+<select id="eventColor" required>
+<option value="lightblue">Light Blue</option>
+<option value="lightgreen">Light Green</option>
+<option value="lightpink">Light Pink</option>
+<option value="lightyellow">Light Yellow</option>
+<option value="lightcoral">Light Coral</option>
+<option value="lavender">Lavender</option>
+</select>
+<button type="submit">Save</button>
+</form>
+</div>
+</div>
+
+<script>
+let events = [], eventsByDate = {};
+let today = new Date(), todayStr = today.toISOString().substring(0,10);
+let currentMonth = today.getMonth(), currentYear = today.getFullYear();
+let oddWeekColor = '', evenWeekColor = '', oddWeekDesc = '', evenWeekDesc = '';
+
+const weekdays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const calendarEl = document.getElementById("calendar");
+const monthYearEl = document.getElementById("monthYear");
+const eventsListEl = document.getElementById("eventsList");
+
+const modal = document.getElementById("eventModal");
+const closeBtn = document.getElementById("closeModal");
+const eventForm = document.getElementById("eventForm");
+const dateLabel = document.getElementById("eventDateLabel");
+const timeInput = document.getElementById("eventTime");
+const textInput = document.getElementById("eventText");
+const colorInput = document.getElementById("eventColor");
+let selectedDateStr = '';
+
+function getQueryParam(name) {
+const params = new URLSearchParams(window.location.search);
+return params.get(name);
+}
+
+function getISOWeek(d) {
+const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+const dayNum = date.getUTCDay() || 7;
+date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+async function loadWeeklyJSON() {
+const weeklyFile = getQueryParam('weekly') || 'weekly.json';
+try {
+const res = await fetch(weeklyFile, { cache: 'no-store' });
+if (!res.ok) throw new Error('File not found');
+const data = await res.json();
+
+if (data.kwuneven) {
+oddWeekColor = data.kwuneven.color || '';
+oddWeekDesc = data.kwuneven.description || '';
+} else {
+oddWeekColor = ''; oddWeekDesc = '';
+}
+if (data.kwevencolor) {
+evenWeekColor = data.kwevencolor.color || '';
+evenWeekDesc = data.kwevencolor.description || '';
+} else {
+evenWeekColor = ''; evenWeekDesc = '';
+}
+const legendEl = document.getElementById("weekLegend");
+legendEl.innerHTML = '';
+if (oddWeekColor) {
+legendEl.innerHTML += `<div><span style="display:inline-block;width:12px;height:12px;background:${oddWeekColor};border:1px solid #999;margin-right:5px;"></span>${oddWeekDesc}</div>`;
+}
+if (evenWeekColor) {
+legendEl.innerHTML += `<div><span style="display:inline-block;width:12px;height:12px;background:${evenWeekColor};border:1px solid #999;margin-right:5px;"></span>${evenWeekDesc}</div>`;
+}
+} catch (e) {
+// If file not found or malformed JSON, clear weekly colors/legend
+oddWeekColor = '';
+evenWeekColor = '';
+oddWeekDesc = '';
+evenWeekDesc = '';
+document.getElementById("weekLegend").innerHTML = '';
+}
+}
+
+async function loadEvents() {
+try {
+const res = await fetch('dates.json', { cache: 'no-store' });
+events = await res.json();
+} catch (e) { events = []; }
+eventsByDate = {};
+events.forEach(ev => {
+if (!eventsByDate[ev.date]) eventsByDate[ev.date] = [];
+eventsByDate[ev.date].push(ev);
+});
+events.forEach(arr => arr?.sort?.((a, b) => a.time.localeCompare(b.time)));
+events.sort((a,b)=>b.date===a.date ? b.time.localeCompare(a.time) : b.date.localeCompare(a.date));
+}
+
+function renderCalendar(month, year) {
+calendarEl.innerHTML = '';
+monthYearEl.textContent = `${monthNames[month]} ${year}`;
+weekdays.forEach(w => {
+const el = document.createElement('div');
+el.className = 'weekday';
+el.textContent = w;
+calendarEl.appendChild(el);
+});
+
+const firstDay = new Date(year, month, 1);
+const offset = (firstDay.getDay() + 6) % 7;
+for (let i = 0; i < offset; i++) calendarEl.appendChild(document.createElement('div'));
+
+const daysInMonth = new Date(year, month + 1, 0).getDate();
+for (let d = 1; d <= daysInMonth; d++) {
+const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const div = document.createElement('div');
+div.className = 'day';
+div.textContent = d;
+
+const dateObj = new Date(year, month, d);
+const isoWeek = getISOWeek(dateObj);
+const weekday = dateObj.getDay();
+if (weekday >= 1 && weekday <= 5) {
+const col = isoWeek % 2 === 0 ? evenWeekColor : oddWeekColor;
+if (col) {
+div.style.textDecoration = 'underline';
+div.style.textDecorationColor = col;
+}
+}
+
+if (dateStr === todayStr) div.classList.add('today');
+if (eventsByDate[dateStr]) {
+div.style.background = eventsByDate[dateStr][0].color || 'lightblue';
+div.style.color = '#000';
+}
+
+div.dataset.date = dateStr;
+div.addEventListener('click', openAddEvent);
+calendarEl.appendChild(div);
+}
+}
+
+function buildEventsList() {
+eventsListEl.innerHTML = '';
+const filtered = events.filter(ev => {
+const [y, m] = ev.date.split('-').map(Number);
+return y === currentYear && (m - 1) === currentMonth;
+});
+
+const upcoming = filtered.filter(ev => ev.date >= todayStr);
+const past = filtered.filter(ev => ev.date < todayStr);
+
+const addGroup = (parent, arr) => {
+let last = '';
+arr.forEach(ev => {
+if (ev.date !== last) {
+const g = document.createElement('div');
+g.className = 'date-group';
+const h = document.createElement('h4');
+h.textContent = ev.date;
+g.appendChild(h);
+parent.appendChild(g);
+last = ev.date;
+}
+const item = document.createElement('div');
+item.className = 'event-item';
+item.innerHTML = `<span style="display:inline-block;width:10px;height:10px;background:${ev.color};margin-right:4px;border:1px solid #999;border-radius:2px;"></span>
+<strong>${ev.time.replace(/\./g,':')}</strong> – ${ev.text}`;
+if (ev.date === todayStr) item.style.fontWeight = 'bold';
+parent.lastChild.appendChild(item);
+});
+};
+addGroup(eventsListEl, upcoming);
+if (past.length) {
+const det = document.createElement('details');
+det.innerHTML = '<summary>Past events</summary>';
+addGroup(det, past);
+eventsListEl.appendChild(det);
+}
+}
+
+function openAddEvent(e) {
+selectedDateStr = e.currentTarget.dataset.date;
+dateLabel.textContent = selectedDateStr;
+timeInput.value = new Date().toISOString().substr(11,8);
+textInput.value = '';
+colorInput.value = 'lightblue';
+modal.style.display = 'flex';
+textInput.focus();
+}
+closeBtn.onclick = () => modal.style.display = 'none';
+window.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
+eventForm.addEventListener('submit', e => {
+e.preventDefault();
+const qs = `process.php?date=${encodeURIComponent(selectedDateStr)}&time=${encodeURIComponent(timeInput.value.replace(/:/g, '.'))}&text=${encodeURIComponent(textInput.value.trim())}&color=${encodeURIComponent(colorInput.value.trim() || 'lightblue')}`;
+window.location.href = qs;
+});
+
+function changeMonth(offset) {
+currentMonth += offset;
+if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+renderCalendar(currentMonth, currentYear);
+buildEventsList();
+}
+
+(async () => {
+await loadWeeklyJSON();
+await loadEvents();
+renderCalendar(currentMonth, currentYear);
+buildEventsList();
+})();
+</script>
+</body>
+</html>
+
+<a href="?weekly=no.json" style=color:blue>
+✖️Weekly</a>
+
+<details><summary>process.php</summary>
+<plaintext>
+====process.php==
+<?php
+header('Content-Type: application/json');
+
+$date = $_GET['date'] ?? '';
+$time = $_GET['time'] ?? '';
+$text = $_GET['text'] ?? '';
+$color = $_GET['color'] ?? 'lightblue';
+
+if (!$date || !$time || !$text) {
+http_response_code(400);
+echo json_encode(["status" => "error", "message" => "Missing required parameters"]);
+exit;
+}
+
+$date = preg_replace('/[^0-9\-]/', '', $date);
+$time = preg_replace('/[^0-9\.]/', '', $time);
+$text = strip_tags($text);
+$color = strip_tags($color);
+
+$newEvent = [
+"date" => $date,
+"time" => $time,
+"text" => $text,
+"color" => $color
+];
+
+$jsonFile = 'dates.json';
+$events = [];
+
+if (file_exists($jsonFile)) {
+$data = file_get_contents($jsonFile);
+$events = json_decode($data, true);
+if (!is_array($events)) $events = [];
+}
+
+$events[] = $newEvent;
+
+if (file_put_contents($jsonFile, json_encode($events, JSON_PRETTY_PRINT))) {
+echo json_encode(["status" => "success", "message" => "Event saved"]);
+} else {
+http_response_code(500);
+echo json_encode(["status" => "error", "message" => "Could not write to file"]);
+}
+
+
+

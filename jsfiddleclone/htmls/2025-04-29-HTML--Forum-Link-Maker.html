@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Link Generator</title>
+</head>
+<body>
+  <h2>Link Generator</h2>
+  <label>Title: <input type="text" id="titleInput"></label><br><br>
+  <label>Link: <input type="text" id="linkInput"></label><br><br>
+  <button onclick="generateLinks()">Generate</button>
+
+  <h3>HTML Link:</h3>
+  <textarea id="htmlOutput" rows="2" cols="60" readonly></textarea>
+
+  <h3>BBCode Link:</h3>
+  <textarea id="bbcodeOutput" rows="2" cols="60" readonly></textarea>
+
+  <script>
+    function generateLinks() {
+      const title = document.getElementById("titleInput").value;
+      const link = document.getElementById("linkInput").value;
+
+      const htmlLink = `<a href="${link}" target="_blank">${title}</a>`;
+      const bbcodeLink = `[url=${link}]${title}[/url]`;
+
+      document.getElementById("htmlOutput").value = htmlLink;
+      document.getElementById("bbcodeOutput").value = bbcodeLink;
+    }
+  </script>
+</body>
+</html>

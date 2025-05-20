@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Codeberg Commit Finder</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    input, button { padding: 0.5rem; }
+    input[type="text"] { width: 360px; border: 1px solid #ccc; border-radius: 4px; }
+    button { margin-left: 0.5rem; cursor: pointer; }
+    #result { margin-top: 1.5rem; line-height: 1.5; white-space: pre-wrap; }
+    a { color: #0366d6; margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Codeberg Commit Finder</h1>
+
+  <label>
+    Codeberg repo URL or user profile:
+    <input id="repoInput" placeholder="e.g. https://codeberg.org/alceawisteria or /user/repo">
+    <button id="searchBtn">Find commit</button>
+  </label>
+
+  <label>
+    <input type="checkbox" id="firstCommitCheck"> Find first-ever commit
+  </label>
+
+  <div id="result"></div>
+
+<script>
+async function detectRepoFromInput(input) {
+  input = input.trim().replace(/\/+$/, '');
+
+  const matchRepo = input.match(/codeberg\.org\/([^\/]+)\/([^\/]+)/i);
+  if (matchRepo) return `${matchRepo[1]}/${matchRepo[2]}`;
+
+  const matchUser = input.match(/codeberg\.org\/([^\/]+)/i);
+  if (matchUser) {
+    const user = matchUser[1];
+    const r = await fetch(`https://codeberg.org/api/v1/users/${user}/repos`);
+    if (!r.ok) throw new Error(`Cannot fetch repos for user ${user}`);
+    const repos = await r.json();
+    if (!repos.length) throw new Error(`User ${user} has no public repos`);
+    return `${user}/${repos[0].name}`;
+  }
+
+  const fallbackMatch = input.match(/^([\w-]+)\/([\w.-]+)$/);
+  if (fallbackMatch) return input;
+
+  throw new Error("Please enter a valid Codeberg repo or user profile URL");
+}
+
+async function fetchCommits(repo, first = false) {
+  const base = `https://codeberg.org/api/v1/repos/${repo}/commits`;
+  let url = `${base}?limit=1&page=${first ? 9999 : 1}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to get commits from Codeberg (${res.status})`);
+  const commits = await res.json();
+  if (!commits.length) throw new Error("No commits found.");
+  return commits[first ? commits.length - 1 : 0];
+}
+
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const raw = document.getElementById('repoInput').value;
+  const first = document.getElementById('firstCommitCheck').checked;
+  const result = document.getElementById('result');
+  result.textContent = 'Searching…';
+
+  try {
+    const repo = await detectRepoFromInput(raw);
+    const commit = await fetchCommits(repo, first);
+    const url = `https://codeberg.org/${repo}/commit/${commit.sha}`;
+    const patch = `${url}.patch`;
+
+    result.innerHTML = `
+      <strong>Repository:</strong> <a href="https://codeberg.org/${repo}" target="_blank">${repo}</a><br>
+      <strong>Commit SHA:</strong> 
+        <a href="${url}" target="_blank">${commit.sha.slice(0, 7)}</a>
+        <a href="${patch}" target="_blank">[.patch]</a><br>
+      <strong>Message:</strong> ${commit.commit.message}<br>
+      <strong>Date:</strong> ${new Date(commit.commit.author.date).toLocaleString()}
+    `;
+  } catch (err) {
+    result.textContent = `⚠️ ${err.message}`;
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Glass Icon Uploader</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-container {
+      text-align: center;
+    }
+
+    canvas {
+      width: 200px; /* Visual size on screen */
+      height: 200px;
+      border-radius: 30px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    .options {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="upload-container">
+  <h2>Upload Icon & Export with Glass Effect</h2>
+  <input type="file" accept="image/*" onchange="handleFile(event)">
+  <div class="options">
+    <label>
+      <input type="checkbox" id="glassCheckbox" checked>
+      Include glass effect
+    </label>
+  </div>
+  <canvas id="iconCanvas" width="400" height="400"></canvas>
+  <br>
+  <button onclick="downloadPng()">Download PNG</button>
+</div>
+
+<script>
+  let originalFileName = "icon";
+
+  function handleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    originalFileName = file.name.split(".").slice(0, -1).join(".") || "icon";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.getElementById("iconCanvas");
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        const radius = 60; // Adjusted for larger canvas
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Rounded corners
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(w - radius, 0);
+        ctx.quadraticCurveTo(w, 0, w, radius);
+        ctx.lineTo(w, h - radius);
+        ctx.quadraticCurveTo(w, h, w - radius, h);
+        ctx.lineTo(radius, h);
+        ctx.quadraticCurveTo(0, h, 0, h - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.clip();
+
+        // Draw image to fill canvas
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const includeGlass = document.getElementById("glassCheckbox").checked;
+
+        if (includeGlass) {
+          // Frosted glass shine
+          const gradient = ctx.createLinearGradient(0, 0, 0, h * 0.4);
+          gradient.addColorStop(0, "rgba(255, 255, 255, 0.6)"); // Slightly stronger white
+          gradient.addColorStop(1, "rgba(255, 255, 255, 0)");  // Transparent fade
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, w, h);
+
+          // Glossy ellipse highlight (adjusted for better effect)
+          ctx.beginPath();
+          ctx.ellipse(w / 2, h * 0.2, w * 0.65, h * 0.35, 0, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.29)";
+          ctx.fill();
+        }
+
+        ctx.restore();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function downloadPng() {
+    const canvas = document.getElementById("iconCanvas");
+    const link = document.createElement("a");
+    link.download = `${originalFileName}-glass.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+</script>
+
+</body>
+</html>

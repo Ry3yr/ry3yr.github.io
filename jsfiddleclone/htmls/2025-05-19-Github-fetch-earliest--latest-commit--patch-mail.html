@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GitHub Commit Finder</title>
+  <style>
+    body    { font-family: system-ui, sans-serif; margin: 2rem; }
+    label   { display: block; margin-bottom: 0.75rem; }
+    input, button { padding: 0.5rem; }
+    input[type="text"] { width: 360px; border: 1px solid #ccc; border-radius: 4px; }
+    button  { margin-left: 0.5rem; cursor: pointer; }
+    #result { margin-top: 1.5rem; line-height: 1.5; white-space: pre-wrap; }
+    a       { color: #0366d6; margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>GitHub Commit Finder</h1>
+
+  <label>
+    GitHub username, profile URL, or repo URL/full-name:
+    <input id="userInput" placeholder="e.g. Ry3yr or https://github.com/Ry3yr/OSTR">
+    <button id="searchBtn">Find commit</button>
+  </label>
+
+  <label>
+    <input type="checkbox" id="firstCommitCheck"> Find first-ever commit
+  </label>
+
+  <div id="result"></div>
+
+<script>
+function extractRepoOrUser(raw) {
+  raw = raw.trim().replace(/\/+$/, '');
+
+  // Match full repo URL
+  const repoMatch = raw.match(/github\.com\/([^\/]+)\/([^\/]+)/i);
+  if (repoMatch) return { type: "repo", repo: `${repoMatch[1]}/${repoMatch[2]}` };
+
+  // Match full repo format like "Ry3yr/OSTR"
+  const simpleRepoMatch = raw.match(/^([\w-]+)\/([\w.-]+)$/);
+  if (simpleRepoMatch) return { type: "repo", repo: raw };
+
+  // Match username or profile URL
+  const userMatch = raw.match(/github\.com\/([^\/]+)/i);
+  return { type: "user", user: userMatch ? userMatch[1] : raw };
+}
+
+async function fetchLatestPushRepo(user) {
+  const r = await fetch(`https://api.github.com/users/${user}/events/public?per_page=30`);
+  if (!r.ok) throw new Error(`GitHub API returned ${r.status}`);
+  const events = await r.json();
+  for (const ev of events) {
+    if (ev.type === 'PushEvent') return ev.repo.name;
+  }
+  throw new Error('No recent repositories found.');
+}
+
+async function fetchLatestCommit(repo) {
+  const r = await fetch(`https://api.github.com/repos/${repo}/commits?per_page=1`);
+  if (!r.ok) throw new Error(`Failed to get latest commit for ${repo}`);
+  const [c] = await r.json();
+  return formatCommit(c, repo);
+}
+
+async function fetchFirstCommit(repo) {
+  const r1 = await fetch(`https://api.github.com/repos/${repo}/commits?per_page=1`);
+  if (!r1.ok) throw new Error(`Failed to get commit history for ${repo}`);
+  const linkHeader = r1.headers.get("Link");
+
+  if (!linkHeader || !linkHeader.includes('rel="last"')) {
+    const [only] = await r1.json();
+    return formatCommit(only, repo);
+  }
+
+  const lastPageMatch = linkHeader.match(/<([^>]+)>;\s*rel="last"/);
+  const lastPageUrl = lastPageMatch?.[1];
+  const rLast = await fetch(lastPageUrl);
+  const commits = await rLast.json();
+  return formatCommit(commits.at(-1), repo);
+}
+
+function formatCommit(c, repo) {
+  return {
+    repo,
+    sha: c.sha,
+    msg: c.commit.message,
+    date: c.commit.author.date,
+    url: `https://github.com/${repo}/commit/${c.sha}`,
+    patch: `https://github.com/${repo}/commit/${c.sha}.patch`
+  };
+}
+
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const input = document.getElementById('userInput').value;
+  const first = document.getElementById('firstCommitCheck').checked;
+  const resultBox = document.getElementById('result');
+  resultBox.textContent = 'Searching…';
+
+  try {
+    const parsed = extractRepoOrUser(input);
+    let repo;
+
+    if (parsed.type === 'repo') {
+      repo = parsed.repo;
+    } else if (parsed.type === 'user') {
+      repo = await fetchLatestPushRepo(parsed.user);
+    } else {
+      throw new Error('Invalid input.');
+    }
+
+    const commit = first ? await fetchFirstCommit(repo) : await fetchLatestCommit(repo);
+    resultBox.innerHTML = `
+      <strong>Repository:</strong> <a href="https://github.com/${commit.repo}" target="_blank">${commit.repo}</a><br>
+      <strong>Commit SHA:</strong> 
+        <a href="${commit.url}" target="_blank">${commit.sha.slice(0, 7)}</a>
+        EMAIL: <a href="${commit.patch}" target="_blank">[.patch]</a><br>
+      <strong>Message:</strong> ${commit.msg}<br>
+      <strong>Date:</strong> ${new Date(commit.date).toLocaleString()}
+    `;
+  } catch (err) {
+    resultBox.textContent = `⚠️ ${err.message}`;
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remove Timestamps, Replace Tabs, and Append Text</title>
+</head>
+<body>
+  <h1>Text Processor</h1>
+  <label for="input">Paste your list here:</label><br>
+  <textarea id="input" rows="10" cols="60" placeholder="Paste your list here"></textarea><br><br>
+  
+  <button onclick="removeTimestamps()">Remove Timestamps</button>
+  <button onclick="replaceTabsInOutput()">Replace Tabs with Spaces in Output</button><br><br>
+
+  <label for="appendText">Text to append to each line in the output:</label>
+  <input id="appendText" type="text" placeholder="Enter text to append">
+  <button onclick="appendToEachLine()">Append</button>
+  
+  <h2>Cleaned List:</h2>
+  <textarea id="output" rows="15" cols="60" readonly></textarea>
+
+  <script>
+    function removeTimestamps() {
+      const inputField = document.getElementById('input');
+      const outputField = document.getElementById('output');
+
+      // Get the input text
+      const inputText = inputField.value;
+
+      // Remove timestamps (pattern: tab followed by time-like format)
+      const cleanedText = inputText.replace(/\t\d{1,2}:\d{2}/g, '');
+
+      // Output the result while preserving line breaks
+      outputField.value = cleanedText;
+    }
+
+    function replaceTabsInOutput() {
+      const outputField = document.getElementById('output');
+
+      // Get the current text in the output field
+      const outputText = outputField.value;
+
+      // Replace tabs (\t) with spaces
+      const cleanedText = outputText.replace(/\t/g, ' ');
+
+      // Output the result while preserving line breaks
+      outputField.value = cleanedText;
+    }
+
+    function appendToEachLine() {
+      const outputField = document.getElementById('output');
+      const appendText = document.getElementById('appendText').value;
+
+      // Get the current text in the output field
+      const outputText = outputField.value;
+
+      // Split the text into lines, append the text to each line, and join back
+      const updatedText = outputText
+        .split('\n')
+        .map(line => line.trim() + (appendText ? ` ${appendText}` : ''))
+        .join('\n');
+
+      // Output the result while preserving line breaks
+      outputField.value = updatedText;
+    }
+  </script>
+</body>
+</html>

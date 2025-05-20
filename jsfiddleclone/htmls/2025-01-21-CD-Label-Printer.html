@@ -5,25 +5,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Label Template Maker</title>
+    <title>CD Label tool (2 CDs)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+canvas {
+    border: 1px solid #000;
+    margin-top: 20px;
+    width: 50%; /* Makes the canvas 50% of its original width */
+    height: auto; /* Maintains aspect ratio */
+}
+        .upload-container {
+            margin-top: 20px;
+        }
+        #output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <p>This tool highlights areas of the image where the color <code>#D7D7D7</code> appears and lets you replace them with your own images.</p>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="upload-container">
+        <p>Upload two images to replace the highlighted areas:</p>
+        <label>First Image: <input type="file" id="upload1" accept="image/*"></label>
+        <label>Second Image: <input type="file" id="upload2" accept="image/*"></label>
+        <button id="replaceBtn">Replace Areas</button>
+        <br><br>
+        <button id="toggleBtn">Toggle Red Markings</button>
+        <br><br>
+        <button id="downloadBtn">Download as PNG</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        const imageUrl = "https://ry3yr.github.io/2CDTemplate_alt.png";
+        const targetColor = { r: 215, g: 215, b: 215 }; // #D7D7D7
+
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const output = document.getElementById("output");
+        const upload1 = document.getElementById("upload1");
+        const upload2 = document.getElementById("upload2");
+        const replaceBtn = document.getElementById("replaceBtn");
+        const toggleBtn = document.getElementById("toggleBtn");
+        const downloadBtn = document.getElementById("downloadBtn");
+
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // To handle cross-origin images
+        img.src = imageUrl;
+
+        let redMarkingsVisible = true; // Tracks the visibility of the red markings
+        let originalImageData = null; // Stores the original image data
+        let redMarkingOverlay = null; // Stores the semi-transparent red markings
+        let replacementImagesData = null; // Stores the replacement image data
+
+        img.onload = function () {
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            // Draw the original image on the canvas
+            ctx.drawImage(img, 0, 0);
+
+            // Highlight areas of #D7D7D7
+            highlightTargetColor();
+        };
+
+        img.onerror = function () {
+            output.innerHTML = "<strong>Failed to load image. Check the URL and try again.</strong>";
+        };
+
+        function highlightTargetColor() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            let found = false;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Check if the pixel matches the target color
+                if (r === targetColor.r && g === targetColor.g && b === targetColor.b) {
+                    // Highlight the pixel with red
+                    data[i] = 255; // Red
+                    data[i + 1] = 0; // Green
+                    data[i + 2] = 0; // Blue
+                    found = true;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            if (found) {
+                createRedMarkingOverlay(imageData); // Create the semi-transparent overlay
+                output.innerHTML = "<strong>Highlighted areas with #D7D7D7 in red.</strong>";
+            } else {
+                output.innerHTML = "<strong>No areas with #D7D7D7 found.</strong>";
+            }
+        }
+
+        function createRedMarkingOverlay(imageData) {
+            const overlay = ctx.createImageData(imageData.width, imageData.height);
+            const overlayData = overlay.data;
+
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                if (imageData.data[i] === 255 && imageData.data[i + 1] === 0 && imageData.data[i + 2] === 0) {
+                    // If the pixel is red, make it semi-transparent
+                    overlayData[i] = 255;   // Red
+                    overlayData[i + 1] = 0; // Green
+                    overlayData[i + 2] = 0; // Blue
+                    overlayData[i + 3] = 128; // 50% opacity
+                } else {
+                    // Leave other pixels transparent
+                    overlayData[i + 3] = 0;
+                }
+            }
+
+            redMarkingOverlay = overlay;
+        }
+
+        toggleBtn.addEventListener("click", function () {
+            if (redMarkingsVisible) {
+                // Hide the red markings (overlay), but keep the replacement images visible
+                ctx.putImageData(originalImageData, 0, 0); // Re-draw the base image
+                if (replacementImagesData) {
+                    ctx.putImageData(replacementImagesData, 0, 0); // Re-draw the replacement images
+                }
+                redMarkingsVisible = false;
+            } else {
+                // Show the red markings (overlay) on top of the already replaced image
+                ctx.putImageData(originalImageData, 0, 0);
+                if (replacementImagesData) {
+                    ctx.putImageData(replacementImagesData, 0, 0);
+                }
+                if (redMarkingOverlay) {
+                    ctx.putImageData(redMarkingOverlay, 0, 0); // Add the red markings on top
+                }
+                redMarkingsVisible = true;
+            }
+        });
+
+        replaceBtn.addEventListener("click", function () {
+            if (!upload1.files[0] || !upload2.files[0]) {
+                output.innerHTML = "<strong>Please upload two images before replacing the areas.</strong>";
+                return;
+            }
+
+            const uploadedImg1 = new Image();
+            const uploadedImg2 = new Image();
+            uploadedImg1.src = URL.createObjectURL(upload1.files[0]);
+            uploadedImg2.src = URL.createObjectURL(upload2.files[0]);
+
+            uploadedImg1.onload = function () {
+                uploadedImg2.onload = function () {
+                    // Store the uploaded images for replacement
+                    replacementImagesData = replaceAreasWithImages(uploadedImg1, uploadedImg2);
+                };
+            };
+        });
+
+        function replaceAreasWithImages(img1, img2) {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            const visited = new Set();
+            const directions = [
+                [-1, 0], [1, 0], [0, -1], [0, 1]
+            ]; // Neighboring pixels (left, right, up, down)
+
+            let shapeIndex = 0;
+
+            function floodFill(x, y) {
+                const stack = [[x, y]];
+                const shapePixels = [];
+
+                while (stack.length) {
+                    const [cx, cy] = stack.pop();
+                    const index = (cy * canvas.width + cx) * 4;
+
+                    if (
+                        cx >= 0 && cx < canvas.width &&
+                        cy >= 0 && cy < canvas.height &&
+                        !visited.has(index) &&
+                        data[index] === 255 && data[index + 1] === 0 && data[index + 2] === 0
+                    ) {
+                        visited.add(index);
+                        shapePixels.push([cx, cy]);
+
+                        for (const [dx, dy] of directions) {
+                            stack.push([cx + dx, cy + dy]);
+                        }
+                    }
+                }
+
+                return shapePixels;
+            }
+
+            function getBoundingBox(pixels) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const [x, y] of pixels) {
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                }
+                return { minX, minY, maxX, maxY };
+            }
+
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const index = (y * canvas.width + x) * 4;
+                    if (data[index] === 255 && data[index + 1] === 0 && data[index + 2] === 0 && !visited.has(index)) {
+                        const shapePixels = floodFill(x, y);
+                        const { minX, minY, maxX, maxY } = getBoundingBox(shapePixels);
+
+                        const width = maxX - minX + 1;
+                        const height = maxY - minY + 1;
+
+                        const replacementImg = shapeIndex % 2 === 0 ? img1 : img2;
+                        shapeIndex++;
+
+                        ctx.drawImage(replacementImg, minX, minY, width, height);
+                    }
+                }
+            }
+
+            return ctx.getImageData(0, 0, canvas.width, canvas.height); // Return the modified image data with replacements
+        }
+
+        downloadBtn.addEventListener("click", function () {
+            const link = document.createElement("a");
+            link.download = "canvas-image.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    </script>
+</body>
+</html>
+
+
+<details><summary>old px ver</summary><plaintext>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Template Maker 2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
         }
 
-        .container {
+        .container2 {
             display: flex;
             flex-direction: column;
             align-items: center;
             margin-top: 20px;
         }
 
-        .upload-buttons {
+        .upload-buttons2 {
             margin: 20px;
         }
 
-        #canvas-container {
+        #canvas-container2 {
             position: relative;
             width: 210mm;
             height: 297mm;
@@ -31,7 +283,7 @@
             border: 1px solid #000;
         }
 
-        .label {
+        .label2 {
             position: absolute;
             width: 117mm;
             height: 117mm;
@@ -40,12 +292,12 @@
             border-radius: 50%; 
         }
 
-        .label1 {
+        .label21 {
             top: 21.5mm;
             left: 46.5mm;
         }
 
-        .label2 {
+        .label22 {
             top: 158.5mm;
             left: 46.5mm;
         }
@@ -56,7 +308,7 @@
             object-fit: cover;
         }
 
-        .button-container {
+        .button-container2 {
             margin-top: 20px;
         }
 
@@ -66,101 +318,100 @@
     </style>
 </head>
 <body>
-    <h1>Label Template Maker</h1>
-    <div class="container">
-        <div class="upload-buttons">
-            <input type="file" id="image1" accept="image/*">
-            <input type="file" id="image2" accept="image/*">
+    <h1>Label Template Maker 2</h1>
+    <div class="container2">
+        <div class="upload-buttons2">
+            <input type="file" id="image21" accept="image/*">
+            <input type="file" id="image22" accept="image/*">
         </div>
-        <div id="canvas-container">
-            <div id="label1" class="label label1">
-                <img id="img1" src="" alt="Label 1">
+        <div id="canvas-container2">
+            <div id="label21" class="label2 label21">
+                <img id="img21" src="" alt="Label 21">
             </div>
-            <div id="label2" class="label label2">
-                <img id="img2" src="" alt="Label 2">
+            <div id="label22" class="label2 label22">
+                <img id="img22" src="" alt="Label 22">
             </div>
         </div>
-        <div class="button-container">
-            <button id="download">Download as Image</button>
+        <div class="button-container2">
+            <button id="download2">Download as Image</button>
         </div>
-        <canvas id="finalCanvas" width="793" height="1122"></canvas>
+        <canvas id="finalCanvas2" width="793" height="1122"></canvas>
     </div>
 
     <script>
-        const imageInput1 = document.getElementById('image1');
-        const imageInput2 = document.getElementById('image2');
-        const img1 = document.getElementById('img1');
-        const img2 = document.getElementById('img2');
-        const downloadButton = document.getElementById('download');
-        const finalCanvas = document.getElementById('finalCanvas');
-        const ctx = finalCanvas.getContext('2d');
+        const imageInput21 = document.getElementById('image21');
+        const imageInput22 = document.getElementById('image22');
+        const img21 = document.getElementById('img21');
+        const img22 = document.getElementById('img22');
+        const downloadButton2 = document.getElementById('download2');
+        const finalCanvas2 = document.getElementById('finalCanvas2');
+        const ctx2 = finalCanvas2.getContext('2d');
 
-        function updateImage(input, imgElement) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    imgElement.src = event.target.result;
+        function updateImage2(input2, imgElement2) {
+            const file2 = input2.files[0];
+            if (file2) {
+                const reader2 = new FileReader();
+                reader2.onload = function(event2) {
+                    imgElement2.src = event2.target.result;
                 };
-                reader.readAsDataURL(file);
+                reader2.readAsDataURL(file2);
             }
         }
 
-        imageInput1.addEventListener('change', () => updateImage(imageInput1, img1));
-        imageInput2.addEventListener('change', () => updateImage(imageInput2, img2));
+        imageInput21.addEventListener('change', () => updateImage2(imageInput21, img21));
+        imageInput22.addEventListener('change', () => updateImage2(imageInput22, img22));
 
-        function drawCanvas() {
+        function drawCanvas2() {
+            ctx2.fillStyle = "#FFFFFF";
+            ctx2.fillRect(0, 0, finalCanvas2.width, finalCanvas2.height);
 
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+            const mmToPx2 = 3.779527559;
+            const labelWidth2 = 117 * mmToPx2;
+            const labelHeight2 = 117 * mmToPx2;
 
-            const mmToPx = 3.779527559;
-            const labelWidth = 117 * mmToPx;
-            const labelHeight = 117 * mmToPx;
-
-            const img1Element = document.getElementById('img1');
-            const label1X = 46.5 * mmToPx;
-            const label1Y = 21.5 * mmToPx;
-            if (img1Element.src) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(
-                    label1X + labelWidth / 2,
-                    label1Y + labelHeight / 2,
-                    labelWidth / 2,
+            const img21Element = document.getElementById('img21');
+            const label21X = 46.5 * mmToPx2;
+            const label21Y = 21.5 * mmToPx2;
+            if (img21Element.src) {
+                ctx2.save();
+                ctx2.beginPath();
+                ctx2.arc(
+                    label21X + labelWidth2 / 2,
+                    label21Y + labelHeight2 / 2,
+                    labelWidth2 / 2,
                     0,
                     Math.PI * 2
                 );
-                ctx.clip();
-                ctx.drawImage(img1Element, label1X, label1Y, labelWidth, labelHeight);
-                ctx.restore();
+                ctx2.clip();
+                ctx2.drawImage(img21Element, label21X, label21Y, labelWidth2, labelHeight2);
+                ctx2.restore();
             }
 
-            const img2Element = document.getElementById('img2');
-            const label2X = 46.5 * mmToPx;
-            const label2Y = 158.5 * mmToPx;
-            if (img2Element.src) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(
-                    label2X + labelWidth / 2,
-                    label2Y + labelHeight / 2,
-                    labelWidth / 2,
+            const img22Element = document.getElementById('img22');
+            const label22X = 46.5 * mmToPx2;
+            const label22Y = 158.5 * mmToPx2;
+            if (img22Element.src) {
+                ctx2.save();
+                ctx2.beginPath();
+                ctx2.arc(
+                    label22X + labelWidth2 / 2,
+                    label22Y + labelHeight2 / 2,
+                    labelWidth2 / 2,
                     0,
                     Math.PI * 2
                 );
-                ctx.clip();
-                ctx.drawImage(img2Element, label2X, label2Y, labelWidth, labelHeight);
-                ctx.restore();
+                ctx2.clip();
+                ctx2.drawImage(img22Element, label22X, label22Y, labelWidth2, labelHeight2);
+                ctx2.restore();
             }
         }
 
-        downloadButton.addEventListener('click', () => {
-            drawCanvas();
-            const link = document.createElement('a');
-            link.download = 'label-template.png';
-            link.href = finalCanvas.toDataURL();
-            link.click();
+        downloadButton2.addEventListener('click', () => {
+            drawCanvas2();
+            const link2 = document.createElement('a');
+            link2.download = 'label-template2.png';
+            link2.href = finalCanvas2.toDataURL();
+            link2.click();
         });
     </script>
 </body>

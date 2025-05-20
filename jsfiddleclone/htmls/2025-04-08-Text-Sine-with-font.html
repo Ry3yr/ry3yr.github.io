@@ -1,0 +1,86 @@
+<!-- src: 
+https://jaron.nl/articles/animate-along-sine-wave-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @property --progress {
+      initial-value: 0;
+      inherits: false;
+      syntax: '<number>';
+    }
+    @keyframes progress {
+      from {
+        --progress: 0;
+      }
+      to {
+        --progress: 1;
+      }
+    }
+    @font-face {
+      font-family: 'ChaosLanguage';
+      src: url('/other/extra/font/chaoslanguage.ttf') format('truetype');
+    }
+    .shape-container {
+      position: fixed;
+      top: 100px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    .shape {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      word-spacing: 0.5em; /* Increased space between words */
+    }
+    .letter {
+      display: inline-block;
+      font-size: 4rem; /* Adjust font size to be 2x larger */
+      color: black;
+      font-family: 'ChaosLanguage', Arial, sans-serif; /* Use ChaosLanguage font */
+      position: relative;
+      animation: move-letter 3s ease-in-out infinite;
+      letter-spacing: 0.1em; /* Increased space between letters */
+    }
+    @keyframes move-letter {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-50px); /* Adjust the wave amplitude */
+      }
+      100% {
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shape-container">
+    <div class="shape" id="text-shape">
+      <!-- The letters will be dynamically added here -->
+    </div>
+  </div>
+  <script>    
+    function generateWaveAnimation(text) {
+      const container = document.getElementById("text-shape");
+      const lettersWithDelays = [...text].map((char, i) => {
+        if (char === ' ') {
+          return '&nbsp;'; // Add space between words
+        }
+        return `<span class="letter" style="animation-delay:${i * 0.1}s">${char}</span>`;
+      }).join(''); 
+      
+      container.innerHTML = lettersWithDelays;
+    }
+
+    const text = "There is nothing to see here";
+    generateWaveAnimation(text);
+  </script>
+</body>
+</html>

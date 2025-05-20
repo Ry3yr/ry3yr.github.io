@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ZIP-FS Demo</title>
+  <style>
+    body { font-family: monospace; white-space: pre-wrap; background: #222; color: #eee; padding: 1rem; }
+    #log { max-height: 30vh; overflow-y: auto; border: 1px solid #555; padding: 1rem; background: #111; }
+    iframe { 
+      width: 100%; 
+      height: 60vh; 
+      border: 2px solid #555; 
+      margin-top: 1rem; 
+      background: white; 
+      color: black;
+    }
+    a.link-root {
+      display: inline-block;
+      margin-top: 1rem;
+      color: #6cf;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>ZIP-FS Demo Logs</h1>
+  <pre id="log">Loading logs...\n</pre>
+
+  <!-- Friendly URL link -->
+  <a href="/root" target="zipfs-iframe" class="link-root">Open Root (/root)</a>
+
+  <!-- Leave iframe src blank initially -->
+  <iframe id="zipfs-iframe" title="ZIPFS root" name="zipfs-iframe"></iframe>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const iframe = document.getElementById('zipfs-iframe');
+
+    function log(...args) {
+      const msg = '[ZIPFS] ' + args.join(' ');
+      console.log(msg);
+      logEl.textContent += msg + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function loadIframe() {
+      log('Setting iframe src to /root');
+      iframe.src = '/root';
+    }
+
+    if ('serviceWorker' in navigator) {
+      log('Registering Service Worker...');
+      navigator.serviceWorker.register('/zipfs-sw.js').then(reg => {
+        log('Service Worker registration succeeded:', reg);
+        log('Service Worker state:', reg.active?.state || reg.installing?.state || 'unknown');
+
+        if (!navigator.serviceWorker.controller) {
+          log('Page not yet controlled. Reloading in 500ms...');
+          setTimeout(() => location.reload(), 500);
+        } else {
+          // SW already controlling → safe to load iframe
+          loadIframe();
+        }
+
+        navigator.serviceWorker.oncontrollerchange = () => {
+          log('Controller changed. Reloading page...');
+          location.reload();
+        };
+      }).catch(err => {
+        log('Service Worker registration failed:', err);
+      });
+
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data?.type === 'SW_LOG') {
+          log(event.data.text);
+        }
+      });
+    } else {
+      log('Service Workers not supported in this browser.');
+    }
+  </script>
+</body>
+</html>

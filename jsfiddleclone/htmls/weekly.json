@@ -1,0 +1,10 @@
+{
+  "kwuneven": {
+    "color": "blue",
+    "description": "Odd ISO Weeks (KW 1, 3, 5...)"
+  },
+  "kwevencolor": {
+    "color": "red",
+    "description": "Even ISO Weeks (KW 2, 4, 6...)"
+  }
+}
