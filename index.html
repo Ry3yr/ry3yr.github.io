@@ -1,45 +1,133 @@
-<!--<meta http-equiv="refresh" content="3; URL=https://alceawis.de/">-->
-
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Redirect with Check</title>
 <script>
-var time = 3 * 1;
-setInterval(function() {
-  //var seconds = time % 60;
-  //var minutes = (time - seconds) / 60;
-  var seconds = time;
-  var minutes = 0;
-  if (seconds.toString().length == 1) {
-    seconds = "0" + seconds;}
-  if (minutes.toString().length == 1) {
-    minutes = "0" + minutes;}
-  document.getElementById("time").innerHTML = minutes + ":" + seconds;
-  time--;
-  if (time == 0) {
-    window.location.href = "https://alceawis.de";}}, 1000);
+  var url = "https://alceawis.de/index.html";
+  var fallbackUrl = "https://ry3yr.github.io/zipfs-sw-worker.html";
+  var redirectDelay = 3;
+  var time = redirectDelay;
+
+  function checkUrlAndRedirect() {
+    var img = new Image();
+    img.onload = function() {
+      startCountdown(url);
+    };
+    img.onerror = function() {
+      showFallbackLink();
+    };
+    // Use favicon.ico as a lightweight, real image resource
+    img.src = "https://alceawis.de/other/images/icon/code.png?" + Date.now();
+  }
+
+  function startCountdown(redirectUrl) {
+    var interval = setInterval(function () {
+      var seconds = time;
+      if (seconds.toString().length == 1) seconds = "0" + seconds;
+      document.getElementById("time").textContent = seconds + " seconds";
+      time--;
+      if (time < 0) {
+        clearInterval(interval);
+        window.location.href = redirectUrl;
+      }
+    }, 1000);
+  }
+
+  function showFallbackLink() {
+    document.getElementById('timer-container').style.display = 'none';
+    var container = document.getElementById('fallback-container');
+    container.innerHTML = '<h1><a href="' + fallbackUrl + '">Site not reachable. Click here to go to fallback page.</a></h1>';
+  }
+
+  window.onload = checkUrlAndRedirect;
 </script>
-<div class="timer" onload="timer(1800)">
-<div class="time"><strong>Redirecting in <span id="time"> x seconds</span></strong></div></div>
+<style>
+  #right-button:hover, .button {
+    transition: background-color .3s ease-in-out;
+  }
+  body {
+    margin: 0; padding: 0;
+    font-family: Arial, sans-serif;
+  }
+  .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 50%;
+    background-color: #ff0000;
+    color: #fff;
+    font-size: 3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .button:hover {
+    background-color: #0056b3;
+  }
+  .button img {
+    max-height: 50%;
+    max-width: 70%;
+  }
+  #left-button {
+    float: left;
+  }
+  #right-button {
+    float: right;
+    background-color: blue;
+  }
+  #right-button:hover {
+    background-color: #333;
+  }
+  #right-button:hover img {
+    animation: 1s bounce;
+  }
+  @keyframes bounce {
+    0%, 50%, 100% {transform: translateY(0);}
+    25% {transform: translateY(-20px);}
+    75% {transform: translateY(-10px);}
+  }
+  #timer-container {
+    text-align: center;
+    font-size: 1.5rem;
+    padding: 1rem;
+    background: #222;
+    color: #fff;
+  }
+  #fallback-container {
+    text-align: center;
+    margin: 2rem;
+  }
+  #fallback-container h1 a {
+    color: #c00;
+    text-decoration: none;
+  }
+  #fallback-container h1 a:hover {
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+  <div id="timer-container">
+    <strong>Redirecting in <span id="time">03 seconds</span></strong>
+  </div>
 
+  <div id="fallback-container"></div>
 
-
-
-    <style>
-#right-button:hover,.button{transition:background-color .3s ease-in-out}body{margin:0;padding:0}.button{display:flex;align-items:center;justify-content:center;height:100vh;width:50%;background-color:#ff0000;color:#fff;font-size:3rem;font-weight:700;text-transform:uppercase;cursor:pointer}.button:hover{background-color:#0056b3}.button img{max-height:50%;max-width:70%}#left-button{float:left}#right-button{float:right;background-color:blue}#right-button:hover{background-color:#333}#right-button:hover img{animation:1s bounce}@keyframes bounce{0%,100%,50%{transform:translateY(0)}25%{transform:translateY(-20px)}75%{transform:translateY(-10px)}}
-    </style>
-  </head>
-  <body>
-    <a href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/index.html" >
-      <div class="button" id="left-button">
-        ~
-        <img src="https://raw.githubusercontent.com/Ry3yr/ry3yr.github.io/main/android-chrome-384x384.png" alt="Center Image">
-       <br><br>~
-      </div>
-    </a>
-    <a href="https://alceawis.de/" >
-      <div class="button" id="right-button">
-        Alceawis
-        <img src="https://files.mastodon.social/cache/accounts/avatars/109/864/007/248/224/654/original/ff09fe24bfece34f.png" alt="Logo">
-      </div>
-    </a>
-  </body>
+  <a href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/index.html">
+    <div class="button" id="left-button">
+      ~
+      <img src="https://raw.githubusercontent.com/Ry3yr/ry3yr.github.io/main/android-chrome-384x384.png" alt="Center Image" />
+      <br><br>~
+    </div>
+  </a>
+  <a href="https://alceawis.de/">
+    <div class="button" id="right-button">
+      Alceawis
+      <img src="https://files.mastodon.social/cache/accounts/avatars/109/864/007/248/224/654/original/ff09fe24bfece34f.png" alt="Logo" />
+    </div>
+  </a>
+</body>
 </html>
