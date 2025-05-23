@@ -6,7 +6,7 @@ sinoalice1 https://medium-media.vgm.io/albums/73/77437/77437-1546029517.jpg http
 sinoalice2 https://medium-media.vgm.io/albums/17/110971/110971-ebd4a5414c49.jpg https://medium-media.vgm.io/albums/17/110971/110971-c4ba48994192.jpg
 nightwishdpp https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3MUC0HR3DBLO0jMzw3HmlP-uZV7pQmlniNw&s https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3MUC0HR3DBLO0jMzw3HmlP-uZV7pQmlniNw&s
 melaniecthistime https://i.discogs.com/rap7YZjSfNsFuHBmyPUQlbW-9uo_a7GKSoVLxR1YOvc/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwODgy/MzMtMTE5MTEzNzg4/OC5qcGVn.jpeg https://i.discogs.com/rap7YZjSfNsFuHBmyPUQlbW-9uo_a7GKSoVLxR1YOvc/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwODgy/MzMtMTE5MTEzNzg4/OC5qcGVn.jpeg
-100prcntfree100prcntfree https://m.media-amazon.com/images/I/6189XfEjoQL._UF894,1000_QL80_.jpg https://m.media-amazon.com/images/I/6189XfEjoQL._UF894,1000_QL80_.jpg
+havenost https://medium-media.vgm.io/albums/35/106953/106953-ca979ad59e34.jpg https://medium-media.vgm.io/albums/35/106953/106953-f8ca93ecfec4.jpg
 deathnoteost1 https://medium-media.vgm.io/albums/06/19060/19060-1273041476.jpg https://medium-media.vgm.io/albums/06/19060/19060-1273041856.jpg
 deathnoteost2 https://medium-media.vgm.io/albums/17/19071/19071-1273075938.jpg https://medium-media.vgm.io/albums/17/19071/19071-1273076336.jpg
 deathnoteost3 https://medium-media.vgm.io/albums/27/19072/19072-1273077924.jpg https://medium-media.vgm.io/albums/27/19072/19072-1273077911.jpg
@@ -14,5 +14,18 @@ vrainsost1 https://medium-media.vgm.io/albums/93/80939/80939-1541393558.jpg http
 vrainsost2 https://medium-media.vgm.io/albums/70/83907/83907-1552553374.jpg https://medium-media.vgm.io/albums/70/83907/83907-1552553374.jpg
 vrainsost3 https://medium-media.vgm.io/albums/32/87923/87923-1573292512.jpg https://medium-media.vgm.io/albums/32/87923/87923-1573292512.jpg
 vrainsost4 https://medium-media.vgm.io/albums/21/95712/95712-1587330628.jpg https://medium-media.vgm.io/albums/21/95712/95712-1587330628.jpg
-havenost https://medium-media.vgm.io/albums/35/106953/106953-ca979ad59e34.jpg https://medium-media.vgm.io/albums/35/106953/106953-f8ca93ecfec4.jpg
-
+100prcntfree100prcntfree https://m.media-amazon.com/images/I/6189XfEjoQL._UF894,1000_QL80_.jpg https://m.media-amazon.com/images/I/6189XfEjoQL._UF894,1000_QL80_.jpg
+ffviir https://image.api.playstation.com/vulcan/img/cfn/11307-dNapclgq_VqNtQ98Xp_LxovvAdjd5AknZhd_-k2Cckq9FPtKDXAHk-ODCfvDKChH6hkEO0VLtj7Vk4E-Z8G707oe0N.png https://image.api.playstation.com/vulcan/img/cfn/113075PxnarzRek4cRpjrRWSpLfrcBd23B5e_Yj2azms6nWYKmySv4h3a22G5_R1CM4BQUmSRD6oOArDROKv041NUkgun78-.png
+ffviirb https://preview.redd.it/mjgaxov1eo691.png?width=1200&format=png&auto=webp&s=b4e9191234516ec055c2e4d2f261d29c3244f9e0 https://assetsio.gnwcdn.com/Final-Fantasy-7-Rebirth-Ending-Header.jpg?width=414&quality=70&format=jpg&dpr=2&auto=webp
+platinumend https://i.scdn.co/image/ab67616d0000b273855709aa64d4f1b0f5237026 https://i.ibb.co/yFcSJwm9/Titelloses-302-20250213004831.png
+xenobladechroniclesx https://medium-media.vgm.io/albums/29/51792/51792-1432459911.jpg https://medium-media.vgm.io/albums/29/51792/51792-1432459911.jpg
+nierautomta https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTCy6mgC1bb0syIvcX_4dXLzXcJIw0VU_wvjw&s https://www.game-ost.ru/static/covers_soundtracks/1/1/110257_536992.jpg
+crymachina https://i.scdn.co/image/ab67616d0000b273a699651e3838345262186ad2 https://i.ibb.co/yBh07Wth/Crymchina.png
+FFVIICCRoF https://medium-media.vgm.io/albums/38/4583/4583-1257276166.jpg https://medium-media.vgm.io/albums/38/4583/4583-1257276083.jpg
+AtelierYumia https://m.media-amazon.com/images/I/71eItTjylFL._AC_SX679_.jpg https://m.media-amazon.com/images/I/71eItTjylFL._AC_SX679_.jpg
+RockZeroColl https://i.namu.wiki/i/1WnmuSJdUjP4kswodOIykdBdvk7-2YgDlvczrT6wsEVyA1ozCxuh58IaBl6u9G9qT6gqrM04adasSx2eTk7LGw.webp https://i.namu.wiki/i/1WnmuSJdUjP4kswodOIykdBdvk7-2YgDlvczrT6wsEVyA1ozCxuh58IaBl6u9G9qT6gqrM04adasSx2eTk7LGw.webp
+RockZeroMythos https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgzua9G6OlNN0jzKkHvnxXUlpG2_sKdc_gCqlqGhqhA-25hHpj_IlB5hpIVdgNoZAuV7-qDTnY954Luo8N7CFcxrfzuN1eyNVJjGHPv2WjLNkfEan20Cnk52PNAhNjxHt4hff_5BIIo7hg/s600/mythos+cover.jpg https://i.ibb.co/Xxqh0Tmx/zero-mythos.jpg
+norn9+nonette https://i.postimg.cc/HL6YpMcS/Anime-Album-Cover.jpg https://i.postimg.cc/HL6YpMcS/Anime-Album-Cover.jpg
+shiki https://i.ibb.co/pBcMTFkm/shiki.jpg https://i.ibb.co/4ZmKHyhH/shiki.jpg
+ajin https://i.ibb.co/xSfqtvh7/Download.jpg https://i.ibb.co/xSfqtvh7/Download.jpg
+chaoslegion https://i.ibb.co/KjtBgPYB/Screenshot-2025-05-23-10-51-38.jpg https://i.ibb.co/svQVPXsz/604-1272144917-1.jpg
