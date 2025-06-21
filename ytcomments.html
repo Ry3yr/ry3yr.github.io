@@ -1,109 +1,158 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Fetch YouTube Comments</title>
-    <style>
-        .blocked {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>YouTube Comments Loader</title>
+  <style>
+    .comment { margin-bottom: 1em; border-bottom: 1px solid #ccc; padding: 0.5em; }
+    .reply { margin-left: 2em; color: #555; }
+    button.reply-btn { margin-top: 0.5em; }
+  </style>
 </head>
 <body>
-    <!-- HTML form for API key and channel selection -->
-    <form id="commentForm" method="POST">
-        <label for="api_key">API Key:</label>
-        <input type="text" name="api_key" id="api_key" value="">
-        <label for="channel_id">Channel:</label>
-        <select id="channel_id" name="channel_id" required>
-            <option value="UCrltGih11A_Nayz6hG5XtIw">Diarykeeper</option>
-            <option value="UCmIpOnd5BVx5Si2hp0WNKZw" selected>Repeekyraid_Cero</option>
-            <option value="UC-5ooQ1hSQ-uM8Mu4dLko4Q">AGB</option>
-            <option value="UCD7mRBujyxUResQ6jiiGypQ">PB</option>
-        </select>
-        <button type="submit">Fetch Comments</button>
-    </form>
-    <!-- Container to display the fetched comments -->
-    <div id="commentsContainer"></div>
-    <script>
-        const form = document.getElementById('commentForm');
-        const commentsContainer = document.getElementById('commentsContainer');
+  <h2>YouTube Comments Fetcher</h2>
 
-        // Retrieve blocked users from localStorage
-        let blockedUsers = JSON.parse(localStorage.getItem('ytusersblocked')) || [];
+  <label>
+    API Key:
+    <input type="text" id="apiKeyInput" placeholder="Enter YouTube API Key">
+  </label><br><br>
 
-        // Function to add a username to blocked users and update localStorage
-        function blockUser(username) {
-            if (!blockedUsers.includes(username)) {
-                blockedUsers.push(username);
-                localStorage.setItem('ytusersblocked', JSON.stringify(blockedUsers));
-                // Hide the comment if it's already displayed
-                document.querySelectorAll(`.comment[data-author="${username}"]`).forEach(comment => {
-                    comment.classList.add('blocked');
-                });
-            }
+  <label>
+    Video URL:
+    <input type="text" id="videoUrl" placeholder="Paste YouTube video URL here">
+  </label><br><br>
+
+  <button onclick="loadComments()">Load Comments</button>
+
+  <div id="stats"></div>
+  <div id="comments"></div>
+
+  <script>
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    function extractVideoId(url) {
+      const regex = /(?:v=|\.be\/|embed\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+    }
+
+    async function fetchTotalCommentCount(videoId, apiKey) {
+      const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}&key=${apiKey}`;
+      const res = await fetch(statsUrl);
+      if (!res.ok) throw new Error("Failed to fetch video stats");
+      const data = await res.json();
+      return parseInt(data.items[0].statistics.commentCount || "0", 10);
+    }
+
+    async function loadComments() {
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      const url = document.getElementById('videoUrl').value.trim();
+      const videoId = extractVideoId(url);
+
+      if (!apiKey) {
+        alert('API key is required');
+        return;
+      }
+      if (!videoId) {
+        alert('Invalid YouTube URL');
+        return;
+      }
+
+      const statsDiv = document.getElementById('stats');
+      const commentsDiv = document.getElementById('comments');
+      statsDiv.innerHTML = '';
+      commentsDiv.innerHTML = '<p>Loading comments...</p>';
+
+      try {
+        const totalComments = await fetchTotalCommentCount(videoId, apiKey);
+        statsDiv.innerHTML = `<h3>Total Comments on Video: ${totalComments}</h3>`;
+      } catch (e) {
+        statsDiv.innerHTML = `<p style="color:red;">Error fetching total comment count</p>`;
+      }
+
+      let commentsHTML = '';
+      let pageToken = '';
+      let totalLoaded = 0;
+
+      commentsDiv.innerHTML = '';
+
+      while (true) {
+        const apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&videoId=${videoId}&key=${apiKey}&maxResults=100&pageToken=${pageToken}`;
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          commentsDiv.innerHTML = `<p>Error: ${response.statusText}</p>`;
+          return;
         }
 
-        // Function to hide comments from blocked users
-        function hideBlockedComments() {
-            blockedUsers.forEach(username => {
-                document.querySelectorAll(`.comment[data-author="${username}"]`).forEach(comment => {
-                    comment.classList.add('blocked');
-                });
-            });
-        }
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const apiKey = document.getElementById('api_key').value;
-            const channelId = document.getElementById('channel_id').value;
-            const apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&allThreadsRelatedToChannelId=${channelId}&maxResults=10&order=time&key=${apiKey}`;
-            try {
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                const comments = data.items;
-                // Clear previous comments
-                commentsContainer.innerHTML = '';
-                // Display the fetched comments
-                comments.forEach((comment) => {
-                    const snippet = comment.snippet.topLevelComment.snippet;
-                    const author = snippet.authorDisplayName;
-                    const text = snippet.textDisplay;
-                    const videoId = snippet.videoId;
-                    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-                    const commentElement = document.createElement('div');
-                    commentElement.classList.add('comment');
-                    commentElement.dataset.author = author;
-                    commentElement.innerHTML = `
-                        <p><strong><a href="#" class="username">${author}</a></strong>: ${text}</p>
-                        <p>From Video: <a href="${videoUrl}" target="_blank">${videoUrl}</a></p>
-                    `;
-                    commentsContainer.appendChild(commentElement);
-                });
-
-                // Add click event to usernames
-                document.querySelectorAll('.username').forEach(usernameElement => {
-                    usernameElement.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        const username = event.target.innerText;
-                        // Confirm before blocking the user
-                        const confirmed = confirm(`Are you sure you want to block comments from ${username}?`);
-                        if (confirmed) {
-                            blockUser(username);
-                        }
-                    });
-                });
-
-                // Hide comments from blocked users after they are added to the DOM
-                hideBlockedComments();
-
-            } catch (error) {
-                console.error('Error fetching comments:', error);
-            }
+        const data = await response.json();
+        data.items.forEach(item => {
+          const topComment = item.snippet.topLevelComment.snippet;
+          const commentId = item.snippet.topLevelComment.id;
+          const replyCount = item.snippet.totalReplyCount;
+          const commentHTML = `
+            <div class="comment" id="comment-${commentId}">
+              <p><strong>${topComment.authorDisplayName}</strong>:</p>
+              <p>${topComment.textDisplay}</p>
+              ${replyCount > 0 ? `<button class="reply-btn" onclick="loadReplies('${commentId}', '${apiKey}')">Load ${replyCount} Replies</button>` : ''}
+              <div class="replies" id="replies-${commentId}"></div>
+            </div>
+          `;
+          commentsDiv.insertAdjacentHTML('beforeend', commentHTML);
+          totalLoaded++;
         });
 
-        // Hide comments from blocked users on page load
-        hideBlockedComments();
+        if (!data.nextPageToken) break;
+        pageToken = data.nextPageToken;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
-    </script>
+      commentsDiv.insertAdjacentHTML('afterbegin', `<h4>Top-Level Comments Loaded: ${totalLoaded}</h4>`);
+    }
+
+    async function loadReplies(parentId, apiKey) {
+      const repliesContainer = document.getElementById(`replies-${parentId}`);
+      const button = document.querySelector(`#comment-${parentId} .reply-btn`);
+      if (button) button.disabled = true;
+
+      let pageToken = '';
+      let repliesHTML = '';
+
+      while (true) {
+        const url = `https://www.googleapis.com/youtube/v3/comments?part=snippet&parentId=${parentId}&key=${apiKey}&maxResults=100&pageToken=${pageToken}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          repliesContainer.innerHTML = `<p>Error loading replies: ${response.statusText}</p>`;
+          return;
+        }
+
+        const data = await response.json();
+        data.items.forEach(reply => {
+          const r = reply.snippet;
+          repliesHTML += `
+            <div class="reply">
+              <p><strong>${r.authorDisplayName}</strong>: ${r.textDisplay}</p>
+            </div>
+          `;
+        });
+
+        if (!data.nextPageToken) break;
+        pageToken = data.nextPageToken;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      repliesContainer.innerHTML = repliesHTML;
+    }
+
+    window.onload = () => {
+      const apikey = getQueryParam('apikey');
+      if (apikey) {
+        document.getElementById('apiKeyInput').value = apikey;
+      }
+    };
+  </script>
 </body>
 </html>
