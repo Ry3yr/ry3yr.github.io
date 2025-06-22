@@ -82,7 +82,7 @@
 <body>
   <h1>Youtube Video Archive</h1>
 
-  [<a target="_blank" href="backup.php" style=color:blue>⬆️Upload</a>]  <a target="_blank" href="ytlist.html" style=color:blue>List</a><br>
+  [<a target="_blank" href="backup.php" style=color:blue>⬆️Upload</a>]  <a target="_blank" href="list.html" style=color:blue>List</a><br>
   <div id="search-container">
     <input type="text" id="search" placeholder="Search videos by title, uploader, or ID..." />
   </div>
@@ -171,7 +171,7 @@
       const params = new URLSearchParams(window.location.search);
       const limit = parseInt(params.get('limit'));
       const limitedVideos = limit > 0 ? videos.slice(0, limit) : videos;
-
+      searchInput.placeholder = `Search ${videos.length} videos...`;
       // Check reachability for each video and store directOk flag
       for (const v of videos) {
         v.directOk = await isReachable(v.url); // Check reachability before rendering
