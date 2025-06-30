@@ -51,6 +51,7 @@
   <h2>Compare Public Repos</h2>
 
   <label><input type="checkbox" id="markForked"> Mark forked repos (grey)</label>
+  <label><input type="checkbox" id="fetchAll"> All repos</label>
 
   <form id="repoForm" style="margin-top: 10px;">
     <label>URL 1: <input type="text" id="user1" value="https://codeberg.org/alceawisteria" required></label>
@@ -118,32 +119,54 @@
       }
     }
 
-    async function fetchRepos(platform, username) {
-      let url;
-      if (platform === "github") {
-        url = `https://api.github.com/users/${username}/repos`;
-      } else if (platform === "codeberg") {
-        url = `https://codeberg.org/api/v1/users/${username}/repos`;
-      } else {
-        log(`Unknown platform for user ${username}`);
-        return [];
-      }
+    // Fetch all pages if fetchAll is true, otherwise just one page
+    async function fetchRepos(platform, username, fetchAll = false) {
+      let repos = [];
+      let page = 1;
+      const per_page = 100; // max per page for GitHub and probably Codeberg
 
-      log(`Fetching from ${platform}: ${url}`);
-      try {
-        const res = await fetch(url);
-        if (!res.ok) {
-          log(`Failed to fetch from ${platform}: ${res.status} ${res.statusText}`);
+      async function fetchPage(page) {
+        let url;
+        if (platform === "github") {
+          url = `https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`;
+        } else if (platform === "codeberg") {
+          url = `https://codeberg.org/api/v1/users/${username}/repos?limit=${per_page}&page=${page}`;
+        } else {
+          log(`Unknown platform for user ${username}`);
           return [];
         }
-        const data = await res.json();
-        log(`Fetched ${data.length} repos from ${platform} for ${username}`);
-        // Return array of objects {name, fork}
-        return data.map(repo => ({ name: repo.name, fork: repo.fork }));
-      } catch (err) {
-        log(`Error fetching from ${platform}: ${err.message}`);
-        return [];
+
+        log(`Fetching from ${platform}: ${url}`);
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            log(`Failed to fetch from ${platform}: ${res.status} ${res.statusText}`);
+            return [];
+          }
+          const data = await res.json();
+          log(`Fetched ${data.length} repos from ${platform} for ${username}, page ${page}`);
+          return data.map(repo => ({ name: repo.name, fork: repo.fork }));
+        } catch (err) {
+          log(`Error fetching from ${platform}: ${err.message}`);
+          return [];
+        }
       }
+
+      if (!fetchAll) {
+        // Just fetch the first page only
+        repos = await fetchPage(1);
+      } else {
+        // Fetch all pages until empty result
+        while (true) {
+          const pageRepos = await fetchPage(page);
+          if (pageRepos.length === 0) break;
+          repos = repos.concat(pageRepos);
+          if (pageRepos.length < per_page) break; // Last page reached
+          page++;
+        }
+      }
+
+      return repos;
     }
 
     function makeRepoLink(platform, username, repo, markForked) {
@@ -159,6 +182,7 @@
       const input1 = document.getElementById("user1").value;
       const input2 = document.getElementById("user2").value;
       const markForked = document.getElementById("markForked").checked;
+      const fetchAll = document.getElementById("fetchAll").checked;
 
       const platform1 = detectPlatform(input1);
       const platform2 = detectPlatform(input2);
@@ -167,6 +191,7 @@
       const username2 = extractUsername(input2);
 
       log(`Starting comparison between "${username1}" (${platform1}) and "${username2}" (${platform2})`);
+      if (fetchAll) log("Fetching ALL repos for each user");
 
       // Update table headers with usernames
       document.getElementById("sharedHeader").textContent = `Repos shared by ${username1} and ${username2}`;
@@ -179,8 +204,8 @@
       `;
 
       const [repos1, repos2] = await Promise.all([
-        fetchRepos(platform1, username1),
-        fetchRepos(platform2, username2)
+        fetchRepos(platform1, username1, fetchAll),
+        fetchRepos(platform2, username2, fetchAll)
       ]);
 
       // Convert to map for easy lookup by name
