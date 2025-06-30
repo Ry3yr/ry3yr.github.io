@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YouTube Comments Loader</title>
+  <style>
+    .comment { margin-bottom: 1em; border-bottom: 1px solid #ccc; padding: 0.5em; }
+    .reply { margin-left: 2em; color: #555; }
+    button.reply-btn { margin-top: 0.5em; }
+  </style>
+</head>
+<body>
+  <h2>YouTube Comments Fetcher</h2>
+
+  <label>
+    API Key:
+    <input type="text" id="apiKeyInput" placeholder="Enter YouTube API Key">
+  </label><br><br>
+
+  <label>
+    Video URL:
+    <input type="text" id="videoUrl" placeholder="Paste YouTube video URL here">
+  </label><br><br>
+
+  <button onclick="loadComments()">Load Comments</button>
+
+  <div id="stats"></div>
+  <div id="comments"></div>
+
+  <script>
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    function extractVideoId(url) {
+      const regex = /(?:v=|\.be\/|embed\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+    }
+
+    async function fetchTotalCommentCount(videoId, apiKey) {
+      const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}&key=${apiKey}`;
+      const res = await fetch(statsUrl);
+      if (!res.ok) throw new Error("Failed to fetch video stats");
+      const data = await res.json();
+      return parseInt(data.items[0].statistics.commentCount || "0", 10);
+    }
+
+    async function loadComments() {
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      const url = document.getElementById('videoUrl').value.trim();
+      const videoId = extractVideoId(url);
+
+      if (!apiKey) {
+        alert('API key is required');
+        return;
+      }
+      if (!videoId) {
+        alert('Invalid YouTube URL');
+        return;
+      }
+
+      const statsDiv = document.getElementById('stats');
+      const commentsDiv = document.getElementById('comments');
+      statsDiv.innerHTML = '';
+      commentsDiv.innerHTML = '<p>Loading comments...</p>';
+
+      try {
+        const totalComments = await fetchTotalCommentCount(videoId, apiKey);
+        statsDiv.innerHTML = `<h3>Total Comments on Video: ${totalComments}</h3>`;
+      } catch (e) {
+        statsDiv.innerHTML = `<p style="color:red;">Error fetching total comment count</p>`;
+      }
+
+      let commentsHTML = '';
+      let pageToken = '';
+      let totalLoaded = 0;
+
+      commentsDiv.innerHTML = '';
+
+      while (true) {
+        const apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&videoId=${videoId}&key=${apiKey}&maxResults=100&pageToken=${pageToken}`;
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          commentsDiv.innerHTML = `<p>Error: ${response.statusText}</p>`;
+          return;
+        }
+
+        const data = await response.json();
+        data.items.forEach(item => {
+          const topComment = item.snippet.topLevelComment.snippet;
+          const commentId = item.snippet.topLevelComment.id;
+          const replyCount = item.snippet.totalReplyCount;
+          const commentHTML = `
+            <div class="comment" id="comment-${commentId}">
+              <p><strong>${topComment.authorDisplayName}</strong>:</p>
+              <p>${topComment.textDisplay}</p>
+              ${replyCount > 0 ? `<button class="reply-btn" onclick="loadReplies('${commentId}', '${apiKey}')">Load ${replyCount} Replies</button>` : ''}
+              <div class="replies" id="replies-${commentId}"></div>
+            </div>
+          `;
+          commentsDiv.insertAdjacentHTML('beforeend', commentHTML);
+          totalLoaded++;
+        });
+
+        if (!data.nextPageToken) break;
+        pageToken = data.nextPageToken;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      commentsDiv.insertAdjacentHTML('afterbegin', `<h4>Top-Level Comments Loaded: ${totalLoaded}</h4>`);
+    }
+
+    async function loadReplies(parentId, apiKey) {
+      const repliesContainer = document.getElementById(`replies-${parentId}`);
+      const button = document.querySelector(`#comment-${parentId} .reply-btn`);
+      if (button) button.disabled = true;
+
+      let pageToken = '';
+      let repliesHTML = '';
+
+      while (true) {
+        const url = `https://www.googleapis.com/youtube/v3/comments?part=snippet&parentId=${parentId}&key=${apiKey}&maxResults=100&pageToken=${pageToken}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          repliesContainer.innerHTML = `<p>Error loading replies: ${response.statusText}</p>`;
+          return;
+        }
+
+        const data = await response.json();
+        data.items.forEach(reply => {
+          const r = reply.snippet;
+          repliesHTML += `
+            <div class="reply">
+              <p><strong>${r.authorDisplayName}</strong>: ${r.textDisplay}</p>
+            </div>
+          `;
+        });
+
+        if (!data.nextPageToken) break;
+        pageToken = data.nextPageToken;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      repliesContainer.innerHTML = repliesHTML;
+    }
+
+    window.onload = () => {
+      const apikey = getQueryParam('apikey');
+      if (apikey) {
+        document.getElementById('apiKeyInput').value = apikey;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<meta charset="UTF-8">
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monthly Cost Calculator</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .item { margin-bottom: 10px; }
+    input[type="text"], input[type="number"] {
+      padding: 5px;
+      margin-right: 10px;
+    }
+    button { padding: 5px 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Monthly Cost Calculator</h2>
+  <div id="items"></div>
+  <button onclick="addItem()">+ Add Item</button>
+  <hr>
+  <h3>Total: €<span id="total">0.00</span></h3>
+  <button onclick="exportJSON()">Export as JSON</button>
+
+  <script>
+    function addItem(description = '', cost = 0) {
+      const container = document.getElementById('items');
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <input type="text" placeholder="Description" value="${description}">
+        <input type="number" placeholder="Cost" value="${cost}" oninput="calculateTotal()" step="0.01" min="0">
+      `;
+      container.appendChild(div);
+      calculateTotal();
+    }
+
+    function calculateTotal() {
+      const inputs = document.querySelectorAll('#items input[type="number"]');
+      let total = 0;
+      inputs.forEach(input => {
+        total += parseFloat(input.value) || 0;
+      });
+      document.getElementById('total').textContent = total.toFixed(2);
+    }
+
+    function exportJSON() {
+      const items = [];
+      const rows = document.querySelectorAll('#items .item');
+      rows.forEach(row => {
+        const desc = row.querySelector('input[type="text"]').value;
+        const cost = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+        items.push({ description: desc, cost: cost });
+      });
+      const dataStr = JSON.stringify(items, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'monthly_costs.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function getURLParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    async function loadJSONFromURL() {
+      const jsonUrl = getURLParameter('url');
+      if (jsonUrl) {
+        try {
+          const response = await fetch(jsonUrl);
+          const data = await response.json();
+          data.forEach(item => addItem(item.description, item.cost));
+        } catch (error) {
+          console.error('Failed to load JSON:', error);
+        }
+      } else {
+        addItem();
+      }
+    }
+
+    // Load data on page load
+    window.onload = loadJSONFromURL;
+  </script>
+</body>
+</html>

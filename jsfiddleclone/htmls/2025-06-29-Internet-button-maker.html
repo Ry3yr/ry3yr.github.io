@@ -1,0 +1,335 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Button</title>
+<!-- html2canvas -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- gif.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.min.js"></script>
+<style>
+  body {
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0;
+    touch-action: none;
+  }
+  .button-container {
+  position: relative;
+  width: 440px; /* Keep this to match the button image's width exactly */
+  height: 210px; /* Keep this to match the button image's height exactly */
+  background-image: url('https://i.ibb.co/Zp4WJmZX/emptybutton.png');
+  background-size: 100% 100%; /* Ensures full coverage with no overflow */
+  background-repeat: no-repeat;
+  border: 0;
+  margin-bottom: 0;
+  padding: 0; /* Ensure no extra spacing */
+  overflow: hidden; /* Clip any overflow */
+}
+
+  .upload-zone {
+    position: absolute;
+    top: 5%;
+    left: 2%;
+    width: 95%;
+    height: 87%;
+    border: 0px dashed #555;
+    box-sizing: border-box;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    background-color: transparent;
+  }
+  .image-wrapper {
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    transition: transform 0.05s ease;
+    will-change: transform;
+  }
+  .image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: fit;
+    pointer-events: none;
+    user-select: none;
+    touch-action: none;
+  }
+  input[type="file"] {
+    display: none;
+  }
+  #output img {
+    border: 0px solid #ccc;
+    margin-top: 0px;
+    max-width: 100%;
+  }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  input[type="text"] {
+    padding: 4px;
+    width: 200px;
+    box-sizing: border-box;
+  }
+  button {
+    padding: 6px 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="button-container" id="screenshotTarget">
+  <label class="upload-zone" title="Click to upload image">
+    <input type="file" accept="image/*" id="fileInput" />
+    <div class="image-wrapper" id="imageWrapper">
+      <img id="uploadedImage" src="" alt="" />
+    </div>
+  </label>
+</div>
+
+<div class="controls">
+  <input type="text" id="filenameInput" placeholder="Enter base filename" />
+  <button id="screenshotBtn">PNG Screenshot</button>
+  <!--<button id="gifBtn">GIF Screenshot</button>-->
+</div>
+
+<div id="output"></div>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const uploadedImage = document.getElementById('uploadedImage');
+  const imageWrapper = document.getElementById('imageWrapper');
+  const uploadZone = document.querySelector('.upload-zone');
+  const screenshotBtn = document.getElementById('screenshotBtn');
+  const gifBtn = document.getElementById('gifBtn');
+  const output = document.getElementById('output');
+  const filenameInput = document.getElementById('filenameInput');
+
+  let scale = 1;
+  let lastScale = 1;
+  let startX = 0;
+  let startY = 0;
+  let translateX = 0;
+  let translateY = 0;
+  let initialDistance = null;
+  let isDragging = false;
+
+  function setTransform() {
+    imageWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  }
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        uploadedImage.src = e.target.result;
+        scale = 1;
+        lastScale = 1;
+        translateX = 0;
+        translateY = 0;
+        setTransform();
+      };
+      reader.readAsDataURL(file);
+    } else {
+      uploadedImage.src = '';
+      alert('Please upload a valid image file.');
+    }
+  });
+
+  function getDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  uploadZone.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      initialDistance = getDistance(e.touches);
+    } else if (e.touches.length === 1) {
+      isDragging = true;
+      startX = e.touches[0].clientX - translateX;
+      startY = e.touches[0].clientY - translateY;
+    }
+  });
+
+  uploadZone.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const currentDistance = getDistance(e.touches);
+      const delta = currentDistance / initialDistance;
+      scale = Math.max(1, Math.min(lastScale * delta, 4));
+      setTransform();
+    } else if (e.touches.length === 1 && isDragging) {
+      translateX = e.touches[0].clientX - startX;
+      translateY = e.touches[0].clientY - startY;
+      setTransform();
+    }
+  });
+
+  uploadZone.addEventListener('touchend', e => {
+    if (e.touches.length < 2) {
+      lastScale = scale;
+      initialDistance = null;
+    }
+    if (e.touches.length === 0) {
+      isDragging = false;
+    }
+  });
+
+  uploadZone.addEventListener('mousedown', e => {
+    isDragging = true;
+    startX = e.clientX - translateX;
+    startY = e.clientY - translateY;
+    uploadZone.style.cursor = 'grabbing';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (isDragging) {
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      setTransform();
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    uploadZone.style.cursor = 'grab';
+  });
+
+  function getFilename(ext) {
+    const base = filenameInput.value.trim() || 'screenshot';
+    return base + '.' + ext;
+  }
+
+  screenshotBtn.addEventListener('click', () => {
+    html2canvas(document.getElementById('screenshotTarget'), {
+      useCORS: true,
+      backgroundColor: null,
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = getFilename('png');
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      const img = new Image();
+      img.src = canvas.toDataURL('image/png');
+      output.innerHTML = '';
+      output.appendChild(img);
+    });
+  });
+
+  gifBtn.addEventListener('click', () => {
+    html2canvas(document.getElementById('screenshotTarget'), {
+      useCORS: true,
+      backgroundColor: null,
+      scale: 2
+    }).then(canvas => {
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        width: canvas.width,
+        height: canvas.height
+      });
+
+      gif.addFrame(canvas, { delay: 500 });
+
+      gif.on('finished', blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = getFilename('gif');
+        link.href = url;
+        link.click();
+
+        const img = new Image();
+        img.src = url;
+        output.innerHTML = '';
+        output.appendChild(img);
+      });
+
+      gif.render();
+    });
+  });
+</script>
+
+</body>
+</html>
+
+
+
+<!--Resize-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.8">
+  <title>Resize Image</title>
+</head>
+<body>
+  <div>
+    <!-- Static input fields for width and height -->
+    <input id="widthInput" type="number" placeholder="Width" />
+    <input id="heightInput" type="number" placeholder="Height" />
+    <button id="resizeBtn">Resize Image</button>  </div>
+  <div id="output"> </div>
+  <script>
+    function resizeImageOnCanvas(originalImage, width, height) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(originalImage, 0, 0, originalImage.width, originalImage.height, 0, 0, width, height);
+      return canvas.toDataURL('image/png');
+    }
+    const resizeBtn = document.getElementById('resizeBtn');
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+    resizeBtn.addEventListener('click', () => {
+      const width = parseInt(widthInput.value, 10);
+      const height = parseInt(heightInput.value, 10);
+      if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+        alert('Please enter valid dimensions.');
+        return;
+      }
+      const img = document.querySelector('#output img');
+      if (img) {
+        const resizedImageDataUrl = resizeImageOnCanvas(img, width, height);
+        const resizedImg = new Image();
+        resizedImg.src = resizedImageDataUrl;
+        resizedImg.onload = () => {
+          const output = document.getElementById('output');
+          output.innerHTML = ''; // Clear the output
+          output.appendChild(resizedImg);
+
+          const downloadLink = document.createElement('a');
+          downloadLink.href = resizedImageDataUrl;
+          downloadLink.download = 'resized_screenshot.png';
+          downloadLink.textContent = 'Download Resized Image';
+          document.body.appendChild(downloadLink);
+        };
+      } else {
+        alert('No image available to resize!');
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+<a href="javascript:void(0);" onclick="document.getElementById('widthInput').value = 440; document.getElementById('heightInput').value = 310;">Set to 440x310</a>
+<a href="javascript:void(0);" onclick="document.getElementById('widthInput').value = 220; document.getElementById('heightInput').value = 205;">Set to 220x205</a>
+<a href="javascript:void(0);" onclick="document.getElementById('widthInput').value = 88; document.getElementById('heightInput').value = 31;">Set to 88x31</a>

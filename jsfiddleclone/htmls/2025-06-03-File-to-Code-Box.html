@@ -1,0 +1,42 @@
+Swlect multipe files (f.e. *.html *.js *.php ).<br>
+Thie will print em all into a textbox, with the filename as header for each <hr>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi File Reader</title>
+</head>
+<body>
+  <input type="file" id="fileInput" multiple><br><br>
+  <textarea id="output" rows="30" cols="100" readonly></textarea>
+
+  <script>
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+      const files = event.target.files;
+      const output = document.getElementById('output');
+      const promises = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        const promise = new Promise((resolve) => {
+          reader.onload = function(e) {
+            const content = e.target.result;
+            const formatted = `${file.name}\n--\n${content}`;
+            resolve(formatted);
+          };
+          reader.readAsText(file);
+        });
+
+        promises.push(promise);
+      }
+
+      Promise.all(promises).then(results => {
+        output.value = results.join('\n\n');
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reddit Client</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; color: #222; }
+    input, button, textarea { font-size: 1rem; padding: 0.4em; }
+    #picker { width: 400px; height: 150px; overflow-y: scroll; border: 1px solid #ccc; }
+    .item { padding: 8px; cursor: pointer; }
+    .item:hover, .item.selected { background-color: #ddeeff; }
+    #resultFrame { width: 100%; height: 600px; border: none; margin-top: 20px; display: none; }
+    #debug { margin-top: 20px; color: red; font-family: monospace; white-space: pre-line; }
+    .post { margin-bottom: 1.5em; }
+    .post img { max-width: 400px; display: block; margin: 0.5em 0; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; padding: 1em; max-width: 800px; width: 90%; max-height: 90%; overflow-y: auto; border-radius: 4px; position: relative; }
+    .close-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 1.2rem; background: none; border: none; }
+    .comment { border-left: 2px solid #ccc; padding-left: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<a href="RedditFrontend.html" target="_blank">RedditClient&nbsp;(PHP&nbsp;ver)</a>
+<hr>
+
+<div id="picker"></div>
+
+<div id="debug"></div>
+<iframe id="resultFrame"></iframe>
+
+<form id="subreddit-form">
+  <label>Subreddit / Post URL:
+    <input id="subreddit-input" value="deutschland">
+  </label>
+  <button type="submit">Load</button>
+</form>
+
+<div id="posts"></div>
+<button id="load-more" style="display:none">Load&nbsp;More</button>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn">✖</button>
+    <!-- URL Bar -->
+    <div style="margin-bottom: 1em;">
+      <label><strong>URL:</strong>
+        <input type="text" id="modal-url-input" style="width:75%;font-size:1rem;">
+      </label>
+      <button id="modal-url-submit">Go</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- Utility ---------- */
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function decodeHtml(html) { const txt=document.createElement('textarea'); txt.innerHTML=html; return txt.value; }
+function log(msg){document.getElementById('debug').innerText+=msg+"\n";}
+
+/* ---------- Picker ---------- */
+fetch('https://alcea-wisteria.de/PHP//0demo/2025-04-05-SocialMediaMediaXtractor/2025-06-15-Reddit-PostFetch/reddit.txt').then(r=>r.text()).then(data=>{
+  const picker=document.getElementById('picker');
+  data.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line=>{
+    const url=line.startsWith('http')?line:`https://www.reddit.com/r/${line.replace(/^\/?r\//,'')}`;
+    const div=document.createElement('div'); div.className='item'; div.textContent=url;
+    div.onclick=()=>handlePickerClick(url,div);
+    picker.appendChild(div);
+  });
+});
+
+function handlePickerClick(url,div){
+  document.querySelectorAll('#picker .item').forEach(el=>el.classList.remove('selected'));
+  div.classList.add('selected');
+  if(/\/comments\//.test(url)){ openPostByUrl(url); }
+  else{ document.getElementById('subreddit-input').value=url.replace(/^https?:\/\/(www\.)?reddit\.com\/r\//i,'').replace(/\/$/,''); form.dispatchEvent(new Event('submit')); }
+}
+
+/* ---------- Subreddit/Post Loading ---------- */
+const form=document.getElementById('subreddit-form');
+const input=document.getElementById('subreddit-input');
+const postsDiv=document.getElementById('posts');
+const loadMoreBtn=document.getElementById('load-more');
+let after='',currentSub='deutschland';
+
+form.addEventListener('submit',e=>{
+  e.preventDefault();
+  const val=input.value.trim();
+  if(val.startsWith('http')){ openPostByUrl(val); return; }
+  currentSub=val||'deutschland'; after=''; postsDiv.innerHTML=''; loadMoreBtn.style.display='none'; loadPosts();
+});
+loadMoreBtn.addEventListener('click',loadPosts);
+
+async function loadPosts(){
+  const url=`https://www.reddit.com/r/${encodeURIComponent(currentSub)}.json?limit=10&after=${after}`;
+  try{
+    const res=await fetch(url); const json=await res.json();
+    json.data.children.forEach(c=>renderPost(c.data));
+    after=json.data.after||''; loadMoreBtn.style.display=after?'block':'none';
+  }catch(err){console.error(err); postsDiv.innerHTML+='<p>Error loading subreddit data.</p>';}
+}
+
+function renderPost(post){
+  const div=document.createElement('div'); div.className='post';
+  const title=document.createElement('h3');
+  title.innerHTML=`<a href="#" data-permalink="${post.permalink}">${escapeHtml(post.title)}</a>`;
+  title.querySelector('a').addEventListener('click',e=>{e.preventDefault(); openPostByUrl(`https://www.reddit.com${post.permalink}`);});
+  div.appendChild(title);
+
+  let imgUrl='';
+  if(post.preview?.images?.length) imgUrl=post.preview.images[0].source.url.replace(/&amp;/g,'&');
+  else if(/\.(jpe?g|png|gif)$/i.test(post.url)) imgUrl=post.url;
+  if(imgUrl){ const img=document.createElement('img'); img.src=imgUrl; div.appendChild(img); }
+
+  const snippet=document.createElement('p'); snippet.textContent=post.selftext?post.selftext.substring(0,150)+'...':'';
+  div.appendChild(snippet); postsDiv.appendChild(div);
+}
+
+/* ---------- Modal ---------- */
+const modal=document.getElementById('modal');
+const modalBody=document.getElementById('modal-body');
+const urlInput=document.getElementById('modal-url-input');
+modal.querySelector('.close-btn').addEventListener('click',()=>modal.style.display='none');
+window.addEventListener('click',e=>{if(e.target===modal) modal.style.display='none';});
+
+async function openPostByUrl(url){
+  try{
+    const api=url.replace(/\/(?:\?.*)?$/,'')+'.json';
+    const res=await fetch(api); const json=await res.json();
+    const post=json[0].data.children[0].data; const comments=json[1].data.children;
+    showModal(post,comments);
+  }catch(err){console.error(err);}
+}
+
+function showModal(post,comments){
+  urlInput.value=`https://www.reddit.com${post.permalink}`;
+  modalBody.innerHTML=`
+    <h2><a href="https://www.reddit.com${post.permalink}" target="_blank">${escapeHtml(post.title)}</a></h2>
+    <p>u/${post.author}&nbsp;•&nbsp;${new Date(post.created_utc*1000).toLocaleString()}&nbsp;•&nbsp;${post.score}&nbsp;points&nbsp;•&nbsp;${post.num_comments}&nbsp;comments</p>
+    <div>${decodeHtml(post.selftext_html||'')}</div>
+    ${gatherImages(post)}
+    <h3>Comments</h3>`;
+  comments.forEach(c=>renderComment(c,0,post.permalink));
+  modal.style.display='flex';
+}
+
+function gatherImages(post){
+  const imgs=[];
+  if(/\.(jpe?g|png|gif)$/i.test(post.url)) imgs.push(post.url);
+  post.preview?.images?.forEach(i=>imgs.push(i.source.url.replace(/&amp;/g,'&')));
+  if(post.gallery_data?.items&&post.media_metadata){
+    post.gallery_data.items.forEach(it=>{
+      const u=post.media_metadata[it.media_id]?.s?.u; if(u) imgs.push(u.replace(/&amp;/g,'&'));
+    });
+  }
+  return [...new Set(imgs)].map(u=>`<img src="${u}" style="max-width:100%;margin:10px 0">`).join('');
+}
+
+function renderComment(node,depth,permalink){
+  if(node.kind!=='t1') return;
+  const c=node.data;
+  const div=document.createElement('div');
+  div.className='comment'; div.style.marginLeft=depth*20+'px';
+  div.innerHTML=`
+    <p><strong><a href="https://www.reddit.com/user/${c.author}" target="_blank">u/${c.author}</a></strong>
+       (${c.score} pts)
+       <a href="https://www.reddit.com${permalink}${c.id}" target="_blank" style="font-size:0.85em">[link]</a>
+        <a href="/other/extra/fetchdata/2025-06-20-RedditCommentPoster/post.php?url=https://www.reddit.com${permalink}${c.id}" target="_blank" style="font-size:0.85em">[post]</a>
+    </p>
+    <div>${decodeHtml(c.body_html)}</div>`;
+  modalBody.appendChild(div);
+  c.replies?.data?.children?.forEach(child=>renderComment(child,depth+1,permalink));
+}
+
+/* ---------- Modal URL Go ---------- */
+document.getElementById('modal-url-submit').addEventListener('click',()=>{
+  const url=urlInput.value.trim();
+  if(!url.startsWith('http')){alert('Please enter a valid URL starting with http or https.'); return;}
+  openPostByUrl(url);
+});
+
+/* ---------- Initial Load ---------- */
+loadPosts();
+</script>
+
+</body>
+</html>

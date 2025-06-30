@@ -1,0 +1,67 @@
+<style>
+.marquee-container {
+width: 100vw;
+overflow: hidden;
+box-sizing: border-box;
+}
+.marquee {
+white-space: nowrap;
+position: relative;
+will-change: transform;
+}
+.marquee a {
+display: inline-block;
+margin-right: 0.25rem;
+}
+.marquee img {
+vertical-align: middle;
+width: 88px;
+height: 31px;
+}
+</style>
+
+<div class="marquee-container">
+<div class="marquee" id="marquee">
+<a href="https://yusaao.org" target="_blank"><img src="https://alceawis.de/other/images/buttons/yusaao.png" alt="yusaao"></a>
+<a href="https://m.youtube.com/watch?v=Kt4ojxXBIck#https://www.nintendolife.com/news/2025/06/arc-system-works-announces-new-interactive-adventure-for-switch-2" target="_blank"><img src="https://alceawis.de/other/images/buttons/derpy.png" alt="Derpy"></a>
+<a href="https://web.archive.org/web/20250629060949/https://phoster.zone/buttons/88/piracy.gif" target="_blank" rel="noopener noreferrer"><img src="https://i.ibb.co/27g10Wnn/piracy.gif" alt="Piracy"></a>
+<a href="https://example.com/browser-support" target="_blank"><img src="https://i.ibb.co/hRR0jL79/anybrowser.gif" alt="Any Browser"></a>
+<a href="https://alceawis.de/mmdvrmresources.html#https://alcea-wisteria.de/blog/2024/08/mmmd-vrm-vroid-mikumikudance-resources" target="_blank"><img src="https://alceawis.de/other/images/buttons/mikumikuvroid.png" alt="mikumiku"></a>
+
+<a href="#" id="reset-marquee">Reset</a>
+</div>
+</div>
+<!--<button id="reset-marquee">Reset</button>-->
+<script>
+let position = 0;
+(function () {
+const tryInit = () => {
+const marquee = document.getElementById('marquee');
+if (!marquee) {
+requestAnimationFrame(tryInit);
+return;
+}
+const container = marquee.parentElement;
+position = parseFloat(localStorage.getItem('marqueePos')) || container.offsetWidth;
+function animateMarquee() {
+position -= 0.5;
+const marqueeWidth = marquee.scrollWidth;
+if (position < -marqueeWidth) {
+position = container.offsetWidth;
+}
+marquee.style.transform = `translateX(${position}px)`;
+requestAnimationFrame(animateMarquee);
+}
+animateMarquee();
+window.addEventListener('beforeunload', () => {
+localStorage.setItem('marqueePos', position);
+});
+document.getElementById('reset-marquee').addEventListener('click', () => {
+position = container.offsetWidth;
+localStorage.setItem('marqueePos', position);
+marquee.style.transform = `translateX(${position}px)`;
+});
+};
+tryInit();
+})();
+</script>

@@ -1,0 +1,246 @@
+<meta charset="UTF-8">
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>YouTube Videos with OAuth Token Input</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    #tokenInputArea { margin-bottom: 1em; }
+    #downloadButtons { margin-top: 1em; }
+    #downloadButtons button { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <h1>YouTube Channel Videos</h1>
+
+  <div id="tokenInputArea">
+    <label for="oauthToken">Paste OAuth Access Token:</label><br>
+    <input type="text" id="oauthToken" size="80" placeholder="Paste your OAuth Access Token here"/>
+    <button id="submitToken">Submit Token</button>
+    <button id="clearToken">Clear Token</button>
+  </div>
+
+  <button id="authorize_button" style="display:none;">Authorize with Google</button>
+  <button id="signout_button" style="display:none;">Sign Out</button>
+
+  <div id="content"></div>
+
+  <div id="downloadButtons" style="display:none;">
+    <button id="downloadHtmlBtn">Download Table as HTML</button>
+    <button id="downloadJsonBtn">Download as JSON</button>
+  </div>
+
+  <script>
+    const API_KEY = 'YOUR_API_KEY'; // Replace with your API key
+    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"];
+
+    const authorizeButton = document.getElementById('authorize_button');
+    const signoutButton = document.getElementById('signout_button');
+    const contentDiv = document.getElementById('content');
+    const tokenInput = document.getElementById('oauthToken');
+    const submitTokenBtn = document.getElementById('submitToken');
+    const clearTokenBtn = document.getElementById('clearToken');
+
+    const downloadButtonsDiv = document.getElementById('downloadButtons');
+    const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
+    const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+
+    let accessToken = localStorage.getItem('yt_access_token') || null;
+    let lastVideoDetails = [];
+    let channelUsername = 'user'; // fallback username
+
+    function clearUI() {
+      contentDiv.innerHTML = '';
+      authorizeButton.style.display = 'none';
+      signoutButton.style.display = 'none';
+      downloadButtonsDiv.style.display = 'none';
+    }
+
+    async function callYouTubeApiWithToken(token) {
+      contentDiv.innerHTML = 'Loading videos...';
+
+      try {
+        // Get channel info
+        const channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=contentDetails,snippet&mine=true', {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (!channelResponse.ok) {
+          throw new Error('Failed to get channel info. Status: ' + channelResponse.status);
+        }
+
+        const channelData = await channelResponse.json();
+
+        if (!channelData.items || channelData.items.length === 0) {
+          contentDiv.innerHTML = 'No channel found or token has no permission.';
+          return;
+        }
+
+        // Extract username from snippet title or fallback to 'user'
+        if (channelData.items[0].snippet && channelData.items[0].snippet.title) {
+          channelUsername = channelData.items[0].snippet.title.replace(/\s+/g, '_').toLowerCase();
+        }
+
+        const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
+
+        let videos = [];
+        let nextPageToken = '';
+
+        do {
+          const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=50&pageToken=${nextPageToken}`, {
+            headers: {
+              'Authorization': 'Bearer ' + token
+            }
+          });
+
+          if (!playlistResponse.ok) {
+            throw new Error('Failed to get playlist items. Status: ' + playlistResponse.status);
+          }
+
+          const playlistData = await playlistResponse.json();
+
+          videos = videos.concat(playlistData.items);
+          nextPageToken = playlistData.nextPageToken || '';
+        } while (nextPageToken);
+
+        const videoIds = videos.map(v => v.contentDetails.videoId);
+        let allVideoDetails = [];
+
+        for (let i = 0; i < videoIds.length; i += 50) {
+          const batchIds = videoIds.slice(i, i + 50).join(',');
+
+          const videosResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${batchIds}`, {
+            headers: {
+              'Authorization': 'Bearer ' + token
+            }
+          });
+
+          if (!videosResponse.ok) {
+            throw new Error('Failed to get video details. Status: ' + videosResponse.status);
+          }
+
+          const videosData = await videosResponse.json();
+          allVideoDetails = allVideoDetails.concat(videosData.items);
+        }
+
+        lastVideoDetails = allVideoDetails;
+
+        renderVideos(allVideoDetails);
+
+        document.getElementById('tokenInputArea').style.display = 'none';
+        signoutButton.style.display = 'inline-block';
+        downloadButtonsDiv.style.display = 'block';
+
+      } catch (error) {
+        contentDiv.innerHTML = 'Error: ' + error.message;
+        console.error(error);
+      }
+    }
+
+    function renderVideos(videoDetails) {
+      if (!videoDetails.length) {
+        contentDiv.innerHTML = 'No videos found.';
+        return;
+      }
+
+      let html = '<table id="videosTable"><thead><tr>';
+      html += '<th>Title</th><th>Views</th><th>Likes</th><th>Comments</th><th>URL</th><th>Upload Date</th>';
+      html += '</tr></thead><tbody>';
+
+      videoDetails.forEach(video => {
+        const stats = video.statistics || {};
+        const snippet = video.snippet || {};
+
+        const url = `https://www.youtube.com/watch?v=${video.id}`;
+        html += '<tr>';
+        html += `<td>${snippet.title}</td>`;
+        html += `<td>${stats.viewCount || '0'}</td>`;
+        html += `<td>${stats.likeCount || '0'}</td>`;
+        html += `<td>${stats.commentCount || '0'}</td>`;
+        html += `<td><a href="${url}" target="_blank">Watch</a></td>`;
+        html += `<td>${new Date(snippet.publishedAt).toLocaleDateString()}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      contentDiv.innerHTML = html;
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    downloadHtmlBtn.addEventListener('click', () => {
+      const table = document.getElementById('videosTable');
+      if (!table) {
+        alert('No table to download.');
+        return;
+      }
+      // Wrap table in minimal HTML so it can be opened standalone
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>YouTube Videos</title></head>
+<body>
+${table.outerHTML}
+</body>
+</html>`;
+      download('youtube_videos.html', htmlContent, 'text/html');
+    });
+
+    downloadJsonBtn.addEventListener('click', () => {
+      if (!lastVideoDetails.length) {
+        alert('No video data to download.');
+        return;
+      }
+      const dateStr = new Date().toISOString().slice(0,10); // yyyy-mm-dd
+      const filename = `${dateStr}-${channelUsername}.json`;
+      download(filename, JSON.stringify(lastVideoDetails, null, 2), 'application/json');
+    });
+
+    // On submit token
+    submitTokenBtn.addEventListener('click', () => {
+      const token = tokenInput.value.trim();
+      if (!token) {
+        alert('Please paste an OAuth access token.');
+        return;
+      }
+      localStorage.setItem('yt_access_token', token);
+      accessToken = token;
+      callYouTubeApiWithToken(token);
+    });
+
+    // Clear token
+    clearTokenBtn.addEventListener('click', () => {
+      localStorage.removeItem('yt_access_token');
+      accessToken = null;
+      contentDiv.innerHTML = '';
+      document.getElementById('tokenInputArea').style.display = 'block';
+      signoutButton.style.display = 'none';
+      downloadButtonsDiv.style.display = 'none';
+      tokenInput.value = '';
+    });
+
+    // On page load, check for token
+    if (accessToken) {
+      tokenInput.value = accessToken;
+      callYouTubeApiWithToken(accessToken);
+    } else {
+      contentDiv.innerHTML = 'Please paste your OAuth access token above and submit.';
+      document.getElementById('tokenInputArea').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Repo Compare Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f9f9f9;
+    }
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    /* Style for forked repos when checkbox is checked */
+    .forked a {
+      color: gray !important;
+      font-style: italic;
+    }
+    #log {
+      margin-top: 30px;
+      padding: 10px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #log .log-entry {
+      margin-bottom: 5px;
+    }
+    input { margin-right: 10px; }
+    form label { margin-right: 15px; }
+  </style>
+</head>
+<body>
+  <h2>Compare Public Repos</h2>
+
+  <label><input type="checkbox" id="markForked"> Mark forked repos (grey)</label>
+
+  <form id="repoForm" style="margin-top: 10px;">
+    <label>URL 1: <input type="text" id="user1" value="https://codeberg.org/alceawisteria" required></label>
+    <label>URL 2:  <input type="text" id="user2" value="https://github.com/Ry3yr" required></label>
+    <button type="submit">Compare</button>
+  </form>
+
+  <h3 id="sharedHeader">Shared Repositories</h3>
+  <table id="sharedReposTable" aria-label="Shared repositories table">
+    <thead>
+      <tr>
+        <th>Repository Name</th> <!-- This will be replaced dynamically -->
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Shared repos go here -->
+    </tbody>
+  </table>
+
+  <h3 id="differentHeader">Different Repositories</h3>
+  <table id="differentReposTable" aria-label="Different repositories table">
+    <thead>
+      <tr>
+        <th id="user1Header">User 1 Only</th>
+        <th id="user2Header">User 2 Only</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Different repos go here -->
+    </tbody>
+  </table>
+
+  <h3>Debug Log</h3>
+  <div id="log"></div>
+
+  <script>
+    const logDiv = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function detectPlatform(input) {
+      if (input.includes("codeberg.org")) return "codeberg";
+      if (input.includes("github.com")) return "github";
+      return "github"; // default guess
+    }
+
+    function extractUsername(input) {
+      input = input.trim();
+      try {
+        if (input.startsWith("http")) {
+          const url = new URL(input);
+          const pathParts = url.pathname.split("/").filter(Boolean);
+          return pathParts[0] || null;
+        } else {
+          return input;
+        }
+      } catch {
+        return input;
+      }
+    }
+
+    async function fetchRepos(platform, username) {
+      let url;
+      if (platform === "github") {
+        url = `https://api.github.com/users/${username}/repos`;
+      } else if (platform === "codeberg") {
+        url = `https://codeberg.org/api/v1/users/${username}/repos`;
+      } else {
+        log(`Unknown platform for user ${username}`);
+        return [];
+      }
+
+      log(`Fetching from ${platform}: ${url}`);
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          log(`Failed to fetch from ${platform}: ${res.status} ${res.statusText}`);
+          return [];
+        }
+        const data = await res.json();
+        log(`Fetched ${data.length} repos from ${platform} for ${username}`);
+        // Return array of objects {name, fork}
+        return data.map(repo => ({ name: repo.name, fork: repo.fork }));
+      } catch (err) {
+        log(`Error fetching from ${platform}: ${err.message}`);
+        return [];
+      }
+    }
+
+    function makeRepoLink(platform, username, repo, markForked) {
+      let base = platform === "github" ? "https://github.com" : "https://codeberg.org";
+      const cssClass = markForked && repo.fork ? 'forked' : '';
+      return `<span class="${cssClass}"><a href="${base}/${username}/${repo.name}" target="_blank" rel="noopener noreferrer">${repo.name}</a></span>`;
+    }
+
+    document.getElementById("repoForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      logDiv.innerHTML = ''; // Clear log
+
+      const input1 = document.getElementById("user1").value;
+      const input2 = document.getElementById("user2").value;
+      const markForked = document.getElementById("markForked").checked;
+
+      const platform1 = detectPlatform(input1);
+      const platform2 = detectPlatform(input2);
+
+      const username1 = extractUsername(input1);
+      const username2 = extractUsername(input2);
+
+      log(`Starting comparison between "${username1}" (${platform1}) and "${username2}" (${platform2})`);
+
+      // Update table headers with usernames
+      document.getElementById("sharedHeader").textContent = `Repos shared by ${username1} and ${username2}`;
+      document.getElementById("user1Header").textContent = `Repos only on ${username1}`;
+      document.getElementById("user2Header").textContent = `Repos only on ${username2}`;
+
+      // Update shared repos table header to two columns for both users
+      document.querySelector("#sharedReposTable thead tr").innerHTML = `
+        <th>${username1}</th><th>${username2}</th>
+      `;
+
+      const [repos1, repos2] = await Promise.all([
+        fetchRepos(platform1, username1),
+        fetchRepos(platform2, username2)
+      ]);
+
+      // Convert to map for easy lookup by name
+      const map1 = new Map(repos1.map(r => [r.name, r]));
+      const map2 = new Map(repos2.map(r => [r.name, r]));
+
+      const sameNames = [...map1.keys()].filter(name => map2.has(name));
+      const only1Names = [...map1.keys()].filter(name => !map2.has(name));
+      const only2Names = [...map2.keys()].filter(name => !map1.has(name));
+
+      // Populate shared repos table (two columns)
+      const sharedTbody = document.querySelector("#sharedReposTable tbody");
+      if (sameNames.length === 0) {
+        sharedTbody.innerHTML = `<tr><td colspan="2"><em>No shared repositories.</em></td></tr>`;
+      } else {
+        sharedTbody.innerHTML = sameNames
+          .map(name => {
+            const repo1 = map1.get(name);
+            const repo2 = map2.get(name);
+            const link1 = repo1 ? makeRepoLink(platform1, username1, repo1, markForked) : '';
+            const link2 = repo2 ? makeRepoLink(platform2, username2, repo2, markForked) : '';
+            return `<tr><td>${link1}</td><td>${link2}</td></tr>`;
+          })
+          .join('');
+      }
+
+      // Populate different repos table with aligned rows
+      const differentTbody = document.querySelector("#differentReposTable tbody");
+      const maxRows = Math.max(only1Names.length, only2Names.length);
+      let rowsHTML = '';
+
+      for (let i = 0; i < maxRows; i++) {
+        const repo1 = only1Names[i] ? makeRepoLink(platform1, username1, map1.get(only1Names[i]), markForked) : '';
+        const repo2 = only2Names[i] ? makeRepoLink(platform2, username2, map2.get(only2Names[i]), markForked) : '';
+        rowsHTML += `<tr><td>${repo1}</td><td>${repo2}</td></tr>`;
+      }
+
+      if (maxRows === 0) {
+        rowsHTML = `<tr><td><em>No unique repositories on either user.</em></td><td></td></tr>`;
+      }
+
+      differentTbody.innerHTML = rowsHTML;
+
+      log(`Comparison complete. Shared: ${sameNames.length}, ${username1} only: ${only1Names.length}, ${username2} only: ${only2Names.length}`);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<a target="_blank" href="https://codeberg.org/alceawisteria/YoutubeArchiveSuite" style=color:lightgray>src</a>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Archive</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      margin: 1rem 0;
+    }
+    #search-container {
+      max-width: 600px;
+      margin: 0 auto 1rem auto;
+      padding: 0 1rem;
+    }
+    #search {
+      width: 100%;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    #videos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    video {
+      width: 100%;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .card h3 {
+      margin: 0 0 0.25rem 0;
+      font-size: 1rem;
+    }
+    .card p {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.875rem;
+      color: #555;
+    }
+    .links a {
+      font-size: 0.875rem;
+      color: #0066cc;
+      margin-right: 1rem;
+      text-decoration: none;
+    }
+    .links a:hover {
+      text-decoration: underline;
+    }
+    .direct-unreachable {
+      color: red !important;
+      pointer-events: none;
+      cursor: default;
+    }
+    #error {
+      text-align: center;
+      color: red;
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+    .toggle-src {
+      margin-top: 0.5rem;
+      padding: 0.4rem;
+      font-size: 0.85rem;
+      background: #eef;
+      border: 1px solid #aac;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .toggle-src:hover {
+      background: #dde;
+    }
+  </style>
+</head>
+<body>
+  <h1>Youtube Video Archive</h1>
+
+  [<a target="_blank" href="backup.php" style=color:blue>⬆️Upload</a>]  
+  <a target="_blank" href="https://ry3yr.github.io/list.html" style=color:blue>List</a> 
+  [<a href="javascript:if(!window.location.href.includes('extendedsearch=true')){window.history.pushState({}, '', window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'extendedsearch=true');}">Enable RealtimeSearch</a>]
+
+  <div id="search-container">
+    <input type="text" id="search" placeholder="Search videos by title, uploader, or ID..." />
+  </div>
+
+  <div style="text-align:center; margin: 1rem;">
+    <button id="check-links">🔍 Check Direct Links</button>
+  </div>
+
+  <div id="videos"></div>
+  <div id="error"></div>
+
+  <script>
+    (async () => {
+      const errorEl = document.getElementById('error');
+      const videosEl = document.getElementById('videos');
+      const searchInput = document.getElementById('search');
+      const checkLinksButton = document.getElementById('check-links');
+
+      // Helper: check if a URL is reachable
+      async function isReachable(url) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          const res = await fetch(url, {
+            method: 'GET',
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          return res.ok || (res.status >= 300 && res.status < 400);
+        } catch {
+          return false;
+        }
+      }
+
+      let videos = [];
+
+      function renderVideos(list) {
+  videosEl.innerHTML = '';
+  for (const v of list) {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const videoId = `video-${v.id}`;
+
+    const unreachableClass = v.directOk === false ? 'direct-unreachable' : '';
+    const directAvailable = v.directOk === true;
+
+    card.innerHTML = `
+      <div class="video-container">
+        <video id="${videoId}" src="${v.waybackurl}" controls preload="metadata"></video>
+      </div>
+      <h3>${v.title}</h3>
+      <p>Uploader: ${v.uploader}</p>
+      <p>ID: ${v.id ?? 'N/A'}</p>
+      <p>Uploaded: ${new Date(v.uploaded).toLocaleString()}</p>
+      <div class="links">
+        <a href="${v.url}" target="_blank" class="direct-link ${unreachableClass}">Direct</a>
+        <a href="${v.waybackurl}" target="_blank">Wayback</a>
+        <a href="javascript:void(0);" class="youtube-link" data-id="${v.id}">YouTube</a>
+        <a href="https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/${v.id}" target="_blank" ><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT61taAw7gmjapOgSz2nugoCrazkCg42il25A&s" width=24px></a>
+      </div>
+      <button class="toggle-src" data-id="${v.id}">🔁 Switch to Direct</button>
+    `;
+
+    videosEl.appendChild(card);
+
+    const toggleBtn = card.querySelector('.toggle-src');
+    const videoEl = card.querySelector('video');
+
+    toggleBtn.addEventListener('click', () => {
+      const currentSrc = videoEl.src;
+      const usingWayback = currentSrc.includes(v.waybackurl);
+      if (usingWayback) {
+        if (v.directOk === false) {
+          alert("Direct link not available or not yet checked.");
+        } else {
+          videoEl.src = v.url;
+          toggleBtn.textContent = '🔁 Switch to Wayback';
+        }
+      } else {
+        videoEl.src = v.waybackurl;
+        toggleBtn.textContent = '🔁 Switch to Direct';
+      }
+    });
+  }
+}
+
+
+      // Load video data
+      try {
+        const localUrl = new URL('videos.json', location.href);
+        localUrl.searchParams.set('_', Date.now());
+        const res = await fetch(localUrl.toString(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('Local load failed');
+        videos = await res.json();
+      } catch {
+        const res = await fetch('https://ry3yr.github.io/videos.json', { cache: 'no-store' });
+        if (!res.ok) {
+          errorEl.textContent = 'Failed to load videos from both sources.';
+          return;
+        }
+        videos = await res.json();
+      }
+
+      // Apply query limit
+      const params = new URLSearchParams(window.location.search);
+      const limit = parseInt(params.get('limit'));
+      const videoId = params.get('videoid');
+      const limitedVideos = limit > 0 ? videos.slice(0, limit) : videos;
+      searchInput.placeholder = `Search ${videos.length} videos...`;
+
+      // Initial render (wayback only)
+      renderVideos(limitedVideos);
+
+      // Search filtering
+      searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+        let filtered = videos;
+        if (query) {
+          filtered = videos.filter(v =>
+            (v.title?.toLowerCase().includes(query)) ||
+            (v.uploader?.toLowerCase().includes(query)) ||
+            (v.id?.toString().toLowerCase().includes(query))
+          );
+        }
+        if (limit > 0) {
+          filtered = filtered.slice(0, limit);
+        }
+        renderVideos(filtered);
+      });
+
+      // Pre-fill search if videoid provided
+      if (videoId) {
+        searchInput.value = videoId;
+        searchInput.dispatchEvent(new Event('input'));
+      }
+
+      // Check links button
+      checkLinksButton.addEventListener('click', async () => {
+        checkLinksButton.disabled = true;
+        checkLinksButton.textContent = '⏳ Checking...';
+        for (const v of videos) {
+          v.directOk = await isReachable(v.url);
+        }
+        checkLinksButton.disabled = false;
+        checkLinksButton.textContent = '🔍 Check Direct Links';
+        renderVideos(videos);
+      });
+
+      // Extended search suggestions
+      const isExtendedSearchActive = params.has('extendedsearch') || localStorage.getItem('extendedsearch') === 'true';
+      if (isExtendedSearchActive) {
+        localStorage.setItem('extendedsearch', 'true');
+        const suggestionList = document.createElement('ul');
+        Object.assign(suggestionList.style, {
+          position: 'absolute',
+          maxHeight: '300px',
+          overflowY: 'auto',
+          width: '100%',
+          backgroundColor: '#fff',
+          border: '1px solid #ccc',
+          borderRadius: '6px',
+          zIndex: '10',
+          listStyle: 'none',
+          padding: '0',
+          margin: '0'
+        });
+        searchInput.parentElement.appendChild(suggestionList);
+
+        searchInput.addEventListener('input', () => {
+          const query = searchInput.value.trim().toLowerCase();
+          suggestionList.innerHTML = '';
+          if (query) {
+            const filtered = videos.filter(v => v.title?.toLowerCase().includes(query));
+            filtered.forEach(v => {
+              const item = document.createElement('li');
+              item.style.padding = '0.5rem';
+              item.style.cursor = 'pointer';
+              item.textContent = v.title;
+              item.addEventListener('click', () => {
+                searchInput.value = v.title;
+                suggestionList.innerHTML = '';
+                searchInput.dispatchEvent(new Event('input'));
+              });
+              suggestionList.appendChild(item);
+            });
+          }
+        });
+
+        searchInput.addEventListener('blur', () => {
+          setTimeout(() => suggestionList.innerHTML = '', 200);
+        });
+      }
+    })();
+
+document.addEventListener('click', function(event) {
+    if (event.target && event.target.classList.contains('youtube-link')) {
+      const videoId = event.target.getAttribute('data-id');
+      const videoContainer = event.target.closest('.card').querySelector('.video-container');
+      
+      // Create the YouTube embed iframe
+      const iframe = document.createElement('iframe');
+      iframe.width = '100%';
+      iframe.height = '315';
+      iframe.src = `https://www.youtube.com/embed/${videoId}`;
+      iframe.frameBorder = '0';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      iframe.allowFullscreen = true;
+      
+      // Replace the existing video element with the iframe
+      videoContainer.innerHTML = '';  // Clear existing video
+      videoContainer.appendChild(iframe);
+      
+      // Optionally, change the "YouTube" link text to something else
+      event.target.textContent = 'YouTube (Playing)';
+      event.target.classList.add('playing');
+    }
+  });
+  </script>
+</body>
+</html>
