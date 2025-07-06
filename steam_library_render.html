@@ -1,0 +1,182 @@
+<a target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2023-11-26-SteamLibraryFetch/steamfetch.php">Fetch</a> <a target="_blank" href="https://steamdb.info/sales/?min_reviews=0&min_rating=60&min_discount=50" style=color:lightgray>Sales</a><br><br>
+<br>
+ <a target="_blank" href="https://steamcommunity.com/id/alceawisteria#https://steamcommunity.com/profiles/76561198119673186/games/?tab=all">[Alcea's Steam Library]</a> 
+<style>
+  .game-image {
+    width: 200px;
+    height: 35px;
+    object-fit: cover;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  table td, table th {
+    padding: 6px 10px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    vertical-align: middle;
+  }
+</style>
+<div id="game-container">Loading games...</div>
+<script>
+  function getQueryStringParameter(parameter) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.has(parameter);
+  }
+  function extractFromRaw(rawHtml, key) {
+    if (!rawHtml) return null;
+    const regex = new RegExp(`<strong>${key}:<\/strong>\\s*([^<]+)`, 'i');
+    const match = rawHtml.match(regex);
+    return match ? match[1].trim() : null;
+  }
+
+  fetch('steam_library.json')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Error loading JSON file: ' + response.status);
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Extract game array depending on structure
+      let games = [];
+      if (Array.isArray(data)) {
+        games = data;
+      } else if (data.response && Array.isArray(data.response.games)) {
+        games = data.response.games;
+      } else {
+        throw new Error("Unexpected JSON format");
+      }
+      if (getQueryStringParameter('sort')) {
+        games.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      }
+      if (games.length === 0) {
+        document.getElementById('game-container').textContent = 'No games found.';
+        return;
+      }
+
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const tbody = document.createElement('tbody');
+
+      // Table headers including new columns
+      const headerRow = document.createElement('tr');
+      ['Game', 'App ID', 'Achievements', 'Playtime (min)', 'Steam Deck Compatibility', 'Hard Drive Space Min', 'RAM Min', 'CPU Min'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      games.forEach(game => {
+        const row = document.createElement('tr');
+
+        // Game cell with image + link + name
+        const gameCell = document.createElement('td');
+        const link = document.createElement('a');
+        link.href = `https://store.steampowered.com/app/${game.appid}`;
+        link.target = '_blank';
+
+        let imgSrc = '';
+        if (game.img_icon_url) {
+          imgSrc = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`;
+        } else {
+          imgSrc = `https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/${game.appid}/${game.img_icon_url}.jpg`;
+        }
+
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.alt = `${game.name || 'Game'} image`;
+        img.className = 'game-image';
+
+        const spanName = document.createElement('span');
+        spanName.textContent = ` ${game.name || 'Unknown'}`;
+
+        link.appendChild(img);
+        link.appendChild(spanName);
+        gameCell.appendChild(link);
+        row.appendChild(gameCell);
+
+        const appidCell = document.createElement('td');
+        appidCell.textContent = game.appid || 'N/A';
+        row.appendChild(appidCell);
+
+        const achCell = document.createElement('td');
+        if (game.appid) {
+          const achievementsLink = `<a target="_blank" href="https://steamcommunity.com/id/alceawisteria/stats/${game.appid}/achievements/">Achievements</a>`;
+          const lastPlayedLink = `<a target="_blank" href="https://alcea-wisteria.de/PHP/0demo/2024-01-14-Lastplayed/lastplayed.php?gamename=${encodeURIComponent(game.name || '')}" style="color: transparent;">→</a>`;
+          achCell.innerHTML = achievementsLink + ' ' + lastPlayedLink;
+        } else {
+          achCell.textContent = '-';
+        }
+        row.appendChild(achCell);
+
+        const playtime = game.playtime_forever ?? game.playtime ?? 0;
+        const playtimeCell = document.createElement('td');
+        playtimeCell.textContent = playtime;
+        row.appendChild(playtimeCell);
+
+        // Steam Deck Compatibility cell
+        const deckCell = document.createElement('td');
+        let deckCompatibility = 'Unknown';
+        if (game.deck_details && game.deck_details.success === 1) {
+          const cat = game.deck_details.results?.resolved_category;
+          switch(cat) {
+            case 0:
+              deckCompatibility = 'Verified';
+              break;
+            case 1:
+              deckCompatibility = 'Playable';
+              break;
+            case 2:
+              deckCompatibility = 'Unsupported';
+              break;
+            case 3:
+              deckCompatibility = 'Unknown';
+              break;
+            default:
+              deckCompatibility = 'Unknown';
+          }
+        } else if (game.steam_deck_compatibility) {
+          deckCompatibility = game.steam_deck_compatibility;
+        }
+        deckCell.textContent = deckCompatibility;
+        row.appendChild(deckCell);
+
+        // Hard Drive Space Min cell
+        const storageMin = game.system_requirements?.Storage?.min 
+          || extractFromRaw(game.system_requirements_raw?.minimum, 'Storage');
+        const storageCell = document.createElement('td');
+        storageCell.textContent = storageMin || '-';
+        row.appendChild(storageCell);
+
+        // RAM Min cell
+        const ramMin = game.system_requirements?.Memory?.min 
+          || extractFromRaw(game.system_requirements_raw?.minimum, 'Memory');
+        const ramCell = document.createElement('td');
+        ramCell.textContent = ramMin || '-';
+        row.appendChild(ramCell);
+
+        // CPU Min cell
+        const cpuMin = game.system_requirements?.Processor?.min 
+          || extractFromRaw(game.system_requirements_raw?.minimum, 'Processor');
+        const cpuCell = document.createElement('td');
+        cpuCell.textContent = cpuMin || '-';
+        row.appendChild(cpuCell);
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+      const container = document.getElementById('game-container');
+      container.innerHTML = '';
+      container.appendChild(table);
+    })
+    .catch(error => {
+      console.error('Error loading/parsing JSON file:', error);
+      document.getElementById('game-container').textContent = 'Failed to load games.';
+    });
+</script>
+
