@@ -1,0 +1,23 @@
+RewriteEngine On
+
+# Redirect /users/username to /username dynamically
+RewriteRule ^users/([^/]+)/?$ /$1 [R=301,L]
+
+# Match any request URI that contains "custom_emojis"
+RewriteCond %{REQUEST_URI} custom_emojis
+RewriteRule ^.*$ custom_emojis.php [L,QSA]
+
+# Add CORS headers to all responses
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# Redirect /@username to /username (optional, but common)
+RewriteRule ^@([^/]+)$ /$1 [R=302,L]
+
+# Route all requests except existing files or directories to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^.*$ index.php [QSA,L]
