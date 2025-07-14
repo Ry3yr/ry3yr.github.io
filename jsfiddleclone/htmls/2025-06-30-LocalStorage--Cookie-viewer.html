@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>LocalStorage Items</h2>
+  <ul id="storageList"></ul>
+
+  <h2>Cookies</h2>
+  <ul id="cookieList"></ul>
+
+  <button onclick="loadData()">🔄 Refresh</button>
+
+  <script>
+    function loadLocalStorage() {
+      const list = document.getElementById('storageList');
+      list.innerHTML = '';
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const value = localStorage.getItem(key);
+        const li = document.createElement('li');
+        li.textContent = `${key}: ${value}`;
+        list.appendChild(li);
+      }
+    }
+
+    function loadCookies() {
+      const list = document.getElementById('cookieList');
+      list.innerHTML = '';
+      const cookies = document.cookie.split('; ');
+      for (const cookie of cookies) {
+        if (cookie.trim() === '') continue;
+        const [key, value] = cookie.split('=');
+        const li = document.createElement('li');
+        li.textContent = `${decodeURIComponent(key)}: ${decodeURIComponent(value || '')}`;
+        list.appendChild(li);
+      }
+    }
+
+    function loadData() {
+      loadLocalStorage();
+      loadCookies();
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

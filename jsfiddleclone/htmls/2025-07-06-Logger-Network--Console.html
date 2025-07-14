@@ -1,0 +1,129 @@
+<!--Logger-->
+  <meta charset="UTF-8">
+  <style>
+    #statusLine { 
+      //background: #333; 
+      padding: 5px 10px; 
+      //border: 1px solid #555; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-top: -20px; 
+      cursor: pointer; 
+      opacity: 0.8;
+    }
+    #showLogs { 
+      font-size: 0.9em; 
+      text-decoration: underline; 
+      cursor: pointer; 
+      color: #66cc66; 
+    }
+    #logModal { 
+      display: none; 
+      position: fixed; 
+      z-index: 9999; 
+      left: 0; 
+      top: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(0, 0, 0, 0.8);
+    }
+    #modalContent { 
+      background: #333; 
+      margin: 5% auto; 
+      padding: 20px; 
+      border: 1px solid #444; 
+      width: 80%; 
+      max-height: 70%; 
+      overflow-y: auto; 
+      white-space: pre-wrap; 
+      font-size: 0.9em; 
+      color: #ddd; 
+      line-height: 1.5;
+      opacity: 1;
+    }
+    #closeModal { 
+      float: right; 
+      cursor: pointer; 
+      font-weight: bold; 
+      color: #f8f8f8; 
+    }
+    .log-section { 
+      margin-bottom: 1em; 
+    }
+    a { 
+      color: #66ccff; 
+      text-decoration: underline; 
+    }
+    .log-entry { 
+      white-space: pre-wrap; 
+      word-wrap: break-word; 
+    }
+    #latestLog { 
+      font-size: 1.1em; 
+      color: #66cc66; 
+    }
+  </style>
+</head>
+<body>
+  <div id="statusLine">
+    <span id="latestLog">Waiting for events...</span>
+  </div>
+  <div id="logModal">
+    <div id="modalContent">
+      <span id="closeModal">[close]</span>
+      <div class="log-section"><h3>Network Logs</h3><div id="networkLogs"></div></div>
+      <div class="log-section"><h3>Console Logs</h3><div id="consoleLogs"></div></div>
+    </div>
+  </div>
+  <script>
+  const latest = document.getElementById('latestLog'), 
+        netDiv = document.getElementById('networkLogs'),
+        conDiv = document.getElementById('consoleLogs'), 
+        modal = document.getElementById('logModal'),
+        statusLine = document.getElementById('statusLine'), 
+        closeModal = document.getElementById('closeModal'),
+        netHist = [], conHist = [], seen = new Set();
+  function update(msg) { 
+    latest.textContent = msg; 
+  }
+  function formatLogWithLinks(text) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, url => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+  }
+  console.log = ((log) => (...a) => {
+    const msg = "> " + a.map(x => typeof x === "object" ? JSON.stringify(x) : x).join(" ");
+    conHist.push(msg); update(msg); log.apply(console, a);
+  })(console.log);
+  new PerformanceObserver(list => list.getEntries().forEach(async e => {
+    if (seen.has(e.name)) return; seen.add(e.name);
+    let pct = "100%";
+    let statusCode = " ";
+    if (e.transferSize && e.encodedBodySize) {
+      let val = Math.min(Math.round((e.transferSize / e.encodedBodySize) * 100), 100);
+      if (!isFinite(val)) val = 100;
+      pct = val + "%";
+    }
+    try {
+      const response = await fetch(e.name, { method: "HEAD" }); // Use HEAD request to only get headers
+      statusCode = response.status;
+    } catch (error) {
+      console.error('Failed to fetch status code:', error);
+      statusCode = "N/A";
+    }
+    const msg = "> " + e.name + " - " + pct + " loaded (Status: " + statusCode + ")";
+    netHist.push(msg); update(msg);
+  })).observe({ type: "resource", buffered: true });
+  statusLine.onclick = () => {
+    netDiv.innerHTML = netHist.length ? netHist.map(formatLogWithLinks).join('<br>') : '(no network logs yet)';
+    conDiv.innerHTML = conHist.length ? conHist.map(formatLogWithLinks).join('<br>') : '(no console logs yet)';
+    modal.style.display = 'block';
+  };
+  closeModal.onclick = () => modal.style.display = 'none';
+  window.onclick = (e) => { 
+    if (e.target == modal) modal.style.display = 'none'; 
+  };
+</script>
+<br>

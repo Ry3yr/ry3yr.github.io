@@ -6,7 +6,6 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-  <!-- HTML form to input the API key, pbUrl, and URL -->
   <form id="apiForm">
     <label for="apikey">API Key:</label>
     <input type="text" id="apikey" name="apikey" required>
@@ -16,131 +15,157 @@
     <br>
     <label for="url">URL:</label>
     <input type="text" id="url" name="url" pattern="https://.*" required>
-    <input type="submit" value="Submit">
+    <br>
+    <label>
+      <input type="checkbox" id="routingCheckbox"> Routing
+    </label>
+    <br>
+    <input type="submit" value="Submit" id="submit">
     <input type="button" value="Clear" id="clearButton">
+    <input type="button" value="Save User" id="saveUserButton">
   </form>
 
-  <!-- Result container -->
   <div id="result"></div>
+  <div id="savedUsers"></div>
 
   <script>
   $(document).ready(function() {
-  // Function to get query string parameter value by name
-  function getQueryStringParam(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-  }
+    function getQueryStringParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
 
-  // Function to populate textboxes from query string values
-  function populateTextboxesFromQueryString() {
-    const apiKeyParam = getQueryStringParam('apikey');
-    const pbUrlParam = getQueryStringParam('pbUrl');
-    const urlParam = getQueryStringParam('search');
+    function populateTextboxesFromQueryString() {
+      $('#apikey').val(getQueryStringParam('apikey'));
+      $('#pbUrl').val(getQueryStringParam('pbUrl'));
+      $('#url').val(getQueryStringParam('search'));
+      logDOMChange('Textboxes populated from query string');
+    }
 
-    $('#apikey').val(apiKeyParam);
-    $('#pbUrl').val(pbUrlParam);
-    $('#url').val(urlParam);
-  }
+    function saveUser(apiKey, pbUrl) {
+      let savedUsers = JSON.parse(localStorage.getItem('savedUsers')) || {};
+      if (!savedUsers[pbUrl]) {
+        savedUsers[pbUrl] = apiKey;
+        localStorage.setItem('savedUsers', JSON.stringify(savedUsers));
+      }
+      loadSavedUsers();
+    }
 
-  // Call the function to populate textboxes on page load
-  populateTextboxesFromQueryString();
+    function loadSavedUsers() {
+      const savedUsers = JSON.parse(localStorage.getItem('savedUsers')) || {};
+      $('#savedUsers').empty();
+      logDOMChange('Clearing previous saved users');
 
-  // Check if ampersand is present in the URL bar
-  const urlBarValue = window.location.href;
-  if (urlBarValue.includes('&')) {
-    // Retrieve form values
-    const apiKey = $('#apikey').val();
-    const pbUrl = $('#pbUrl').val();
-    const search = $('#url').val();
+      Object.entries(savedUsers).forEach(([pbUrl, apiKey]) => {
+        const link = $('<a href="#" class="savedUserLink"></a>')
+          .text(pbUrl)
+          .data('pburl', pbUrl)
+          .data('apikey', apiKey);
+        const para = $('<p></p>').append(link).append(' - API Key: ' + apiKey);
+        $('#savedUsers').append(para);
+        logDOMChange(`Saved user added: ${pbUrl} - API Key: ${apiKey}`);
+      });
 
-    // Perform AJAX request
-    performAjaxRequest(apiKey, pbUrl, search);
-  }
+      $('.savedUserLink').click(function(e) {
+        e.preventDefault();
+        $('#pbUrl').val($(this).data('pburl'));
+        $('#apikey').val($(this).data('apikey'));
+        logDOMChange(`User selected: ${$(this).data('pburl')}`);
+      });
+    }
 
-  // Perform AJAX request
-  function performAjaxRequest(apiKey, pbUrl, search) {
-    var url = pbUrl + "/api/v2/search/?q=" + encodeURIComponent(search) + "&limit=1&resolve=true";
+    function performAjaxRequest(apiKey, pbUrl, search) {
+      const url = pbUrl + "/api/v2/search/?q=" + encodeURIComponent(search) + "&limit=1&resolve=true";
+      logDOMChange('Making AJAX request to ' + url);
+      $("#apikey, #pbUrl, #url, #submit").prop("disabled", true);
 
-    // Disable form elements
-    $("#apikey").prop("disabled", true);
-    $("#pbUrl").prop("disabled", true);
-    $("#url").prop("disabled", true);
-    $("#submit").prop("disabled", true);
+      $.ajax({
+        url: url,
+        headers: {
+          "Authorization": "Bearer " + apiKey
+        },
+        success: function(response) {
+          if (response.statuses && response.statuses.length > 0 && response.statuses[0].id) {
+            const id = response.statuses[0].id;
+            const urlParts = parseURL(search);
+            const pathParts = urlParts.pathname.split("/").filter(part => part !== "");
+            const username = pathParts[0];
+            const domain = urlParts.hostname;
 
-    // Perform AJAX request
-    $.ajax({
-      url: url,
-      headers: {
-        "Authorization": "Bearer " + apiKey
-      },
-      success: function(response) {
-        if (response.statuses && response.statuses.length > 0 && response.statuses[0].id) {
-          var id = response.statuses[0].id;
+            const useRouting = $("#routingCheckbox").is(":checked");
+            const newUrl = useRouting
+              ? pbUrl + "/web/statuses/" + id
+              : pbUrl + "/" + username + "@" + domain + "/" + id;
 
-          // Extract username and domain from the URL
-          var urlParts = parseURL(search);
-          var pathParts = urlParts.pathname.split("/").filter(function(part) {
-            return part !== "";
-          });
-          var username = pathParts[0];
-          var domain = urlParts.hostname;
+            $("#result").html("New URL: <a id='newUrlLink' href='" + newUrl + "'>" + newUrl + "</a>");
+            logDOMChange('Displaying new URL: ' + newUrl);
 
-          // Construct the new URL
-          var newUrl = pbUrl + "/" + username + "@" + domain + "/" + id;
-
-          // Output the new URL
-          $("#result").html("New URL: <a id='newUrlLink' href='" + newUrl + "'>" + newUrl + "</a>");
-
-          // Automatically open the new URL in a new tab
-          $("#newUrlLink")[0].click();
-        } else {
-          $("#result").html("Please enter a URL<br>cURL Result: " + JSON.stringify(response) + "<br>" + url + "<br><a target='_blank' href='https://codepen.io/ryedai1/full/WNYZBya'>Lookup</a>");
+            setTimeout(function() {
+              window.location.href = newUrl;
+            }, 3000);
+          } else {
+            $("#result").html("Please enter a URL<br>cURL Result: " + JSON.stringify(response) + "<br>" + url + "<br><a target='_blank' href='https://codepen.io/ryedai1/full/WNYZBya'>Lookup</a>");
+            logDOMChange('Error response: ' + JSON.stringify(response));
+          }
+        },
+        error: function(xhr, status, error) {
+          $("#result").html("Error: " + error);
+          logDOMChange('AJAX request failed: ' + error);
+        },
+        complete: function() {
+          $("#apikey, #pbUrl, #url, #submit").prop("disabled", false);
         }
-      },
-      error: function(xhr, status, error) {
-        $("#result").html("Error: " + error);
-      },
-      complete: function() {
-        // Re-enable form elements
-        $("#apikey").prop("disabled", false);
-        $("#pbUrl").prop("disabled", false);
-        $("#url").prop("disabled", false);
-        $("#submit").prop("disabled", false);
+      });
+    }
+
+    function parseURL(url) {
+      const parser = document.createElement("a");
+      parser.href = url;
+      return parser;
+    }
+
+    function logDOMChange(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      $('#result').append(`<p>[${timestamp}] ${message}</p>`);
+    }
+
+    $("#apiForm").submit(function(event) {
+      event.preventDefault();
+      const apiKey = $("#apikey").val();
+      const pbUrl = $("#pbUrl").val();
+      const search = $("#url").val();
+      logDOMChange(`Form submitted with values - API Key: ${apiKey}, pbUrl: ${pbUrl}, URL: ${search}`);
+      performAjaxRequest(apiKey, pbUrl, search);
+    });
+
+    $("#clearButton").click(function() {
+      $("#apikey").val("");
+      $("#pbUrl").val("");
+      $("#url").val("");
+      $("#result").html("");
+      logDOMChange("Form fields cleared.");
+    });
+
+    $("#saveUserButton").click(function() {
+      const apiKey = $("#apikey").val();
+      const pbUrl = $("#pbUrl").val();
+      if (apiKey && pbUrl) {
+        logDOMChange("Saving user with API Key and pbUrl");
+        saveUser(apiKey, pbUrl);
       }
     });
-  }
 
-  // Helper function to parse URL
-  function parseURL(url) {
-    var parser = document.createElement("a");
-    parser.href = url;
-    return parser;
-  }
-
-  // Submit form event handler
-  $("#apiForm").submit(function(event) {
-    event.preventDefault(); // Prevent default form submission
-
-    // Retrieve form values
-    var apiKey = $("#apikey").val();
-    var pbUrl = $("#pbUrl").val();
-    var search = $("#url").val();
-
-    // Perform AJAX request
-    performAjaxRequest(apiKey, pbUrl, search);
+    populateTextboxesFromQueryString();
+    loadSavedUsers();
   });
-
-  // Clear button event handler
-  $("#clearButton").click(function() {
-    // Clear input values
-    $("#apikey").val("");
-    $("#pbUrl").val("");
-    $("#url").val("");
-
-    // Clear result container
-    $("#result").html("");
-  });
-});
   </script>
 </body>
 </html>
+
+
+
+<details><summary>BOOKMARKLET</summary>
+
+
+<!----Mastodon----Fediverse--Bookmarklet--><a href="https://codepen.io/ryedai1/pen/NWJoeRW" target="_blank"><img src="https://donestech.net/files/noticies/xarxa-fediverse-mastodon.png" style="width:50px" alt="feditext">Reroute any mastodon/fedi link to your home instance</a><br><textarea id="feditext" rows="8" cols="80"></textarea><br><button onclick="openBookmarkDialogfeditext()">Add to Bookmark</button><button onclick="copyToClipboardfeditext()">Copy to Clipboard</button><script> var decodedStringfeditext = atob('amF2YXNjcmlwdDooZnVuY3Rpb24oKSB7CiAgdmFyIGVuY29kZWRVcmwgPSBlbmNvZGVVUklDb21wb25lbnQod2luZG93LmxvY2F0aW9uLmhyZWYpOwogIHZhciByZWRpcmVjdFVybCA9ICJodHRwczovL2FsY2VhLXdpc3RlcmlhLmRlL1BIUC8wZGVtby8yMDIzLTEwLTIyLU1hc3RvZG9uVG9vdFNlYXJjaC9zZWFyY2htYXN0b3VybC5waHA/c2VhcmNoPSIgKyBlbmNvZGVkVXJsICsgIiZwYlVybD1odHRwcyUzQSUyRiUyRnBiLnRvZG9uLmRlJmFwaWtleT1hcGlrZXloZXJlIjsKICB3aW5kb3cubG9jYXRpb24uaHJlZiA9IHJlZGlyZWN0VXJsOw==');function openBookmarkDialogfeditext() { var bookmarkName = prompt("Enter bookmark name:"); if (bookmarkName) { var bookmarkUrl = decodedStringfeditext; if (window.navigator.userAgent.indexOf("Chrome") !== -1 && chrome && chrome.bookmarks) { chrome.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }, function() { alert("Bookmark added: " + bookmarkName); }); } else if (window.navigator.userAgent.indexOf("Firefox") !== -1 && browser && browser.bookmarks) { browser.bookmarks.create({ title: bookmarkName, url: bookmarkUrl }).then(function() { alert("Bookmark added: " + bookmarkName); }); } else { alert("Sorry, your browser does not support the bookmarking feature.");}}} function copyToClipboardfeditext() { var feditext = document.getElementById("feditext").value; var tempInput = document.createElement("input"); tempInput.value = feditext; document.body.appendChild(tempInput); tempInput.select(); tempInput.setSelectionRange(0, 99999); document.execCommand("copy"); document.body.removeChild(tempInput); alert("Text copied to clipboard: " + feditext);} document.getElementById("feditext").value = decodedStringfeditext;</script><hr>
+</details>

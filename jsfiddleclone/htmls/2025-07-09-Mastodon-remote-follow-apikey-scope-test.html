@@ -1,0 +1,195 @@
+<a target="_blank" href="https://alcea-wisteria.de/PHP//0demo/2024-03-07-FediTools/2025-07-09-RemoteFollow/RemoteFollow.php" style=color:blue>PHP ver</a><br>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Remote Follow & API Key Scope Tester</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 1em; }
+  input, button { margin: 0.3em 0; padding: 0.4em; width: 100%; max-width: 400px; }
+  #log, #scopeLog { white-space: pre-wrap; background: #f0f0f0; padding: 1em; border: 1px solid #ccc; max-width: 600px; height: 150px; overflow-y: auto; margin-top: 0.5em; }
+  fieldset { margin-bottom: 1.5em; max-width: 620px; }
+</style>
+</head>
+<body>
+
+<h2>Remote Follow</h2>
+<fieldset>
+  <label for="targetUser">User (user@domain or full URL):</label><br />
+  <input type="text" id="targetUser" placeholder="e.g. user@domain or https://example.com/user" />
+  <label for="yourInstance">Your Instance Domain (https://your.instance):</label><br />
+  <input type="text" id="yourInstance" placeholder="e.g. https://mstdn.animexx.de" />
+  <label for="yourApiKey">Your API Key (Bearer Token):</label><br />
+  <input type="text" id="yourApiKey" placeholder="Paste your API token here" />
+  <button id="btnFollow">Remote Follow</button>
+  <div id="log"></div>
+</fieldset>
+
+<h2>Test API Key Scopes</h2>
+<fieldset>
+  <label for="instanceDomain">Instance Domain (https://domain):</label><br />
+  <input type="text" id="instanceDomain" placeholder="e.g. https://mstdn.animexx.de" />
+  <label for="apiKey">API Key:</label><br />
+  <input type="text" id="apiKey" placeholder="Paste your API token here" />
+  <button id="btnTestScopes">Test API Key Scopes</button>
+  <div id="scopeLog"></div>
+</fieldset>
+
+<script>
+  const logEl = document.getElementById('log');
+  const scopeLogEl = document.getElementById('scopeLog');
+
+  function logTo(el, msg) {
+    el.textContent += msg + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+
+  async function remoteFollow(userInput, yourInstance, yourApiKey, debugEl) {
+    logTo(debugEl, `Starting remote follow for: ${userInput}`);
+
+    let actorUrl = '';
+    if (userInput.includes('@') && !userInput.startsWith('http')) {
+      const [user, domain] = userInput.split('@');
+      actorUrl = `https://${domain}/users/${user}`;
+    } else if (userInput.startsWith('http')) {
+      actorUrl = userInput;
+    } else {
+      logTo(debugEl, 'Invalid user input format.');
+      return;
+    }
+    logTo(debugEl, `Resolved actor URL: ${actorUrl}`);
+
+    if (!yourInstance || !yourApiKey) {
+      logTo(debugEl, 'Your instance domain and API key are required.');
+      return;
+    }
+
+    try {
+      const actorRes = await fetch(actorUrl, { headers: { Accept: 'application/activity+json' } });
+      if (!actorRes.ok) {
+        logTo(debugEl, `Failed to fetch actor JSON: ${actorRes.status} ${actorRes.statusText}`);
+        return;
+      }
+      const actor = await actorRes.json();
+      logTo(debugEl, `Fetched actor data: type=${actor.type}`);
+
+      if (!actor.inbox) {
+        logTo(debugEl, 'Actor has no inbox URL.');
+        return;
+      }
+
+      // Get your own actor URL from your instance's API using the token
+      const credentialsRes = await fetch(yourInstance.replace(/\/$/, '') + '/api/v1/accounts/verify_credentials', {
+        headers: { Authorization: `Bearer ${yourApiKey}` }
+      });
+      if (!credentialsRes.ok) {
+        logTo(debugEl, `Failed to verify credentials on your instance: ${credentialsRes.status} ${credentialsRes.statusText}`);
+        return;
+      }
+      const yourAccount = await credentialsRes.json();
+      const yourActorUrl = yourAccount.url || `${yourInstance}/users/${yourAccount.acct}`;
+      logTo(debugEl, `Your actor URL: ${yourActorUrl}`);
+
+      const followActivity = {
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        'type': 'Follow',
+        'actor': yourActorUrl,
+        'object': actor.id || actorUrl
+      };
+
+      logTo(debugEl, `Sending Follow activity to inbox: ${actor.inbox}`);
+
+      const postRes = await fetch(actor.inbox, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/activity+json',
+          Authorization: `Bearer ${yourApiKey}`
+        },
+        body: JSON.stringify(followActivity)
+      });
+
+      if (postRes.status === 202) {
+        logTo(debugEl, 'Follow request accepted (202).');
+      } else {
+        logTo(debugEl, `Follow request response: ${postRes.status} ${postRes.statusText}`);
+        const text = await postRes.text();
+        if(text) logTo(debugEl, `Response body:\n${text}`);
+      }
+    } catch (e) {
+      logTo(debugEl, `Error during remote follow: ${e.message}`);
+    }
+  }
+
+  async function testApiKeyScopesDetailed(apiKey, instanceUrl, debugEl) {
+    const base = instanceUrl.replace(/\/$/, '');
+    const tests = [
+      {scope: 'read', method: 'GET', url: '/api/v1/accounts/verify_credentials'},
+      {scope: 'write', method: 'POST', url: '/api/v1/statuses', body: {status: 'scope test'}},
+      // follow test with dummy account id; user must edit if needed
+      {scope: 'follow', method: 'POST', url: '/api/v1/accounts/1/follow'}
+    ];
+
+    logTo(debugEl, `Testing API key scopes on instance: ${instanceUrl}\n`);
+
+    for (const test of tests) {
+      try {
+        let options = {
+          method: test.method,
+          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+        };
+        if (test.body) options.body = JSON.stringify(test.body);
+
+        const res = await fetch(base + test.url, options);
+
+        if (res.status === 401) {
+          logTo(debugEl, `Unauthorized for scope '${test.scope}' (401) — token invalid or expired.`);
+        } else if (res.status === 403) {
+          logTo(debugEl, `Forbidden for scope '${test.scope}' (403) — token missing '${test.scope}' scope.`);
+        } else if (res.ok) {
+          logTo(debugEl, `Scope '${test.scope}': ACCESS GRANTED (HTTP ${res.status})`);
+          if (test.scope === 'write') {
+            const data = await res.json();
+            if (data.id) {
+              await fetch(base + `/api/v1/statuses/${data.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${apiKey}` }
+              });
+              logTo(debugEl, 'Test post deleted.');
+            }
+          }
+        } else {
+          logTo(debugEl, `Scope '${test.scope}': Unexpected response ${res.status} ${res.statusText}`);
+        }
+      } catch (err) {
+        logTo(debugEl, `Error testing scope '${test.scope}': ${err.message}`);
+      }
+    }
+  }
+
+  document.getElementById('btnFollow').onclick = () => {
+    logEl.textContent = '';
+    const userInput = document.getElementById('targetUser').value.trim();
+    const yourInstance = document.getElementById('yourInstance').value.trim();
+    const yourApiKey = document.getElementById('yourApiKey').value.trim();
+    if (!userInput || !yourInstance || !yourApiKey) {
+      logTo(logEl, 'Please fill user, your instance domain, and your API key.');
+      return;
+    }
+    remoteFollow(userInput, yourInstance, yourApiKey, logEl);
+  };
+
+  document.getElementById('btnTestScopes').onclick = () => {
+    scopeLogEl.textContent = '';
+    const instance = document.getElementById('instanceDomain').value.trim();
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!instance || !apiKey) {
+      logTo(scopeLogEl, 'Instance URL and API key are required.');
+      return;
+    }
+    testApiKeyScopesDetailed(apiKey, instance, scopeLogEl);
+  };
+</script>
+
+</body>
+</html>

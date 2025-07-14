@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width" />
+  <style>
+.credits-content>*,.letter{user-select:none;cursor:default}.credits-wrapper,body{height:100vh;background-color:#000}body{margin:0;font-family:Arial,sans-serif;color:#fff;overflow-x:hidden;display:flex;justify-content:center;align-items:center;user-select:none;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-direction:column}#tap-to-play{font-size:36px;font-weight:700;text-align:center;color:#fff;margin-bottom:20px}#trigger-output{width:90vw;max-width:800px;color:#0f0;font-family:monospace;margin-bottom:20px;user-select:text;min-height:50px;background:rgba(0,0,0,.6);padding:10px;border-radius:8px;display:none}.credits-wrapper{position:fixed;top:0;left:0;width:100vw;height:100vh;display:none;justify-content:center;align-items:center;overflow:hidden;z-index:9999;text-align:center;padding:20px}.credits-content{position:relative;width:90vw;max-width:800px;height:150px}.credits-content>*{position:absolute;top:0;left:0;right:0;bottom:0;opacity:0;transition:opacity 1s ease-in-out;pointer-events:none;font-size:24px;line-height:2;margin:0 auto;white-space:normal}.credits-content>.active{opacity:1;pointer-events:auto;position:relative}.credits-content h1{font-size:40px;font-weight:700}.special-thanks{font-size:28px;color:gold}@property --progress{initial-value:0;inherits:false;syntax:'<number>'}@keyframes move-letter{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}.letter{display:inline-block;font-size:24px;color:#fff;animation:3s ease-in-out infinite move-letter;animation-delay:calc(var(--i) * .1s);letter-spacing:.05em;position:relative}
+  </style>
+
+
+  <script>
+  window['libopenmpt'] = {};
+  (function () {
+    const cdnBase = "//cdn.jsdelivr.net/gh/deskjet/chiptune2.js@master/";
+    const fallbackBase = "/other/extra/scripts/libraries/";
+    const testFile = "libopenmpt.js";
+    libopenmpt.locateFile = function (filename) {
+      return cdnBase + filename;
+    };
+    fetch(cdnBase + testFile, { method: 'HEAD' })
+      .then(response => {
+        if (response.ok) {
+          console.log("[libopenmpt] CDN is available.");
+          libopenmpt.locateFile = function (filename) {
+            return cdnBase + filename;
+          };
+        } else {
+          throw new Error("CDN response not OK");
+        }
+      })
+      .catch(() => {
+        console.warn("[libopenmpt] CDN unavailable, using fallback.");
+        libopenmpt.locateFile = function (filename) {
+          return fallbackBase + filename;
+        };
+      });
+  })();
+  libopenmpt.onRuntimeInitialized = function () {
+    var player;
+    var started = false;
+    function init() {
+      if (player === undefined) {
+        player = new ChiptuneJsPlayer(new ChiptuneJsConfig(-1));
+        }
+      }
+      function afterLoad(path, buffer) {
+        player.play(buffer);
+      }
+      function loadURL(path) {
+        init();
+        player.load(path, afterLoad.bind(this, path));
+      }
+
+      // Base64 decode helper
+      function base64Decode(str) {
+        try {
+          return decodeURIComponent(atob(str).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+        } catch {
+          return atob(str);
+        }
+      }
+      function wrapLettersPreservingHTML() {
+        const credits = document.querySelectorAll('.credits-content > *');
+        credits.forEach(el => {
+          if (el.getAttribute('data-wrapped')) return;
+          el.setAttribute('data-wrapped', 'true');
+          const triggerEl = el.querySelector('trigger');
+          if (triggerEl) {
+            el._triggerBase64 = triggerEl.textContent.trim();
+            triggerEl.remove();
+          }
+          const frag = document.createDocumentFragment();
+          let letterIndex = 0;
+          el.childNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              [...node.textContent].forEach(char => {
+                const span = document.createElement('span');
+                span.className = 'letter';
+                span.style.setProperty('--i', letterIndex);
+                span.textContent = char === ' ' ? '\u00A0' : char;
+                frag.appendChild(span);
+                letterIndex++;
+              });
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+              if (node.tagName.toLowerCase() === 'img') {
+                // Clone the image node and add class + delay style
+                const imgClone = node.cloneNode(true);
+                imgClone.classList.add('letter');
+                imgClone.style.setProperty('--i', letterIndex);
+                frag.appendChild(imgClone);
+                letterIndex++;
+              } else {
+                frag.appendChild(node.cloneNode(true));
+              }
+            }
+          });
+          el.innerHTML = '';
+          el.appendChild(frag);
+        });
+      }
+      function executeTriggerBase64(base64content) {
+        if (!base64content) {
+          console.log('[Trigger] No base64 content found.');
+          return;
+        }
+        console.log('[Trigger] Base64 content detected:', base64content);
+        const decoded = base64Decode(base64content);
+        console.log('[Trigger] Decoded content:', decoded);
+        const outputDiv = document.getElementById('trigger-output');
+        if (outputDiv) {
+          outputDiv.innerHTML = decoded.trim();
+          outputDiv.style.display = 'block'; // show div if hidden
+          console.log('[Trigger] Injected content into #trigger-output');
+        }
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = decoded.trim();
+        const scripts = tempDiv.querySelectorAll('script');
+        if (scripts.length > 0) {
+          console.log(`[Trigger] Found ${scripts.length} <script> tag(s). Injecting...`);
+        } else {
+          console.log('[Trigger] No <script> tags found in decoded content.');
+        }
+        scripts.forEach((script, index) => {
+          const newScript = document.createElement('script');
+          if (script.src) {
+            newScript.src = script.src;
+            newScript.async = false;
+            console.log(`[Trigger] Injecting script ${index + 1} with src: ${script.src}`);
+          } else {
+            newScript.textContent = script.textContent;
+            console.log(`[Trigger] Injecting inline script ${index + 1}`);
+          }
+          document.body.appendChild(newScript);
+        });
+        console.log('[Trigger] Script injection complete.');
+      }
+
+      function showCreditsSequentially() {
+        const credits = document.querySelectorAll('.credits-content > *');
+        let index = 0;
+        const fadeDuration = 1000; // ms
+        const displayDuration = 6000; // ms
+
+        credits.forEach((el, i) => {
+          el.style.opacity = i === 0 ? '1' : '0';
+          el.style.pointerEvents = i === 0 ? 'auto' : 'none';
+          el.style.position = 'absolute';
+          el.style.top = 0;
+          el.style.left = 0;
+          el.style.right = 0;
+          el.style.bottom = 0;
+          el._triggerExecuted = false;
+        });
+
+        function showNext() {
+          const current = credits[index];
+          const nextIndex = (index + 1) % credits.length;
+          const next = credits[nextIndex];
+
+          // Fade out current
+          current.style.transition = `opacity ${fadeDuration}ms ease-in-out`;
+          current.style.opacity = '0';
+          current.style.pointerEvents = 'none';
+
+          setTimeout(() => {
+            // Fade in next
+            next.style.transition = `opacity ${fadeDuration}ms ease-in-out`;
+            next.style.opacity = '1';
+            next.style.pointerEvents = 'auto';
+
+            // Execute trigger if exists and not executed
+            if (next._triggerBase64 && !next._triggerExecuted) {
+              executeTriggerBase64(next._triggerBase64);
+              next._triggerExecuted = true;
+            }
+
+            index = nextIndex;
+
+            if (next.classList.contains('special-thanks')) {
+              setTimeout(() => {
+                document.querySelector('.credits-content').style.display = 'none';
+
+                const countdownContainer = document.createElement('div');
+                countdownContainer.style.fontSize = '48px';
+                countdownContainer.style.fontWeight = 'bold';
+                countdownContainer.style.color = '#FFD700'; // Gold
+                countdownContainer.style.marginTop = '20px';
+                countdownContainer.style.textAlign = 'center';
+                countdownContainer.style.userSelect = 'none';
+                document.querySelector('.credits-wrapper').appendChild(countdownContainer);
+
+                let countdown = 3;
+                countdownContainer.textContent = countdown + '.';
+
+                let countdownInterval = setInterval(() => {
+                  countdown--;
+                  if (countdown > 0) {
+                    countdownContainer.textContent = countdown + '.';
+                  } else {
+                    clearInterval(countdownInterval);
+                    window.location.href = '/index.html';
+                  }
+                }, 1000);
+              }, displayDuration);
+            }
+
+          }, fadeDuration);
+        }
+
+        setInterval(showNext, displayDuration + fadeDuration);
+
+        // Execute trigger for first element if exists
+        if (credits[0]._triggerBase64 && !credits[0]._triggerExecuted) {
+          executeTriggerBase64(credits[0]._triggerBase64);
+          credits[0]._triggerExecuted = true;
+        }
+      }
+
+      document.body.addEventListener('click', function () {
+        if (!started) {
+          started = true;
+          loadURL('https://ry3yr.github.io/TAKATISB.IT');
+          document.getElementById('tap-to-play').style.display = 'none';
+          const creditsWrapper = document.querySelector('.credits-wrapper');
+          creditsWrapper.style.display = 'flex';
+          wrapLettersPreservingHTML();
+          showCreditsSequentially();
+        }
+      }, { once: true });
+    };
+  </script>
+  <script src="//cdn.jsdelivr.net/gh/deskjet/chiptune2.js@master/libopenmpt.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/deskjet/chiptune2.js@master/chiptune2.js"></script>
+  <script src="/other/extra/scripts/libraries/libopenmpt.js"></script>
+  <script src="/other/extra/scripts/libraries/chiptune2.js"></script>
+
+</head>
+<body>
+  <div id="tap-to-play">Tap to Play</div>
+  <!-- This div will be overwritten with each trigger's decoded content -->
+  <div id="trigger-output" style="display:none;"></div>
+  <div class="credits-wrapper">
+    <div class="credits-content">
+      <h1>Website by Alcea &amp; Wisteria</h1>
+      <p>...<trigger>PHNjcmlwdD4KICBjb25zdCBvbGRJZnJhbWUgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgneXVzYWFvLWlmcmFtZScpOwogIGlmIChvbGRJZnJhbWUpIG9sZElmcmFtZS5yZW1vdmUoKTsKCiAgY29uc3QgaWZyYW1lID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnaWZyYW1lJyk7CiAgaWZyYW1lLmlkID0gJ3l1c2Fhby1pZnJhbWUnOwogIGlmcmFtZS5zcmMgPSAnaHR0cHM6Ly95dXNhYW8ub3JnLyc7CgogIE9iamVjdC5hc3NpZ24oaWZyYW1lLnN0eWxlLCB7CiAgICBwb3NpdGlvbjogJ2ZpeGVkJywKICAgIHRvcDogJzAnLAogICAgbGVmdDogJzAnLAogICAgd2lkdGg6ICcxMDB2dycsCiAgICBoZWlnaHQ6ICcxMDB2aCcsCiAgICBib3JkZXI6ICdub25lJywKICAgIG1hcmdpbjogJzAnLAogICAgcGFkZGluZzogJzAnLAogICAgekluZGV4OiAnOTk5OScsCiAgICBkaXNwbGF5OiAnYmxvY2snLAogIH0pOwoKICBkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGlmcmFtZSk7Cjwvc2NyaXB0Pg==
+</trigger></p>
+      <p><strong>Graphics:</strong> BG (<img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/c78bc3fc-9f08-47ca-81ae-d89055c7ec49/dfr9leq-6469dd10-a9c9-4871-b338-e1423d9ca761.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2M3OGJjM2ZjLTlmMDgtNDdjYS04MWFlLWQ4OTA1NWM3ZWM0OVwvZGZyOWxlcS02NDY5ZGQxMC1hOWM5LTQ4NzEtYjMzOC1lMTQyM2Q5Y2E3NjEucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.wC-H3zMTTbcSeXPqgLZOFyHLx6shcDlmbBduH_QMyck" alt="Image" width="50" height="50" />
+ Rockman.EXE/&amp;/ <img src="https://upload.wikimedia.org/wikipedia/fr/thumb/7/78/Mega_Man_Star_Force_Logo.png/250px-Mega_Man_Star_Force_Logo.png" alt="Image" height="50" /> MegamanStarforce), <img src="https://www.pngplay.com/wp-content/uploads/11/Nier-Automata-Logo-PNG-HD-Images.png" alt="Image" height="50" />, <br>Selfdrawn images<trigger>PHNjcmlwdD4KY29uc3QgZmlyYW1lID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3l1c2Fhby1pZnJhbWUnKTtpZiAoZmlyYW1lKSB7CiAgLy8gQWRkIHRyYW5zaXRpb24gaWYgbm90IGFscmVhZHkgc2V0CiAgZmlyYW1lLnN0eWxlLnRyYW5zaXRpb24gPSAnb3BhY2l0eSAwLjVzIGVhc2UnOwogIC8vIFN0YXJ0IGZhZGUgb3V0CiAgZmlyYW1lLnN0eWxlLm9wYWNpdHkgPSAnMCc7CiAgLy8gQWZ0ZXIgdHJhbnNpdGlvbiBlbmRzLCByZW1vdmUgaWZyYW1lCiAgZmlyYW1lLmFkZEV2ZW50TGlzdGVuZXIoJ3RyYW5zaXRpb25lbmQnLCAoKSA9PiB7CiAgICBpZiAoZmlyYW1lLnBhcmVudE5vZGUpIHsKICAgICAgZmlyYW1lLnBhcmVudE5vZGUucmVtb3ZlQ2hpbGQoZmlyYW1lKTsKICAgIH0KICB9KTsKfQo8L3NjcmlwdD4=
+</trigger></p>
+      <p><strong>Programcode:</strong> JS for Frontend, PHP in Backend</p>
+      <p><strong>Libraries:</strong> ChartJS, JQuery (for Navbar Load etc). <br>NicepageCSS for Hamburger menu</p>
+      <p><strong>SFX:</strong> <img src="https://www.pngplay.com/wp-content/uploads/11/Nier-Automata-Logo-PNG-HD-Images.png" alt="Image" height="50" /> by PlatinumGames</p>
+      <p><strong>Hosting:</strong> ServerProfis</p>
+      <p><strong>Cats:</strong> <img src="other/extra/fetchdata/ENS/tangoens.gif" alt="Image" height="50" /> Tango (ENS Messaging), <img src="https://i.postimg.cc/43P71zYd/Screenshot-2025-07-02-03-29-45.jpg" alt="Image" height="50" /> Oneko <br>(to chase your cursor, meow 😺)<trigger>PHNjcmlwdCBzcmM9Im90aGVyL2V4dHJhL3NjcmlwdHMvb25la28vb25la29fY2FsbC5qcyI+PC9zY3JpcHQ+</trigger>
+      </p>
+      <p><strong>Snow:</strong> Only around in Winter</p>
+      <p><strong>80*31px Buttons:</strong> From various sources</p>
+      <p><strong>CreditsMusic:</strong> Takatis by JörgWinterstein</p>
+      <p class="special-thanks">Special Thanks to: ~You~ For visiting (๑╹ω╹๑ )</p>
+    </div>
+  </div>
+</body>
+</html>
