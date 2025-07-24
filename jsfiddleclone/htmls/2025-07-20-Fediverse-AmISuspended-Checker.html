@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mastodon Suspension Check</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 1rem; max-width: 700px; margin: auto; }
+  label { display: block; margin-top: 1rem; font-weight: bold; }
+  input[type="text"], textarea { width: 100%; padding: 0.4rem; font-size: 1rem; }
+  button { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
+  ul { list-style: none; padding-left: 0; margin-top: 1rem; }
+  li { margin-bottom: 0.5rem; }
+  .loading { color: gray; }
+  .suspended { color: red; font-weight: bold; }
+  .active { color: green; font-weight: bold; }
+  .error { color: orange; font-weight: bold; }
+  .lookup-domain {
+    margin-left: 0.5rem;
+    font-size: 0.9em;
+    color: #555;
+    font-family: monospace;
+    text-decoration: none;
+  }
+  .lookup-domain:hover {
+    text-decoration: underline;
+  }
+  .checkbox-label {
+    font-weight: normal;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+</style>
+</head>
+<body>
+<h1>Am I suspended ?</h1>
+<ul id="results">
+  <!-- results go here -->
+</ul>
+<form id="checkForm">
+  <label for="acctInput">User handle to check (e.g. alceawis@alceawis.com):</label>
+  <input type="text" id="acctInput" value="alceawis@alceawis.com" required />
+
+  <label for="followersUrlInput">Followers JSON endpoint URL:</label>
+  <input type="text" id="followersUrlInput" value="https://alceawis.com/alceawis/followers" required />
+
+  <label class="checkbox-label">
+    <input type="checkbox" id="formatToggle" />
+    Use <code>normal Mastodon followers</code> JSON format
+  </label>
+
+  <label for="extraDomains">Extra domains to check (one per line):</label>
+  <textarea id="extraDomains" rows="4">c.im
+mastodon.social</textarea>
+
+  <button type="submit">Check Suspension Status</button>
+</form>
+
+<script>
+async function runCheck() {
+  const acctToCheck = document.getElementById('acctInput').value.trim();
+  const userFollowersUrl = document.getElementById('followersUrlInput').value.trim();
+  const useNormalFormat = document.getElementById('formatToggle').checked;
+  const extraDomainsInput = document.getElementById('extraDomains').value.trim();
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '<li class="loading">Loading followers...</li>';
+
+  if (!acctToCheck || !userFollowersUrl) {
+    resultsEl.innerHTML = '<li class="error">Please fill in both fields.</li>';
+    return;
+  }
+
+  resultsEl.innerHTML = '';
+  const extractDomain = url => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return null;
+    }
+  };
+
+  const suspensionCache = new Map();
+  const allDomains = new Set();
+
+  try {
+    const resp = await fetch(userFollowersUrl);
+    if (!resp.ok) throw new Error(`Failed to fetch followers: ${resp.status}`);
+    const data = await resp.json();
+
+    let followersUrls = [];
+    if (useNormalFormat) {
+      if (!Array.isArray(data)) {
+        resultsEl.innerHTML = '<li class="error">Expected an array of follower objects in normal format.</li>';
+        return;
+      }
+      followersUrls = data.map(f => f.url).filter(Boolean);
+    } else {
+      followersUrls = data.orderedItems || [];
+    }
+
+    for (const url of followersUrls) {
+      const domain = extractDomain(url);
+      if (domain) allDomains.add(domain);
+    }
+
+    const extraDomains = extraDomainsInput
+      .split('\n')
+      .map(d => d.trim())
+      .filter(d => d);
+    for (const d of extraDomains) {
+      allDomains.add(d);
+    }
+
+    if (allDomains.size === 0) {
+      resultsEl.innerHTML = '<li>No domains to check.</li>';
+      return;
+    }
+
+    for (const domain of allDomains) {
+      if (!suspensionCache.has(domain)) {
+        suspensionCache.set(domain, checkSuspended(domain, acctToCheck));
+      }
+      const suspended = await suspensionCache.get(domain);
+      const li = document.createElement('li');
+      const textNode = document.createTextNode(`${domain} — Suspended: ${suspended === null ? 'Error' : suspended ? 'YES' : 'NO'}`);
+      li.appendChild(textNode);
+
+      const lookupLink = document.createElement('a');
+      lookupLink.className = 'lookup-domain';
+      lookupLink.textContent = `[>> ${domain}]`;
+      lookupLink.href = `https://${domain}/api/v1/accounts/lookup?acct=${encodeURIComponent(acctToCheck)}`;
+      lookupLink.target = '_blank';
+      lookupLink.rel = 'noopener noreferrer';
+      li.appendChild(lookupLink);
+
+      li.classList.add(suspended === null ? 'error' : suspended ? 'suspended' : 'active');
+      resultsEl.appendChild(li);
+    }
+  } catch (error) {
+    resultsEl.innerHTML = `<li class="error">Error: ${error.message}</li>`;
+  }
+
+  async function checkSuspended(instance, acct) {
+    const apiUrl = `https://${instance}/api/v1/accounts/lookup?acct=${encodeURIComponent(acct)}`;
+    try {
+      const resp = await fetch(apiUrl);
+      if (resp.status === 404) {
+        return true;
+      }
+      if (!resp.ok) {
+        console.warn(`API error from ${instance}: ${resp.status}`);
+        return null;
+      }
+      const json = await resp.json();
+      if ('suspended' in json) {
+        return Boolean(json.suspended);
+      }
+      return false;
+    } catch (e) {
+      console.warn(`Error fetching from ${instance}:`, e);
+      return null;
+    }
+  }
+}
+document.getElementById('checkForm').addEventListener('submit', event => {
+  event.preventDefault();
+  runCheck();
+});
+window.addEventListener('load', () => {
+  runCheck();
+});
+</script>
+</body>
+</html>

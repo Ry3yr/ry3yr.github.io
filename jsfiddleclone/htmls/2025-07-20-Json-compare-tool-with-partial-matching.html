@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compare JSON1[index] with JSON2</title>
+  <style>
+    body { font-family: monospace; margin: 1rem; }
+    .debug-section {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f0f0f0;
+      border-radius: 6px;
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .match { color: green; font-weight: bold; }
+    .no-match { color: red; font-weight: bold; }
+    label, input, button { margin-top: 0.5rem; display: block; }
+    .inline-inputs > * {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 1rem;
+    }
+    .inline-inputs input {
+      width: 80px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Compare JSON1[index] → JSON2 (𒐫 → &lt;blockquote&gt;)</h2>
+
+  <label for="url1">JSON 1 URL:</label>
+  <input type="text" id="url1" size="80" value="https://alceawis.de/other/extra/scripts/fakesocialmedia/data_alcea.json" />
+
+  <label for="url2">JSON 2 URL:</label>
+  <input type="text" id="url2" size="80" value="https://alceawis.com/data_alcea.json" />
+
+  <div class="inline-inputs">
+    <label for="indexToCompare">Index (JSON1):</label>
+    <input type="number" id="indexToCompare" min="0" value="0" />
+
+    <label for="maxIndex">Max Index:</label>
+    <input type="number" id="maxIndex" readonly />
+  </div>
+
+  <button onclick="compareSingleValue()">Compare</button>
+
+  <h3>Result:</h3>
+  <div id="result"></div>
+
+  <h3>Debug Info:</h3>
+  <div><strong>JSON 1 Values:</strong><div id="json1-debug" class="debug-section"></div></div>
+  <div><strong>JSON 2 Values:</strong><div id="json2-debug" class="debug-section"></div></div>
+  <div><strong>Comparison Log:</strong><div id="comparison-debug" class="debug-section"></div></div>
+
+  <script>
+    async function fetchJSON(url) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+        return await response.json();
+      } catch (err) {
+        alert(err);
+        return null;
+      }
+    }
+
+    function extractValuesWithMeta(arr) {
+      if (!Array.isArray(arr)) return [];
+      return arr.flatMap(obj =>
+        Object.entries(obj).map(([k, v]) => ({
+          value: (v?.value || '').trim(),
+          fullObj: v || {}
+        }))
+      );
+    }
+
+    function normalizeVal(str) {
+      return str.replace(/\uD809\uDC2B(.*?)\uD809\uDC2B/g, "<blockquote>$1</blockquote>");
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;',
+        '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function truncate(str, max = 80) {
+      return str.length > max ? str.slice(0, max) + "..." : str;
+    }
+
+    async function compareSingleValue() {
+      const url1 = document.getElementById('url1').value.trim();
+      const url2 = document.getElementById('url2').value.trim();
+      const index = parseInt(document.getElementById('indexToCompare').value, 10);
+      const resultEl = document.getElementById('result');
+      const maxIndexEl = document.getElementById('maxIndex');
+      const dbg1 = document.getElementById('json1-debug');
+      const dbg2 = document.getElementById('json2-debug');
+      const dbgSteps = document.getElementById('comparison-debug');
+
+      resultEl.innerHTML = dbg1.innerHTML = dbg2.innerHTML = dbgSteps.innerHTML = '';
+
+      const [json1, json2] = await Promise.all([fetchJSON(url1), fetchJSON(url2)]);
+      if (!json1 || !json2) {
+        resultEl.innerHTML = '<span class="no-match">Error loading JSON files</span>';
+        return;
+      }
+
+      const json1vals = extractValuesWithMeta(json1);
+      const json2vals = extractValuesWithMeta(json2);
+      maxIndexEl.value = json1vals.length - 1;
+
+      dbg1.textContent = json1vals.map((v, i) => `[${i}] (${v.value.length}) ${v.value}`).join('\n');
+      dbg2.textContent = json2vals.map((v, i) => `[${i}] (${v.value.length}) ${v.value}`).join('\n');
+
+      const rawVal1 = json1vals[index]?.value;
+      if (!rawVal1) {
+        resultEl.innerHTML = '<span class="no-match">No value at given index</span>';
+        return;
+      }
+      const normVal1 = normalizeVal(rawVal1);
+
+      // Full match
+      for (let i = 0; i < json2vals.length; i++) {
+        const val2 = json2vals[i].value;
+        dbgSteps.textContent += `Full compare JSON1[${index}] to JSON2[${i}]\n`;
+        if (val2 === normVal1) {
+          const status = json2vals[i].fullObj.status || '(no status)';
+          resultEl.innerHTML = `<span class="match">Full match at JSON2[${i}]</span><br><strong>Status:</strong> ${escapeHtml(status)}<br><br><strong>Raw:</strong><br>${escapeHtml(rawVal1)}<br><strong>Normalized:</strong><br>${escapeHtml(normVal1)}`;
+          return;
+        }
+      }
+
+      // Partial match: first 16 characters
+      const prefix1 = normVal1.slice(0, 16);
+      for (let i = 0; i < json2vals.length; i++) {
+        const prefix2 = json2vals[i].value.slice(0, 16);
+        dbgSteps.textContent += `Partial compare prefix "${prefix1}" to JSON2[${i}] prefix "${prefix2}"\n`;
+        if (prefix1 === prefix2) {
+          const status = json2vals[i].fullObj.status || '(no status)';
+          resultEl.innerHTML = `<span class="match">Partial match (first 16 chars) at JSON2[${i}]</span><br><strong>Status:</strong> ${escapeHtml(status)}<br><br><strong>Raw:</strong><br>${escapeHtml(rawVal1)}<br><strong>Normalized:</strong><br>${escapeHtml(normVal1)}`;
+          return;
+        }
+      }
+
+      resultEl.innerHTML = '<span class="no-match">No full or partial match found</span>';
+    }
+  </script>
+</body>
+</html>

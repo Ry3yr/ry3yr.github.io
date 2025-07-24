@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropzone File Upload</title>
+
+    <!-- Include Dropzone CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.css" rel="stylesheet">
+
+    <style>
+        /* Custom styling for the dropzone */
+        #jsonOutput {
+            white-space: pre-wrap;
+            background: #f4f4f4;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+
+        /* Style for dropzone */
+        .dropzone {
+            border: 2px dashed #007bff;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Upload Images with Dropzone</h2>
+
+    <!-- Dropzone Form -->
+    <form action="#" class="dropzone" id="myDropzone" enctype="multipart/form-data"></form>
+
+    <button id="generateJson">Generate JSON</button>
+
+    <pre id="jsonOutput"></pre>
+
+    <!-- Include Dropzone JS -->
+    <script src="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.js"></script>
+
+    <script>
+        // Initialize Dropzone for multi-file support
+        Dropzone.autoDiscover = false;  // Disable auto-discovery for custom configuration
+        const myDropzone = new Dropzone("#myDropzone", {
+            url: "#",  // Prevent it from actually submitting
+            addRemoveLinks: true,
+            dictDefaultMessage: "Drag and drop files here or click to select files", // Mobile-friendly message
+            dictRemoveFile: "Remove",
+            acceptedFiles: "image/*",  // Only images are allowed
+            autoProcessQueue: false,  // Do not auto-submit, only process when user asks for it
+            init: function() {
+                // You can track when files are added to the queue
+                this.on("addedfile", function(file) {
+                    console.log(file.name + " added");
+                });
+            }
+        });
+
+        // Handle the Generate JSON Button click
+        document.getElementById('generateJson').addEventListener('click', function() {
+            // Get the uploaded files from Dropzone
+            const uploadedFiles = myDropzone.files;
+            
+            // If no files are uploaded
+            if (uploadedFiles.length === 0) {
+                alert("Please upload some files first.");
+                return;
+            }
+
+            // Create the JSON object
+            const filesObj = {};
+            uploadedFiles.forEach((file) => {
+                // Get the base name of the file (without extension)
+                const baseName = file.name.split('.')[0];  // Remove file extension
+                filesObj[baseName] = file.name;  // Use the base name as the key
+            });
+
+            const result = {
+                ...filesObj,
+                "files_count": uploadedFiles.length
+            };
+
+            // Output the JSON to the page
+            document.getElementById('jsonOutput').textContent = JSON.stringify(result, null, 2);
+        });
+    </script>
+
+</body>
+</html>
