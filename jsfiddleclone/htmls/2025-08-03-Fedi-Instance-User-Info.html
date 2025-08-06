@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .user-list {
+            margin-top: 20px;
+        }
+        .user-link {
+            display: block;
+            padding: 8px;
+            margin: 5px 0;
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+        .user-link:hover {
+            text-decoration: underline;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        details {
+            margin-top: 20px;
+        }
+        details summary {
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <form id="endpoint-form">
+        <label for="domain">Enter Domain:</label>
+        <input type="text" id="domain" name="domain" placeholder="e.g., mastodon.social" required>
+        <button type="submit">Fetch Users</button>
+    </form>
+
+    <div id="user-count"></div>
+    <div class="user-list" id="user-list">
+        <!-- Users will be listed here -->
+    </div>
+
+    <!-- Instance Data in a details section -->
+    <details id="instance-details">
+        <summary>Click to View Instance Information</summary>
+        <table id="instance-table">
+            <!-- Instance data will be displayed here -->
+        </table>
+    </details>
+
+    <script>
+        // Function to get query string value for 'instance'
+        function getQueryStringParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Automatically trigger fetch if 'instance' query parameter is provided
+        const instanceFromQuery = getQueryStringParameter('instance');
+        if (instanceFromQuery) {
+            document.getElementById('domain').value = instanceFromQuery;
+            fetchData(instanceFromQuery);  // Auto trigger fetch for the instance
+        }
+
+        document.getElementById('endpoint-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const domain = document.getElementById('domain').value.trim();
+            if (!domain) {
+                alert('Please enter a valid domain');
+                return;
+            }
+
+            fetchData(domain);
+        });
+
+        async function fetchData(domain) {
+            const endpointDirectory = `https://${domain}/api/v1/directory?local=true`;
+            const endpointInstance = `https://${domain}/api/v1/instance`;
+            const userListContainer = document.getElementById('user-list');
+            const userCountContainer = document.getElementById('user-count');
+            const instanceTable = document.getElementById('instance-table');
+            const instanceDetails = document.getElementById('instance-details');
+            userListContainer.innerHTML = 'Loading...';
+            userCountContainer.innerHTML = ''; // Clear any previous count
+
+            try {
+                // Fetch the instance data to get the total user count and other details
+                const instanceResponse = await fetch(endpointInstance);
+                if (!instanceResponse.ok) {
+                    throw new Error('Failed to fetch instance data.');
+                }
+                const instanceData = await instanceResponse.json();
+                const totalUsers = instanceData.stats ? instanceData.stats.user_count : 'Unknown';
+
+                // Display total user count
+                userCountContainer.innerHTML = `Total Users: ${totalUsers}`;
+
+                // Fetch the users from the directory endpoint
+                const directoryResponse = await fetch(endpointDirectory);
+                if (!directoryResponse.ok) {
+                    throw new Error('Failed to fetch users from the directory.');
+                }
+                const data = await directoryResponse.json();
+
+                if (data && Array.isArray(data)) {
+                    // Sort users by `created_at` (registration date)
+                    const sortedUsers = data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+                    userListContainer.innerHTML = ''; // Clear loading message
+
+                    sortedUsers.forEach(user => {
+                        // Format user data
+                        const userName = user.display_name || 'Unknown User';
+                        const userUsername = user.username || 'Unknown Username';
+                        const registrationDate = new Date(user.created_at).toLocaleDateString() || 'Invalid Date';
+
+                        const userLink = document.createElement('a');
+                        userLink.href = `https://${domain}/users/${userUsername}`; // Link to the user's profile
+                        userLink.classList.add('user-link');
+                        userLink.textContent = `${userName} (@${userUsername}) - Registered: ${registrationDate}`;
+
+                        // Open link in a new tab
+                        userLink.target = "_blank";
+
+                        userListContainer.appendChild(userLink);
+                    });
+                } else {
+                    userListContainer.innerHTML = 'No users found or invalid response format.';
+                }
+
+                // Display instance data in a table
+                const instanceDetailsHTML = `
+                    <tr><th>Instance Title</th><td>${instanceData.title || 'N/A'}</td></tr>
+                    <tr><th>Description</th><td>${instanceData.description || 'N/A'}</td></tr>
+                    <tr><th>Email</th><td><a href="mailto:${instanceData.email || 'N/A'}">${instanceData.email || 'N/A'}</a></td></tr>
+                    <tr><th>Version</th><td>${instanceData.version || 'N/A'}</td></tr>
+                    <tr><th>Registrations</th><td>${instanceData.registrations ? 'Enabled' : 'Disabled'}</td></tr>
+                    <tr><th>Approval Required</th><td>${instanceData.approval_required ? 'Yes' : 'No'}</td></tr>
+                    <tr><th>Invites Enabled</th><td>${instanceData.invites_enabled ? 'Yes' : 'No'}</td></tr>
+                    <tr><th>Total Users</th><td>${instanceData.stats.user_count || 'N/A'}</td></tr>
+                    <tr><th>Total Statuses</th><td>${instanceData.stats.status_count || 'N/A'}</td></tr>
+                    <tr><th>Total Domains</th><td>${instanceData.stats.domain_count || 'N/A'}</td></tr>
+                `;
+                instanceTable.innerHTML = instanceDetailsHTML;
+
+                // Enable the details section
+                instanceDetails.open = false;
+
+            } catch (error) {
+                console.error(error);
+                userListContainer.innerHTML = 'Error fetching data. Please try again.';
+            }
+        }
+    </script>
+
+</body>
+</html>

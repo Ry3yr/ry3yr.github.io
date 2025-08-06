@@ -1,0 +1,115 @@
+<!----Instance Info--->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .user-list {
+            margin-top: 20px;
+        }
+        .user-link {
+            display: block;
+            padding: 8px;
+            margin: 5px 0;
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+        .user-link:hover {
+            text-decoration: underline;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        details {
+            margin-top: 20px;
+        }
+        details summary {
+            font-weight: bold;
+            cursor: pointer;
+        }
+        details[open] {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div id="user-count"></div>
+    <div class="user-list" id="user-list">
+    </div>
+    <details id="instance-details" open>
+        <summary>Instance Information</summary>
+        <table id="instance-table">
+        </table>
+    </details>
+    <script>
+        const domain = 'alceawis.com';
+        fetchData(domain);
+        async function fetchData(domain) {
+            const endpointDirectory = `https://${domain}/api/v1/directory?local=true`;
+            const endpointInstance = `https://${domain}/api/v1/instance`;
+            const userListContainer = document.getElementById('user-list');
+            const userCountContainer = document.getElementById('user-count');
+            const instanceTable = document.getElementById('instance-table');
+            const instanceDetails = document.getElementById('instance-details');
+            userListContainer.innerHTML = 'Loading...';
+            userCountContainer.innerHTML = '';
+            try {
+                const instanceResponse = await fetch(endpointInstance);
+                if (!instanceResponse.ok) {
+                    throw new Error('Failed to fetch instance data.');
+                }
+                const instanceData = await instanceResponse.json();
+                const totalUsers = instanceData.stats ? instanceData.stats.user_count : 'Unknown';
+                userCountContainer.innerHTML = `Total Users: ${totalUsers}`;
+                const directoryResponse = await fetch(endpointDirectory);
+                if (!directoryResponse.ok) {
+                    throw new Error('Failed to fetch users from the directory.');
+                }
+                const data = await directoryResponse.json();
+                if (data && Array.isArray(data)) {
+                    const sortedUsers = data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                    userListContainer.innerHTML = '';
+                    sortedUsers.forEach(user => {
+                        const userName = user.display_name || 'Unknown User';
+                        const userUsername = user.username || 'Unknown Username';
+                        const registrationDate = new Date(user.created_at).toLocaleDateString() || 'Invalid Date';
+                        const userLink = document.createElement('a');
+                        userLink.href = `https://${domain}/users/${userUsername}`; // Link to the user's profile
+                        userLink.classList.add('user-link');
+                        userLink.textContent = `${userName} (@${userUsername}) - Registered: ${registrationDate}`;
+                        userLink.target = "_blank";
+                        userListContainer.appendChild(userLink);
+                    });
+                } else {
+                    userListContainer.innerHTML = 'No users found or invalid response format.';
+                }
+                const instanceDetailsHTML = `
+                    <tr><th>Instance Title</th><td>${instanceData.title || 'N/A'}</td></tr>
+                    <tr><th>Description</th><td>${instanceData.description || 'N/A'}</td></tr>
+                    <tr><th>Email</th><td><a href="mailto:${instanceData.email || 'N/A'}">${instanceData.email || 'N/A'}</a></td></tr>
+                    <tr><th>Version</th><td>${instanceData.version || 'N/A'}</td></tr>
+                    <tr><th>Registrations</th><td>${instanceData.registrations ? 'Enabled' : 'Disabled'}</td></tr>
+                    <tr><th>Approval Required</th><td>${instanceData.approval_required ? 'Yes' : 'No'}</td></tr>
+                    <tr><th>Invites Enabled</th><td>${instanceData.invites_enabled ? 'Yes' : 'No'}</td></tr>
+                    <tr><th>Total Users</th><td>${instanceData.stats.user_count || 'N/A'}</td></tr>
+                    <tr><th>Total Statuses</th><td>${instanceData.stats.status_count || 'N/A'}</td></tr>
+                    <tr><th>Total Domains</th><td>${instanceData.stats.domain_count || 'N/A'}</td></tr>
+                `;
+                instanceTable.innerHTML = instanceDetailsHTML;
+                instanceDetails.open = true;
+            } catch (error) {
+                console.error(error);
+                userListContainer.innerHTML = 'Error fetching data. Please try again.';
+            }
+        }
+    </script>

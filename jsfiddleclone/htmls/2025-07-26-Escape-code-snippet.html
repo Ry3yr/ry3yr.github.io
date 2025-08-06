@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Text to HTML Entities</title>
+</head>
+<body>
+    <h2>Convert Special Characters to HTML Entities</h2>
+    
+    <!-- Textbox for user input -->
+    <textarea id="inputText" rows="6" cols="50"></textarea>
+    
+    <br>
+    <button onclick="convertToHtmlEntities()">Convert</button>
+    
+    <h3>Converted Text:</h3>
+    <textarea id="outputText" rows="6" cols="50" readonly></textarea>
+
+    <script>
+        function convertToHtmlEntities() {
+            // Get the input text from the textarea
+            let inputText = document.getElementById('inputText').value;
+
+            // Create a temporary element to escape the HTML
+            let element = document.createElement('div');
+            element.textContent = inputText;  // or use innerText
+            element.innerHTML = element.innerHTML; // This automatically encodes special chars
+
+            // Set the converted text into the output area
+            document.getElementById('outputText').value = element.innerHTML;
+        }
+    </script>
+</body>
+</html>
