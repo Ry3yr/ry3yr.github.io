@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Domain Uptime Monitor</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f8f9fa;
+    margin: 2rem;
+  }
+  h1 {
+    text-align: center;
+    color: #28a745;
+  }
+  .service {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
+  }
+  .service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .service-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  .status {
+    font-weight: bold;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+  .status.up { color: #28a745; }
+  .status.down { color: #dc3545; }
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .bar-block {
+    width: 10px;
+    height: 20px;
+    border-radius: 2px;
+    background: #ccc;
+    cursor: pointer;
+  }
+  .bar-block.up { background: #28a745; }
+  .bar-block.down { background: #dc3545; }
+  .uptime {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #333;
+  }
+  .popup {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 1000;
+  }
+</style>
+</head>
+<body>
+<h1><u>Domain Uptime </u>"<a target="_blank" href="https://alceawis.de/other/extra/scripts/fakesocialmedia/commentload.html?number=5000&text=When you don%27t want to ge"  style=color:#28a745>Monitor</a>" <a href="http://127.0.0.1:8080/2025-08-04-UptimeCheck/sync.php" target="_blank" style=color:lightgrey>Sync</a>
+</h1>
+<div id="container"></div>
+<div id="popup" class="popup"></div>
+<script>
+    const domainFiles = [
+      'alceawis.de.json',
+      'alceawis.com.json',
+      'alcea-wisteria.de.json'
+    ];
+
+    function statusLabel(code) {
+      return code === 200 ? 'UP' : 'DOWN';
+    }
+
+    function getStatusClass(code) {
+      return code === 200 ? 'up' : 'down';
+    }
+
+    function getDateOnly(datetime) {
+      return datetime.split(' ')[0];
+    }
+
+    // Unique per day (latest per day kept)
+    function filterUniquePerDay(entries) {
+      const map = new Map();
+      for (let entry of [...entries].reverse()) {
+        const day = getDateOnly(entry.date);
+        if (!map.has(day)) {
+          map.set(day, entry);
+        }
+      }
+      return Array.from(map.values()).reverse(); // Oldest to newest
+    }
+
+    async function loadDomainData(filename) {
+      try {
+        const res = await fetch(filename, {
+          headers: {
+            'Cache-Control': 'no-store', // Prevent caching of the request
+          }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch(err) {
+        console.error(`Error loading ${filename}:`, err);
+        return [];
+      }
+    }
+
+    function renderService(domain, entries) {
+      const filtered = filterUniquePerDay(entries); // Unique daily entries
+      const upCount = filtered.filter(e => e.response_code === 200).length;
+      const total = filtered.length;
+      const uptimePercent = total ? ((upCount / total) * 100).toFixed(3) : '0.000';
+      const status = upCount === total ? 'Operational' : 'Issues';
+      const statusClass = upCount === total ? 'up' : 'down';
+
+      const service = document.createElement('div');
+      service.className = 'service';
+      service.innerHTML = `
+        <div class="service-header">
+          <div class="service-name">${domain}</div>
+          <div class="status ${statusClass}">${status} (${uptimePercent}%)</div>
+        </div>
+        <div class="bar"></div>
+        <div class="uptime">${total} day(s) monitored</div>
+      `;
+
+      const bar = service.querySelector('.bar');
+
+      const recentEntries = filtered.slice(-80).reverse(); // last 80, newest first
+      recentEntries.forEach(e => {
+        const block = document.createElement('div');
+        block.className = `bar-block ${getStatusClass(e.response_code)}`;
+        block.title = `${e.date}: ${statusLabel(e.response_code)}`;
+        block.dataset.details = JSON.stringify(e);
+        block.addEventListener('click', (evt) => {
+          showPopup(evt, e);
+        });
+        bar.appendChild(block);
+      });
+
+      document.getElementById('container').appendChild(service);
+    }
+
+    function showPopup(evt, entry) {
+      const popup = document.getElementById('popup');
+      popup.innerHTML = `
+        <strong>${entry.domainname}</strong><br/>
+        Date: ${entry.date}<br/>
+        Response Code: ${entry.response_code}<br/>
+        Status: ${statusLabel(entry.response_code)}<br/>
+        Mode: ${entry.mode}
+      `;
+      popup.style.display = 'block';
+      popup.style.left = evt.pageX + 10 + 'px';
+      popup.style.top = evt.pageY + 10 + 'px';
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.classList.contains('bar-block')) {
+        document.getElementById('popup').style.display = 'none';
+      }
+    });
+
+    async function init() {
+      for (const file of domainFiles) {
+        const data = await loadDomainData(file);
+        if (data.length) {
+          const domain = file.replace('.json','');
+          renderService(domain, data);
+        }
+      }
+    }
+
+    init();
+</script>
+</body>
+</html>

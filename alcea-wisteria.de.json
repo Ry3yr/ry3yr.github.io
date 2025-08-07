@@ -1,0 +1,32 @@
+[
+    {
+        "date": "2025-08-04 13:38:26",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-04 13:38:32",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-05 03:19:10",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-06 11:34:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-07 11:34:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    }
+]
