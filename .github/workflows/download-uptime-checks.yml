@@ -1,0 +1,32 @@
+name: Weekly Download of Uptime Check Files
+
+on:
+  schedule:
+    # This cron expression will trigger the action every Sunday at midnight UTC
+    - cron: '0 0 * * SUN'
+
+jobs:
+  download_json_files:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Download JSON files to root directory
+      run: |
+        curl -o ./alcea-wisteria.de.json https://alcea-wisteria.de/PHP//0demo/2025-08-04-UptimeCheck/alcea-wisteria.de.json
+        curl -o ./alceawis.com.json https://alcea-wisteria.de/PHP//0demo/2025-08-04-UptimeCheck/alceawis.com.json
+        curl -o ./alceawis.de.json https://alcea-wisteria.de/PHP//0demo/2025-08-04-UptimeCheck/alceawis.de.json
+
+    - name: Commit downloaded files to the repository
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add ./*.json
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Weekly download of uptime check JSON files"
+          git push
+        fi
