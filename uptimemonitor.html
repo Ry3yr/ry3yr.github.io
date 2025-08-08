@@ -75,119 +75,124 @@
 <div id="container"></div>
 <div id="popup" class="popup"></div>
 <script>
-    const domainFiles = [
-      'alceawis.de.json',
-      'alceawis.com.json',
-      'alcea-wisteria.de.json'
-    ];
+  const domainFiles = [
+    'alceawis.de.json',
+    'alceawis.com.json',
+    'alcea-wisteria.de.json'
+  ];
 
-    function statusLabel(code) {
-      return code === 200 ? 'UP' : 'DOWN';
+  function statusLabel(code) {
+    return code === 200 ? 'UP' : 'DOWN';
+  }
+
+  function getStatusClass(code) {
+    return code === 200 ? 'up' : 'down';
+  }
+
+  function getDateOnly(datetime) {
+    return datetime.split(' ')[0];
+  }
+
+  // Unique per day (latest per day kept)
+  function filterUniquePerDay(entries) {
+    const map = new Map();
+    for (let entry of [...entries].reverse()) {
+      const day = getDateOnly(entry.date);
+      if (!map.has(day)) {
+        map.set(day, entry);
+      }
     }
+    return Array.from(map.values()).reverse(); // Oldest to newest
+  }
 
-    function getStatusClass(code) {
-      return code === 200 ? 'up' : 'down';
-    }
+  async function loadDomainData(filename) {
+    try {
+      // Append cache-busting query (timestamp) to the filename
+      const url = `${filename}?t=${new Date().getTime()}`;
 
-    function getDateOnly(datetime) {
-      return datetime.split(' ')[0];
-    }
-
-    // Unique per day (latest per day kept)
-    function filterUniquePerDay(entries) {
-      const map = new Map();
-      for (let entry of [...entries].reverse()) {
-        const day = getDateOnly(entry.date);
-        if (!map.has(day)) {
-          map.set(day, entry);
+      const res = await fetch(url, {
+        headers: {
+          'Cache-Control': 'no-store', // Prevent caching of the request
         }
-      }
-      return Array.from(map.values()).reverse(); // Oldest to newest
-    }
-
-    async function loadDomainData(filename) {
-      try {
-        const res = await fetch(filename, {
-          headers: {
-            'Cache-Control': 'no-store', // Prevent caching of the request
-          }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        return Array.isArray(data) ? data : [];
-      } catch(err) {
-        console.error(`Error loading ${filename}:`, err);
-        return [];
-      }
-    }
-
-    function renderService(domain, entries) {
-      const filtered = filterUniquePerDay(entries); // Unique daily entries
-      const upCount = filtered.filter(e => e.response_code === 200).length;
-      const total = filtered.length;
-      const uptimePercent = total ? ((upCount / total) * 100).toFixed(3) : '0.000';
-      const status = upCount === total ? 'Operational' : 'Issues';
-      const statusClass = upCount === total ? 'up' : 'down';
-
-      const service = document.createElement('div');
-      service.className = 'service';
-      service.innerHTML = `
-        <div class="service-header">
-          <div class="service-name">${domain}</div>
-          <div class="status ${statusClass}">${status} (${uptimePercent}%)</div>
-        </div>
-        <div class="bar"></div>
-        <div class="uptime">${total} day(s) monitored</div>
-      `;
-
-      const bar = service.querySelector('.bar');
-
-      const recentEntries = filtered.slice(-80).reverse(); // last 80, newest first
-      recentEntries.forEach(e => {
-        const block = document.createElement('div');
-        block.className = `bar-block ${getStatusClass(e.response_code)}`;
-        block.title = `${e.date}: ${statusLabel(e.response_code)}`;
-        block.dataset.details = JSON.stringify(e);
-        block.addEventListener('click', (evt) => {
-          showPopup(evt, e);
-        });
-        bar.appendChild(block);
       });
 
-      document.getElementById('container').appendChild(service);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch(err) {
+      console.error(`Error loading ${filename}:`, err);
+      return [];
     }
+  }
 
-    function showPopup(evt, entry) {
-      const popup = document.getElementById('popup');
-      popup.innerHTML = `
-        <strong>${entry.domainname}</strong><br/>
-        Date: ${entry.date}<br/>
-        Response Code: ${entry.response_code}<br/>
-        Status: ${statusLabel(entry.response_code)}<br/>
-        Mode: ${entry.mode}
-      `;
-      popup.style.display = 'block';
-      popup.style.left = evt.pageX + 10 + 'px';
-      popup.style.top = evt.pageY + 10 + 'px';
-    }
+  function renderService(domain, entries) {
+    const filtered = filterUniquePerDay(entries); // Unique daily entries
+    const upCount = filtered.filter(e => e.response_code === 200).length;
+    const total = filtered.length;
+    const uptimePercent = total ? ((upCount / total) * 100).toFixed(3) : '0.000';
+    const status = upCount === total ? 'Operational' : 'Issues';
+    const statusClass = upCount === total ? 'up' : 'down';
 
-    document.addEventListener('click', e => {
-      if (!e.target.classList.contains('bar-block')) {
-        document.getElementById('popup').style.display = 'none';
-      }
+    const service = document.createElement('div');
+    service.className = 'service';
+    service.innerHTML = `
+      <div class="service-header">
+        <div class="service-name">${domain}</div>
+        <div class="status ${statusClass}">${status} (${uptimePercent}%)</div>
+      </div>
+      <div class="bar"></div>
+      <div class="uptime">${total} day(s) monitored</div>
+    `;
+
+    const bar = service.querySelector('.bar');
+
+    const recentEntries = filtered.slice(-80).reverse(); // last 80, newest first
+    recentEntries.forEach(e => {
+      const block = document.createElement('div');
+      block.className = `bar-block ${getStatusClass(e.response_code)}`;
+      block.title = `${e.date}: ${statusLabel(e.response_code)}`;
+      block.dataset.details = JSON.stringify(e);
+      block.addEventListener('click', (evt) => {
+        showPopup(evt, e);
+      });
+      bar.appendChild(block);
     });
 
-    async function init() {
-      for (const file of domainFiles) {
-        const data = await loadDomainData(file);
-        if (data.length) {
-          const domain = file.replace('.json','');
-          renderService(domain, data);
-        }
+    document.getElementById('container').appendChild(service);
+  }
+
+  function showPopup(evt, entry) {
+    const popup = document.getElementById('popup');
+    popup.innerHTML = `
+      <strong>${entry.domainname}</strong><br/>
+      Date: ${entry.date}<br/>
+      Response Code: ${entry.response_code}<br/>
+      Status: ${statusLabel(entry.response_code)}<br/>
+      Mode: ${entry.mode}
+    `;
+    popup.style.display = 'block';
+    popup.style.left = evt.pageX + 10 + 'px';
+    popup.style.top = evt.pageY + 10 + 'px';
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.classList.contains('bar-block')) {
+      document.getElementById('popup').style.display = 'none';
+    }
+  });
+
+  async function init() {
+    for (const file of domainFiles) {
+      const data = await loadDomainData(file);
+      if (data.length) {
+        const domain = file.replace('.json','');
+        renderService(domain, data);
       }
     }
+  }
 
-    init();
+  init();
 </script>
+
 </body>
 </html>
