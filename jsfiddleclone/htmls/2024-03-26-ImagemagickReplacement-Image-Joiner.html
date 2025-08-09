@@ -1,139 +1,262 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/min/dropzone.min.css">
+  <meta charset="UTF-8">
+  <title>Join Images Tool</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/min/dropzone.min.css">
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
     canvas {
-      width: auto;
-      height: auto;
       max-width: 100%;
-      max-height: 100%;
+      height: auto;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+    .options {
+      margin-top: 15px;
+    }
+    .options label {
+      margin-right: 10px;
+    }
+    .grid-options {
+      display: none;
+      margin-top: 10px;
+      margin-left: 20px;
+    }
+    .grid-options input {
+      width: 40px;
+      margin: 0 5px;
     }
   </style>
 </head>
+
 <body>
+  <h2>Upload Images</h2>
   <div id="myDropzone" class="dropzone"></div>
-  <div>
-    <input type="radio" name="orientation" value="horizontal" id="radioHorizontal">
+
+  <div class="options">
+    <input type="radio" name="orientation" id="radioHorizontal" value="horizontal" checked>
     <label for="radioHorizontal">Horizontal</label>
-    <input type="radio" name="orientation" value="vertical" id="radioVertical">
+    
+    <input type="radio" name="orientation" id="radioVertical" value="vertical">
     <label for="radioVertical">Vertical</label>
-    <br>
+    
+    <input type="radio" name="orientation" id="radioGrid" value="grid">
+    <label for="radioGrid">Grid</label>
+    
+    <div id="gridOptions" class="grid-options">
+      <span>Grid layout: </span>
+      <input type="number" id="gridCols" min="1" value="2"> × <input type="number" id="gridRows" min="1" value="2">
+    </div>
+    <br><br>
+
     <input type="checkbox" id="resizeCheckbox">
     <label for="resizeCheckbox">Resize smaller images to largest</label>
     <br>
+
+    <input type="checkbox" id="orderCheckbox">
+    <label for="orderCheckbox">Order images by filename</label>
+    <br><br>
+
     <button id="joinButton">Join Images</button>
+    <button id="downloadButton" disabled>Download Joined Image</button>
   </div>
+
   <div id="imageInfo"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/min/dropzone.min.js"></script>
   <script>
     Dropzone.autoDiscover = false;
+    var imageFiles = [];
+
     var myDropzone = new Dropzone("#myDropzone", {
       url: "#",
       autoProcessQueue: false,
-      maxFiles: 5,
       acceptedFiles: "image/*",
-      init: function () {
-        var joinButton = document.querySelector("#joinButton");
-        var radioHorizontal = document.querySelector("#radioHorizontal");
-        var radioVertical = document.querySelector("#radioVertical");
-        var resizeCheckbox = document.querySelector("#resizeCheckbox");
-        var imageFiles = [];
-
-        this.on("addedfile", function (file) {
+      addRemoveLinks: true,
+      init: function() {
+        this.on("addedfile", function(file) {
           imageFiles.push(file);
         });
 
-        joinButton.addEventListener("click", function () {
-          var selectedOrientation = radioHorizontal.checked ? "horizontal" : "vertical";
-          var resizeImages = resizeCheckbox.checked;
-          joinImages(selectedOrientation, resizeImages, imageFiles);
+        this.on("removedfile", function(file) {
+          imageFiles = imageFiles.filter(f => f !== file);
         });
       }
     });
 
-    function joinImages(orientation, resizeImages, imageFiles) {
-      if (imageFiles.length > 1) {
-        var canvas = document.createElement("canvas");
-        var ctx = canvas.getContext("2d");
+    // Show/hide grid options when grid radio is selected
+    document.querySelectorAll('input[name="orientation"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        document.getElementById('gridOptions').style.display = 
+          this.id === 'radioGrid' ? 'block' : 'none';
+      });
+    });
 
-        var loadedImages = 0;
-        var images = [];
+    document.getElementById("joinButton").addEventListener("click", function() {
+      if (imageFiles.length === 0) {
+        alert("Please upload at least one image.");
+        return;
+      }
 
-        // Load the images
-        imageFiles.forEach(function (file) {
-          var img = new Image();
-          img.onload = function () {
-            loadedImages++;
-            images.push(img);
+      var orientation = document.querySelector('input[name="orientation"]:checked').value;
+      var resizeImages = document.getElementById("resizeCheckbox").checked;
+      var orderByFilename = document.getElementById("orderCheckbox").checked;
 
-            if (loadedImages === imageFiles.length) {
-              var totalWidth = 0;
-              var maxHeight = 0;
+      var filesToJoin = [...imageFiles];
 
-              // Calculate the total width and maximum height of the images
-              images.forEach(function (image) {
-                totalWidth += image.width;
-                maxHeight = Math.max(maxHeight, image.height);
-              });
+      if (orderByFilename) {
+        filesToJoin.sort((a, b) => a.name.localeCompare(b.name));
+      }
 
+      if (orientation === 'grid') {
+        var cols = parseInt(document.getElementById('gridCols').value) || 1;
+        var rows = parseInt(document.getElementById('gridRows').value) || 1;
+        joinImages(orientation, resizeImages, filesToJoin, cols, rows);
+      } else {
+        joinImages(orientation, resizeImages, filesToJoin);
+      }
+    });
+
+    function joinImages(orientation, resizeImages, files, cols, rows) {
+      var loadedImages = [];
+      var loadCount = 0;
+
+      files.forEach(function(file, index) {
+        var img = new Image();
+        img.onload = function() {
+          loadedImages[index] = img;
+          loadCount++;
+          if (loadCount === files.length) {
+            mergeImages(loadedImages, orientation, resizeImages, cols, rows);
+          }
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    function mergeImages(images, orientation, resizeImages, cols, rows) {
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+
+      let totalWidth = 0;
+      let totalHeight = 0;
+      let maxWidth = 0;
+      let maxHeight = 0;
+
+      images.forEach(function(img) {
+        totalWidth += img.width;
+        totalHeight += img.height;
+        if (img.width > maxWidth) maxWidth = img.width;
+        if (img.height > maxHeight) maxHeight = img.height;
+      });
+
+      if (orientation === "horizontal") {
+        canvas.width = totalWidth;
+        canvas.height = maxHeight;
+      } else if (orientation === "vertical") {
+        canvas.width = maxWidth;
+        canvas.height = totalHeight;
+      } else if (orientation === "grid") {
+        // For grid, calculate dimensions based on cols and rows
+        let cellWidth = maxWidth;
+        let cellHeight = maxHeight;
+        
+        if (resizeImages) {
+          // Find max dimensions for all images
+          images.forEach(img => {
+            if (img.width > cellWidth) cellWidth = img.width;
+            if (img.height > cellHeight) cellHeight = img.height;
+          });
+        }
+        
+        canvas.width = cellWidth * cols;
+        canvas.height = cellHeight * rows;
+      }
+
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (orientation === "grid") {
+        let cellWidth = canvas.width / cols;
+        let cellHeight = canvas.height / rows;
+        
+        for (let i = 0; i < images.length; i++) {
+          if (i >= cols * rows) break; // Don't draw more images than grid cells
+          
+          let row = Math.floor(i / cols);
+          let col = i % cols;
+          
+          let img = images[i];
+          let drawWidth = cellWidth;
+          let drawHeight = cellHeight;
+          
+          if (resizeImages) {
+            ctx.drawImage(img, col * cellWidth, row * cellHeight, cellWidth, cellHeight);
+          } else {
+            // Center the image in the cell if not resizing
+            let x = col * cellWidth + (cellWidth - img.width) / 2;
+            let y = row * cellHeight + (cellHeight - img.height) / 2;
+            ctx.drawImage(img, x, y);
+          }
+        }
+      } else {
+        // Original horizontal/vertical code
+        images.forEach(function(img) {
+          if (resizeImages) {
+            if (orientation === "horizontal" && img.height !== maxHeight) {
+              let scale = maxHeight / img.height;
+              let newWidth = img.width * scale;
+              ctx.drawImage(img, offsetX, 0, newWidth, maxHeight);
+              offsetX += newWidth;
+            } else if (orientation === "vertical" && img.width !== maxWidth) {
+              let scale = maxWidth / img.width;
+              let newHeight = img.height * scale;
+              ctx.drawImage(img, 0, offsetY, maxWidth, newHeight);
+              offsetY += newHeight;
+            } else {
               if (orientation === "horizontal") {
-                canvas.width = totalWidth;
-                canvas.height = maxHeight;
+                ctx.drawImage(img, offsetX, 0);
+                offsetX += img.width;
               } else {
-                if (resizeImages) {
-                  // Resize smaller images to match the largest image's height
-                  var maxWidth = Math.max(...images.map(img => img.width));
-                  images.forEach(function (image) {
-                    if (image.height < maxHeight) {
-                      var scaleFactor = maxHeight / image.height;
-                      image.width *= scaleFactor;
-                      image.height = maxHeight;
-                    }
-                  });
-                }
-                canvas.width = Math.max(...images.map(img => img.width));
-                canvas.height = maxHeight * images.length;
+                ctx.drawImage(img, 0, offsetY);
+                offsetY += img.height;
               }
-
-              var offsetX = 0;
-              var offsetY = 0;
-
-              // Draw the images onto the canvas based on the orientation
-              images.forEach(function (img) {
-                if (orientation === "horizontal") {
-                  ctx.drawImage(img, offsetX, 0);
-                  offsetX += img.width;
-                } else {
-                  ctx.drawImage(img, 0, offsetY);
-                  offsetY += img.height;
-                }
-              });
-
-              var resultContainer = document.getElementById("imageInfo");
-              resultContainer.innerHTML = "";
-              resultContainer.appendChild(canvas);
             }
-          };
-          img.src = URL.createObjectURL(file);
+          } else {
+            if (orientation === "horizontal") {
+              ctx.drawImage(img, offsetX, 0);
+              offsetX += img.width;
+            } else {
+              ctx.drawImage(img, 0, offsetY);
+              offsetY += img.height;
+            }
+          }
         });
       }
+
+      var container = document.getElementById("imageInfo");
+      container.innerHTML = "";
+      container.appendChild(canvas);
+
+      document.getElementById("downloadButton").disabled = false;
     }
+
+    document.getElementById("downloadButton").addEventListener("click", function() {
+      var canvas = document.querySelector("canvas");
+      if (!canvas) {
+        alert("No joined image available!");
+        return;
+      }
+      var link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "joined-image.png";
+      link.click();
+    });
   </script>
 </body>
 </html>
-
-<!---Download--image-->
-<button id="downloadButton">Download Joined Image</button>
-<script>
-  var downloadButton = document.querySelector("#downloadButton");
-  downloadButton.addEventListener("click", function () {
-    var canvas = document.querySelector("canvas");
-    var image = canvas.toDataURL("image/png");
-    var a = document.createElement("a");
-    a.href = image;
-    a.download = "Download.png";
-    a.click();
-  });
-</script>
