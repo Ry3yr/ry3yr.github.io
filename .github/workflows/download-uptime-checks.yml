@@ -2,7 +2,8 @@ name: Weekly Download of Uptime Check Files
 
 on:
   schedule:
-    - cron: '0 0 * * SUN'
+    - cron: '0 0 * * SUN' # Every Sunday at midnight UTC
+  workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
   download_json_files:
