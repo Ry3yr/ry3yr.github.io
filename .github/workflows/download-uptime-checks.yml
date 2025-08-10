@@ -22,6 +22,7 @@ jobs:
 
     - name: Commit and push changes
       run: |
+        set -e
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
         git add ./*.json
@@ -29,6 +30,10 @@ jobs:
           echo "No changes to commit"
         else
           git commit -m "Weekly download of uptime check JSON files"
-          git pull --rebase origin main
+          if ! git pull --rebase origin main; then
+            echo "❌ Rebase failed due to conflicts. Keeping remote changes and skipping push."
+            git rebase --abort || true
+            exit 0
+          fi
           git push origin main
         fi
