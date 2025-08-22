@@ -97,7 +97,7 @@
 <body>
   <h1>Youtube Video Archive</h1>
   [<a target="_blank" href="backup.php" style=color:blue>⬆️Upload</a>]  
-  <a target="_blank" href="https://ry3yr.github.io/list.html" style=color:blue>List</a> 
+  <a target="_blank" href="https://ry3yr.github.io/ytlist.html" style=color:blue>List</a> 
   [<a href="javascript:if(!window.location.href.includes('extendedsearch=true')){window.history.pushState({}, '', window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'extendedsearch=true');}">Enable RealtimeSearch</a>]
     <style>
         body{font-family:Arial,sans-serif;margin:20px}.video-links{list-style-type:none;padding:0}.video-links li{margin:10px 0}.video-links a{text-decoration:none;color:#007bff;font-size:16px}.video-links a:hover{text-decoration:underline}
@@ -256,6 +256,7 @@ function superParseJSON(jsonString) {
           ${v.id ? `<a href="https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/${v.id}" target="_blank"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT61taAw7gmjapOgSz2nugoCrazkCg42il25A&s" width="20px"></a>` : ''}
           ${v.id ? `<a href="https://preservetube.com/watch?v=${v.id}" target="_blank"><img src="https://i.ibb.co/SXjxP6v6/Screenshot-20250625-224044-Brave.png" width="20px"></a>` : ''}
           ${v.id ? `<a href="https://alcea-wisteria.de/hidrive/hidrive.php?path=/public/ytarchive/${v.id}.mp4" target="_blank"><img src="https://media.technologycounter.com/vendors/software-products/software-logo/hidrive.jpg" width="20px"></a>` : ''}
+          ${v.id ? `<a href="http://127.0.0.1:8080/2025-06-28-FileServerUpload/2025-06-28-MultiUpload(SFTP-FTP)/streamtplink.php?path=/(YT-To-Upload)/ytarchive/${v.id}.mp4" target="_blank"><img src="https://images.seeklogo.com/logo-png/43/1/tp-link-logo-png_seeklogo-434726.png" width="20px"></a>` : ''}
         </div>
         <div class="current-link"></div>
         <button class="toggle-src" data-id="#">🔁 Switch</button>
