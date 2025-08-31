@@ -286,5 +286,95 @@
         "mode": "response_code",
         "domainname": "alcea-wisteria.de",
         "response_code": 200
+    },
+    {
+        "date": "2025-08-24 11:34:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-24 18:12:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-25 11:34:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-25 18:12:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-26 11:35:19",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-26 18:12:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-27 11:34:11",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-27 18:12:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-28 11:34:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-28 17:17:40",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-28 18:12:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-29 11:34:02",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-29 18:12:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-30 11:34:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-08-30 18:12:01",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
     }
 ]
