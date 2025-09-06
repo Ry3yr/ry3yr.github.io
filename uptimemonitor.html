@@ -83,6 +83,13 @@
 <body>
 <h1><u>Domain Uptime </u>"<a target="_blank" href="https://alceawis.de/other/extra/scripts/fakesocialmedia/commentload.html?number=5000&text=When you don%27t want to ge"  style=color:#28a745>Monitor</a>" <a href="http://127.0.0.1:8080/2025-08-04-UptimeCheck/sync.php" target="_blank" style=color:lightgrey>Sync</a> <a target="_blank" href="check.php" style=color:blue>⟳</a>
 </h1>
+     <div id="daysPassed"></div><script>
+        const startDate = new Date("2025-08-04");
+        const today = new Date();
+        const timeDiff = today - startDate;
+        const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById("daysPassed").innerHTML = "<b>Days passed:</b> " + daysPassed + " days";
+    </script><hr>
 <div id="container"></div>
 <div id="popup" class="popup"></div>
 <script>
