@@ -1,0 +1,372 @@
+Anti PayWall(s)
+-----------------------
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart URL Proxy Router</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.secondary {
+            background-color: #2196F3;
+        }
+        button.secondary:hover {
+            background-color: #0b7dda;
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 100%;
+        }
+        .bookmarklet {
+            background-color: #e9f7ef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            word-break: break-all;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        .bookmarklet:hover {
+            background-color: #d4edda;
+        }
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        .service-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e7f3fe;
+            border-radius: 4px;
+            display: none;
+        }
+        .active {
+            font-weight: bold;
+            color: #2c7be5;
+        }
+        .section {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        h2 {
+            color: #2c7be5;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Smart URL Proxy Router</h1>
+        <p>Open any URL through the most appropriate proxy service:</p>
+        
+        <select id="serviceSelector">
+            <option value="auto">Auto-Select (Smart Proxy)</option>
+            <option value="freedium">Freedium</option>
+            <option value="12ft">12ft.io</option>
+            <option value="archive">Archive.today</option>
+            <option value="libmedium">LibMedium</option>
+            <option value="scribe">Scribe.rip</option>
+            <option value="threadreader">ThreadReaderApp</option>
+            <option value="googlecache">Google Cache</option>
+        </select>
+        
+        <div id="serviceInfo" class="service-info">
+            <!-- Service information will be displayed here -->
+        </div>
+        
+        <input type="url" id="urlInput" placeholder="https://example.com/article" autofocus>
+        <button onclick="openProxy()">Open via Selected Proxy</button>
+        <button class="secondary" onclick="rotateService()">Rotate to Next Service</button>
+        
+        <div class="section">
+            <h2>Smart Universal Bookmarklet</h2>
+            <p>This bookmarklet automatically selects the best proxy based on the current website:</p>
+            <div id="smartBookmarklet" class="bookmarklet" onclick="copyBookmarklet('smart')" title="Click to copy">
+                <!-- Smart bookmarklet code will be inserted here -->
+            </div>
+            <p class="instructions">Drag this link to your bookmarks bar to create a smart one-click proxy button that works everywhere.</p>
+        </div>
+        
+        <div class="section">
+            <h2>Specific Service Bookmarklet</h2>
+            <p>Bookmarklet for currently selected service:</p>
+            <div id="bookmarkletCode" class="bookmarklet" onclick="copyBookmarklet('current')" title="Click to copy">
+                <!-- Current service bookmarklet will be inserted here -->
+            </div>
+            <p class="instructions">Drag this link to your bookmarks bar to always use the selected proxy service.</p>
+        </div>
+    </div>
+
+    <script>
+        // Proxy services configuration
+        const services = [
+            {
+                id: "auto",
+                name: "Auto-Select",
+                url: "",
+                info: "Smart proxy that automatically selects the best service for the current website."
+            },
+            {
+                id: "freedium",
+                name: "Freedium",
+                url: "https://freedium.cfd/",
+                info: "Bypasses Medium paywall by showing cached versions of articles.",
+                domains: ["medium.com", "towardsdatascience.com"]
+            },
+            {
+                id: "12ft",
+                name: "12ft.io",
+                url: "https://12ft.io/",
+                info: "General purpose paywall remover that works on many sites including Medium, Bloomberg, etc.",
+                domains: ["bloomberg.com", "washingtonpost.com", "ft.com"]
+            },
+            {
+                id: "archive",
+                name: "Archive.today",
+                url: "https://archive.today/?run=1&url=",
+                info: "Creates permanent archived copies of web pages, bypassing paywalls.",
+                domains: ["nytimes.com", "wsj.com", "economist.com"]
+            },
+            {
+                id: "libmedium",
+                name: "LibMedium",
+                url: "https://libmedium.batsense.net/",
+                info: "Alternative Medium proxy focused on privacy and accessibility.",
+                domains: ["medium.com"]
+            },
+            {
+                id: "scribe",
+                name: "Scribe.rip",
+                url: "https://scribe.rip/",
+                info: "Another Medium-specific proxy that reformats articles for better readability.",
+                domains: ["medium.com"]
+            },
+            {
+                id: "threadreader",
+                name: "ThreadReader",
+                url: "https://threadreaderapp.com/thread/",
+                info: "For unrolling Twitter threads (only works with Twitter URLs).",
+                domains: ["twitter.com", "x.com"]
+            },
+            {
+                id: "googlecache",
+                name: "Google Cache",
+                url: "https://webcache.googleusercontent.com/search?q=cache:",
+                info: "Google's cached version of pages (when available).",
+                domains: ["*"]
+            }
+        ];
+
+        let currentServiceIndex = 1; // Start with Freedium as default
+        
+        // Initialize the page
+        function init() {
+            updateServiceInfo();
+            updateBookmarklet();
+            updateSmartBookmarklet();
+        }
+        
+        // Open URL with selected proxy service
+        function openProxy() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            try {
+                new URL(url);
+            } catch (e) {
+                alert('Please enter a valid URL (include http:// or https://)');
+                return;
+            }
+            
+            const serviceId = document.getElementById('serviceSelector').value;
+            let service;
+            
+            if (serviceId === "auto") {
+                service = autoSelectService(url);
+            } else {
+                service = services.find(s => s.id === serviceId);
+            }
+            
+            let proxyUrl;
+            
+            // Special handling for certain services
+            if (service.id === "threadreader") {
+                const tweetId = extractTweetId(url);
+                if (tweetId) {
+                    proxyUrl = `${service.url}${tweetId}`;
+                } else {
+                    alert("ThreadReader only works with Twitter URLs");
+                    return;
+                }
+            } else {
+                proxyUrl = `${service.url}${url}`;
+            }
+            
+            window.open(proxyUrl, '_blank');
+        }
+        
+        // Auto-select the best service based on URL domain
+        function autoSelectService(url) {
+            const urlObj = new URL(url);
+            const hostname = urlObj.hostname.replace('www.', '');
+            
+            // Check for specific domain matches first
+            for (const service of services) {
+                if (service.domains) {
+                    for (const domain of service.domains) {
+                        if (hostname === domain || 
+                            (domain === '*' && service.id !== 'auto') || 
+                            hostname.endsWith('.' + domain)) {
+                            return service;
+                        }
+                    }
+                }
+            }
+            
+            // Default to 12ft.io for general paywalls, then archive.today
+            return services.find(s => s.id === "12ft") || services.find(s => s.id === "archive");
+        }
+        
+        // Extract tweet ID from Twitter URL
+        function extractTweetId(url) {
+            const twitterRegex = /twitter\.com\/\w+\/status\/(\d+)/;
+            const match = url.match(twitterRegex);
+            return match ? match[1] : null;
+        }
+        
+        // Rotate to next service
+        function rotateService() {
+            currentServiceIndex = (currentServiceIndex + 1) % services.length;
+            if (services[currentServiceIndex].id === "auto") {
+                currentServiceIndex = (currentServiceIndex + 1) % services.length;
+            }
+            document.getElementById('serviceSelector').value = services[currentServiceIndex].id;
+            updateServiceInfo();
+            updateBookmarklet();
+        }
+        
+        // Update service info display
+        function updateServiceInfo() {
+            const serviceId = document.getElementById('serviceSelector').value;
+            const service = serviceId === "auto" ? services[0] : services.find(s => s.id === serviceId);
+            const infoDiv = document.getElementById('serviceInfo');
+            infoDiv.innerHTML = `<strong>${service.name}</strong>: ${service.info}`;
+            infoDiv.style.display = 'block';
+        }
+        
+        // Update bookmarklet code for current service
+        function updateBookmarklet() {
+            const serviceId = document.getElementById('serviceSelector').value;
+            const service = services.find(s => s.id === serviceId);
+            let bookmarkletCode;
+            
+            if (service.id === "threadreader") {
+                bookmarkletCode = `javascript:(function(){const tweetId=location.href.match(/twitter\\.com\\/\\w+\\/status\\/(\\d+)/);if(tweetId){window.open('${service.url}'+tweetId[1]);}else{alert('This only works on Twitter thread pages');}})();`;
+            } else if (service.id === "auto") {
+                bookmarkletCode = document.getElementById('smartBookmarklet').textContent;
+            } else {
+                bookmarkletCode = `javascript:(function(){window.open('${service.url}'+location.href);})();`;
+            }
+            
+            document.getElementById('bookmarkletCode').textContent = bookmarkletCode;
+        }
+        
+        // Create the smart universal bookmarklet
+        function updateSmartBookmarklet() {
+            const smartBookmarklet = `javascript:(function(){
+                const url = location.href;
+                const hostname = new URL(url).hostname.replace('www.', '');
+                
+                // Service matching logic
+                ${services.filter(s => s.id !== 'auto').map(service => {
+                    if (!service.domains) return '';
+                    const domainChecks = service.domains.map(domain => {
+                        if (domain === '*') return 'true';
+                        return `hostname === '${domain}' || hostname.endsWith('.${domain}')`;
+                    }).join(' || ');
+                    return `if (${domainChecks}) { window.open('${service.url}' + url); return; }`;
+                }).join('\n')}
+                
+                // Default services
+                window.open('https://12ft.io/' + url);
+            })();`;
+            
+            document.getElementById('smartBookmarklet').textContent = smartBookmarklet;
+        }
+        
+        // Copy bookmarklet to clipboard
+        function copyBookmarklet(type) {
+            const elementId = type === 'smart' ? 'smartBookmarklet' : 'bookmarkletCode';
+            const bookmarklet = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(bookmarklet).then(() => {
+                alert('Bookmarklet copied to clipboard! Drag it to your bookmarks bar.');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                prompt("Copy this bookmarklet code:", bookmarklet);
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('serviceSelector').addEventListener('change', function() {
+            updateServiceInfo();
+            updateBookmarklet();
+        });
+        
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                openProxy();
+            }
+        });
+        
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>

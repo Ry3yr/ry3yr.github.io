@@ -1,0 +1,183 @@
+
+<h1> REQUIRES SAME DOMAIN !</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IFrame Content Shrink & Cleanup</title>
+<style>
+  iframe {
+    width: 100%;
+    border: 1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+
+<iframe id="myIframe" src="https://alceawis.de/pinned_posts_rendered.html"></iframe>
+
+<script>
+function removeEmptyTextNodes(element) {
+  Array.from(element.childNodes).forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) {
+      node.remove();
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      removeEmptyTextNodes(node);
+    }
+  });
+}
+
+function compactElement(el, fontScale = 1, lineHeight = 1.1) {
+  el.style.fontSize = fontScale * 100 + "%";
+  el.style.margin = "0";
+  el.style.padding = "0";
+  el.style.lineHeight = lineHeight;
+  removeEmptyTextNodes(el);
+}
+
+function resizeIframeToContent(iframe) {
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    iframe.style.height = doc.body.scrollHeight + "px";
+  } catch (e) {
+    // cross-origin iframe cannot be accessed
+  }
+}
+
+const iframe = document.getElementById("myIframe");
+
+iframe.addEventListener("load", function() {
+  let doc;
+  try {
+    doc = iframe.contentDocument || iframe.contentWindow.document;
+  } catch (e) {
+    return; // cross-origin, cannot manipulate
+  }
+
+  // Compact content
+  doc.querySelectorAll("div.content").forEach(el => compactElement(el, 0.5, 1.1));
+  doc.querySelectorAll("h1").forEach(el => compactElement(el, 0.65, 1.1));
+  doc.querySelectorAll("p").forEach(el => compactElement(el, 0.9, 1.1));
+
+  // Remove extra margins/paddings for all elements
+  doc.querySelectorAll("*").forEach(el => {
+    el.style.margin = "0";
+    el.style.padding = "0";
+  });
+
+  // Resize iframe to fit content
+  resizeIframeToContent(iframe);
+});
+
+// Optional: continuously adjust height in case content changes dynamically
+setInterval(() => resizeIframeToContent(iframe), 500);
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+<!---aggressive--ver-->
+<!--<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IFrame Minimal Height</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+  iframe {
+    width: 100%;
+    border: none;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<iframe id="myIframe" src="https://alceawis.de/pinned_posts_rendered.html"></iframe>
+
+<script>
+function removeEmptyTextNodes(element) {
+  Array.from(element.childNodes).forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) {
+      node.remove();
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      removeEmptyTextNodes(node);
+    }
+  });
+}
+
+function compactElement(el, fontScale = 0.7, lineHeight = 1) {
+  el.style.fontSize = fontScale * 100 + "%";
+  el.style.margin = "0";
+  el.style.padding = "0";
+  el.style.lineHeight = lineHeight;
+  el.style.boxSizing = "border-box";
+  removeEmptyTextNodes(el);
+}
+
+function removeExtraSpace(doc) {
+  // Hide empty blocks
+  doc.querySelectorAll("br, hr, div, p").forEach(el => {
+    if (!el.textContent.trim() && !el.querySelector("*")) {
+      el.style.display = "none";
+    }
+  });
+
+  // Compact all elements except the links
+  doc.querySelectorAll("*:not(.view-post-link):not(.comment-load-link)").forEach(el => {
+    compactElement(el, 0.7, 1);
+  });
+
+  // Keep both links normal size
+  doc.querySelectorAll(".view-post-link, .comment-load-link").forEach(link => {
+    link.style.display = "inline-block";
+    link.style.margin = "0";
+    link.style.padding = "0";
+    link.style.fontSize = "";  // normal size
+    link.style.lineHeight = ""; // normal line-height
+  });
+
+  // Shrink body and html height
+  doc.body.style.margin = "0";
+  doc.body.style.padding = "0";
+  doc.body.style.height = "auto";
+  doc.documentElement.style.height = "auto";
+}
+
+function resizeIframeToContent(iframe) {
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    iframe.style.height = doc.body.scrollHeight + "px";
+  } catch (e) {
+    // cross-origin
+  }
+}
+
+const iframe = document.getElementById("myIframe");
+
+iframe.addEventListener("load", function() {
+  let doc;
+  try {
+    doc = iframe.contentDocument || iframe.contentWindow.document;
+  } catch (e) {
+    return;
+  }
+
+  removeExtraSpace(doc);
+  resizeIframeToContent(iframe);
+});
+
+// Continuously adjust height for dynamic content
+setInterval(() => resizeIframeToContent(iframe), 200);
+</script>
+
+</body>
+</html>

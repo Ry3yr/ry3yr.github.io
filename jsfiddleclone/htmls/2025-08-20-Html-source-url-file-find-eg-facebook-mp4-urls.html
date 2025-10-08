@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Link Extractor</title>
+</head>
+<body>
+    <h1>1) Upload html file</h1>
+    
+    <!-- File Picker -->
+    <input type="file" id="fileInput" />
+    
+    <!-- Textbox for extension -->
+    <label for="extInput">Extension (e.g. .mp4): </label>
+    <input type="text" id="extInput" value=".mp4" />
+    
+    <div id="output"></div>
+    
+    <h2>2.) paste url and fix it</h2>
+    <!-- Textbox for raw input -->
+    <textarea id="rawInput" rows="10" cols="80" placeholder="Paste raw text containing URLs here..."></textarea>
+    <br />
+    <button onclick="processRawText()">Process Raw Text</button>
+
+    <h2>Decoded URL:</h2>
+    <textarea id="decodedUrlOutput" rows="3" cols="80" readonly></textarea>
+
+    <script>
+        // When the file is selected
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const ext = document.getElementById('extInput').value.trim(); // Get the user-defined extension
+
+            if (file) {
+                const reader = new FileReader();
+                
+                // Read file as text
+                reader.onload = function(e) {
+                    const fileContent = e.target.result;
+                    extractLinks(fileContent, ext);
+                };
+
+                reader.readAsText(file);
+            } else {
+                alert("Please upload a valid file.");
+            }
+        }
+
+        // Extract links from the content based on extension
+        function extractLinks(fileContent, ext) {
+            const links = [];
+            let startIdx = 0;
+            const extLower = ext.toLowerCase(); // Make sure extension is case-insensitive
+
+            while ((startIdx = fileContent.indexOf(extLower, startIdx)) !== -1) {
+                // Move backwards to find the start of the URL (https)
+                let httpsIdx = fileContent.lastIndexOf('https', startIdx);
+                
+                if (httpsIdx !== -1) {
+                    // Extract from https to the first double quote (")
+                    let url = fileContent.slice(httpsIdx, fileContent.indexOf('"', httpsIdx));
+                    links.push(url);
+                }
+
+                startIdx += extLower.length; // Move past the current extension to search for the next one
+            }
+
+            // Display the results
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+
+            if (links.length > 0) {
+                output.innerHTML = '<h2>Links Found:</h2>';
+                const ul = document.createElement('ul');
+                links.forEach(link => {
+                    const li = document.createElement('li');
+                    
+                    const linkText = document.createElement('span');
+                    linkText.textContent = link;
+                    
+                    // Create the copy button
+                    const copyButton = document.createElement('button');
+                    copyButton.textContent = 'Copy';
+                    copyButton.onclick = () => copyToClipboard(link);
+
+                    li.appendChild(linkText);
+                    li.appendChild(copyButton);
+                    ul.appendChild(li);
+                });
+                output.appendChild(ul);
+            } else {
+                output.innerHTML = '<p>No links found with the specified extension.</p>';
+            }
+        }
+
+        // Function to copy the link to the clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(err => {
+                alert('Error copying to clipboard: ' + err);
+            });
+        }
+
+        // Process the raw input text and fix the URLs
+        function processRawText() {
+            const rawText = document.getElementById('rawInput').value;
+            const fixedUrl = fixUrl(rawText);
+
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+
+            if (fixedUrl) {
+                output.innerHTML = `<h2>Fixed URL:</h2>
+                                    <p><a href="${fixedUrl}" target="_blank">${fixedUrl}</a></p>`;
+                
+                // Display the fixed URL in the decoded URL output area
+                document.getElementById('decodedUrlOutput').value = fixedUrl;
+            } else {
+                output.innerHTML = '<p>No valid URL found in the raw text.</p>';
+            }
+        }
+
+        // Fix and decode the URL
+        function fixUrl(rawText) {
+            // Regular expression to find URLs starting with https://
+            const regex = /https:\/\/[^\s"]+/g;
+            let match = regex.exec(rawText);
+
+            if (match) {
+                let url = match[0];
+
+                // Decode escape sequences like \/ -> /
+                url = url.replace(/\\\//g, '/');
+
+                // Decode percent-encoded characters (e.g., \u00253D -> =)
+                url = decodeURIComponent(url);
+
+                // Check if it's a valid URL and return it
+                try {
+                    new URL(url); // Check if the URL is valid
+                    return url;
+                } catch (e) {
+                    console.error('Invalid URL:', url);
+                    return null;
+                }
+            }
+
+            return null;
+        }
+    </script>
+</body>
+</html>

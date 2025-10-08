@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+   <style>
+    body { font-family: Arial, sans-serif; max-width: 95%; margin: 20px auto; }
+    #posts-container.vertical { display: block; }
+    #posts-container.horizontal { display: flex; flex-wrap: wrap; gap: 12px; }
+    .post {
+      border: 1px solid #ccc;
+      padding: 12px;
+      border-radius: 5px;
+      margin-bottom: 12px;
+      flex: 1 1 300px;
+      box-sizing: border-box;
+    }
+    .author { font-weight: bold; margin-bottom: 5px; }
+    .content { margin: 10px 0; white-space: pre-wrap; }
+    .timestamp { font-size: 0.85em; color: #666; }
+    img.inline-media { max-width: 50%; display: block; margin: 8px 0; border-radius: 4px; }
+    iframe.youtube { width: 100%; height: 315px; margin: 8px 0; border: none; }
+    iframe.reply-iframe { width: 100%; border: none; min-height: 150px; margin-top: 8px; border-radius: 4px; }
+    .view-post-link, .comment-load-link { display: inline-block; margin-top: 8px; margin-right: 10px; font-weight: bold; color: #007bff; text-decoration: none; }
+    .view-post-link:hover, .comment-load-link:hover { text-decoration: underline; }
+    #download-html-link {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: black;
+      color: white;
+      opacity: 0.45;
+      padding: 6px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 12px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <h1>📌📍Pinned📍📌</h1>
+  <div id="posts-container">Loading...</div>
+  <a id="download-html-link">Download HTML</a>
+
+  <script>
+    const STORAGE_KEY = "alcea_pinned_posts";
+
+    function renderEmojis(content, emojis) {
+      if (!emojis) return content;
+      emojis.forEach(emoji => {
+        const regex = new RegExp(`:${emoji.shortcode}:`, 'g');
+        content = content.replace(
+          regex,
+          `<img src="${emoji.url}" alt=":${emoji.shortcode}:" title=":${emoji.shortcode}:" style="height:1.2em;width:1.2em;vertical-align:middle;">`
+        );
+      });
+      return content;
+    }
+
+    function enhanceLinks(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+
+      div.querySelectorAll('a').forEach(a => {
+        const href = a.href;
+
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+
+        if (/https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/.test(href)) {
+          const videoId = href.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]+)/)?.[1];
+          if (videoId) {
+            const iframe = document.createElement('iframe');
+            iframe.className = 'youtube';
+            iframe.src = `https://www.youtube.com/embed/${videoId}`;
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+            a.replaceWith(iframe);
+          }
+        }
+        else if (/\.(gif|jpe?g|png)$/i.test(href)) {
+          const img = document.createElement('img');
+          img.src = href;
+          img.className = 'inline-media';
+          a.replaceWith(img);
+        }
+      });
+
+      return div.innerHTML;
+    }
+
+    function renderPosts(posts, account) {
+      const container = document.getElementById('posts-container');
+      container.innerHTML = '';
+
+      posts.forEach(post => {
+        let content = post.content;
+        content = renderEmojis(content, post.emojis);
+        content = enhanceLinks(content);
+
+        const div = document.createElement('div');
+        div.className = 'post';
+
+        const commentLink = `<a class="comment-load-link" href="#" 
+          onclick="
+            const postContentEl = document.getElementById('post-content-${post.id}');
+            const value = postContentEl.textContent || postContentEl.innerText || '';
+            const formattedText = value.replace(/\\n/g,'\\r\\n');
+            const slicedValue = formattedText.slice(0,22);
+            const commentLoadUrl = 'https://alceawis.de/other/extra/scripts/fakesocialmedia/commentload.html?number=4000&text=' + encodeURIComponent(slicedValue);
+            window.open(commentLoadUrl,'_blank');
+            return false;
+          ">Load Comment</a>`;
+
+        div.innerHTML = `
+          <div class="author">${account.display_name || account.username}</div>
+          <div class="content" id="post-content-${post.id}">${content}</div>
+          <div class="timestamp">${new Date(post.created_at).toLocaleString()}</div>
+          <iframe class="reply-iframe" 
+                  src="https://alceawis.de/other/extra/scripts/fakesocialmedia/replyhandler.html?url=${encodeURIComponent(post.url)}">
+          </iframe>
+          <a class="view-post-link" href="${post.url}" target="_blank" rel="noopener noreferrer">View Post</a>
+          ${commentLink}
+        `;
+        container.appendChild(div);
+
+        const iframe = div.querySelector('.reply-iframe');
+        iframe.addEventListener('load', () => {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframe.style.height = iframeDoc.body.scrollHeight + 20 + 'px';
+          } catch (e) {
+            console.warn('Could not resize iframe', e);
+          }
+        });
+      });
+    }
+
+    async function fetchAndStorePosts() {
+      const accountRes = await fetch('https://alceawis.com/api/v1/accounts/lookup?acct=alcea');
+      if (!accountRes.ok) throw new Error('Failed to lookup account');
+      const account = await accountRes.json();
+
+      const pinnedRes = await fetch(`https://alceawis.com/api/v1/accounts/${account.id}/statuses?pinned=true`);
+      if (!pinnedRes.ok) throw new Error('Failed to fetch pinned posts');
+      const posts = await pinnedRes.json();
+
+      const payload = { account, posts, savedAt: Date.now() };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+
+      return payload;
+    }
+
+    async function loadPinnedPosts() {
+      const container = document.getElementById('posts-container');
+      const h1 = document.querySelector('h1');
+
+      const params = new URLSearchParams(window.location.search);
+      const orient = params.get('orient');
+      container.className = orient === 'horizontal' ? 'horizontal' : 'vertical';
+      container.textContent = 'Loading pinned posts...';
+
+      let usedCache = false;
+
+      try {
+        let data = null;
+        const cached = localStorage.getItem(STORAGE_KEY);
+        if (cached) {
+          try {
+            data = JSON.parse(cached);
+            usedCache = true;
+          } catch (e) {
+            console.warn("Invalid cached data, refetching...");
+          }
+        }
+
+        if (!data) {
+          data = await fetchAndStorePosts();
+          usedCache = false;
+        }
+
+        if (!data.posts || !data.posts.length) {
+          container.textContent = 'No pinned posts found.';
+          return;
+        }
+
+        renderPosts(data.posts, data.account);
+
+        const existingIndicator = h1.querySelector('.cache-indicator');
+        if (usedCache) {
+          if (!existingIndicator) {
+            const span = document.createElement('span');
+            span.className = 'cache-indicator';
+            span.textContent = ' (from cache)';
+            span.style.color = '#888';
+            span.style.fontSize = '0.8em';
+            h1.appendChild(span);
+          }
+        } else {
+          if (existingIndicator) existingIndicator.remove();
+        }
+
+      } catch (err) {
+        container.textContent = 'Error loading pinned posts: ' + err.message;
+        console.error(err);
+      }
+    }
+
+    // Download page as rendered HTML with UTF-8 BOM
+    document.getElementById('download-html-link').addEventListener('click', () => {
+      const htmlEl = document.documentElement.cloneNode(true);
+
+      const dlLink = htmlEl.querySelector('#download-html-link');
+      if (dlLink) dlLink.remove();
+
+      const head = htmlEl.querySelector('head');
+      if (!head.querySelector('meta[charset]')) {
+        const meta = document.createElement('meta');
+        meta.setAttribute('charset', 'UTF-8');
+        head.insertBefore(meta, head.firstChild);
+      }
+
+      const htmlString = '<!DOCTYPE html>\n<html>' + htmlEl.innerHTML + '</html>';
+
+      // Add UTF-8 BOM for maximum compatibility
+      const contentWithBOM = '\uFEFF' + htmlString;
+
+      const blob = new Blob([contentWithBOM], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pinned_posts_rendered.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    document.addEventListener('DOMContentLoaded', loadPinnedPosts);
+  </script>
+</body>
+</html>

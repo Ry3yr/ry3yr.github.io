@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Transaction Parser</title>
+<style>
+*{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+body{background-color:#f5f7fa;margin:0;padding:20px;color:#333}
+.container{max-width:900px;margin:0 auto;background-color:white;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);padding:25px}
+h1{color:#2c3e50;margin-top:0;text-align:center}
+.description{color:#7f8c8d;margin-bottom:20px;text-align:center}
+textarea{width:100%;height:200px;padding:15px;border:1px solid #ddd;border-radius:5px;font-size:14px;resize:vertical;margin-bottom:20px}
+button{background-color:#3498db;color:white;border:none;padding:12px 20px;border-radius:5px;cursor:pointer;font-size:16px;width:100%;transition:background-color .3s}
+button:hover{background-color:#2980b9}
+.results{margin-top:30px;display:none}
+.transaction{background-color:#f8f9fa;border-left:4px solid #3498db;padding:15px;margin-bottom:15px;border-radius:0 5px 5px 0}
+.transaction-header{display:flex;justify-content:space-between;margin-bottom:8px}
+.transaction-description{font-weight:bold;color:#2c3e50}
+.transaction-amount{font-weight:bold;color:#e74c3c}
+.total{background-color:#2c3e50;color:white;padding:15px;border-radius:5px;text-align:center;font-size:18px;font-weight:bold;margin-top:20px}
+.info-box{background-color:#e8f4fd;border-left:4px solid #3498db;padding:15px;margin-bottom:20px;border-radius:0 5px 5px 0}
+canvas{display:block;margin:30px auto;max-width:500px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Bank Transaction Parser</h1>
+<p class="description">Paste your bank transaction data to extract Euro values, calculate totals, and visualize by category.</p>
+<div class="info-box">
+<strong>How to use:</strong> Paste your bank transaction data in the text area and click "Parse Transactions".
+The parser extracts all Euro amounts, uses the correct preceding line (like "Ferdinand Glogger"), and generates a categorized pie chart.
+</div>
+<textarea id="transactionData" placeholder="Paste your bank transaction data here..."></textarea>
+<button id="parseButton">Parse Transactions</button>
+<div class="results" id="results">
+<h2>Extracted Transactions</h2>
+<div id="transactionList"></div>
+<div class="total" id="totalAmount">Total: €0.00</div>
+<canvas id="pieChart"></canvas>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.getElementById('parseButton').addEventListener('click',()=>{
+    const data=document.getElementById('transactionData').value;
+    const transactions=parseTransactions(data);
+    displayResults(transactions);
+    displayPieChart(transactions);
+});
+
+function parseTransactions(data){
+    const lines=data.split('\n').map(l=>l.trim()).filter(l=>l);
+    const transactions=[];
+    for(let i=0;i<lines.length;i++){
+        const line=lines[i];
+        if(!line||line.includes('ic_chevron')||line.includes('Umsatzdetails'))continue;
+
+        // Detect euro line
+        if(line.startsWith('-') && /^-?\d+,\d{2}$/.test(line)){
+            let description='';
+            
+            // Prefer the line two lines before the amount (main name line)
+            const candidate2 = lines[i-2] || '';
+            const candidate1 = lines[i-1] || '';
+
+            const validLine = txt => txt && !txt.includes('EUR') && !txt.includes('ic_chevron') && !txt.includes('Umsatzdetails');
+
+            if(validLine(candidate2)) description = candidate2;
+            else if(validLine(candidate1)) description = candidate1;
+            
+            const amount = parseFloat(line.replace('-','').replace(',','.'));
+            if(description && amount) transactions.push({description, amount});
+        }
+    }
+    return transactions;
+}
+
+function displayResults(transactions){
+    const list=document.getElementById('transactionList');
+    const totalEl=document.getElementById('totalAmount');
+    const results=document.getElementById('results');
+    list.innerHTML='';
+    if(transactions.length===0){
+        list.innerHTML='<p>No transactions found. Please check your data format.</p>';
+        results.style.display='block';
+        return;
+    }
+    let total=0;
+    transactions.forEach(t=>{
+        total+=t.amount;
+        const div=document.createElement('div');
+        div.className='transaction';
+        div.innerHTML=`<div class="transaction-header">
+            <div class="transaction-description">${t.description}</div>
+            <div class="transaction-amount">-€${t.amount.toFixed(2)}</div>
+        </div>`;
+        list.appendChild(div);
+    });
+    totalEl.textContent=`Total: -€${total.toFixed(2)}`;
+    results.style.display='block';
+}
+
+function displayPieChart(transactions){
+    const ctx=document.getElementById('pieChart').getContext('2d');
+    let edekaLidlNetto=0,klarna=0,ebay=0,ferdinand=0,db=0,rest=0;
+    transactions.forEach(t=>{
+        const desc=t.description.toLowerCase();
+        if(desc.includes('edeka')||desc.includes('lidl')||desc.includes('netto')) edekaLidlNetto+=t.amount;
+        else if(desc.includes('klarna')) klarna+=t.amount;
+        else if(desc.includes('ebay')) ebay+=t.amount;
+        else if(desc.includes('ferdinand')) ferdinand+=t.amount;
+        else if(desc.includes('db')) db+=t.amount;
+        else rest+=t.amount;
+    });
+
+    const totals=[ebay,edekaLidlNetto,klarna,ferdinand,db,rest];
+    const labels=['eBay','EDEKA/LIDL/Netto','Klarna','Ferdinand','DB','Rest'];
+    const totalSum=totals.reduce((a,b)=>a+b,0);
+    const chartData={
+        labels:labels.map((l,i)=>`${l} (€${totals[i].toFixed(2)} / ${(totals[i]/totalSum*100).toFixed(1)}%)`),
+        datasets:[{
+            data:totals,
+            backgroundColor:[
+                '#3498db', // eBay
+                '#3498db', // EDEKA/LIDL/Netto (same)
+                '#ff69b4', // Klarna (pink)
+                '#f1c40f', // Ferdinand (yellow)
+                '#ff9999', // DB (light red)
+                '#2ecc71'  // Rest (green)
+            ]
+        }]
+    };
+    if(window.pieChartInstance)window.pieChartInstance.destroy();
+    window.pieChartInstance=new Chart(ctx,{
+        type:'pie',
+        data:chartData,
+        options:{
+            plugins:{
+                legend:{position:'bottom',labels:{boxWidth:15}},
+                tooltip:{
+                    callbacks:{
+                        label:ctx=>{
+                            const val=ctx.parsed;
+                            const pct=((val/totalSum)*100).toFixed(1);
+                            return `${ctx.label}: €${val.toFixed(2)} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
+
+
+
+<details>
+old
+<plaintext>
+<meta charset="utf-8">
+<script>
+function fetchValues() {
+const inputText = document.getElementById('inputText').value;
+const euroRegex = /-(\d+(?:,\d+)?)\s*EUR/g;
+const dateRegex = /^(?!.*Valuta).*\b\d{1,2}\.\s.*$/gm;
+const euroMatches = Array.from(inputText.matchAll(euroRegex), match => match[1]);
+const dateMatches = Array.from(inputText.matchAll(dateRegex), match => match[0]);
+let result = '<table>';
+result += '<tr><th>€</th><th>Date</th><th>Text</th></tr>';
+for (let i = 1; i < euroMatches.length; i++) {
+const startIndex = inputText.indexOf(euroMatches[i - 1]);
+const endIndex = inputText.indexOf(euroMatches[i], startIndex + euroMatches[i - 1].length);
+let textBetweenMatches = inputText.substring(startIndex + euroMatches[i - 1].length + 1, endIndex).trim();
+const truncatedText = textBetweenMatches.substring(0, 45);
+result += `<tr><td>${euroMatches[i]}€</td><td>${dateMatches[i].replace(/[•Valuata]/g, '')}</td><td>${truncatedText}</td></tr>`;
+}
+result += '</table>';
+document.getElementById('result').innerHTML = result;
+}
+</script>
+</head>
+<body>
+<textarea id="inputText" rows="10" cols="50" placeholder="Bank Saldo Fetch"></textarea><br>
+<button onclick="fetchValues()">Fetch Values</button><br>
+<div id="result"></div> <div id="output"></div>
+
+
+<button onclick="calculateTotals()">Calculate Subtotal</button>
+
+<script>
+function calculateTotals() {
+const divContent = document.getElementById('result').textContent;
+
+const lines = divContent.split('\n');
+
+let totalAll = 0;
+let totalNettoVMarkt = 0;
+
+for (let i = 0; i < lines.length; i++) {
+const line = lines[i];
+const euroValueMatch = line.match(/[0-9,]+\u20AC/);
+const vendorMatch = line.match(/Netto|V-MARKT/);
+
+if (euroValueMatch) {
+const euroValue = parseFloat(euroValueMatch[0]);
+totalAll += euroValue;
+}
+
+if (euroValueMatch && vendorMatch) {
+const euroValue = parseFloat(euroValueMatch[0]);
+totalNettoVMarkt += euroValue;
+}
+}
+
+console.log('Total All:', totalAll.toFixed(2) + '€');
+console.log('Total Netto + V-MARKT:', totalNettoVMarkt.toFixed(2) + '€');
+var outputElement = document.getElementById('output');
+var totalAllParagraph = document.createElement('p');
+totalAllParagraph.textContent = 'Total All: ' + totalAll.toFixed(2) + '€';
+outputElement.appendChild(totalAllParagraph);
+var totalNettoVMarktParagraph = document.createElement('p');
+totalNettoVMarktParagraph.textContent = 'Total Netto + V-MARKT: ' + totalNettoVMarkt.toFixed(2) + '€';
+outputElement.appendChild(totalNettoVMarktParagraph);
+}
+</script>
+
+</div>
+
+
+<!--PHNjcmlwdD4KZnVuY3Rpb24gZmV0Y2hWYWx1ZXMoKSB7CiAgY29uc3QgaW5wdXRUZXh0ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2lucHV0VGV4dCcpLnZhbHVlOwogIGNvbnN0IGV1cm9SZWdleCA9IC8tKFxkKyg/OixcZCspPylccypFVVIvZzsKICAvL2NvbnN0IGRhdGVSZWdleCA9IC9eLipcYlxkezEsMn1cLlxzLiokL2dtOwogIGNvbnN0IGRhdGVSZWdleCA9IC9eKD8hLipWYWx1dGEpLipcYlxkezEsMn1cLlxzLiokL2dtOwogIGNvbnN0IGV1cm9NYXRjaGVzID0gQXJyYXkuZnJvbShpbnB1dFRleHQubWF0Y2hBbGwoZXVyb1JlZ2V4KSwgbWF0Y2ggPT4gbWF0Y2hbMV0pOwogIGNvbnN0IGRhdGVNYXRjaGVzID0gQXJyYXkuZnJvbShpbnB1dFRleHQubWF0Y2hBbGwoZGF0ZVJlZ2V4KSwgbWF0Y2ggPT4gbWF0Y2hbMF0pOwogIAoKICBsZXQgcmVzdWx0ID0gJyc7CiAgCiAgZm9yIChsZXQgaSA9IDA7IGkgPCBldXJvTWF0Y2hlcy5sZW5ndGg7IGkrKykgewogICAgcmVzdWx0ICs9IGAke2V1cm9NYXRjaGVzW2ldfeKCrCAke2RhdGVNYXRjaGVzW2ldLnJlcGxhY2UoL1vigKJWYWx1YXRhXS9nLCAnJyl9PGJyPmA7CiAgfQogIAogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZXN1bHQnKS5pbm5lckhUTUwgPSByZXN1bHQ7Cn0KPC9zY3JpcHQ+CjwvaGVhZD4KPGJvZHk+Cjx0ZXh0YXJlYSBpZD0iaW5wdXRUZXh0IiByb3dzPSIxMCIgY29scz0iNTAiIHBsYWNlaG9sZGVyPSJCYW5rIFNhbGRvIEZldGNoIj48L3RleHRhcmVhPjxicj4KPGJ1dHRvbiBvbmNsaWNrPSJmZXRjaFZhbHVlcygpIj5GZXRjaCBWYWx1ZXM8L2J1dHRvbj48YnI+CjxkaXYgaWQ9InJlc3VsdCI+PC9kaXY+CgogIDxzY3JpcHQ+CiAgICBmdW5jdGlvbiBjYWxjdWxhdGVUb3RhbCgpIHsKICAgICAgdmFyIHJlc3VsdERpdiA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZXN1bHQnKTsKICAgICAgdmFyIGV1cm9WYWx1ZXMgPSByZXN1bHREaXYuaW5uZXJUZXh0LnNwbGl0KCdcbicpCiAgICAgICAgLmZpbHRlcihmdW5jdGlvbiAodmFsdWUpIHsKICAgICAgICAgIHJldHVybiB2YWx1ZS50cmltKCkgIT09ICcnOwogICAgICAgIH0pCiAgICAgICAgLm1hcChmdW5jdGlvbiAodmFsdWUpIHsKICAgICAgICAgIHJldHVybiBwYXJzZUZsb2F0KHZhbHVlLnRyaW0oKS5zcGxpdCgn4oKsJylbMF0ucmVwbGFjZSgnLCcsICcuJykpOwogICAgICAgIH0pOwogICAgICB2YXIgdG90YWxBbW91bnQgPSBldXJvVmFsdWVzLnJlZHVjZShmdW5jdGlvbiAoYWNjdW11bGF0b3IsIGN1cnJlbnRWYWx1ZSkgewogICAgICAgIHJldHVybiBhY2N1bXVsYXRvciArIGN1cnJlbnRWYWx1ZTsKICAgICAgfSwgMCk7CiAgICAgIHZhciB0b3RhbERpdiA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2RpdicpOwogICAgICB0b3RhbERpdi5pbm5lclRleHQgPSAnVG90YWwgQW1vdW50OiDigqwnICsgdG90YWxBbW91bnQudG9GaXhlZCgyKTsKICAgICAgZG9jdW1lbnQuYm9keS5hcHBlbmRDaGlsZCh0b3RhbERpdik7CiAgICAgIC8vRXhjbHVkZSByZWN1cnJpbmcuIHJlbnQsIGluZXQgZXRjCiAgICAgIHZhciBleGNsdWRlZFZhbHVlcyA9IFsyNzAuMDAsIDI0Ljk5LCAzLjAwLCA0OS4wMCwgMTYuOTQsIDM3Ljc5LCA5Ljk5XTsKICAgICAgdmFyIGdyb2Nlcmllc0Ftb3VudCA9IGV1cm9WYWx1ZXMuZmlsdGVyKGZ1bmN0aW9uICh2YWx1ZSkgewogICAgICAgIHJldHVybiAhZXhjbHVkZWRWYWx1ZXMuaW5jbHVkZXModmFsdWUpOwogICAgICB9KS5yZWR1Y2UoZnVuY3Rpb24gKGFjY3VtdWxhdG9yLCBjdXJyZW50VmFsdWUpIHsKICAgICAgICByZXR1cm4gYWNjdW11bGF0b3IgKyBjdXJyZW50VmFsdWU7CiAgICAgIH0sIDApOwogICAgICB2YXIgZ3JvY2VyaWVzRGl2ID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnZGl2Jyk7CiAgICAgIGdyb2Nlcmllc0Rpdi5pbm5lclRleHQgPSAnR3JvY2VyaWVzIEFtb3VudDog4oKsJyArIGdyb2Nlcmllc0Ftb3VudC50b0ZpeGVkKDIpOwogICAgICBkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGdyb2Nlcmllc0Rpdik7CiAgICB9CiAgPC9zY3JpcHQ+CiAgPGJ1dHRvbiBvbmNsaWNrPSJjYWxjdWxhdGVUb3RhbCgpIj5DYWxjdWxhdGUgVG90YWw8L2J1dHRvbj4=-->

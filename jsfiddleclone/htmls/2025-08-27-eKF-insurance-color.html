@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>E-Scooter Registration Plate Color</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 450px;
+      margin: 50px auto;
+      padding: 20px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .color-box {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    .Black { color: black; }
+    .Blue { color: blue; }
+    .Green { color: green; }
+
+    .next small {
+      display: block;
+      margin-top: 5px;
+      font-size: 0.8em;
+      color: #555;
+    }
+
+    details {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .status {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .valid { color: green; }
+    .upcoming { color: blue; }
+    .expired { color: red; }
+
+    .radio-group {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Current Insurance Sticker</h2>
+  <div class="current">
+    Current Color: <span class="color-box" id="currentColor"></span><br>
+    Valid for: <span id="timeLeft"></span>
+  </div>
+
+  <details>
+    <summary>Test Sticker Color (Red, Green, Blue)</summary>
+    (Select the color of the sticker)
+    <div class="radio-group">
+      <label><input type="radio" name="colorTest" value="Red"> Black</label>
+      <label><input type="radio" name="colorTest" value="Green"> Green</label>
+      <label><input type="radio" name="colorTest" value="Blue"> Blue</label>
+    </div>
+
+    <div id="colorStatus" class="status"></div>
+
+    <div class="next">
+      Next Color: <span class="color-box" id="nextColor"></span>
+      <small>from <span id="nextStart"></span></small>
+    </div>
+  </details>
+
+  <script>
+    const colors = ['Black', 'Blue', 'Green'];
+    const startYear = 2023;
+
+    const today = new Date();
+    const currentYear = today.getMonth() >= 2 ? today.getFullYear() : today.getFullYear() - 1;
+    const yearIndex = currentYear - startYear;
+
+    const currentColor = colors[yearIndex % colors.length];
+    const nextColor = colors[(yearIndex + 1) % colors.length];
+
+    const endDate = new Date(currentYear + 1, 1, 28);
+    if ((currentYear + 1) % 4 === 0 && ((currentYear + 1) % 100 !== 0 || (currentYear + 1) % 400 === 0)) {
+      endDate.setDate(29);
+    }
+
+    const nextStart = new Date(currentYear + 1, 2, 1);
+    const msLeft = endDate.getTime() - today.getTime();
+    const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
+
+    document.getElementById('currentColor').textContent = currentColor;
+    document.getElementById('currentColor').classList.add(currentColor);
+
+    document.getElementById('nextColor').textContent = nextColor;
+    document.getElementById('nextColor').classList.add(nextColor);
+
+    document.getElementById('timeLeft').textContent = daysLeft + ' days';
+    document.getElementById('nextStart').textContent = nextStart.toLocaleDateString('en-GB');
+
+    const radios = document.querySelectorAll('input[name="colorTest"]');
+    radios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        const input = radio.value;
+        const statusEl = document.getElementById('colorStatus');
+        let message = '';
+        let cssClass = '';
+
+        const normalized = input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
+
+        const mappedColor = normalized === 'Red' ? 'Black' : normalized;
+
+        let expirationDate;
+        if (mappedColor === 'Black') {
+          expirationDate = endDate;
+        } else if (mappedColor === 'Blue') {
+          expirationDate = new Date(currentYear, 2, 28);
+        } else if (mappedColor === 'Green') {
+          expirationDate = new Date(currentYear, 5, 30);
+        }
+
+        const expiredMs = today.getTime() - expirationDate.getTime();
+        const expiredDays = Math.floor(expiredMs / (1000 * 60 * 60 * 24));
+        const expiredMonths = Math.floor(expiredDays / 30);
+
+        if (mappedColor === currentColor) {
+          message = 'This color is currently valid.';
+          cssClass = 'valid';
+        } else if (mappedColor === nextColor) {
+          message = `This color will be valid soon (from ${nextStart.toLocaleDateString('en-GB')}).`;
+          cssClass = 'upcoming';
+        } else {
+          message = `This color has expired. It expired ${expiredDays} days (${expiredMonths} months) ago.`;
+          cssClass = 'expired';
+        }
+
+        statusEl.textContent = message;
+        statusEl.className = 'status ' + cssClass;
+      });
+    });
+  </script>
+</body>
+</html>

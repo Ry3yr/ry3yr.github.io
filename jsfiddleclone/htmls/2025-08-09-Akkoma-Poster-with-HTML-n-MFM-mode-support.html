@@ -1,0 +1,230 @@
+<a target="_blank" href="0ld/save_post_manual.php" style=color:blue>Save akko data manual</a>
+<hr>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Akkoma Poster</title>
+  <style>
+    #hiddenText { display: none; }
+    #readBtn { display: none; margin-top: 5px; }
+    #debugLog {
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      padding: 10px;
+      margin-top: 15px;
+      font-family: monospace;
+      font-size: 0.9em;
+      max-height: 250px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    #jsonPreview {
+      border: 1px solid #999;
+      background: #f0f0f0;
+      padding: 10px;
+      margin-top: 15px;
+      font-family: monospace;
+      font-size: 0.9em;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h2>Akkoma Poster</h2>
+
+  <label>API Key: <input type="text" id="apikey" /></label><br />
+  <label>Instance URL: <input type="text" id="instance" /></label><br />
+  <label><input type="checkbox" id="htmlMode" checked onchange="toggleMode('html')" /> HTML mode</label><br />
+  <label><input type="checkbox" id="mfmMode" onchange="toggleMode('mfm')" /> MFM mode</label><br />
+  <button id="readBtn" onclick="readFromStorage()">Read from Storage</button><br /><br />
+
+  <textarea id="mainText" rows="10" cols="50"></textarea><br /><br />
+  <button onclick="postToAkkoma()">Post</button>
+
+  <div id="hiddenText"></div>
+
+  <h3>📦 JSON that will be saved:</h3>
+  <div id="jsonPreview" contenteditable="true">{}</div>
+
+  <h3>🪵 Debug Log</h3>
+  <div id="debugLog"><strong>Debug Log:</strong><br /></div>
+
+  <script>
+    function logToDom(message) {
+      const logDiv = document.getElementById("debugLog");
+      const timestamp = new Date().toISOString();
+      logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function readFromStorage() {
+      const apiKey = localStorage.getItem("apikey");
+      const instance = localStorage.getItem("instance");
+      if (apiKey && instance) {
+        document.getElementById("apikey").value = apiKey;
+        document.getElementById("instance").value = instance;
+        logToDom("Read API key and instance from localStorage");
+      } else {
+        logToDom("No data found in localStorage");
+      }
+    }
+
+    function toggleMode(mode) {
+      const htmlMode = document.getElementById("htmlMode");
+      const mfmMode = document.getElementById("mfmMode");
+      
+      if (mode === 'html') {
+        if (htmlMode.checked) {
+          mfmMode.checked = false;
+        }
+      } else if (mode === 'mfm') {
+        if (mfmMode.checked) {
+          htmlMode.checked = false;
+        }
+      }
+      logToDom(`Mode changed: ${mode} (HTML: ${htmlMode.checked}, MFM: ${mfmMode.checked})`);
+    }
+
+    window.onload = async () => {
+      logToDom("Page loaded");
+      const params = new URLSearchParams(window.location.search);
+      const apiKey = params.get("apikey");
+      const instance = params.get("instance");
+
+      if (apiKey) {
+        document.getElementById("apikey").value = apiKey;
+        localStorage.setItem("apikey", apiKey);
+        logToDom("API key from URL stored in localStorage");
+      }
+      if (instance) {
+        document.getElementById("instance").value = instance;
+        localStorage.setItem("instance", instance);
+        logToDom("Instance from URL stored in localStorage");
+      }
+
+      if (localStorage.getItem("apikey") && localStorage.getItem("instance")) {
+        document.getElementById("readBtn").style.display = "inline-block";
+        logToDom("LocalStorage found — showing Read button");
+      }
+
+      try {
+        const url = 'data_part_alcea.json?t=' + Date.now();
+        const res = await fetch(url);
+        const data = await res.json();
+
+        let latest = null;
+        for (let i = 0; i < data.length; i++) {
+          const entry = data[i];
+          const dateKey = Object.keys(entry)[0];
+          const valueObj = entry[dateKey];
+
+          if (
+            valueObj &&
+            typeof valueObj.value === "string" &&
+            valueObj.value.includes("•acws")
+          ) {
+            latest = valueObj.value;
+            break;
+          }
+        }
+
+        if (latest) {
+          document.getElementById("mainText").value = latest;
+          document.getElementById("hiddenText").innerText = latest;
+          logToDom("Loaded latest •acws entry from JSON");
+        } else {
+          logToDom("No •acws entry found in data_part_alcea.json");
+        }
+      } catch (err) {
+        logToDom("Error loading data_part_alcea.json: " + err.message);
+      }
+    };
+
+    async function postToAkkoma() {
+      const htmlMode = document.getElementById("htmlMode").checked;
+      const mfmMode = document.getElementById("mfmMode").checked;
+      const instance = document.getElementById("instance").value.trim();
+      const token = document.getElementById("apikey").value.trim();
+      let rawStatus = document.getElementById("mainText").value.trim();
+
+      if (htmlMode) {
+        rawStatus = rawStatus.replace(/\n/g, "<br>");
+      }
+
+      let status;
+      if (mfmMode) {
+        status = rawStatus.replace(/𒐫(.*?)𒐫/gs, "> $1");
+      } else {
+        status = rawStatus.replace(/𒐫(.*?)𒐫/gs, "<blockquote>$1</blockquote>");
+      }
+      
+      const preview = document.getElementById("hiddenText").innerText.slice(0, 33);
+
+      if (!instance || !token || !status) {
+        logToDom("❌ Missing instance, API key, or content");
+        return;
+      }
+
+      logToDom("Posting to Akkoma...");
+
+      try {
+        let contentType;
+        if (mfmMode) {
+          contentType = "text/x.misskeymarkdown";  // Updated to correct MFM media type
+        } else if (htmlMode) {
+          contentType = "text/html";
+        } else {
+          contentType = "text/plain";
+        }
+
+        const postRes = await fetch(`${instance}/api/v1/statuses`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status,
+            content_type: contentType,
+          }),
+        });
+
+        if (!postRes.ok) {
+          const error = await postRes.json();
+          throw new Error(error.error || "Unknown posting error");
+        }
+
+        const postData = await postRes.json();
+        const postUrl = postData.url;
+        const now = new Date().toISOString();
+
+        const logObject = {
+          date: now,
+          url: postUrl,
+          preview: preview,
+          mode: mfmMode ? "mfm" : (htmlMode ? "html" : "plain"),
+          mediaType: contentType  // Include the actual media type used
+        };
+
+        document.getElementById("jsonPreview").innerText = JSON.stringify(
+          logObject,
+          null,
+          2
+        );
+        logToDom(`✅ Posted to Akkoma at: ${postUrl} (Content-Type: ${contentType})`);
+
+        await fetch("/other/extra/scripts/fakesocialmedia/0ld/save_post.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(logObject),
+        });
+
+        logToDom("📁 JSON sent to save_post.php");
+      } catch (err) {
+        logToDom("❌ Error: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

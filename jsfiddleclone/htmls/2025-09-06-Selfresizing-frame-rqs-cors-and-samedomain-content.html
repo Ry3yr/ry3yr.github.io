@@ -1,0 +1,47 @@
+<iframe
+  id="dynamicIframe"
+  src="/other/extra/scripts/fakesocialmedia/replyhandler.html?url=https://mas.to/@alcea/114838646987887493"
+  style="width: 100%; border: none; overflow: auto;"
+  scrolling="no"
+  title="Reply Handler">
+</iframe>
+
+<script>
+  const iframe = document.getElementById('dynamicIframe');
+
+  let previousHeight = 0;
+  let stableCount = 0;
+  let checkInterval;
+
+  function measureIframeHeight() {
+    try {
+      const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+      if (!iframeDocument) return;
+
+      const bodyHeight = iframeDocument.body.scrollHeight + 33; // add buffer
+      iframe.style.height = bodyHeight + "px";
+
+      console.log(`Iframe resized to ${bodyHeight}px`);
+
+      if (bodyHeight === previousHeight) {
+        stableCount++;
+        if (stableCount >= 2) {
+          clearInterval(checkInterval);
+          console.log("Iframe size stable for 2 consecutive checks. Stopping resize checks.");
+        }
+      } else {
+        stableCount = 0; // reset if size changed
+        previousHeight = bodyHeight;
+      }
+    } catch (e) {
+      console.warn("Cannot access iframe content to measure height.", e);
+    }
+  }
+
+  iframe.addEventListener('load', () => {
+    measureIframeHeight(); // initial measurement
+    stableCount = 0;
+    previousHeight = 0;
+    checkInterval = setInterval(measureIframeHeight, 3000);
+  });
+</script>

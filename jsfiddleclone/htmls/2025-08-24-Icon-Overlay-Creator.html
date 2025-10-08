@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Layered Image Editor</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 20px; }
+    canvas { border: 1px solid #ccc; touch-action: none; }
+    input[type="file"] { margin: 5px; }
+    button { margin-top: 10px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+
+  <div>
+    <label>Top Image: <input type="file" id="topImage" accept="image/*"></label>
+    <label>Bottom Image: <input type="file" id="bottomImage" accept="image/*"></label>
+    <label>Background (optional): <input type="file" id="bgImage" accept="image/*"></label>
+  </div>
+  <button id="downloadBtn">Flatten & Download PNG</button>
+  <br><br>
+  <canvas id="canvas" width="512" height="512"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const layers = {
+      bg: { img: null, x: 0, y: 0, scale: 1 },
+      bottom: { img: null, x: 0, y: 0, scale: 1 },
+      top: { img: null, x: 0, y: 0, scale: 1 }
+    };
+
+    let activeLayer = null;
+    let dragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let lastTouches = [];
+
+    function loadImage(input, key) {
+      const file = input.files[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = () => {
+        layers[key].img = img;
+        layers[key].scale = 1;
+        layers[key].x = (canvas.width - img.width) / 2;
+        layers[key].y = (canvas.height - img.height) / 2;
+        draw();
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    ['topImage', 'bottomImage', 'bgImage'].forEach(id => {
+      document.getElementById(id).addEventListener('change', e => {
+        const key = id.replace('Image', '');
+        loadImage(e.target, key);
+      });
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ['bg', 'bottom', 'top'].forEach(key => {
+        const layer = layers[key];
+        if (layer.img) {
+          const w = layer.img.width * layer.scale;
+          const h = layer.img.height * layer.scale;
+          ctx.drawImage(layer.img, layer.x, layer.y, w, h);
+        }
+      });
+    }
+
+    function getTouchCenter(touches) {
+      const x = (touches[0].clientX + touches[1].clientX) / 2;
+      const y = (touches[0].clientY + touches[1].clientY) / 2;
+      const rect = canvas.getBoundingClientRect();
+      return { x: x - rect.left, y: y - rect.top };
+    }
+
+    function distance(t1, t2) {
+      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    }
+
+    function getLayerAt(x, y) {
+      const keys = ['top', 'bottom', 'bg'];
+      for (let i = keys.length - 1; i >= 0; i--) {
+        const key = keys[i];
+        const layer = layers[key];
+        if (!layer.img) continue;
+        const w = layer.img.width * layer.scale;
+        const h = layer.img.height * layer.scale;
+        if (x >= layer.x && x <= layer.x + w && y >= layer.y && y <= layer.y + h) {
+          return key;
+        }
+      }
+      return null;
+    }
+
+    canvas.addEventListener('mousedown', e => {
+      const x = e.offsetX;
+      const y = e.offsetY;
+      activeLayer = getLayerAt(x, y);
+      if (activeLayer) {
+        dragging = true;
+        dragStart = { x, y };
+      }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!dragging || !activeLayer) return;
+      const dx = e.offsetX - dragStart.x;
+      const dy = e.offsetY - dragStart.y;
+      dragStart = { x: e.offsetX, y: e.offsetY };
+      layers[activeLayer].x += dx;
+      layers[activeLayer].y += dy;
+      draw();
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      dragging = false;
+    });
+
+    canvas.addEventListener('wheel', e => {
+      const x = e.offsetX;
+      const y = e.offsetY;
+      const key = getLayerAt(x, y);
+      if (!key) return;
+
+      e.preventDefault();
+      const layer = layers[key];
+      const zoomFactor = 1.05;
+      const scaleChange = e.deltaY < 0 ? zoomFactor : 1 / zoomFactor;
+
+      const oldScale = layer.scale;
+      layer.scale *= scaleChange;
+      const newScale = layer.scale;
+
+      const dx = x - layer.x;
+      const dy = y - layer.y;
+
+      layer.x -= dx * (newScale - oldScale) / oldScale;
+      layer.y -= dy * (newScale - oldScale) / oldScale;
+
+      draw();
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      lastTouches = [...e.touches];
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      activeLayer = getLayerAt(x, y);
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touches = [...e.touches];
+      const rect = canvas.getBoundingClientRect();
+      const layer = layers[activeLayer];
+      if (!layer) return;
+
+      if (touches.length === 1 && lastTouches.length === 1) {
+        const dx = touches[0].clientX - lastTouches[0].clientX;
+        const dy = touches[0].clientY - lastTouches[0].clientY;
+        layer.x += dx;
+        layer.y += dy;
+      } else if (touches.length === 2 && lastTouches.length === 2) {
+        const prevDist = distance(lastTouches[0], lastTouches[1]);
+        const newDist = distance(touches[0], touches[1]);
+        const scaleChange = newDist / prevDist;
+        const center = getTouchCenter(touches);
+
+        const dx = center.x - layer.x;
+        const dy = center.y - layer.y;
+
+        const oldScale = layer.scale;
+        layer.scale *= scaleChange;
+
+        layer.x -= dx * (layer.scale - oldScale) / oldScale;
+        layer.y -= dy * (layer.scale - oldScale) / oldScale;
+      }
+
+      lastTouches = touches;
+      draw();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => {
+      lastTouches = [];
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 512;
+      tempCanvas.height = 512;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      ['bg', 'bottom', 'top'].forEach(key => {
+        const layer = layers[key];
+        if (layer.img) {
+          const w = layer.img.width * layer.scale;
+          const h = layer.img.height * layer.scale;
+          tempCtx.drawImage(layer.img, layer.x, layer.y, w, h);
+        }
+      });
+
+      const link = document.createElement('a');
+      link.download = 'flattened.png';
+      link.href = tempCanvas.toDataURL('image/png');
+      link.click();
+    });
+  </script>
+
+</body>
+</html>

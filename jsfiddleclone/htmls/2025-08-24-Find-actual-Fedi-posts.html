@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<details><summary>Profile to post id resolve</summary>
+    Enter a Fediverse account (either @username@instance.com or full URL like https://woof.tech/@dr_muesli)<br>
+    <input type="text" id="accountHandle" placeholder="Enter username or full URL">
+    <button onclick="getFirstPost()">Find First Post</button>
+    <div id="result"></div></details>
+    <script>
+        function parseHandle(handle) {
+            let username, instance;
+            const urlRegex = /^(https?:\/\/)([^\/]+)\/(.*)$/;
+            const match = handle.match(urlRegex);
+            if (match) {
+                username = match[3].startsWith('@') ? match[3].substring(1) : match[3];
+                instance = match[2];
+            } else {
+                const parts = handle.split('@');
+                if (parts.length === 2) {
+                    username = parts[0].substring(1);
+                    instance = parts[1];
+                }
+            }
+            return { username, instance };
+        }
+
+        async function getFirstPost() {
+            const handle = document.getElementById('accountHandle').value.trim();
+            if (!handle) {
+                alert("Please enter a valid Fediverse handle.");
+                return;
+            }
+
+            const { username, instance } = parseHandle(handle);
+            if (!username || !instance) {
+                alert("Invalid handle format. Please enter a valid Fediverse account or URL.");
+                return;
+            }
+
+            try {
+                const lookupUrl = `https://${instance}/api/v1/accounts/lookup?acct=${username}`;
+                const lookupResponse = await fetch(lookupUrl);
+                if (!lookupResponse.ok) {
+                    const errorText = await lookupResponse.text();
+                    throw new Error(`Error fetching user data: ${lookupResponse.status} - ${errorText}`);
+                }
+
+                const userData = await lookupResponse.json();
+                const userId = userData.id;
+                if (!userId) {
+                    throw new Error('User ID not found.');
+                }
+
+                const statusesUrl = `https://${instance}/api/v1/accounts/${userId}/statuses`;
+                const statusesResponse = await fetch(statusesUrl);
+                if (!statusesResponse.ok) {
+                    const errorText = await statusesResponse.text();
+                    throw new Error(`Error fetching posts: ${statusesResponse.status} - ${errorText}`);
+                }
+
+                const posts = await statusesResponse.json();
+                if (!Array.isArray(posts) || posts.length === 0) {
+                    document.getElementById('result').innerHTML = 'No posts found.';
+                } else {
+                    const firstPost = posts[posts.length - 1];
+                    if (firstPost && firstPost.url) {
+                        const firstPostUrl = firstPost.url;
+                        document.getElementById('result').innerHTML = `
+                            <p>First post URL:</p>
+                            <a href="${firstPostUrl}" target="_blank">${firstPostUrl}</a>
+                        `;
+                    } else {
+                        document.getElementById('result').innerHTML = 'No URL found for the first post.';
+                    }
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+
+
+
+  <title>Fediverse Post Viewer</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; }
+    button { padding: 10px 20px; }
+    .post { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    .post-date { color: gray; font-size: 0.9em; }
+    .post-content img { vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+<h2>Enter a Fediverse Post URL</h2>
+<input type="text" id="postUrlInput" placeholder="e.g. https://example.social/@user/1234567890">
+<button onclick="processUrl()">Fetch Posts</button>
+
+<div id="handleDisplay"></div>
+<div id="errorDisplay" style="color:red;"></div>
+<div id="posts"></div>
+<button id="fetchNextBatchButton" style="display:none;" onclick="fetchNextBatch()">Fetch Next Batch</button>
+
+<script>
+let lastPostId = null;
+let userApiUrl = '';
+let domain = '';
+let emojis = [];
+
+function getQueryParam(name) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+async function fetchWithFallback(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Direct fetch failed, trying proxy...');
+    const proxiedUrl = `https://alceawis.de/cors.php?query=${encodeURIComponent(url)}`;
+    const proxyRes = await fetch(proxiedUrl, options);
+    if (!proxyRes.ok) throw new Error(`Proxy fetch failed: ${proxyRes.status}`);
+    return await proxyRes.json();
+  }
+}
+
+async function fetchEmojis(domain) {
+  const emojiUrl = `https://${domain}/api/v1/custom_emojis`;
+  try {
+    return await fetchWithFallback(emojiUrl);
+  } catch (err) {
+    console.error('Error fetching custom emojis:', err);
+    return [];
+  }
+}
+
+function replaceEmojiShortcodes(content, emojis) {
+  emojis.forEach(emoji => {
+    const shortcode = `:${emoji.shortcode}:`;
+    const emojiImg = `<img src="${emoji.url}" alt="${emoji.shortcode}" title="${emoji.shortcode}" style="width: 1.2em; height: 1.2em; vertical-align: middle;" />`;
+    const regex = new RegExp(`(:${emoji.shortcode}:)`, 'g');
+    content = content.replace(regex, emojiImg);
+  });
+  return content;
+}
+
+async function fetchPosts() {
+  let url = userApiUrl;
+
+  if (lastPostId) {
+    url = `${url}&max_id=${lastPostId}`;
+  }
+
+  try {
+    const posts = await fetchWithFallback(url);
+
+    const container = document.getElementById('posts');
+    if (posts.length === 0) {
+      document.getElementById('fetchNextBatchButton').style.display = 'none';
+      return;
+    }
+
+    posts.forEach(post => {
+      const div = document.createElement('div');
+      div.className = 'post';
+      let postContent = post.content;
+      postContent = replaceEmojiShortcodes(postContent, emojis);
+
+      div.innerHTML = `
+        <div class="post-date">${new Date(post.created_at).toLocaleString()}</div>
+        <div class="post-content">${postContent}</div>
+        <a href="${post.url}" target="_blank">View Post</a>
+      `;
+      container.appendChild(div);
+      lastPostId = post.id; // Update the last post ID
+    });
+
+    document.getElementById('fetchNextBatchButton').style.display = 'inline-block';
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('errorDisplay').textContent = `Error: ${err.message}`;
+  }
+}
+
+async function processUrl() {
+  const input = document.getElementById('postUrlInput').value.trim();
+  document.getElementById('errorDisplay').textContent = '';
+  document.getElementById('handleDisplay').textContent = '';
+  document.getElementById('posts').innerHTML = '';
+  document.getElementById('fetchNextBatchButton').style.display = 'none';
+
+  if (!input) return;
+
+  let postUrl;
+  try {
+    postUrl = new URL(input);
+  } catch (e) {
+    document.getElementById('errorDisplay').textContent = 'Invalid URL.';
+    return;
+  }
+
+  domain = postUrl.hostname;
+  const pathname = postUrl.pathname;
+  const parts = pathname.split('/');
+  const postId = parts[parts.length - 1];
+
+  const apiUrl = `https://${domain}/api/v1/statuses/${postId}`;
+
+  try {
+    const postData = await fetchWithFallback(apiUrl);
+
+    const account = postData.account;
+    const acct = account.acct.includes('@') ? account.acct : `${account.acct}@${domain}`;
+    userApiUrl = `https://${domain}/api/v1/accounts/${account.id}/statuses?limit=30&exclude_reblogs=true`;
+
+    document.getElementById('handleDisplay').textContent = `User Handle: ${acct}`;
+
+    emojis = await fetchEmojis(domain);
+
+    fetchPosts();
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('errorDisplay').textContent = `Error: ${err.message}`;
+  }
+}
+
+function fetchNextBatch() {
+  fetchPosts();
+}
+
+window.addEventListener('load', () => {
+  const urlParam = getQueryParam('url');
+  if (urlParam) {
+    document.getElementById('postUrlInput').value = urlParam;
+    processUrl();
+  }
+});
+</script>
+
+</body>
+</html>
