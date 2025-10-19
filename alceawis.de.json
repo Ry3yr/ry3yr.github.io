@@ -1114,5 +1114,77 @@
         "mode": "response_code",
         "domainname": "alceawis.de",
         "response_code": 200
+    },
+    {
+        "date": "2025-10-11 19:56:08",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-11 20:06:27",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-12 11:34:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-12 18:00:54",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-12 18:12:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-12 18:14:17",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-12 23:52:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-13 20:39:46",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-13 23:52:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-14 20:23:42",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-14 23:52:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2025-10-15 10:34:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
     }
 ]
