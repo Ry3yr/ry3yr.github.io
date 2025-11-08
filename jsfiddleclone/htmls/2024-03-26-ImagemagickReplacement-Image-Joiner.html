@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,15 +8,21 @@
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
     canvas {
       max-width: 100%;
       height: auto;
       margin-top: 20px;
       border: 1px solid #ccc;
+      display: block;
     }
     .options {
       margin-top: 15px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
     }
     .options label {
       margin-right: 10px;
@@ -31,14 +36,75 @@
       width: 40px;
       margin: 0 5px;
     }
+    .file-size-limit {
+      margin-top: 10px;
+      margin-bottom: 15px;
+    }
+    .file-size-limit input {
+      width: 100px;
+      margin: 0 5px;
+    }
+    .file-size-limit select {
+      margin-left: 5px;
+    }
+    .info-text {
+      color: #666;
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+    .dropzone {
+      border: 2px dashed #0087F7;
+      border-radius: 5px;
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 8px 15px;
+      margin-right: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background-color: #45a049;
+    }
+    #downloadButton {
+      background-color: #008CBA;
+    }
+    #downloadButton:hover:not(:disabled) {
+      background-color: #007B9A;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .status.success {
+      background-color: #dff0d8;
+      color: #3c763d;
+    }
+    .status.error {
+      background-color: #f2dede;
+      color: #a94442;
+    }
   </style>
 </head>
 
 <body>
+  <h1>Image Joining Tool</h1>
+  
   <h2>Upload Images</h2>
   <div id="myDropzone" class="dropzone"></div>
 
   <div class="options">
+    <h3>Layout Options</h3>
     <input type="radio" name="orientation" id="radioHorizontal" value="horizontal" checked>
     <label for="radioHorizontal">Horizontal</label>
     
@@ -52,8 +118,8 @@
       <span>Grid layout: </span>
       <input type="number" id="gridCols" min="1" value="2"> × <input type="number" id="gridRows" min="1" value="2">
     </div>
-    <br><br>
-
+    
+    <h3>Processing Options</h3>
     <input type="checkbox" id="resizeCheckbox">
     <label for="resizeCheckbox">Resize smaller images to largest</label>
     <br>
@@ -61,9 +127,22 @@
     <input type="checkbox" id="orderCheckbox">
     <label for="orderCheckbox">Order images by filename</label>
     <br><br>
+    
+    <h3>File Size Limit</h3>
+    <div class="file-size-limit">
+      <label for="fileSizeLimit">Maximum file size:</label>
+      <input type="number" id="fileSizeLimit" min="0.1" step="0.1" value="2">
+      <select id="fileSizeUnit">
+        <option value="KB">KB</option>
+        <option value="MB" selected>MB</option>
+      </select>
+      <div class="info-text">Set to 0 for no limit</div>
+    </div>
 
     <button id="joinButton">Join Images</button>
     <button id="downloadButton" disabled>Download Joined Image</button>
+    
+    <div id="statusMessage" class="status"></div>
   </div>
 
   <div id="imageInfo"></div>
@@ -72,12 +151,14 @@
   <script>
     Dropzone.autoDiscover = false;
     var imageFiles = [];
+    var currentCanvas = null;
 
     var myDropzone = new Dropzone("#myDropzone", {
       url: "#",
       autoProcessQueue: false,
       acceptedFiles: "image/*",
       addRemoveLinks: true,
+      maxFiles: 20,
       init: function() {
         this.on("addedfile", function(file) {
           imageFiles.push(file);
@@ -99,7 +180,7 @@
 
     document.getElementById("joinButton").addEventListener("click", function() {
       if (imageFiles.length === 0) {
-        alert("Please upload at least one image.");
+        showStatus("Please upload at least one image.", "error");
         return;
       }
 
@@ -242,19 +323,92 @@
       var container = document.getElementById("imageInfo");
       container.innerHTML = "";
       container.appendChild(canvas);
+      currentCanvas = canvas;
 
-      document.getElementById("downloadButton").disabled = false;
+      // Apply file size limit if specified
+      applyFileSizeLimit();
+    }
+
+    function applyFileSizeLimit() {
+      if (!currentCanvas) return;
+      
+      const sizeLimit = parseFloat(document.getElementById("fileSizeLimit").value);
+      const unit = document.getElementById("fileSizeUnit").value;
+      
+      // Convert to bytes
+      let maxBytes;
+      if (unit === "KB") {
+        maxBytes = sizeLimit * 1024;
+      } else if (unit === "MB") {
+        maxBytes = sizeLimit * 1024 * 1024;
+      }
+      
+      // If no limit or limit is 0, enable download immediately
+      if (sizeLimit <= 0) {
+        document.getElementById("downloadButton").disabled = false;
+        showStatus("Image ready for download.", "success");
+        return;
+      }
+      
+      // Try different quality levels to meet the size limit
+      let quality = 0.9;
+      let dataURL = currentCanvas.toDataURL("image/jpeg", quality);
+      
+      // Function to check size and adjust quality if needed
+      function checkAndAdjustQuality() {
+        const base64String = dataURL.split(',')[1];
+        const fileSize = atob(base64String).length;
+        
+        if (fileSize > maxBytes && quality > 0.1) {
+          // Reduce quality and try again
+          quality -= 0.1;
+          dataURL = currentCanvas.toDataURL("image/jpeg", quality);
+          setTimeout(checkAndAdjustQuality, 0); // Use timeout to prevent blocking
+        } else {
+          // We're either under the limit or at minimum quality
+          currentCanvas.dataset.dataURL = dataURL;
+          document.getElementById("downloadButton").disabled = false;
+          
+          if (fileSize > maxBytes) {
+            showStatus(`Image size (${formatFileSize(fileSize)}) exceeds limit (${formatFileSize(maxBytes)}). Using minimum quality.`, "error");
+          } else {
+            showStatus(`Image ready for download. Final size: ${formatFileSize(fileSize)} (quality: ${Math.round(quality * 100)}%)`, "success");
+          }
+        }
+      }
+      
+      checkAndAdjustQuality();
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + " bytes";
+      else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + " KB";
+      else return (bytes / 1048576).toFixed(2) + " MB";
+    }
+
+    function showStatus(message, type) {
+      const statusElement = document.getElementById("statusMessage");
+      statusElement.textContent = message;
+      statusElement.className = "status " + type;
     }
 
     document.getElementById("downloadButton").addEventListener("click", function() {
-      var canvas = document.querySelector("canvas");
-      if (!canvas) {
-        alert("No joined image available!");
+      if (!currentCanvas) {
+        showStatus("No joined image available!", "error");
         return;
       }
+      
       var link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = "joined-image.png";
+      
+      // Use the stored data URL if we applied size limits
+      if (currentCanvas.dataset.dataURL) {
+        link.href = currentCanvas.dataset.dataURL;
+        link.download = "joined-image.jpg";
+      } else {
+        link.href = currentCanvas.toDataURL("image/png");
+        link.download = "joined-image.png";
+      }
+      
       link.click();
     });
   </script>
