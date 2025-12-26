@@ -71,8 +71,8 @@ button {
     <br><br>
 
     <label>Path in ZIP:</label><br>
-    <input id="filePath" placeholder="path/to/file.ext">
-    <button onclick="openInNewTab()">Open File</button>
+    <input id="filePath" placeholder="path/to/file.ext or folder/">
+    <button onclick="openInNewTab()">Open File/Folder</button>
 </div>
 
 <div id="explorer" style="display:none;">
@@ -161,6 +161,7 @@ function renderFolder() {
         div.className = "item folder";
         div.textContent = f;
         div.onclick = () => {
+            filePathInput.value = currentPath + f + "/";
             currentPath += f + "/";
             renderFolder();
         };
@@ -174,6 +175,7 @@ function renderFolder() {
         div.textContent = f;
         div.onclick = () => {
             filePathInput.value = currentPath + f;
+            openInNewTab();
         };
         list.appendChild(div);
     });
@@ -182,7 +184,7 @@ function renderFolder() {
 /* ---------- OPEN IN NEW TAB ---------- */
 function openInNewTab() {
     if (!zipUrlInput.value || !filePathInput.value) {
-        alert("ZIP URL and file path required");
+        alert("ZIP URL and file/folder path required");
         return;
     }
     const url =
@@ -255,15 +257,54 @@ function displayFile(blob, filePath) {
     r.readAsText(blob);
 }
 
+/* ---------- PROCESS ZIP URL AND PATH ---------- */
+function processZipUrl(zipUrl, filePath) {
+    fetch(zipUrl)
+        .then(r => r.arrayBuffer())
+        .then(b => JSZip.loadAsync(b))
+        .then(zip => {
+            zipData = zip;
+            
+            // Check if the path is a folder (ends with / or doesn't exist as a file but exists as a folder)
+            const isFolder = filePath.endsWith('/') || 
+                           zipData.files[filePath] === undefined && 
+                           Object.keys(zipData.files).some(key => 
+                               key.startsWith(filePath + '/') || key === filePath + '/'
+                           );
+            
+            if (isFolder) {
+                // Show the explorer and navigate to the folder
+                explorer.style.display = "block";
+                currentPath = filePath.endsWith('/') ? filePath : filePath + '/';
+                
+                // Ensure the path exists in the zip
+                const folderExists = Object.keys(zipData.files).some(key => 
+                    key.startsWith(currentPath)
+                );
+                
+                if (!folderExists && currentPath !== "/") {
+                    alert("Folder not found in ZIP");
+                    currentPath = "";
+                }
+                
+                renderFolder();
+                header.style.display = "none"; // Hide header for direct folder links
+            } else {
+                // It's a file - display it
+                fetchAndDisplayFile(zipUrl, filePath);
+                header.style.display = "none"; // Hide header for direct file links
+            }
+        })
+        .catch(() => alert("Failed to load ZIP"));
+}
+
 /* ---------- AUTO LOAD ---------- */
 window.onload = () => {
     const q = getQueryParams();
     if (q.zipUrl && q.filePath) {
-        // Hide header and input UI
-        header.style.display = "none";
         zipUrlInput.value = q.zipUrl;
         filePathInput.value = q.filePath;
-        fetchAndDisplayFile(q.zipUrl, q.filePath);
+        processZipUrl(q.zipUrl, q.filePath);
     }
 };
 </script>
