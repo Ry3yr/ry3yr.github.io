@@ -1,0 +1,2538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Karaoke Designer</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --panel: #1a1a1a;
+            --accent: #00f2ff;
+            --selection: #ff3e81
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: #eee;
+            font-family: sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden
+        }
+
+        #sidebar {
+            width: 420px;
+            background: var(--panel);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column
+        }
+
+        .scroll-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px
+        }
+
+        .file-inputs {
+            margin-bottom: 15px
+        }
+
+        .file-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center
+        }
+
+        .file-label {
+            font-size: 11px;
+            color: #888;
+            width: 70px
+        }
+
+        .file-btn,
+        .url-input {
+            flex: 1;
+            padding: 8px;
+            background: #222;
+            color: #eee;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 11px
+        }
+
+        .file-btn {
+            text-align: center;
+            cursor: pointer
+        }
+
+        .file-btn:hover {
+            background: #333
+        }
+
+        .url-input {
+            color: #fff
+        }
+
+        .drop-zone {
+            border: 2px dashed #444;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 12px
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(0, 242, 255, 0.1)
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+            padding: 5px;
+            background: #222;
+            border-radius: 4px
+        }
+
+        .checkbox-row label {
+            margin: 0;
+            font-size: 11px;
+            color: #ccc
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--accent);
+            letter-spacing: 1px;
+            margin: 15px 0 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3px
+        }
+
+        .line-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #222;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            position: relative
+        }
+
+        .line-item.active-line {
+            border-color: var(--selection)
+        }
+
+        .timestamp {
+            font-family: monospace;
+            font-size: 10px;
+            color: #666;
+            display: block;
+            margin-bottom: 5px
+        }
+
+        .speed-control {
+            position: absolute;
+            right: 10px;
+            top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #444
+        }
+
+        .speed-control.hidden {
+            display: none
+        }
+
+        .speed-control label {
+            font-size: 8px;
+            color: #aaa;
+            white-space: nowrap
+        }
+
+        .speed-control input {
+            width: 40px;
+            padding: 2px 4px;
+            font-size: 10px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 3px
+        }
+
+        .word-token {
+            display: inline-block;
+            padding: 3px 6px;
+            margin: 2px;
+            border-radius: 4px;
+            background: #333;
+            cursor: pointer;
+            font-size: 12px;
+            position: relative
+        }
+
+        .word-token.active-selection {
+            outline: 2px solid var(--selection);
+            background: #444
+        }
+
+        .word-time-tag {
+            position: absolute;
+            top: -12px;
+            left: 0;
+            font-size: 8px;
+            background: var(--selection);
+            color: #fff;
+            padding: 1px 3px;
+            border-radius: 2px;
+            pointer-events: none;
+            display: none
+        }
+
+        .has-timing .word-time-tag {
+            display: block
+        }
+
+        #viewer {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            position: relative
+        }
+
+        #stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden
+        }
+
+        video {
+            width: 90%;
+            max-height: 80%;
+            border-radius: 4px;
+            border: 1px solid #333
+        }
+
+        #sub-overlay {
+            position: absolute;
+            bottom: 15%;
+            width: 100%;
+            text-align: center;
+            font-weight: 900;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.3em
+        }
+
+        .movable-word {
+            display: inline-block;
+            position: relative;
+            transition: color 0.2s, transform 0.2s
+        }
+
+        .word-inactive {
+            opacity: 0.4;
+            filter: grayscale(1)
+        }
+
+        .transition-bounce .word-active {
+            animation: bounce 0.3s ease
+        }
+
+        .transition-fade .word-inactive {
+            opacity: 0
+        }
+
+        .transition-fade .word-active {
+            opacity: 1;
+            animation: fadeIn 0.3s ease
+        }
+
+        .transition-fade .word-past {
+            opacity: 0.2
+        }
+
+        .transition-spin .word-active {
+            animation: spin 0.5s ease
+        }
+
+        .transition-ball .word-active {
+            animation: ballBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+        }
+
+        .transition-zoom .word-active {
+            animation: zoomIn 0.3s ease
+        }
+
+        .transition-slide .word-active {
+            animation: slideUp 0.4s ease
+        }
+
+        .transition-typing .word-active {
+            animation: typing 0.3s steps(4, end)
+        }
+
+        .transition-wave .word-active {
+            animation: wave 0.5s ease
+        }
+
+        .transition-single .word {
+            opacity: 0;
+            transform: scale(0.8)
+        }
+
+        .transition-single .word-active {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+            animation: singleWordIn 0.3s ease forwards
+        }
+
+        .transition-single .word-past {
+            opacity: 0 !important;
+            transform: scale(0.8) !important;
+            animation: singleWordOut 0.3s ease forwards
+        }
+
+        .transition-single .word-inactive {
+            opacity: 0 !important;
+            transform: scale(0.8) !important
+        }
+
+        .transition-line-word .word {
+            position: relative;
+            transition: opacity 0.2s ease, transform 0.2s ease
+        }
+
+        .transition-line-word .word-active {
+            opacity: 1 !important
+        }
+
+        .transition-line-word .word-past,
+        .transition-line-word .word-inactive {
+            opacity: 0 !important;
+            pointer-events: none
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) }
+            50% { transform: translateY(-15px) }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0 }
+            to { opacity: 1 }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg) scale(0.5); opacity: 0 }
+            to { transform: rotate(360deg) scale(1); opacity: 1 }
+        }
+
+        @keyframes ballBounce {
+            0%, 100% { transform: translateY(0) }
+            25% { transform: translateY(-30px) scale(1.1) }
+            50% { transform: translateY(0) scale(1) }
+            75% { transform: translateY(-10px) scale(1.05) }
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.3); opacity: 0 }
+            to { transform: scale(1); opacity: 1 }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0 }
+            to { transform: translateY(0); opacity: 1 }
+        }
+
+        @keyframes typing {
+            from { width: 0; overflow: hidden }
+            to { width: auto }
+        }
+
+        @keyframes wave {
+            0% { transform: translateY(0) }
+            25% { transform: translateY(-10px) }
+            50% { transform: translateY(0) }
+            75% { transform: translateY(-5px) }
+            100% { transform: translateY(0) }
+        }
+
+        @keyframes singleWordIn {
+            from { opacity: 0; transform: scale(0.8) }
+            to { opacity: 1; transform: scale(1) }
+        }
+
+        @keyframes singleWordOut {
+            from { opacity: 1; transform: scale(1) }
+            to { opacity: 0; transform: scale(0.8) }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1 }
+            50% { opacity: 0 }
+        }
+
+        .blink-05 { animation: blink 0.5s infinite }
+        .blink-10 { animation: blink 1s infinite }
+        .blink-15 { animation: blink 1.5s infinite }
+
+        .controls {
+            padding: 15px;
+            background: #111;
+            border-top: 1px solid #333
+        }
+
+        .control-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px
+        }
+
+        label {
+            font-size: 9px;
+            color: #888;
+            display: block;
+            margin-bottom: 3px
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 6px;
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 11px
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px
+        }
+
+        .btn-sm {
+            flex: 1;
+            padding: 5px;
+            font-size: 9px;
+            background: #333;
+            color: #eee;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px
+        }
+
+        .btn-sm:hover {
+            background: #444
+        }
+
+        .btn-accent {
+            background: var(--selection) !important;
+            color: #fff !important
+        }
+
+        .btn-download {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 8px
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="scroll-area">
+            <h2 style="margin-top:0">Editor</h2>
+            <div class="file-inputs">
+                <div class="file-row">
+                    <div class="file-label">Video:</div>
+                    <input type="file" id="video-file" accept="video/*" style="display:none">
+                    <div class="file-btn" onclick="document.getElementById('video-file').click()">Choose Video</div>
+                    <input type="text" id="video-url" class="url-input" placeholder="Or paste URL">
+                </div>
+                <div class="file-row">
+                    <div class="file-label">Subtitles:</div>
+                    <input type="file" id="sub-file" accept=".srt" style="display:none">
+                    <div class="file-btn" onclick="document.getElementById('sub-file').click()">Choose SRT</div>
+                    <input type="text" id="sub-url" class="url-input" placeholder="Or paste URL">
+                </div>
+            </div>
+            <div class="drop-zone" id="drop-zone">Or Drag Video & SRT here</div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="translucent-toggle" checked>
+                <label for="translucent-toggle">Show translucent words before active</label>
+            </div>
+            <div class="section-title">Global Master Style</div>
+            <div class="control-row">
+                <div>
+                    <label>Transition Effect</label>
+                    <select id="g-transition">
+                        <option value="none">None</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="fade">Fade</option>
+                        <option value="spin">Spin</option>
+                        <option value="ball">Ball Bounce</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="slide">Slide</option>
+                        <option value="typing">Typing</option>
+                        <option value="wave">Wave</option>
+                        <option value="single">One Word</option>
+                        <option value="line-word">Line Word by Word</option>
+                    </select>
+                </div>
+            </div>
+            <div class="control-row">
+                <div>
+                    <label>Font</label>
+                    <select id="g-font">
+                        <option>Arial Black</option>
+                        <option>Impact</option>
+                        <option>Verdana</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Size</label>
+                    <input type="number" id="g-size" value="50">
+                </div>
+            </div>
+            <div class="control-row">
+                <div>
+                    <label>Global Effect</label>
+                    <select id="g-effect">
+                        <option value="">None</option>
+                        <option value="huge">Huge</option>
+                        <option value="outline">Outline</option>
+                        <option value="italic">Italic</option>
+                        <option value="glow">Glow</option>
+                        <option value="blink-05">Blink 0.5s</option>
+                        <option value="blink-10">Blink 1.0s</option>
+                        <option value="blink-15">Blink 1.5s</option>
+                        <option value="strike">Strike</option>
+                        <option value="under">Under</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Color</label>
+                    <input type="color" id="g-color" value="#ffffff">
+                </div>
+            </div>
+            <div class="section-title">Timeline Controls</div>
+            <div class="control-row">
+                <div>
+                    <label>Timing Mode</label>
+                    <select id="timing-mode">
+                        <option value="uniform" selected>Uniform (equal time per word)</option>
+                        <option value="syllable">Syllable-based (longer words last longer)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn-sm btn-accent" onclick="distributeAll()">Auto-Fill All Timing</button>
+                <button class="btn-sm" onclick="resetAllTiming()">Reset All</button>
+            </div>
+            <div id="lines-list">Waiting for files...</div>
+        </div>
+        <div class="controls" id="word-panel">
+            <div class="section-title" id="sel-label" style="margin-top:0;color:var(--selection)">No selection</div>
+            <div id="timing-controls" style="display:none;background:#1a1a1a;padding:10px;border-radius:6px;margin-bottom:10px;border:1px solid #333">
+                <label style="color:var(--accent)">Word Timing</label>
+                <div class="control-row">
+                    <div><label>Start</label><input type="number" id="w-start" step="0.1"></div>
+                    <div><label>End</label><input type="number" id="w-end" step="0.1"></div>
+                    <div><label>Linger (s)</label><input type="number" id="w-linger" step="0.1" min="0" value="0"></div>
+                </div>
+            </div>
+            <div class="control-row">
+                <div><label>Font</label><select id="w-font"><option value="inherit">Inherit</option><option>Arial Black</option><option>Impact</option><option>Verdana</option></select></div>
+                <div><label>Color</label><input type="color" id="w-color" value="#ffffff"></div>
+            </div>
+            <div class="control-row">
+                <div><label>Effect</label><select id="w-effect"><option value="inherit">Inherit</option><option value="">None</option><option value="huge">Huge</option><option value="outline">Outline</option><option value="italic">Italic</option><option value="glow">Glow</option><option value="blink-05">Blink 0.5s</option><option value="blink-10">Blink 1.0s</option><option value="blink-15">Blink 1.5s</option><option value="strike">Strike</option><option value="under">Under</option></select></div>
+                <div style="display:flex;align-items:flex-end"><button class="btn-sm" onclick="resetWordPos()">Reset Pos</button></div>
+            </div>
+            <button class="btn-download" onclick="exportASS()">Download .ASS</button>
+        </div>
+    </div>
+    <div id="viewer">
+        <div id="stage" onmousedown="startMove(event)" onmousemove="doMove(event)" onmouseup="endMove()">
+            <video id="v-player" controls></video>
+            <div id="sub-overlay"></div>
+        </div>
+    </div>
+    <script>
+        let subData = [], selectedWordId = null, activeLineIdx = null, isMoving = false
+        const vPlayer = document.getElementById('v-player'),
+            overlay = document.getElementById('sub-overlay'),
+            stage = document.getElementById('stage'),
+            dz = document.getElementById('drop-zone'),
+            videoFileInput = document.getElementById('video-file'),
+            subFileInput = document.getElementById('sub-file'),
+            videoUrlInput = document.getElementById('video-url'),
+            subUrlInput = document.getElementById('sub-url'),
+            translucentToggle = document.getElementById('translucent-toggle')
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search)
+            const videoParam = urlParams.get('video')
+            const subtitleParam = urlParams.get('subtitle')
+            if (videoParam) { videoUrlInput.value = videoParam; loadVideoFromURL() }
+            if (subtitleParam) { subUrlInput.value = subtitleParam; loadSubFromURL() }
+        })
+
+        videoFileInput.addEventListener('change', e => {
+            if (e.target.files[0]) vPlayer.src = URL.createObjectURL(e.target.files[0])
+        })
+
+        subFileInput.addEventListener('change', e => {
+            if (e.target.files[0]) e.target.files[0].text().then(parseSRT)
+        })
+
+        function loadVideoFromURL() {
+            const url = videoUrlInput.value.trim();
+            if (url) vPlayer.src = url
+        }
+
+        async function loadSubFromURL() {
+            const url = subUrlInput.value.trim();
+            if (url) {
+                try {
+                    const response = await fetch(url);
+                    const text = await response.text();
+                    parseSRT(text)
+                } catch (e) {
+                    alert('Failed to load subtitles')
+                }
+            }
+        }
+
+        dz.addEventListener('dragover', e => {
+            e.preventDefault();
+            dz.classList.add('dragover')
+        })
+
+        dz.addEventListener('drop', e => {
+            e.preventDefault();
+            dz.classList.remove('dragover');
+            Array.from(e.dataTransfer.files).forEach(file => {
+                if (file.name.endsWith('.srt')) {
+                    file.text().then(parseSRT);
+                    subUrlInput.value = ''
+                } else {
+                    vPlayer.src = URL.createObjectURL(file);
+                    videoUrlInput.value = ''
+                }
+            })
+        })
+
+        function parseSRT(text) {
+            subData = text.trim().split(/\n\s*\n/).map((block, lIdx) => {
+                const lines = block.split('\n')
+                if (lines.length < 3) return null
+                const words = lines.slice(2).join(' ').split(' ').filter(w => w).map((w, wIdx) => ({
+                    text: w.replace(/[^a-zA-Z0-9']/g, ''), // Clean punctuation for syllable count
+                    rawText: w,
+                    color: null,
+                    font: 'inherit',
+                    effect: 'inherit',
+                    size: 'inherit',
+                    offX: 0,
+                    offY: 0,
+                    kStart: 0,
+                    kEnd: 0,
+                    linger: 0,
+                    id: `w-${lIdx}-${wIdx}`
+                }))
+                return { start: lines[1].split(' --> ')[0].trim().replace(',', '.'), end: lines[1].split(' --> ')[1].trim().replace(',', '.'), words, speed: 1.0 }
+            }).filter(x => x)
+            renderEditor()
+        }
+
+        function timeToSec(t) {
+            const parts = t.split(/[:,.]/);
+            if (parts.length !== 4) return 0;
+            return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]) + parseInt(parts[3]) / 1000
+        }
+
+        function countSyllables(word) {
+            if (!word) return 1;
+            word = word.toLowerCase();
+            if (word.length <= 3) return 1;
+            word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+            word = word.replace(/^y/, '');
+            const matches = word.match(/[aeiouy]{1,2}/g);
+            return matches ? matches.length : 1;
+        }
+
+        function renderEditor() {
+            const gCol = document.getElementById('g-color').value
+            document.getElementById('lines-list').innerHTML = subData.map((line, idx) => {
+                const hasTiming = line.words.some(w => w.kEnd > 0)
+                const hasAutoTiming = line.words.every(w => w.kEnd > 0)
+                return `<div class="line-item ${activeLineIdx === idx ? 'active-line' : ''} ${hasTiming ? 'has-timing' : ''}" onclick="selectLine(${idx},event)">
+                    <span class="timestamp">${line.start}</span>
+                    <div style="position:absolute;right:10px;top:10px;">
+                        <button class="btn-sm" onclick="distributeLine(${idx},event)">Auto-Time</button>
+                        <button class="btn-sm" onclick="resetLineTiming(${idx},event)">Reset</button>
+                    </div>
+                    <div class="speed-control ${hasAutoTiming ? '' : 'hidden'}" id="speed-control-${idx}">
+                        <label>Speed:</label>
+                        <input type="number" id="speed-input-${idx}" value="${line.speed}" step="0.1" min="0.1" max="10" onchange="applySpeedMultiplier(${idx},this.value)" onclick="event.stopPropagation()">
+                    </div>
+                    ${line.words.map(w => `<span class="word-token ${w.id === selectedWordId ? 'active-selection' : ''}" id="${w.id}" onclick="selectWord('${w.id}',event)" style="color:${w.color || gCol}">
+                        <span class="word-time-tag">${(w.kStart * line.speed).toFixed(1)}s${w.linger > 0 ? '+' + w.linger.toFixed(1) : ''}</span>${w.rawText}
+                    </span>`).join('')}
+                </div>`
+            }).join('')
+        }
+
+        function applySpeedMultiplier(lineIdx, speedValue) {
+            const speed = parseFloat(speedValue);
+            if (isNaN(speed) || speed <= 0) return;
+            const line = subData[lineIdx];
+            line.speed = speed;
+            distributeLine(lineIdx);
+            renderEditor();
+            renderPreview();
+        }
+
+        function selectLine(idx, e) {
+            if (e && (e.target.tagName === 'BUTTON' || e.target.classList.contains('word-token') || e.target.classList.contains('speed-control') || e.target.type === 'number')) return;
+            activeLineIdx = idx;
+            selectedWordId = null;
+            document.getElementById('timing-controls').style.display = 'none';
+            vPlayer.currentTime = timeToSec(subData[idx].start);
+            renderEditor();
+            renderPreview()
+        }
+
+        function selectWord(id, e) {
+            e.stopPropagation();
+            selectedWordId = id;
+            const word = findWord(id);
+            document.getElementById('timing-controls').style.display = 'block';
+            document.getElementById('w-start').value = word.kStart;
+            document.getElementById('w-end').value = word.kEnd;
+            document.getElementById('w-color').value = word.color || document.getElementById('g-color').value;
+            document.getElementById('w-font').value = word.font;
+            document.getElementById('w-effect').value = word.effect;
+            document.getElementById('w-linger').value = word.linger || 0;
+            document.getElementById('sel-label').innerText = `Editing: "${word.rawText}"`;
+            renderEditor();
+            renderPreview()
+        }
+
+        function findWord(id) {
+            for (let l of subData) {
+                let w = l.words.find(x => x.id === id);
+                if (w) return w
+            }
+        }
+
+        function distributeLine(idx, e) {
+            if (e) e.stopPropagation();
+            const line = subData[idx];
+            const duration = timeToSec(line.end) - timeToSec(line.start);
+            const timingMode = document.getElementById('timing-mode').value;
+            let current = 0;
+            if (timingMode === 'uniform') {
+                const segment = duration / line.words.length / line.speed;
+                line.words.forEach((w, i) => {
+                    w.kStart = parseFloat((i * segment).toFixed(3));
+                    w.kEnd = parseFloat(((i + 1) * segment).toFixed(3));
+                });
+            } else { // syllable-based
+                let totalSyl = 0;
+                line.words.forEach(w => {
+                    totalSyl += countSyllables(w.text);
+                });
+                if (totalSyl === 0) totalSyl = 1;
+                const segment = duration / totalSyl / line.speed;
+                line.words.forEach(w => {
+                    const syl = countSyllables(w.text);
+                    w.kStart = parseFloat(current.toFixed(3));
+                    current += syl * segment;
+                    w.kEnd = parseFloat(current.toFixed(3));
+                });
+            }
+            renderEditor();
+            renderPreview()
+        }
+
+        function distributeAll() {
+            subData.forEach((_, i) => distributeLine(i))
+        }
+
+        function resetLineTiming(idx, e) {
+            if (e) e.stopPropagation();
+            subData[idx].words.forEach(w => { w.kStart = 0; w.kEnd = 0; w.linger = 0 });
+            subData[idx].speed = 1.0;
+            renderEditor();
+            renderPreview()
+        }
+
+        function resetAllTiming() {
+            subData.forEach((line, i) => {
+                line.words.forEach(w => { w.kStart = 0; w.kEnd = 0; w.linger = 0 });
+                line.speed = 1.0
+            });
+            renderEditor();
+            renderPreview()
+        }
+
+        document.getElementById('w-start').oninput = document.getElementById('w-end').oninput = document.getElementById('w-color').oninput = document.getElementById('w-font').onchange = document.getElementById('w-effect').onchange = document.getElementById('w-linger').oninput = function autoApply() {
+            if (!selectedWordId) return
+            const word = findWord(selectedWordId)
+            word.kStart = parseFloat(document.getElementById('w-start').value) || 0
+            word.kEnd = parseFloat(document.getElementById('w-end').value) || 0
+            word.color = document.getElementById('w-color').value
+            word.font = document.getElementById('w-font').value
+            word.effect = document.getElementById('w-effect').value
+            word.linger = parseFloat(document.getElementById('w-linger').value) || 0
+            const lineIdx = parseInt(selectedWordId.split('-')[1])
+            const wordIdx = parseInt(selectedWordId.split('-')[2])
+            const line = subData[lineIdx]
+            if (wordIdx < line.words.length - 1) {
+                const nextWord = line.words[wordIdx + 1];
+                const currentWordEnd = word.kEnd * line.speed;
+                const nextWordStart = nextWord.kStart * line.speed;
+                const maxLinger = nextWordStart - currentWordEnd;
+                if (word.linger > maxLinger) {
+                    word.linger = Math.max(0, maxLinger);
+                    document.getElementById('w-linger').value = word.linger
+                }
+            }
+            renderEditor()
+            renderPreview()
+        }
+
+        let moveStartX = 0, moveStartY = 0, originalOffX = 0, originalOffY = 0
+
+        function startMove(e) {
+            if (!selectedWordId) return;
+            e.preventDefault();
+            const word = findWord(selectedWordId);
+            if (!word) return;
+            moveStartX = e.clientX;
+            moveStartY = e.clientY;
+            originalOffX = word.offX || 0;
+            originalOffY = word.offY || 0;
+            isMoving = true;
+            document.body.style.cursor = 'grabbing'
+        }
+
+        function endMove() {
+            isMoving = false;
+            document.body.style.cursor = 'default'
+        }
+
+        function doMove(e) {
+            if (!isMoving || !selectedWordId) return;
+            e.preventDefault();
+            const word = findWord(selectedWordId);
+            if (!word) return;
+            const deltaX = e.clientX - moveStartX;
+            const deltaY = e.clientY - moveStartY;
+            word.offX = originalOffX + deltaX / 2;
+            word.offY = originalOffY + deltaY / 2;
+            renderPreview();
+            renderEditor()
+        }
+
+        function resetWordPos() {
+            if (selectedWordId) {
+                const w = findWord(selectedWordId);
+                w.offX = 0;
+                w.offY = 0;
+                renderPreview();
+                renderEditor()
+            }
+        }
+
+        vPlayer.ontimeupdate = renderPreview
+        document.getElementById('g-transition').onchange = document.getElementById('g-font').onchange = document.getElementById('g-size').oninput = document.getElementById('g-effect').onchange = document.getElementById('g-color').oninput = translucentToggle.onchange = renderPreview
+
+        function applyEffectCSS(eff, color) {
+            let css = "", className = ""
+            if (eff === "huge") css += `transform:scale(1.6);margin:0 10px;`
+            if (eff === "italic") css += `font-style:italic;`
+            if (eff === "glow") css += `filter:drop-shadow(0 0 10px ${color});`
+            if (eff === "outline") css += `-webkit-text-stroke:2px ${color};color:white;`
+            if (eff.startsWith('blink')) className = eff
+            if (eff === "strike") css += `text-decoration:line-through;color:${color};`
+            if (eff === "under") css += `text-decoration:underline;color:${color};`
+            return { css, className }
+        }
+
+        function renderPreview() {
+            const now = vPlayer.currentTime
+            const activeLine = subData.find(s => now >= timeToSec(s.start) && now <= timeToSec(s.end))
+            const gFont = document.getElementById('g-font').value,
+                gSize = document.getElementById('g-size').value,
+                gEff = document.getElementById('g-effect').value,
+                gCol = document.getElementById('g-color').value,
+                gTransition = document.getElementById('g-transition').value,
+                showTranslucent = translucentToggle.checked
+            overlay.className = ''
+            overlay.classList.add(`transition-${gTransition}`)
+            if (activeLine) {
+                const elapsed = now - timeToSec(activeLine.start)
+                const hasAnyK = activeLine.words.some(w => w.kEnd > 0)
+                overlay.innerHTML = activeLine.words.map(w => {
+                    const color = w.color || gCol, font = w.font === 'inherit' ? gFont : w.font, size = gSize, eff = w.effect === 'inherit' ? gEff : w.effect
+                    const { css: effCSS, className: effClass } = applyEffectCSS(eff, color)
+                    const effectiveKStart = w.kStart * activeLine.speed, effectiveKEnd = w.kEnd * activeLine.speed, effectiveLinger = w.linger || 0
+                    let kClass = "word-inactive"
+                    if (hasAnyK) {
+                        if (gTransition === 'line-word') {
+                            const isActive = elapsed >= effectiveKStart && elapsed < effectiveKEnd
+                            const isPast = elapsed >= effectiveKEnd
+                            kClass = isActive ? "word-active" : (isPast ? "word-past" : "word-inactive")
+                        } else {
+                            if (elapsed < effectiveKStart) {
+                                kClass = showTranslucent ? "word-inactive" : "word-inactive"
+                            } else if (elapsed >= effectiveKStart && elapsed < effectiveKEnd) {
+                                kClass = "word-active"
+                            } else if (elapsed >= effectiveKEnd && elapsed < effectiveKEnd + effectiveLinger) {
+                                kClass = gTransition === 'single' ? "word-active" : "word-past"
+                            } else {
+                                kClass = "word-past"
+                            }
+                        }
+                    } else {
+                        kClass = "word-active"
+                    }
+                    let style = `color:${color};font-family:'${font}';font-size:${size}px;`
+                    style += `transform:translate(${w.offX}px,${w.offY}px);`
+                    style += effCSS
+                    const baseClass = (gTransition === 'single' || gTransition === 'line-word') ? 'word ' : '',
+                        fullClass = `${baseClass}movable-word ${w.id === selectedWordId ? 'is-selected' : ''} ${effClass} ${kClass}`
+                    return `<span class="${fullClass}" style="${style}">${w.rawText}</span>`
+                }).join('')
+                if (gTransition === 'line-word' && hasAnyK) {
+                    let currentActiveWord = null
+                    for (let i = activeLine.words.length - 1; i >= 0; i--) {
+                        const w = activeLine.words[i]
+                        const effectiveKStart = w.kStart * activeLine.speed
+                        const effectiveKEnd = w.kEnd * activeLine.speed
+                        if (elapsed >= effectiveKStart && elapsed < effectiveKEnd) {
+                            currentActiveWord = w;
+                            break
+                        }
+                    }
+                    activeLine.words.forEach(w => {
+                        const wordEl = overlay.querySelector(`[id="${w.id}"]`)
+                        if (wordEl) {
+                            if (currentActiveWord && w.id !== currentActiveWord.id) {
+                                wordEl.classList.add('word-past');
+                                wordEl.classList.remove('word-active', 'word-inactive')
+                            } else if (currentActiveWord && w.id === currentActiveWord.id) {
+                                wordEl.classList.add('word-active');
+                                wordEl.classList.remove('word-past', 'word-inactive')
+                            }
+                        }
+                    })
+                }
+            } else {
+                overlay.innerHTML = ""
+            }
+        }
+
+        function exportASS() {
+            if (subData.length === 0) { alert("No subtitle data!"); return }
+            const gFont = document.getElementById('g-font').value,
+                gSize = document.getElementById('g-size').value,
+                gCol = document.getElementById('g-color').value,
+                gEff = document.getElementById('g-effect').value,
+                gTransition = document.getElementById('g-transition').value,
+                showTranslucent = translucentToggle.checked
+            let assContent = `[Script Info]
+Title: Karaoke Export
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
+Style: Default,${gFont},${gSize},&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,3,2,10,10,10,1
+
+[Events]
+Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+`
+
+            function getResetTags() {
+                return '\\u0\\s0\\i0\\bord2\\shad0\\blur0'
+            }
+
+            function getEffectTags(effect, color) {
+                let tags = ''
+                switch (effect) {
+                    case 'huge': tags += '\\fs' + Math.round(parseInt(gSize) * 1.5) + '\\fscx150\\fscy150'; break
+                    case 'outline': tags += '\\bord4\\3c&H' + hexToASSColor(color); break
+                    case 'italic': tags += '\\i1'; break
+                    case 'glow': tags += '\\shad8\\blur3'; break
+                    case 'blink-05': tags += '\\t(0,500,\\alpha&HFF&)\\t(500,1000,\\alpha&H00&)'; break
+                    case 'blink-10': tags += '\\t(0,1000,\\alpha&HFF&)\\t(1000,2000,\\alpha&H00&)'; break
+                    case 'blink-15': tags += '\\t(0,1500,\\alpha&HFF&)\\t(1500,3000,\\alpha&H00&)'; break
+                    case 'strike': tags += '\\s1'; break
+                    case 'under': tags += '\\u1'; break
+                }
+                return tags
+            }
+
+            function getTransitionTags(transition, duration, color) {
+                let tags = ''
+                const durationMs = Math.round(duration * 1000)
+                switch (transition) {
+                    case 'bounce': tags += `\\t(0,${Math.round(durationMs / 2)},\\fscy120)\\t(${Math.round(durationMs / 2)},${durationMs},\\fscy100)`; break
+                    case 'fade': tags += `\\t(0,${durationMs},\\alpha&H00&\\alpha&HFF&)`; break
+                    case 'spin': tags += `\\t(0,${durationMs},\\frx360\\fry360)`; break
+                    case 'ball': tags += `\\t(0,${Math.round(durationMs / 4)},\\fscy130)\\t(${Math.round(durationMs / 4)},${Math.round(durationMs / 2)},\\fscy100)\\t(${Math.round(durationMs / 2)},${Math.round(durationMs * 3 / 4)},\\fscy110)\\t(${Math.round(durationMs * 3 / 4)},${durationMs},\\fscy100)`; break
+                    case 'zoom': tags += `\\t(0,${durationMs},\\fscx30\\fscy30\\fscx100\\fscy100)`; break
+                    case 'slide': tags += `\\t(0,${durationMs},\\fsp-50\\fsp0)`; break
+                    case 'typing': tags += `\\t(0,${durationMs},\\alpha&H00&\\alpha&HFF&)`; break
+                    case 'wave': tags += `\\t(0,${Math.round(durationMs / 4)},\\fscy110)\\t(${Math.round(durationMs / 4)},${Math.round(durationMs / 2)},\\fscy100)\\t(${Math.round(durationMs / 2)},${Math.round(durationMs * 3 / 4)},\\fscy105)\\t(${Math.round(durationMs * 3 / 4)},${durationMs},\\fscy100)`; break
+                }
+                return tags
+            }
+
+            function getWordTags(word) {
+                let tags = ''
+                if (gTransition === 'line-word') {
+                    tags = `\\c&H${hexToASSColor(word.color || gCol)}`
+                    if (word.font !== 'inherit' && word.font !== gFont) {
+                        tags += `\\fn${word.font}`
+                    } else {
+                        tags += `\\fn${gFont}`
+                    }
+                } else {
+                    tags = getResetTags()
+                    if (word.color && word.color !== gCol) {
+                        tags += `\\c&H${hexToASSColor(word.color)}`
+                    } else {
+                        tags += `\\c&H${hexToASSColor(gCol)}`
+                    }
+                    if (word.font !== 'inherit' && word.font !== gFont) {
+                        tags += `\\fn${word.font}`
+                    } else {
+                        tags += `\\fn${gFont}`
+                    }
+                }
+                if (word.effect !== 'inherit' && word.effect !== gEff) {
+                    tags += getEffectTags(word.effect, word.color || gCol)
+                }
+                if (word.offX !== 0 || word.offY !== 0) {
+                    const posX = 960 + word.offX * 2
+                    const posY = 540 + word.offY * 2
+                    tags += `\\pos(${Math.round(posX)},${Math.round(posY)})`
+                }
+                return tags
+            }
+
+            function buildKaraokeText(line, currentWordIndex, lineStartTime, wordStartTime, wordEndTime) {
+                let text = ''
+                const sungStyle = `\\c&H${hexToASSColor(gCol)}80`
+                const wordDuration = wordEndTime - wordStartTime
+                line.words.forEach((w, i) => {
+                    const wordTags = getWordTags(w)
+                    let finalTags = wordTags
+                    if (i === currentWordIndex && gTransition !== 'none' && gTransition !== 'single' && gTransition !== 'line-word') {
+                        const transitionTags = getTransitionTags(gTransition, wordDuration, w.color || gCol)
+                        finalTags = transitionTags + wordTags
+                    }
+                    if (i < currentWordIndex) {
+                        text += `{${sungStyle}${wordTags}}${w.rawText}`
+                    } else if (i === currentWordIndex) {
+                        const duration = (wordEndTime - wordStartTime) * 100;
+                        const kTag = Math.round(duration);
+                        text += `{\\k${kTag}${finalTags}}${w.rawText}`
+                    } else {
+                        if (showTranslucent) {
+                            text += `{\\alpha&H80&${wordTags}}${w.rawText}`
+                        } else {
+                            text += `{${wordTags}}${w.rawText}`
+                        }
+                    }
+                    if (i < line.words.length - 1) text += ' '
+                })
+                return text
+            }
+
+            function buildSingleWordText(line, currentWordIndex, lineStartTime, wordStartTime, wordEndTime) {
+                const word = line.words[currentWordIndex]
+                let wordTags = getWordTags(word)
+                const duration = (wordEndTime - wordStartTime) * 100
+                const kTag = Math.round(duration)
+                wordTags = wordTags.replace(/\\pos\([^)]+\)/g, '')
+                const fadeInTags = `\\alpha&H00&\\t(0,200,\\alpha&HFF&)`
+                const scaleTags = `\\fscx80\\fscy80\\t(0,200,\\fscx100\\fscy100)`
+                return `{\\k${kTag}${fadeInTags}${scaleTags}${wordTags}}${word.rawText}`
+            }
+
+            subData.forEach(line => {
+                const lineStart = formatASSTime(timeToSec(line.start)),
+                    lineEnd = formatASSTime(timeToSec(line.end)),
+                    hasTiming = line.words.some(w => w.kEnd > 0),
+                    lineStartTime = timeToSec(line.start)
+
+                if (!hasTiming) {
+                    if (gTransition === 'single' || gTransition === 'line-word') {
+                        let text = ''
+                        line.words.forEach((w, i) => {
+                            const wordTags = getWordTags(w)
+                            text += `{${wordTags}}${w.rawText}`
+                            if (i < line.words.length - 1) text += ' {}'
+                        })
+                        if (gEff && gEff !== 'inherit') {
+                            const globalTags = getEffectTags(gEff, gCol);
+                            if (globalTags) text = `{${globalTags}}${text}`
+                        }
+                        assContent += `Dialogue: 0,${lineStart},${lineEnd},Default,,0,0,0,,${text}\n`
+                    } else {
+                        let text = ''
+                        line.words.forEach((w, i) => {
+                            const wordTags = getWordTags(w)
+                            let finalTags = wordTags
+                            if (gTransition !== 'none') {
+                                const transitionTags = getTransitionTags(gTransition, 0.3, gCol);
+                                finalTags = transitionTags + wordTags
+                            }
+                            text += finalTags ? `{${finalTags}}${w.rawText}` : w.rawText
+                            if (i < line.words.length - 1) text += ' {}'
+                        })
+                        if (gEff && gEff !== 'inherit') {
+                            const globalTags = getEffectTags(gEff, gCol);
+                            if (globalTags) text = `{${globalTags}}${text}`
+                        }
+                        assContent += `Dialogue: 0,${lineStart},${lineEnd},Default,,0,0,0,,${text}\n`
+                    }
+                } else {
+                    if (gTransition === 'single') {
+                        for (let i = 0; i < line.words.length; i++) {
+                            const word = line.words[i],
+                                effectiveKStart = word.kStart * line.speed,
+                                effectiveKEnd = word.kEnd * line.speed,
+                                wordStartTime = lineStartTime + effectiveKStart,
+                                wordEndTime = lineStartTime + effectiveKEnd + (word.linger || 0)
+                            if (effectiveKEnd <= effectiveKStart) continue
+                            if (i < line.words.length - 1) {
+                                const nextWord = line.words[i + 1]
+                                const nextWordStart = lineStartTime + (nextWord.kStart * line.speed)
+                                if (wordEndTime > nextWordStart) wordEndTime = nextWordStart
+                            }
+                            let text = buildSingleWordText(line, i, lineStartTime, wordStartTime, wordEndTime - (word.linger || 0))
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) text = `{${globalTags}}${text}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(wordStartTime)},${formatASSTime(wordEndTime)},Default,,0,0,0,,${text}\n`
+                        }
+                    } else if (gTransition === 'line-word') {
+                        const lineWords = line.words
+                        for (let i = 0; i < lineWords.length; i++) {
+                            const word = lineWords[i]
+                            const effectiveKStart = word.kStart * line.speed
+                            const effectiveKEnd = word.kEnd * line.speed
+                            const wordStartTime = lineStartTime + effectiveKStart
+                            const wordEndTime = lineStartTime + effectiveKEnd
+                            if (effectiveKEnd <= effectiveKStart) continue
+                            let text = ''
+                            for (let j = 0; j < lineWords.length; j++) {
+                                const currentWord = lineWords[j]
+                                const wordTags = getWordTags(currentWord)
+                                if (j <= i) {
+                                    text += `{${wordTags}}${currentWord.rawText}`
+                                } else {
+                                    text += `{\\alpha&HFF${wordTags}}${currentWord.rawText}`
+                                }
+                                if (j < lineWords.length - 1) text += ' {}'
+                            }
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) text = `{${globalTags}}${text}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(wordStartTime)},${formatASSTime(wordEndTime)},Default,,0,0,0,,${text}\n`
+                        }
+                        const lastWordEndTime = lineStartTime + (lineWords[lineWords.length - 1].kEnd * line.speed)
+                        if (lastWordEndTime < timeToSec(line.end)) {
+                            let finalText = ''
+                            for (let j = 0; j < lineWords.length; j++) {
+                                const currentWord = lineWords[j]
+                                const wordTags = getWordTags(currentWord)
+                                finalText += `{${wordTags}}${currentWord.rawText}`
+                                if (j < lineWords.length - 1) finalText += ' {}'
+                            }
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) finalText = `{${globalTags}}${finalText}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(lastWordEndTime)},${lineEnd},Default,,0,0,0,,${finalText}\n`
+                        }
+                    } else {
+                        for (let i = 0; i < line.words.length; i++) {
+                            const word = line.words[i],
+                                effectiveKStart = word.kStart * line.speed,
+                                effectiveKEnd = word.kEnd * line.speed,
+                                wordStartTime = lineStartTime + effectiveKStart,
+                                wordEndTime = lineStartTime + effectiveKEnd
+                            if (effectiveKEnd <= effectiveKStart) continue
+                            let text = buildKaraokeText(line, i, lineStartTime, wordStartTime, wordEndTime)
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) text = `{${globalTags}}${text}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(wordStartTime)},${formatASSTime(wordEndTime)},Default,,0,0,0,,${text}\n`
+                        }
+                        const lastWord = line.words[line.words.length - 1],
+                            lastWordEndTime = lineStartTime + (lastWord.kEnd * line.speed)
+                        if (lastWordEndTime < timeToSec(line.end)) {
+                            let finalText = ''
+                            line.words.forEach((w, i) => {
+                                const wordTags = getWordTags(w)
+                                finalText += `{\\c&H${hexToASSColor(gCol)}80${wordTags}}${w.rawText}`
+                                if (i < line.words.length - 1) finalText += ' {}'
+                            })
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) finalText = `{${globalTags}}${finalText}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(lastWordEndTime)},${lineEnd},Default,,0,0,0,,${finalText}\n`
+                        }
+                    }
+                }
+            })
+
+            assContent += `\n;Generated by Karaoke Designer\n;Translucent:${showTranslucent ? 'Yes' : 'No'}\n;Style:${gFont} ${gSize}px,${gCol},${gEff || 'None'}\n;Transition:${gTransition}\n`
+
+            const blob = new Blob([assContent], { type: 'text/plain' }),
+                url = URL.createObjectURL(blob),
+                a = document.createElement('a')
+            a.href = url
+            a.download = 'karaoke.ass'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+        }
+
+        function formatASSTime(seconds) {
+            const hours = Math.floor(seconds / 3600),
+                minutes = Math.floor((seconds % 3600) / 60),
+                secs = Math.floor(seconds % 60),
+                centiseconds = Math.round((seconds % 1) * 100),
+                cs = Math.min(99, Math.max(0, centiseconds))
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`
+        }
+
+        function hexToASSColor(hex) {
+            hex = hex.replace('#', '')
+            if (hex.length === 3) { hex = hex.split('').map(c => c + c).join('') }
+            if (hex.length === 6) {
+                const r = hex.substring(0, 2);
+                const g = hex.substring(2, 4);
+                const b = hex.substring(4, 6);
+                return `${b}${g}${r}`
+            }
+            return 'FFFFFF'
+        }
+    </script>
+</body>
+</html>
+
+<details><summary style="color: transparent; text-decoration: none;">title</summary> <plaintext>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Karaoke Designer</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --panel: #1a1a1a;
+            --accent: #00f2ff;
+            --selection: #ff3e81
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: #eee;
+            font-family: sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden
+        }
+
+        #sidebar {
+            width: 420px;
+            background: var(--panel);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column
+        }
+
+        .scroll-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px
+        }
+
+        .file-inputs {
+            margin-bottom: 15px
+        }
+
+        .file-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center
+        }
+
+        .file-label {
+            font-size: 11px;
+            color: #888;
+            width: 70px
+        }
+
+        .file-btn,
+        .url-input {
+            flex: 1;
+            padding: 8px;
+            background: #222;
+            color: #eee;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 11px
+        }
+
+        .file-btn {
+            text-align: center;
+            cursor: pointer
+        }
+
+        .file-btn:hover {
+            background: #333
+        }
+
+        .url-input {
+            color: #fff
+        }
+
+        .drop-zone {
+            border: 2px dashed #444;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 12px
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(0, 242, 255, 0.1)
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+            padding: 5px;
+            background: #222;
+            border-radius: 4px
+        }
+
+        .checkbox-row label {
+            margin: 0;
+            font-size: 11px;
+            color: #ccc
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--accent);
+            letter-spacing: 1px;
+            margin: 15px 0 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3px
+        }
+
+        .line-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #222;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            position: relative
+        }
+
+        .line-item.active-line {
+            border-color: var(--selection)
+        }
+
+        .timestamp {
+            font-family: monospace;
+            font-size: 10px;
+            color: #666;
+            display: block;
+            margin-bottom: 5px
+        }
+
+        .speed-control {
+            position: absolute;
+            right: 10px;
+            top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #444
+        }
+
+        .speed-control.hidden {
+            display: none
+        }
+
+        .speed-control label {
+            font-size: 8px;
+            color: #aaa;
+            white-space: nowrap
+        }
+
+        .speed-control input {
+            width: 40px;
+            padding: 2px 4px;
+            font-size: 10px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 3px
+        }
+
+        .word-token {
+            display: inline-block;
+            padding: 3px 6px;
+            margin: 2px;
+            border-radius: 4px;
+            background: #333;
+            cursor: pointer;
+            font-size: 12px;
+            position: relative
+        }
+
+        .word-token.active-selection {
+            outline: 2px solid var(--selection);
+            background: #444
+        }
+
+        .word-time-tag {
+            position: absolute;
+            top: -12px;
+            left: 0;
+            font-size: 8px;
+            background: var(--selection);
+            color: #fff;
+            padding: 1px 3px;
+            border-radius: 2px;
+            pointer-events: none;
+            display: none
+        }
+
+        .has-timing .word-time-tag {
+            display: block
+        }
+
+        #viewer {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            position: relative
+        }
+
+        #stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden
+        }
+
+        video {
+            width: 90%;
+            max-height: 80%;
+            border-radius: 4px;
+            border: 1px solid #333
+        }
+
+        #sub-overlay {
+            position: absolute;
+            bottom: 15%;
+            width: 100%;
+            text-align: center;
+            font-weight: 900;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.3em
+        }
+
+        .movable-word {
+            display: inline-block;
+            position: relative;
+            transition: color 0.2s, transform 0.2s
+        }
+
+        .word-inactive {
+            opacity: 0.4;
+            filter: grayscale(1)
+        }
+
+        .transition-bounce .word-active {
+            animation: bounce 0.3s ease
+        }
+
+        .transition-fade .word-inactive {
+            opacity: 0
+        }
+
+        .transition-fade .word-active {
+            opacity: 1;
+            animation: fadeIn 0.3s ease
+        }
+
+        .transition-fade .word-past {
+            opacity: 0.2
+        }
+
+        .transition-spin .word-active {
+            animation: spin 0.5s ease
+        }
+
+        .transition-ball .word-active {
+            animation: ballBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+        }
+
+        .transition-zoom .word-active {
+            animation: zoomIn 0.3s ease
+        }
+
+        .transition-slide .word-active {
+            animation: slideUp 0.4s ease
+        }
+
+        .transition-typing .word-active {
+            animation: typing 0.3s steps(4, end)
+        }
+
+        .transition-wave .word-active {
+            animation: wave 0.5s ease
+        }
+
+        .transition-single .word {
+            opacity: 0;
+            transform: scale(0.8)
+        }
+
+        .transition-single .word-active {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+            animation: singleWordIn 0.3s ease forwards
+        }
+
+        .transition-single .word-past {
+            opacity: 0 !important;
+            transform: scale(0.8) !important;
+            animation: singleWordOut 0.3s ease forwards
+        }
+
+        .transition-single .word-inactive {
+            opacity: 0 !important;
+            transform: scale(0.8) !important
+        }
+
+        .transition-line-word .word {
+            position: relative;
+            transition: opacity 0.2s ease, transform 0.2s ease
+        }
+
+        .transition-line-word .word-active {
+            opacity: 1 !important
+        }
+
+        .transition-line-word .word-past,
+        .transition-line-word .word-inactive {
+            opacity: 0 !important;
+            pointer-events: none
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) }
+            50% { transform: translateY(-15px) }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0 }
+            to { opacity: 1 }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg) scale(0.5); opacity: 0 }
+            to { transform: rotate(360deg) scale(1); opacity: 1 }
+        }
+
+        @keyframes ballBounce {
+            0%, 100% { transform: translateY(0) }
+            25% { transform: translateY(-30px) scale(1.1) }
+            50% { transform: translateY(0) scale(1) }
+            75% { transform: translateY(-10px) scale(1.05) }
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.3); opacity: 0 }
+            to { transform: scale(1); opacity: 1 }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0 }
+            to { transform: translateY(0); opacity: 1 }
+        }
+
+        @keyframes typing {
+            from { width: 0; overflow: hidden }
+            to { width: auto }
+        }
+
+        @keyframes wave {
+            0% { transform: translateY(0) }
+            25% { transform: translateY(-10px) }
+            50% { transform: translateY(0) }
+            75% { transform: translateY(-5px) }
+            100% { transform: translateY(0) }
+        }
+
+        @keyframes singleWordIn {
+            from { opacity: 0; transform: scale(0.8) }
+            to { opacity: 1; transform: scale(1) }
+        }
+
+        @keyframes singleWordOut {
+            from { opacity: 1; transform: scale(1) }
+            to { opacity: 0; transform: scale(0.8) }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1 }
+            50% { opacity: 0 }
+        }
+
+        .blink-05 { animation: blink 0.5s infinite }
+        .blink-10 { animation: blink 1s infinite }
+        .blink-15 { animation: blink 1.5s infinite }
+
+        .controls {
+            padding: 15px;
+            background: #111;
+            border-top: 1px solid #333
+        }
+
+        .control-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px
+        }
+
+        label {
+            font-size: 9px;
+            color: #888;
+            display: block;
+            margin-bottom: 3px
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 6px;
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 11px
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px
+        }
+
+        .btn-sm {
+            flex: 1;
+            padding: 5px;
+            font-size: 9px;
+            background: #333;
+            color: #eee;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px
+        }
+
+        .btn-sm:hover {
+            background: #444
+        }
+
+        .btn-accent {
+            background: var(--selection) !important;
+            color: #fff !important
+        }
+
+        .btn-download {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 8px
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="scroll-area">
+            <h2 style="margin-top:0">Editor</h2>
+            <div class="file-inputs">
+                <div class="file-row">
+                    <div class="file-label">Video:</div>
+                    <input type="file" id="video-file" accept="video/*" style="display:none">
+                    <div class="file-btn" onclick="document.getElementById('video-file').click()">Choose Video</div>
+                    <input type="text" id="video-url" class="url-input" placeholder="Or paste URL">
+                </div>
+                <div class="file-row">
+                    <div class="file-label">Subtitles:</div>
+                    <input type="file" id="sub-file" accept=".srt" style="display:none">
+                    <div class="file-btn" onclick="document.getElementById('sub-file').click()">Choose SRT</div>
+                    <input type="text" id="sub-url" class="url-input" placeholder="Or paste URL">
+                </div>
+            </div>
+            <div class="drop-zone" id="drop-zone">Or Drag Video & SRT here</div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="translucent-toggle" checked>
+                <label for="translucent-toggle">Show translucent words before active</label>
+            </div>
+            <div class="section-title">Global Master Style</div>
+            <div class="control-row">
+                <div>
+                    <label>Transition Effect</label>
+                    <select id="g-transition">
+                        <option value="none">None</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="fade">Fade</option>
+                        <option value="spin">Spin</option>
+                        <option value="ball">Ball Bounce</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="slide">Slide</option>
+                        <option value="typing">Typing</option>
+                        <option value="wave">Wave</option>
+                        <option value="single">One Word</option>
+                        <option value="line-word">Line Word by Word</option>
+                    </select>
+                </div>
+            </div>
+            <div class="control-row">
+                <div>
+                    <label>Font</label>
+                    <select id="g-font">
+                        <option>Arial Black</option>
+                        <option>Impact</option>
+                        <option>Verdana</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Size</label>
+                    <input type="number" id="g-size" value="50">
+                </div>
+            </div>
+            <div class="control-row">
+                <div>
+                    <label>Global Effect</label>
+                    <select id="g-effect">
+                        <option value="">None</option>
+                        <option value="huge">Huge</option>
+                        <option value="outline">Outline</option>
+                        <option value="italic">Italic</option>
+                        <option value="glow">Glow</option>
+                        <option value="blink-05">Blink 0.5s</option>
+                        <option value="blink-10">Blink 1.0s</option>
+                        <option value="blink-15">Blink 1.5s</option>
+                        <option value="strike">Strike</option>
+                        <option value="under">Under</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Color</label>
+                    <input type="color" id="g-color" value="#ffffff">
+                </div>
+            </div>
+            <div class="section-title">Timeline Controls</div>
+            <div class="control-row">
+                <div>
+                    <label>Timing Mode</label>
+                    <select id="timing-mode">
+                        <option value="uniform" selected>Uniform (equal time per word)</option>
+                        <option value="syllable">Syllable-based (longer words last longer)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn-sm btn-accent" onclick="distributeAll()">Auto-Fill All Timing</button>
+                <button class="btn-sm" onclick="resetAllTiming()">Reset All</button>
+            </div>
+            <div id="lines-list">Waiting for files...</div>
+        </div>
+        <div class="controls" id="word-panel">
+            <div class="section-title" id="sel-label" style="margin-top:0;color:var(--selection)">No selection</div>
+            <div id="timing-controls" style="display:none;background:#1a1a1a;padding:10px;border-radius:6px;margin-bottom:10px;border:1px solid #333">
+                <label style="color:var(--accent)">Word Timing</label>
+                <div class="control-row">
+                    <div><label>Start</label><input type="number" id="w-start" step="0.1"></div>
+                    <div><label>End</label><input type="number" id="w-end" step="0.1"></div>
+                    <div><label>Linger (s)</label><input type="number" id="w-linger" step="0.1" min="0" value="0"></div>
+                </div>
+            </div>
+            <div class="control-row">
+                <div><label>Font</label><select id="w-font"><option value="inherit">Inherit</option><option>Arial Black</option><option>Impact</option><option>Verdana</option></select></div>
+                <div><label>Color</label><input type="color" id="w-color" value="#ffffff"></div>
+            </div>
+            <div class="control-row">
+                <div><label>Effect</label><select id="w-effect"><option value="inherit">Inherit</option><option value="">None</option><option value="huge">Huge</option><option value="outline">Outline</option><option value="italic">Italic</option><option value="glow">Glow</option><option value="blink-05">Blink 0.5s</option><option value="blink-10">Blink 1.0s</option><option value="blink-15">Blink 1.5s</option><option value="strike">Strike</option><option value="under">Under</option></select></div>
+                <div style="display:flex;align-items:flex-end"><button class="btn-sm" onclick="resetWordPos()">Reset Pos</button></div>
+            </div>
+            <button class="btn-download" onclick="exportASS()">Download .ASS</button>
+        </div>
+    </div>
+    <div id="viewer">
+        <div id="stage" onmousedown="startMove(event)" onmousemove="doMove(event)" onmouseup="endMove()">
+            <video id="v-player" controls></video>
+            <div id="sub-overlay"></div>
+        </div>
+    </div>
+    <script>
+        let subData = [], selectedWordId = null, activeLineIdx = null, isMoving = false
+        const vPlayer = document.getElementById('v-player'),
+            overlay = document.getElementById('sub-overlay'),
+            stage = document.getElementById('stage'),
+            dz = document.getElementById('drop-zone'),
+            videoFileInput = document.getElementById('video-file'),
+            subFileInput = document.getElementById('sub-file'),
+            videoUrlInput = document.getElementById('video-url'),
+            subUrlInput = document.getElementById('sub-url'),
+            translucentToggle = document.getElementById('translucent-toggle')
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search)
+            const videoParam = urlParams.get('video')
+            const subtitleParam = urlParams.get('subtitle')
+            if (videoParam) { videoUrlInput.value = videoParam; loadVideoFromURL() }
+            if (subtitleParam) { subUrlInput.value = subtitleParam; loadSubFromURL() }
+        })
+
+        videoFileInput.addEventListener('change', e => {
+            if (e.target.files[0]) vPlayer.src = URL.createObjectURL(e.target.files[0])
+        })
+
+        subFileInput.addEventListener('change', e => {
+            if (e.target.files[0]) e.target.files[0].text().then(parseSRT)
+        })
+
+        function loadVideoFromURL() {
+            const url = videoUrlInput.value.trim();
+            if (url) vPlayer.src = url
+        }
+
+        async function loadSubFromURL() {
+            const url = subUrlInput.value.trim();
+            if (url) {
+                try {
+                    const response = await fetch(url);
+                    const text = await response.text();
+                    parseSRT(text)
+                } catch (e) {
+                    alert('Failed to load subtitles')
+                }
+            }
+        }
+
+        dz.addEventListener('dragover', e => {
+            e.preventDefault();
+            dz.classList.add('dragover')
+        })
+
+        dz.addEventListener('drop', e => {
+            e.preventDefault();
+            dz.classList.remove('dragover');
+            Array.from(e.dataTransfer.files).forEach(file => {
+                if (file.name.endsWith('.srt')) {
+                    file.text().then(parseSRT);
+                    subUrlInput.value = ''
+                } else {
+                    vPlayer.src = URL.createObjectURL(file);
+                    videoUrlInput.value = ''
+                }
+            })
+        })
+
+        function parseSRT(text) {
+            subData = text.trim().split(/\n\s*\n/).map((block, lIdx) => {
+                const lines = block.split('\n')
+                if (lines.length < 3) return null
+                const words = lines.slice(2).join(' ').split(' ').filter(w => w).map((w, wIdx) => ({
+                    text: w.replace(/[^a-zA-Z0-9']/g, ''), // Clean punctuation for syllable count
+                    rawText: w,
+                    color: null,
+                    font: 'inherit',
+                    effect: 'inherit',
+                    size: 'inherit',
+                    offX: 0,
+                    offY: 0,
+                    kStart: 0,
+                    kEnd: 0,
+                    linger: 0,
+                    id: `w-${lIdx}-${wIdx}`
+                }))
+                return { start: lines[1].split(' --> ')[0].trim().replace(',', '.'), end: lines[1].split(' --> ')[1].trim().replace(',', '.'), words, speed: 1.0 }
+            }).filter(x => x)
+            renderEditor()
+        }
+
+        function timeToSec(t) {
+            const parts = t.split(/[:,.]/);
+            if (parts.length !== 4) return 0;
+            return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]) + parseInt(parts[3]) / 1000
+        }
+
+        function countSyllables(word) {
+            if (!word) return 1;
+            word = word.toLowerCase();
+            if (word.length <= 3) return 1;
+            word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+            word = word.replace(/^y/, '');
+            const matches = word.match(/[aeiouy]{1,2}/g);
+            return matches ? matches.length : 1;
+        }
+
+        function renderEditor() {
+            const gCol = document.getElementById('g-color').value
+            document.getElementById('lines-list').innerHTML = subData.map((line, idx) => {
+                const hasTiming = line.words.some(w => w.kEnd > 0)
+                const hasAutoTiming = line.words.every(w => w.kEnd > 0)
+                return `<div class="line-item ${activeLineIdx === idx ? 'active-line' : ''} ${hasTiming ? 'has-timing' : ''}" onclick="selectLine(${idx},event)">
+                    <span class="timestamp">${line.start}</span>
+                    <div style="position:absolute;right:10px;top:10px;">
+                        <button class="btn-sm" onclick="distributeLine(${idx},event)">Auto-Time</button>
+                        <button class="btn-sm" onclick="resetLineTiming(${idx},event)">Reset</button>
+                    </div>
+                    <div class="speed-control ${hasAutoTiming ? '' : 'hidden'}" id="speed-control-${idx}">
+                        <label>Speed:</label>
+                        <input type="number" id="speed-input-${idx}" value="${line.speed}" step="0.1" min="0.1" max="10" onchange="applySpeedMultiplier(${idx},this.value)" onclick="event.stopPropagation()">
+                    </div>
+                    ${line.words.map(w => `<span class="word-token ${w.id === selectedWordId ? 'active-selection' : ''}" id="${w.id}" onclick="selectWord('${w.id}',event)" style="color:${w.color || gCol}">
+                        <span class="word-time-tag">${(w.kStart * line.speed).toFixed(1)}s${w.linger > 0 ? '+' + w.linger.toFixed(1) : ''}</span>${w.rawText}
+                    </span>`).join('')}
+                </div>`
+            }).join('')
+        }
+
+        function applySpeedMultiplier(lineIdx, speedValue) {
+            const speed = parseFloat(speedValue);
+            if (isNaN(speed) || speed <= 0) return;
+            const line = subData[lineIdx];
+            line.speed = speed;
+            distributeLine(lineIdx);
+            renderEditor();
+            renderPreview();
+        }
+
+        function selectLine(idx, e) {
+            if (e && (e.target.tagName === 'BUTTON' || e.target.classList.contains('word-token') || e.target.classList.contains('speed-control') || e.target.type === 'number')) return;
+            activeLineIdx = idx;
+            selectedWordId = null;
+            document.getElementById('timing-controls').style.display = 'none';
+            vPlayer.currentTime = timeToSec(subData[idx].start);
+            renderEditor();
+            renderPreview()
+        }
+
+        function selectWord(id, e) {
+            e.stopPropagation();
+            selectedWordId = id;
+            const word = findWord(id);
+            document.getElementById('timing-controls').style.display = 'block';
+            document.getElementById('w-start').value = word.kStart;
+            document.getElementById('w-end').value = word.kEnd;
+            document.getElementById('w-color').value = word.color || document.getElementById('g-color').value;
+            document.getElementById('w-font').value = word.font;
+            document.getElementById('w-effect').value = word.effect;
+            document.getElementById('w-linger').value = word.linger || 0;
+            document.getElementById('sel-label').innerText = `Editing: "${word.rawText}"`;
+            renderEditor();
+            renderPreview()
+        }
+
+        function findWord(id) {
+            for (let l of subData) {
+                let w = l.words.find(x => x.id === id);
+                if (w) return w
+            }
+        }
+
+        function distributeLine(idx, e) {
+            if (e) e.stopPropagation();
+            const line = subData[idx];
+            const duration = timeToSec(line.end) - timeToSec(line.start);
+            const timingMode = document.getElementById('timing-mode').value;
+            let current = 0;
+            if (timingMode === 'uniform') {
+                const segment = duration / line.words.length / line.speed;
+                line.words.forEach((w, i) => {
+                    w.kStart = parseFloat((i * segment).toFixed(3));
+                    w.kEnd = parseFloat(((i + 1) * segment).toFixed(3));
+                });
+            } else { // syllable-based
+                let totalSyl = 0;
+                line.words.forEach(w => {
+                    totalSyl += countSyllables(w.text);
+                });
+                if (totalSyl === 0) totalSyl = 1;
+                const segment = duration / totalSyl / line.speed;
+                line.words.forEach(w => {
+                    const syl = countSyllables(w.text);
+                    w.kStart = parseFloat(current.toFixed(3));
+                    current += syl * segment;
+                    w.kEnd = parseFloat(current.toFixed(3));
+                });
+            }
+            renderEditor();
+            renderPreview()
+        }
+
+        function distributeAll() {
+            subData.forEach((_, i) => distributeLine(i))
+        }
+
+        function resetLineTiming(idx, e) {
+            if (e) e.stopPropagation();
+            subData[idx].words.forEach(w => { w.kStart = 0; w.kEnd = 0; w.linger = 0 });
+            subData[idx].speed = 1.0;
+            renderEditor();
+            renderPreview()
+        }
+
+        function resetAllTiming() {
+            subData.forEach((line, i) => {
+                line.words.forEach(w => { w.kStart = 0; w.kEnd = 0; w.linger = 0 });
+                line.speed = 1.0
+            });
+            renderEditor();
+            renderPreview()
+        }
+
+        document.getElementById('w-start').oninput = document.getElementById('w-end').oninput = document.getElementById('w-color').oninput = document.getElementById('w-font').onchange = document.getElementById('w-effect').onchange = document.getElementById('w-linger').oninput = function autoApply() {
+            if (!selectedWordId) return
+            const word = findWord(selectedWordId)
+            word.kStart = parseFloat(document.getElementById('w-start').value) || 0
+            word.kEnd = parseFloat(document.getElementById('w-end').value) || 0
+            word.color = document.getElementById('w-color').value
+            word.font = document.getElementById('w-font').value
+            word.effect = document.getElementById('w-effect').value
+            word.linger = parseFloat(document.getElementById('w-linger').value) || 0
+            const lineIdx = parseInt(selectedWordId.split('-')[1])
+            const wordIdx = parseInt(selectedWordId.split('-')[2])
+            const line = subData[lineIdx]
+            if (wordIdx < line.words.length - 1) {
+                const nextWord = line.words[wordIdx + 1];
+                const currentWordEnd = word.kEnd * line.speed;
+                const nextWordStart = nextWord.kStart * line.speed;
+                const maxLinger = nextWordStart - currentWordEnd;
+                if (word.linger > maxLinger) {
+                    word.linger = Math.max(0, maxLinger);
+                    document.getElementById('w-linger').value = word.linger
+                }
+            }
+            renderEditor()
+            renderPreview()
+        }
+
+        let moveStartX = 0, moveStartY = 0, originalOffX = 0, originalOffY = 0
+
+        function startMove(e) {
+            if (!selectedWordId) return;
+            e.preventDefault();
+            const word = findWord(selectedWordId);
+            if (!word) return;
+            moveStartX = e.clientX;
+            moveStartY = e.clientY;
+            originalOffX = word.offX || 0;
+            originalOffY = word.offY || 0;
+            isMoving = true;
+            document.body.style.cursor = 'grabbing'
+        }
+
+        function endMove() {
+            isMoving = false;
+            document.body.style.cursor = 'default'
+        }
+
+        function doMove(e) {
+            if (!isMoving || !selectedWordId) return;
+            e.preventDefault();
+            const word = findWord(selectedWordId);
+            if (!word) return;
+            const deltaX = e.clientX - moveStartX;
+            const deltaY = e.clientY - moveStartY;
+            word.offX = originalOffX + deltaX / 2;
+            word.offY = originalOffY + deltaY / 2;
+            renderPreview();
+            renderEditor()
+        }
+
+        function resetWordPos() {
+            if (selectedWordId) {
+                const w = findWord(selectedWordId);
+                w.offX = 0;
+                w.offY = 0;
+                renderPreview();
+                renderEditor()
+            }
+        }
+
+        vPlayer.ontimeupdate = renderPreview
+        document.getElementById('g-transition').onchange = document.getElementById('g-font').onchange = document.getElementById('g-size').oninput = document.getElementById('g-effect').onchange = document.getElementById('g-color').oninput = translucentToggle.onchange = renderPreview
+
+        function applyEffectCSS(eff, color) {
+            let css = "", className = ""
+            if (eff === "huge") css += `transform:scale(1.6);margin:0 10px;`
+            if (eff === "italic") css += `font-style:italic;`
+            if (eff === "glow") css += `filter:drop-shadow(0 0 10px ${color});`
+            if (eff === "outline") css += `-webkit-text-stroke:2px ${color};color:white;`
+            if (eff.startsWith('blink')) className = eff
+            if (eff === "strike") css += `text-decoration:line-through;color:${color};`
+            if (eff === "under") css += `text-decoration:underline;color:${color};`
+            return { css, className }
+        }
+
+        function renderPreview() {
+            const now = vPlayer.currentTime
+            const activeLine = subData.find(s => now >= timeToSec(s.start) && now <= timeToSec(s.end))
+            const gFont = document.getElementById('g-font').value,
+                gSize = document.getElementById('g-size').value,
+                gEff = document.getElementById('g-effect').value,
+                gCol = document.getElementById('g-color').value,
+                gTransition = document.getElementById('g-transition').value,
+                showTranslucent = translucentToggle.checked
+            overlay.className = ''
+            overlay.classList.add(`transition-${gTransition}`)
+            if (activeLine) {
+                const elapsed = now - timeToSec(activeLine.start)
+                const hasAnyK = activeLine.words.some(w => w.kEnd > 0)
+                overlay.innerHTML = activeLine.words.map(w => {
+                    const color = w.color || gCol, font = w.font === 'inherit' ? gFont : w.font, size = gSize, eff = w.effect === 'inherit' ? gEff : w.effect
+                    const { css: effCSS, className: effClass } = applyEffectCSS(eff, color)
+                    const effectiveKStart = w.kStart * activeLine.speed, effectiveKEnd = w.kEnd * activeLine.speed, effectiveLinger = w.linger || 0
+                    let kClass = "word-inactive"
+                    if (hasAnyK) {
+                        if (gTransition === 'line-word') {
+                            const isActive = elapsed >= effectiveKStart && elapsed < effectiveKEnd
+                            const isPast = elapsed >= effectiveKEnd
+                            kClass = isActive ? "word-active" : (isPast ? "word-past" : "word-inactive")
+                        } else {
+                            if (elapsed < effectiveKStart) {
+                                kClass = showTranslucent ? "word-inactive" : "word-inactive"
+                            } else if (elapsed >= effectiveKStart && elapsed < effectiveKEnd) {
+                                kClass = "word-active"
+                            } else if (elapsed >= effectiveKEnd && elapsed < effectiveKEnd + effectiveLinger) {
+                                kClass = gTransition === 'single' ? "word-active" : "word-past"
+                            } else {
+                                kClass = "word-past"
+                            }
+                        }
+                    } else {
+                        kClass = "word-active"
+                    }
+                    let style = `color:${color};font-family:'${font}';font-size:${size}px;`
+                    style += `transform:translate(${w.offX}px,${w.offY}px);`
+                    style += effCSS
+                    const baseClass = (gTransition === 'single' || gTransition === 'line-word') ? 'word ' : '',
+                        fullClass = `${baseClass}movable-word ${w.id === selectedWordId ? 'is-selected' : ''} ${effClass} ${kClass}`
+                    return `<span class="${fullClass}" style="${style}">${w.rawText}</span>`
+                }).join('')
+                if (gTransition === 'line-word' && hasAnyK) {
+                    let currentActiveWord = null
+                    for (let i = activeLine.words.length - 1; i >= 0; i--) {
+                        const w = activeLine.words[i]
+                        const effectiveKStart = w.kStart * activeLine.speed
+                        const effectiveKEnd = w.kEnd * activeLine.speed
+                        if (elapsed >= effectiveKStart && elapsed < effectiveKEnd) {
+                            currentActiveWord = w;
+                            break
+                        }
+                    }
+                    activeLine.words.forEach(w => {
+                        const wordEl = overlay.querySelector(`[id="${w.id}"]`)
+                        if (wordEl) {
+                            if (currentActiveWord && w.id !== currentActiveWord.id) {
+                                wordEl.classList.add('word-past');
+                                wordEl.classList.remove('word-active', 'word-inactive')
+                            } else if (currentActiveWord && w.id === currentActiveWord.id) {
+                                wordEl.classList.add('word-active');
+                                wordEl.classList.remove('word-past', 'word-inactive')
+                            }
+                        }
+                    })
+                }
+            } else {
+                overlay.innerHTML = ""
+            }
+        }
+
+        function exportASS() {
+            if (subData.length === 0) { alert("No subtitle data!"); return }
+            const gFont = document.getElementById('g-font').value,
+                gSize = document.getElementById('g-size').value,
+                gCol = document.getElementById('g-color').value,
+                gEff = document.getElementById('g-effect').value,
+                gTransition = document.getElementById('g-transition').value,
+                showTranslucent = translucentToggle.checked
+            let assContent = `[Script Info]
+Title: Karaoke Export
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
+Style: Default,${gFont},${gSize},&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,3,2,10,10,10,1
+
+[Events]
+Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+`
+
+            function getResetTags() {
+                return '\\u0\\s0\\i0\\bord2\\shad0\\blur0'
+            }
+
+            function getEffectTags(effect, color) {
+                let tags = ''
+                switch (effect) {
+                    case 'huge': tags += '\\fs' + Math.round(parseInt(gSize) * 1.5) + '\\fscx150\\fscy150'; break
+                    case 'outline': tags += '\\bord4\\3c&H' + hexToASSColor(color); break
+                    case 'italic': tags += '\\i1'; break
+                    case 'glow': tags += '\\shad8\\blur3'; break
+                    case 'blink-05': tags += '\\t(0,500,\\alpha&HFF&)\\t(500,1000,\\alpha&H00&)'; break
+                    case 'blink-10': tags += '\\t(0,1000,\\alpha&HFF&)\\t(1000,2000,\\alpha&H00&)'; break
+                    case 'blink-15': tags += '\\t(0,1500,\\alpha&HFF&)\\t(1500,3000,\\alpha&H00&)'; break
+                    case 'strike': tags += '\\s1'; break
+                    case 'under': tags += '\\u1'; break
+                }
+                return tags
+            }
+
+            function getTransitionTags(transition, duration, color) {
+                let tags = ''
+                const durationMs = Math.round(duration * 1000)
+                switch (transition) {
+                    case 'bounce': tags += `\\t(0,${Math.round(durationMs / 2)},\\fscy120)\\t(${Math.round(durationMs / 2)},${durationMs},\\fscy100)`; break
+                    case 'fade': tags += `\\t(0,${durationMs},\\alpha&H00&\\alpha&HFF&)`; break
+                    case 'spin': tags += `\\t(0,${durationMs},\\frx360\\fry360)`; break
+                    case 'ball': tags += `\\t(0,${Math.round(durationMs / 4)},\\fscy130)\\t(${Math.round(durationMs / 4)},${Math.round(durationMs / 2)},\\fscy100)\\t(${Math.round(durationMs / 2)},${Math.round(durationMs * 3 / 4)},\\fscy110)\\t(${Math.round(durationMs * 3 / 4)},${durationMs},\\fscy100)`; break
+                    case 'zoom': tags += `\\t(0,${durationMs},\\fscx30\\fscy30\\fscx100\\fscy100)`; break
+                    case 'slide': tags += `\\t(0,${durationMs},\\fsp-50\\fsp0)`; break
+                    case 'typing': tags += `\\t(0,${durationMs},\\alpha&H00&\\alpha&HFF&)`; break
+                    case 'wave': tags += `\\t(0,${Math.round(durationMs / 4)},\\fscy110)\\t(${Math.round(durationMs / 4)},${Math.round(durationMs / 2)},\\fscy100)\\t(${Math.round(durationMs / 2)},${Math.round(durationMs * 3 / 4)},\\fscy105)\\t(${Math.round(durationMs * 3 / 4)},${durationMs},\\fscy100)`; break
+                }
+                return tags
+            }
+
+            function getWordTags(word) {
+                let tags = ''
+                if (gTransition === 'line-word') {
+                    tags = `\\c&H${hexToASSColor(word.color || gCol)}`
+                    if (word.font !== 'inherit' && word.font !== gFont) {
+                        tags += `\\fn${word.font}`
+                    } else {
+                        tags += `\\fn${gFont}`
+                    }
+                } else {
+                    tags = getResetTags()
+                    if (word.color && word.color !== gCol) {
+                        tags += `\\c&H${hexToASSColor(word.color)}`
+                    } else {
+                        tags += `\\c&H${hexToASSColor(gCol)}`
+                    }
+                    if (word.font !== 'inherit' && word.font !== gFont) {
+                        tags += `\\fn${word.font}`
+                    } else {
+                        tags += `\\fn${gFont}`
+                    }
+                }
+                if (word.effect !== 'inherit' && word.effect !== gEff) {
+                    tags += getEffectTags(word.effect, word.color || gCol)
+                }
+                if (word.offX !== 0 || word.offY !== 0) {
+                    const posX = 960 + word.offX * 2
+                    const posY = 540 + word.offY * 2
+                    tags += `\\pos(${Math.round(posX)},${Math.round(posY)})`
+                }
+                return tags
+            }
+
+            function buildKaraokeText(line, currentWordIndex, lineStartTime, wordStartTime, wordEndTime) {
+                let text = ''
+                const sungStyle = `\\c&H${hexToASSColor(gCol)}80`
+                const wordDuration = wordEndTime - wordStartTime
+                line.words.forEach((w, i) => {
+                    const wordTags = getWordTags(w)
+                    let finalTags = wordTags
+                    if (i === currentWordIndex && gTransition !== 'none' && gTransition !== 'single' && gTransition !== 'line-word') {
+                        const transitionTags = getTransitionTags(gTransition, wordDuration, w.color || gCol)
+                        finalTags = transitionTags + wordTags
+                    }
+                    if (i < currentWordIndex) {
+                        text += `{${sungStyle}${wordTags}}${w.rawText}`
+                    } else if (i === currentWordIndex) {
+                        const duration = (wordEndTime - wordStartTime) * 100;
+                        const kTag = Math.round(duration);
+                        text += `{\\k${kTag}${finalTags}}${w.rawText}`
+                    } else {
+                        if (showTranslucent) {
+                            text += `{\\alpha&H80&${wordTags}}${w.rawText}`
+                        } else {
+                            text += `{${wordTags}}${w.rawText}`
+                        }
+                    }
+                    if (i < line.words.length - 1) text += ' '
+                })
+                return text
+            }
+
+            function buildSingleWordText(line, currentWordIndex, lineStartTime, wordStartTime, wordEndTime) {
+                const word = line.words[currentWordIndex]
+                let wordTags = getWordTags(word)
+                const duration = (wordEndTime - wordStartTime) * 100
+                const kTag = Math.round(duration)
+                wordTags = wordTags.replace(/\\pos\([^)]+\)/g, '')
+                const fadeInTags = `\\alpha&H00&\\t(0,200,\\alpha&HFF&)`
+                const scaleTags = `\\fscx80\\fscy80\\t(0,200,\\fscx100\\fscy100)`
+                return `{\\k${kTag}${fadeInTags}${scaleTags}${wordTags}}${word.rawText}`
+            }
+
+            subData.forEach(line => {
+                const lineStart = formatASSTime(timeToSec(line.start)),
+                    lineEnd = formatASSTime(timeToSec(line.end)),
+                    hasTiming = line.words.some(w => w.kEnd > 0),
+                    lineStartTime = timeToSec(line.start)
+
+                if (!hasTiming) {
+                    if (gTransition === 'single' || gTransition === 'line-word') {
+                        let text = ''
+                        line.words.forEach((w, i) => {
+                            const wordTags = getWordTags(w)
+                            text += `{${wordTags}}${w.rawText}`
+                            if (i < line.words.length - 1) text += ' {}'
+                        })
+                        if (gEff && gEff !== 'inherit') {
+                            const globalTags = getEffectTags(gEff, gCol);
+                            if (globalTags) text = `{${globalTags}}${text}`
+                        }
+                        assContent += `Dialogue: 0,${lineStart},${lineEnd},Default,,0,0,0,,${text}\n`
+                    } else {
+                        let text = ''
+                        line.words.forEach((w, i) => {
+                            const wordTags = getWordTags(w)
+                            let finalTags = wordTags
+                            if (gTransition !== 'none') {
+                                const transitionTags = getTransitionTags(gTransition, 0.3, gCol);
+                                finalTags = transitionTags + wordTags
+                            }
+                            text += finalTags ? `{${finalTags}}${w.rawText}` : w.rawText
+                            if (i < line.words.length - 1) text += ' {}'
+                        })
+                        if (gEff && gEff !== 'inherit') {
+                            const globalTags = getEffectTags(gEff, gCol);
+                            if (globalTags) text = `{${globalTags}}${text}`
+                        }
+                        assContent += `Dialogue: 0,${lineStart},${lineEnd},Default,,0,0,0,,${text}\n`
+                    }
+                } else {
+                    if (gTransition === 'single') {
+                        for (let i = 0; i < line.words.length; i++) {
+                            const word = line.words[i],
+                                effectiveKStart = word.kStart * line.speed,
+                                effectiveKEnd = word.kEnd * line.speed,
+                                wordStartTime = lineStartTime + effectiveKStart,
+                                wordEndTime = lineStartTime + effectiveKEnd + (word.linger || 0)
+                            if (effectiveKEnd <= effectiveKStart) continue
+                            if (i < line.words.length - 1) {
+                                const nextWord = line.words[i + 1]
+                                const nextWordStart = lineStartTime + (nextWord.kStart * line.speed)
+                                if (wordEndTime > nextWordStart) wordEndTime = nextWordStart
+                            }
+                            let text = buildSingleWordText(line, i, lineStartTime, wordStartTime, wordEndTime - (word.linger || 0))
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) text = `{${globalTags}}${text}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(wordStartTime)},${formatASSTime(wordEndTime)},Default,,0,0,0,,${text}\n`
+                        }
+                    } else if (gTransition === 'line-word') {
+                        const lineWords = line.words
+                        for (let i = 0; i < lineWords.length; i++) {
+                            const word = lineWords[i]
+                            const effectiveKStart = word.kStart * line.speed
+                            const effectiveKEnd = word.kEnd * line.speed
+                            const wordStartTime = lineStartTime + effectiveKStart
+                            const wordEndTime = lineStartTime + effectiveKEnd
+                            if (effectiveKEnd <= effectiveKStart) continue
+                            let text = ''
+                            for (let j = 0; j < lineWords.length; j++) {
+                                const currentWord = lineWords[j]
+                                const wordTags = getWordTags(currentWord)
+                                if (j <= i) {
+                                    text += `{${wordTags}}${currentWord.rawText}`
+                                } else {
+                                    text += `{\\alpha&HFF${wordTags}}${currentWord.rawText}`
+                                }
+                                if (j < lineWords.length - 1) text += ' {}'
+                            }
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) text = `{${globalTags}}${text}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(wordStartTime)},${formatASSTime(wordEndTime)},Default,,0,0,0,,${text}\n`
+                        }
+                        const lastWordEndTime = lineStartTime + (lineWords[lineWords.length - 1].kEnd * line.speed)
+                        if (lastWordEndTime < timeToSec(line.end)) {
+                            let finalText = ''
+                            for (let j = 0; j < lineWords.length; j++) {
+                                const currentWord = lineWords[j]
+                                const wordTags = getWordTags(currentWord)
+                                finalText += `{${wordTags}}${currentWord.rawText}`
+                                if (j < lineWords.length - 1) finalText += ' {}'
+                            }
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) finalText = `{${globalTags}}${finalText}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(lastWordEndTime)},${lineEnd},Default,,0,0,0,,${finalText}\n`
+                        }
+                    } else {
+                        for (let i = 0; i < line.words.length; i++) {
+                            const word = line.words[i],
+                                effectiveKStart = word.kStart * line.speed,
+                                effectiveKEnd = word.kEnd * line.speed,
+                                wordStartTime = lineStartTime + effectiveKStart,
+                                wordEndTime = lineStartTime + effectiveKEnd
+                            if (effectiveKEnd <= effectiveKStart) continue
+                            let text = buildKaraokeText(line, i, lineStartTime, wordStartTime, wordEndTime)
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) text = `{${globalTags}}${text}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(wordStartTime)},${formatASSTime(wordEndTime)},Default,,0,0,0,,${text}\n`
+                        }
+                        const lastWord = line.words[line.words.length - 1],
+                            lastWordEndTime = lineStartTime + (lastWord.kEnd * line.speed)
+                        if (lastWordEndTime < timeToSec(line.end)) {
+                            let finalText = ''
+                            line.words.forEach((w, i) => {
+                                const wordTags = getWordTags(w)
+                                finalText += `{\\c&H${hexToASSColor(gCol)}80${wordTags}}${w.rawText}`
+                                if (i < line.words.length - 1) finalText += ' {}'
+                            })
+                            if (gEff && gEff !== 'inherit') {
+                                const globalTags = getEffectTags(gEff, gCol);
+                                if (globalTags) finalText = `{${globalTags}}${finalText}`
+                            }
+                            assContent += `Dialogue: 0,${formatASSTime(lastWordEndTime)},${lineEnd},Default,,0,0,0,,${finalText}\n`
+                        }
+                    }
+                }
+            })
+
+            assContent += `\n;Generated by Karaoke Designer\n;Translucent:${showTranslucent ? 'Yes' : 'No'}\n;Style:${gFont} ${gSize}px,${gCol},${gEff || 'None'}\n;Transition:${gTransition}\n`
+
+            const blob = new Blob([assContent], { type: 'text/plain' }),
+                url = URL.createObjectURL(blob),
+                a = document.createElement('a')
+            a.href = url
+            a.download = 'karaoke.ass'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+        }
+
+        function formatASSTime(seconds) {
+            const hours = Math.floor(seconds / 3600),
+                minutes = Math.floor((seconds % 3600) / 60),
+                secs = Math.floor(seconds % 60),
+                centiseconds = Math.round((seconds % 1) * 100),
+                cs = Math.min(99, Math.max(0, centiseconds))
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`
+        }
+
+        function hexToASSColor(hex) {
+            hex = hex.replace('#', '')
+            if (hex.length === 3) { hex = hex.split('').map(c => c + c).join('') }
+            if (hex.length === 6) {
+                const r = hex.substring(0, 2);
+                const g = hex.substring(2, 4);
+                const b = hex.substring(4, 6);
+                return `${b}${g}${r}`
+            }
+            return 'FFFFFF'
+        }
+    </script>
+</body>
+</html>

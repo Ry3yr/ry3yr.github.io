@@ -1,0 +1,253 @@
+<!--<a target="_blank" href="view-source:https://alceawis.de/videoplayer?video=https://alcea-wisteria.de/vid/anime/vrns/2025-12-08-vrains-yunthreethings.mp4&time=6:30" style=color:blue>Demo</a><br><hr>-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Video Player with Subtitles</title>
+<style>
+/* 🎨 GLOBAL STYLES */
+body {
+margin: 0;
+background: #111;
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100vh;
+font-family: sans-serif;
+user-select: none;
+}
+
+/* 🖼️ VIDEO CONTAINER */
+#video-container {
+position: relative;
+width: 80%;
+max-width: 1200px;
+}
+
+/* 🎬 VIDEO ELEMENT */
+video {
+width: 100%;
+display: block;
+background: #000;
+}
+
+/* 💬 SUBTITLES (NORMAL MODE) */
+#subs {
+/* Set initial styles for absolute positioning inside the container */
+position: absolute;
+bottom: 5%;
+left: 50%;
+transform: translateX(-50%);
+width: 90%;
+text-align: center;
+color: white;
+font-size: 1.8em;
+text-shadow: 0 0 10px black, 0 0 10px black;
+pointer-events: none;
+line-height: 1.4;
+word-break: break-word;
+z-index: 9999;
+}
+
+/* 💬 SUBTITLES (FULLSCREEN MODE) - New Fixed Style */
+.subs-fullscreen {
+/* The style when the element is moved to the document body for fixed positioning */
+position: fixed !important; /* Override absolute position */
+bottom: 5% !important; /* Anchor to viewport bottom */
+width: 90vw !important; /* Scale relative to viewport width */
+font-size: 3vw !important; /* Scale font relative to viewport */
+/* Ensure it remains centered and visible above all elements */
+left: 50%;
+transform: translateX(-50%);
+z-index: 99999;
+}
+
+/* ❌ Removed #video-container:fullscreen #subs CSS */
+</style>
+</head>
+<body>
+
+<div id="video-container">
+<video id="video" controls></video>
+<div id="subs"></div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const subsDiv = document.getElementById('subs');
+const videoContainer = document.getElementById('video-container');
+
+// --- URL PARAMETER PARSING ---
+function getQueryParam(name) {
+return new URLSearchParams(window.location.search).get(name);
+}
+
+const videoUrl = getQueryParam('video');
+if (!videoUrl) {
+subsDiv.textContent = 'Error: No video specified in URL parameter "?video=..."';
+throw new Error('No video specified');
+}
+video.src = videoUrl;
+
+const timeParam = getQueryParam('time');
+function parseTime(str) {
+if (!str) return 0;
+if (str.includes(':')) {
+const parts = str.split(':').map(Number);
+if (parts.length === 2) return parts[0]*60 + parts[1];
+if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+}
+return Number(str);
+}
+const startTime = parseTime(timeParam);
+
+const baseName = videoUrl.replace(/\.[^/.]+$/, "");
+const subtitleFiles = [baseName + '.vtt', baseName + '.srt'];
+
+let cues = [];
+
+// --- SUBTITLE LOADING AND PARSING (Unchanged) ---
+async function loadSubtitles() {
+let text = null;
+let urlUsed = null;
+
+for (const url of subtitleFiles) {
+try {
+const res = await fetch(url);
+if (!res.ok) continue;
+text = await res.text();
+urlUsed = url;
+break;
+} catch(e) {
+console.error('Failed to fetch subtitle file:', url, e);
+continue;
+}
+}
+
+if (!text) {
+console.log('No subtitle file found.');
+return;
+}
+
+if (urlUsed.endsWith('.srt')) {
+text = "WEBVTT\n\n" + text
+.replace(/\r/g, "")
+.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2")
+.replace(/(\d+)\n(\d{2}:\d{2}:\d{2}\.\d{3} -->)/g, "$2");
+}
+
+cues = [];
+const entries = text.split(/\n\n+/);
+
+for (const entry of entries) {
+if (entry.toUpperCase().includes('WEBVTT')) continue;
+
+const lines = entry.split('\n').map(l => l.trim()).filter(l => l);
+if (lines.length < 2) continue;
+
+let timeLine = '';
+let textLines = [];
+
+const timeLineIndex = lines.findIndex(l => l.includes('-->'));
+
+if (timeLineIndex !== -1) {
+timeLine = lines[timeLineIndex];
+textLines = lines.slice(timeLineIndex + 1);
+} else {
+continue;
+}
+
+const [startStr, endStr] = timeLine.split('-->').map(s => s.trim());
+
+function parseTimeStr(str) {
+const cleanStr = str.replace(',', '.');
+const parts = cleanStr.split(':').map(p => parseFloat(p));
+if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+if (parts.length === 2) return parts[0]*60 + parts[1];
+return parseFloat(cleanStr);
+}
+
+const start = parseTimeStr(startStr);
+const end = parseTimeStr(endStr);
+
+cues.push({start, end, text: textLines.join('\n')});
+}
+}
+
+// --- SUBTITLE RENDERING LOOP (Unchanged) ---
+let cueIndex = 0;
+function renderSubs() {
+const t = video.currentTime;
+
+if (cueIndex >= cues.length || t < cues[cueIndex].start || t > cues[cueIndex].end) {
+cueIndex = 0;
+while (cueIndex < cues.length && cues[cueIndex].end < t) {
+cueIndex++;
+}
+}
+
+if (cueIndex < cues.length && t >= cues[cueIndex].start && t <= cues[cueIndex].end) {
+subsDiv.textContent = cues[cueIndex].text;
+} else {
+subsDiv.textContent = '';
+}
+
+requestAnimationFrame(renderSubs);
+}
+
+// --- FULLSCREEN SUBTITLE POSITION FIX (JAVASCRIPT) ---
+function updateSubtitlePosition() {
+// Check if any element is currently in fullscreen mode
+if (document.fullscreenElement) {
+// FIX: Move the subtitle div outside of the container and attach it to the body
+// This ensures it stays on top of the fullscreen layer.
+document.body.appendChild(subsDiv);
+subsDiv.classList.add('subs-fullscreen');
+} else {
+// FIX: Move the subtitle div back to its original container
+videoContainer.appendChild(subsDiv);
+subsDiv.classList.remove('subs-fullscreen');
+}
+}
+// Listen for the browser's fullscreen event
+document.addEventListener('fullscreenchange', updateSubtitlePosition);
+document.addEventListener('webkitfullscreenchange', updateSubtitlePosition); // For older WebKit browsers (Safari)
+
+// --- INITIALIZATION ---
+loadSubtitles().then(() => {
+if (video.src) requestAnimationFrame(renderSubs);
+});
+
+video.addEventListener('loadedmetadata', () => {
+if (startTime > 0 && startTime < video.duration) {
+video.currentTime = startTime;
+}
+});
+
+// --- KEYBOARD SHORTCUTS ---
+document.addEventListener('keydown', (e) => {
+switch(e.key.toLowerCase()) {
+case ' ':
+case 'k':
+e.preventDefault();
+video.paused ? video.play() : video.pause();
+break;
+case 'f':
+e.preventDefault();
+// We still request fullscreen on the container to cover the whole box
+document.fullscreenElement ? document.exitFullscreen() : videoContainer.requestFullscreen();
+break;
+case 'arrowleft':
+e.preventDefault();
+video.currentTime = Math.max(0, video.currentTime - 5);
+break;
+case 'arrowright':
+e.preventDefault();
+video.currentTime = Math.min(video.duration, video.currentTime + 5);
+break;
+}
+});
+</script>
+
+</body>
+</html>

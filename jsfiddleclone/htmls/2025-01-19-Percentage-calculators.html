@@ -1,3 +1,281 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Percentage Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 30px;
+            color: #2c3e50;
+            min-height: 50px;
+        }
+        .description {
+            margin-top: 20px;
+            font-size: 1em;
+            color: #555;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Percentage Calculator</h2>
+        
+        <div class="input-group">
+            <label for="calculationType">Select Calculation:</label>
+            <select id="calculationType" onchange="updateCalculator()">
+                <option value="change">Percentage Change (auto ±)</option>
+                <option value="increase">Percentage Increase</option>
+                <option value="decrease">Percentage Decrease</option>
+                <option value="ofPercent">What % is X of Y?</option>
+                <option value="percentOfNumber">X% of a Number</option>
+                <option value="reversePercent">Reverse Percentage (Original Value)</option>
+                <option value="difference">Percentage Difference</option>
+                <option value="growth">Growth Over Multiple Steps (same as change)</option>
+                <option value="whats100">If X is Y%, what is 100%?</option>
+            </select>
+        </div>
+        
+        <div id="inputFields"></div>
+
+        <button onclick="calculate()">Calculate</button>
+
+        <div id="result" class="result"></div>
+        <div id="description" class="description"></div>
+    </div>
+
+    <script>
+        function updateCalculator() {
+            const calcType = document.getElementById('calculationType').value;
+            const inputFieldsDiv = document.getElementById('inputFields');
+            const descriptionDiv = document.getElementById('description');
+            let html = '';
+            let description = '';
+
+            if (calcType === 'change' || calcType === 'increase' || calcType === 'decrease' || calcType === 'growth') {
+                html = `
+                    <div class="input-group">
+                        <label for="oldValue">Original Value:</label>
+                        <input type="number" id="oldValue" placeholder="e.g. 100" step="any">
+                    </div>
+                    <div class="input-group">
+                        <label for="newValue">New Value:</label>
+                        <input type="number" id="newValue" placeholder="e.g. 120" step="any">
+                    </div>
+                `;
+                description = calcType === 'growth' 
+                    ? 'Calculates overall percentage growth from start to end value.'
+                    : 'Enter the original and new values to calculate the percentage change.';
+            } 
+            else if (calcType === 'ofPercent') {
+                html = `
+                    <div class="input-group">
+                        <label for="part">Part (X):</label>
+                        <input type="number" id="part" placeholder="e.g. 25" step="any">
+                    </div>
+                    <div class="input-group">
+                        <label for="whole">Whole (Y):</label>
+                        <input type="number" id="whole" placeholder="e.g. 200" step="any">
+                    </div>
+                `;
+                description = 'Calculates what percentage the part is of the whole. Formula: (part / whole) × 100';
+            }
+            else if (calcType === 'percentOfNumber') {
+                html = `
+                    <div class="input-group">
+                        <label for="percent">Percentage:</label>
+                        <input type="number" id="percent" placeholder="e.g. 15" step="any">
+                    </div>
+                    <div class="input-group">
+                        <label for="number">Number:</label>
+                        <input type="number" id="number" placeholder="e.g. 300" step="any">
+                    </div>
+                `;
+                description = 'Calculates a percentage of a given number. Formula: (percentage / 100) × number';
+            }
+            else if (calcType === 'reversePercent') {
+                html = `
+                    <div class="input-group">
+                        <label for="finalValue">Final Value (after % change):</label>
+                        <input type="number" id="finalValue" placeholder="e.g. 120 (after increase)" step="any">
+                    </div>
+                    <div class="input-group">
+                        <label for="percent">Percentage Change (±%):</label>
+                        <input type="number" id="percent" placeholder="e.g. 20 or -15" step="any">
+                    </div>
+                `;
+                description = 'Finds the original value before a percentage was added or subtracted.';
+            }
+            else if (calcType === 'difference') {
+                html = `
+                    <div class="input-group">
+                        <label for="value1">Value 1:</label>
+                        <input type="number" id="value1" placeholder="e.g. 150" step="any">
+                    </div>
+                    <div class="input-group">
+                        <label for="value2">Value 2:</label>
+                        <input type="number" id="value2" placeholder="e.g. 180" step="any">
+                    </div>
+                `;
+                description = 'Calculates the percentage difference between two values relative to their average.';
+            }
+            else if (calcType === 'whats100') {
+                html = `
+                    <div class="input-row">
+                        <label>If</label>
+                        <input type="number" id="number" placeholder="50" step="any" style="flex:1;">
+                        <input type="text" id="unit" value="minutes" style="width:100px;">
+                        <label>is</label>
+                        <input type="number" id="percent" placeholder="20" step="any" style="flex:1;">
+                        <label>%</label>
+                    </div>
+                `;
+                description = 'If a certain amount represents a percentage, this finds what 100% would be.';
+            }
+
+            inputFieldsDiv.innerHTML = html;
+            descriptionDiv.innerHTML = description;
+        }
+
+        function calculate() {
+            const calcType = document.getElementById('calculationType').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.color = '#2c3e50';
+
+            try {
+                if (calcType === 'change' || calcType === 'growth') {
+                    const oldV = parseFloat(document.getElementById('oldValue').value);
+                    const newV = parseFloat(document.getElementById('newValue').value);
+                    if (isNaN(oldV) || isNaN(newV) || oldV === 0) throw "Invalid or zero original value";
+                    const change = ((newV - oldV) / oldV) * 100;
+                    const sign = change > 0 ? '+' : '';
+                    resultDiv.innerText = `Percentage Change: ${sign}${change.toFixed(4)}%`;
+                }
+                else if (calcType === 'increase') {
+                    const oldV = parseFloat(document.getElementById('oldValue').value);
+                    const newV = parseFloat(document.getElementById('newValue').value);
+                    if (isNaN(oldV) || isNaN(newV) || oldV === 0) throw "Invalid input";
+                    const inc = ((newV - oldV) / oldV) * 100;
+                    if (inc < 0) throw "New value is smaller — use Decrease instead";
+                    resultDiv.innerText = `Percentage Increase: +${inc.toFixed(4)}%`;
+                }
+                else if (calcType === 'decrease') {
+                    const oldV = parseFloat(document.getElementById('oldValue').value);
+                    const newV = parseFloat(document.getElementById('newValue').value);
+                    if (isNaN(oldV) || isNaN(newV) || oldV === 0) throw "Invalid input";
+                    const dec = ((oldV - newV) / oldV) * 100;
+                    if (dec < 0) throw "New value is larger — use Increase instead";
+                    resultDiv.innerText = `Percentage Decrease: -${dec.toFixed(4)}%`;
+                }
+                else if (calcType === 'ofPercent') {
+                    const part = parseFloat(document.getElementById('part').value);
+                    const whole = parseFloat(document.getElementById('whole').value);
+                    if (isNaN(part) || isNaN(whole) || whole === 0) throw "Invalid input";
+                    const perc = (part / whole) * 100;
+                    resultDiv.innerText = `${part} is ${perc.toFixed(4)}% of ${whole}`;
+                }
+                else if (calcType === 'percentOfNumber') {
+                    const perc = parseFloat(document.getElementById('percent').value);
+                    const num = parseFloat(document.getElementById('number').value);
+                    if (isNaN(perc) || isNaN(num)) throw "Invalid input";
+                    const val = (perc / 100) * num;
+                    resultDiv.innerText = `${perc}% of ${num} = ${val.toFixed(4)}`;
+                }
+                else if (calcType === 'reversePercent') {
+                    const final = parseFloat(document.getElementById('finalValue').value);
+                    const percChange = parseFloat(document.getElementById('percent').value);
+                    if (isNaN(final) || isNaN(percChange)) throw "Invalid input";
+                    const original = final / (1 + percChange / 100);
+                    resultDiv.innerText = `Original value was: ${original.toFixed(4)}`;
+                }
+                else if (calcType === 'difference') {
+                    const v1 = parseFloat(document.getElementById('value1').value);
+                    const v2 = parseFloat(document.getElementById('value2').value);
+                    if (isNaN(v1) || isNaN(v2)) throw "Invalid input";
+                    const avg = (v1 + v2) / 2;
+                    if (avg === 0) throw "Average is zero";
+                    const diff = Math.abs(v1 - v2) / avg * 100;
+                    resultDiv.innerText = `Percentage Difference: ${diff.toFixed(4)}%`;
+                }
+                else if (calcType === 'whats100') {
+                    const amount = parseFloat(document.getElementById('number').value);
+                    const percent = parseFloat(document.getElementById('percent').value);
+                    const unit = document.getElementById('unit').value.trim() || 'units';
+                    if (isNaN(amount) || isNaN(percent) || percent === 0) throw "Invalid input";
+                    const full = (amount / percent) * 100;
+                    resultDiv.innerText = `Then ${full.toFixed(4)} ${unit} is 100%.`;
+                }
+            } catch (error) {
+                resultDiv.style.color = '#e74c3c';
+                resultDiv.innerText = error.includes("throw") ? error : "Please enter valid numbers.";
+            }
+        }
+
+        // Initialize on load
+        window.onload = updateCalculator;
+    </script>
+</body>
+</html>
+
+
+<!----
 <h1>So whats 100%?</h1>
    <meta charset="UTF-8">
     If <input type="number" id="number" placeholder="number">

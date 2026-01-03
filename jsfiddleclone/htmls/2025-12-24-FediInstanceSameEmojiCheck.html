@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Emoji Instance Comparator</title>
+<style>
+  body { font-family: sans-serif; padding: 1rem; }
+  input { width: 340px; margin-bottom: 0.5rem; }
+  button { margin: 0.5rem 0; }
+  .emoji {
+    display: inline-block;
+    text-align: center;
+    margin: 4px;
+    width: 64px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .emoji:hover { background: #eee; }
+  img { width: 32px; height: 32px; display: block; margin: auto; }
+  .copied { color: green; font-size: 0.8em; }
+</style>
+</head>
+<body>
+
+<h3>Compare Instance Emojis</h3>
+
+<input id="url1" placeholder="https://instance-one.tld" /><br />
+<input id="url2" placeholder="https://instance-two.tld" /><br />
+<button onclick="compare()">Compare</button>
+
+<h4>Shared Emojis (click to copy)</h4>
+<div id="result"></div>
+
+<script>
+const CORS_PROXY = "https://ascw.com/cors.php?query=";
+
+function getQueryParams() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    url1: p.get("url1"),
+    url2: p.get("url2")
+  };
+}
+
+async function fetchWithFallback(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    return await res.json();
+  } catch {
+    const res = await fetch(CORS_PROXY + encodeURIComponent(url));
+    if (!res.ok) throw new Error();
+    return await res.json();
+  }
+}
+
+async function getEmojis(instanceUrl) {
+  const host = new URL(instanceUrl).host;
+  const key = `emojis:${host}`;
+
+  const cached = localStorage.getItem(key);
+  if (cached) return JSON.parse(cached);
+
+  const emojis = await fetchWithFallback(
+    `${instanceUrl}/api/v1/custom_emojis`
+  );
+
+  localStorage.setItem(key, JSON.stringify(emojis));
+  return emojis;
+}
+
+function copyToClipboard(text, el) {
+  navigator.clipboard.writeText(text).then(() => {
+    const note = document.createElement("div");
+    note.className = "copied";
+    note.textContent = "copied!";
+    el.appendChild(note);
+    setTimeout(() => note.remove(), 800);
+  });
+}
+
+function imgFallback(img) {
+  if (img.dataset.fallbackUsed) return;
+  img.dataset.fallbackUsed = "1";
+  img.src = img.dataset.altSrc;
+}
+
+async function compare() {
+  const u1 = document.getElementById("url1").value.trim();
+  const u2 = document.getElementById("url2").value.trim();
+  const out = document.getElementById("result");
+  out.innerHTML = "Loading…";
+
+  if (!u1 || !u2) {
+    out.innerHTML = "Both URLs are required.";
+    return;
+  }
+
+  try {
+    const [e1, e2] = await Promise.all([
+      getEmojis(u1),
+      getEmojis(u2)
+    ]);
+
+    const map2 = new Map(e2.map(e => [e.shortcode, e]));
+    const shared = e1
+      .filter(e => map2.has(e.shortcode))
+      .map(e => ({
+        shortcode: e.shortcode,
+        url1: e.url,
+        url2: map2.get(e.shortcode).url
+      }));
+
+    out.innerHTML = shared.length
+      ? shared.map(e => `
+        <div class="emoji"
+             onclick="copyToClipboard(':${e.shortcode}:', this)">
+          <img
+            src="${e.url1}"
+            data-alt-src="${e.url2}"
+            onerror="imgFallback(this)"
+          />
+          :${e.shortcode}:
+        </div>
+      `).join("")
+      : "<em>No shared emojis</em>";
+
+  } catch (err) {
+    out.innerHTML = "Error loading emojis.";
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const { url1, url2 } = getQueryParams();
+  if (url1) document.getElementById("url1").value = url1;
+  if (url2) document.getElementById("url2").value = url2;
+  if (url1 && url2) compare();
+});
+</script>
+
+</body>
+</html>

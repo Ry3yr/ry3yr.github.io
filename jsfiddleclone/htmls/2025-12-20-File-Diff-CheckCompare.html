@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Aligned Side-by-Side Diff (Preserve Alignment)</title>
+<style>
+  body { 
+    font-family: monospace; 
+    margin: 10px; 
+    background: #f5f5f5;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent body scroll, use wrapper instead */
+  }
+
+  h3 {
+    margin-bottom: 15px;
+    color: #333;
+    flex-shrink: 0;
+  }
+
+  .input-area {
+    background: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+    flex-shrink: 0;
+  }
+
+  textarea { 
+    width: 100%; 
+    height: 60px; 
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-family: monospace;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+
+  button {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+
+  button:hover {
+    background: #3a7bc8;
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  /* Container for the diff */
+  .scroll-wrapper {
+    flex: 1;
+    overflow: auto; /* Handles both vertical and horizontal scroll */
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: white;
+  }
+
+  /* Perfect alignment via Fixed Table Layout */
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* Forces columns to stay exactly 50% */
+    min-width: 800px;    /* Prevents table from getting too squished */
+  }
+
+  .diff-table td {
+    vertical-align: top;
+    padding: 0;
+    border-right: 1px solid #ddd;
+    width: 50%;
+    overflow: hidden; /* Critical: clips content that would otherwise bleed */
+  }
+
+  .diff-table td:last-child {
+    border-right: none;
+  }
+
+  .line-container {
+    display: table-row;
+  }
+
+  .line-cell {
+    height: 1.4em;
+    min-height: 1.4em;
+    border-bottom: 1px solid #f0f0f0;
+    position: relative;
+  }
+
+  .line-number {
+    display: inline-block;
+    width: 45px;
+    color: #999;
+    background: #fafafa;
+    text-align: right;
+    padding-right: 8px;
+    user-select: none;
+    border-right: 1px solid #eee;
+    font-size: 11px;
+    line-height: 1.8em; /* Centers number vertically with text */
+  }
+
+  .line-content {
+    display: inline-block;
+    white-space: pre; /* Preserves spaces/tabs without wrapping */
+    padding: 0 10px;
+    font-size: 13px;
+    line-height: 1.4em;
+    vertical-align: top;
+    /* This prevents the text from pushing outside the 50% width */
+    max-width: calc(100% - 65px); 
+    overflow: hidden; 
+    text-overflow: ellipsis; /* Adds '...' to very long lines */
+  }
+
+  /* Colors */
+  .same     { background: #ffffff; }
+  .removed  { background: #ffeef0; color: #b31d28; }
+  .added    { background: #e6ffed; color: #22863a; }
+
+  /* Utilities */
+  .loading { display: none; color: #666; padding: 20px; text-align: center; }
+  .error { color: #c62828; padding: 10px; background: #ffebee; border-radius: 3px; margin-top: 10px; display: none; }
+  .status { margin-top: 10px; color: #666; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h3>Aligned Side-by-Side Diff (Unchanged Lines Stay Aligned)</h3>
+
+<div class="input-area">
+  <textarea id="url1" placeholder="Enter URL 1 (e.g., https://example.com/file1.txt)"></textarea>
+  <textarea id="url2" placeholder="Enter URL 2 (e.g., https://example.com/file2.txt)"></textarea>
+  
+  <button onclick="run()" id="compareBtn">Compare</button>
+  <button onclick="clearAll()" style="background: #666; margin-left: 10px;">Clear</button>
+  
+  <div class="loading" id="loading">Loading and comparing files...</div>
+  <div class="error" id="error"></div>
+  <div class="status" id="status"></div>
+</div>
+
+<!-- Single scrolling container -->
+<div class="scroll-wrapper" id="scrollWrapper">
+  <table class="diff-table" id="diffTable">
+    <tbody id="diffBody"></tbody>
+  </table>
+</div>
+
+<script>
+// Read query parameters
+function getQueryParams() {
+  const params = {};
+  const query = window.location.search.substring(1);
+  if (!query) return params;
+  
+  query.split("&").forEach(p => {
+    const [k, v] = p.split("=");
+    if(k) params[decodeURIComponent(k)] = decodeURIComponent(v || "");
+  });
+  return params;
+}
+
+// Escape HTML and preserve spaces/tabs
+function escape(s = "") { 
+  return s.replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;")
+          .replace(/ /g, "&nbsp;")
+          .replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;");
+}
+
+// Create a table row for a line
+function createLineRow(leftText, rightText, leftClass, rightClass, leftNum = "", rightNum = "") {
+  const leftNumHtml = leftNum ? `<span class="line-number">${leftNum}</span>` : '<span class="line-number"></span>';
+  const rightNumHtml = rightNum ? `<span class="line-number">${rightNum}</span>` : '<span class="line-number"></span>';
+  
+  return `
+    <tr class="line-container">
+      <td class="line-cell ${leftClass}">
+        ${leftNumHtml}<span class="line-content">${escape(leftText)}</span>
+      </td>
+      <td class="line-cell ${rightClass}">
+        ${rightNumHtml}<span class="line-content">${escape(rightText)}</span>
+      </td>
+    </tr>
+  `;
+}
+
+// LCS diff that returns aligned pairs
+function alignedDiff(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+  // Build LCS matrix
+  for(let i = 1; i <= m; i++) {
+    for(let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+
+  const out = [];
+  let i = m, j = n;
+  
+  // Backtrack to find alignment
+  while(i > 0 || j > 0) {
+    if(i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+      out.unshift({ left: a[i - 1], right: b[j - 1], type: "same" });
+      i--; j--;
+    } else if(j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      out.unshift({ left: "", right: b[j - 1], type: "added" });
+      j--;
+    } else {
+      out.unshift({ left: a[i - 1], right: "", type: "removed" });
+      i--;
+    }
+  }
+  return out;
+}
+
+// Run diff
+async function run() {
+  const u1 = document.getElementById("url1").value.trim();
+  const u2 = document.getElementById("url2").value.trim();
+  
+  if(!u1 || !u2) {
+    showError("Please enter both URLs");
+    return;
+  }
+
+  // Validate URLs
+  try {
+    new URL(u1);
+    new URL(u2);
+  } catch {
+    showError("Please enter valid URLs");
+    return;
+  }
+
+  const compareBtn = document.getElementById("compareBtn");
+  const loading = document.getElementById("loading");
+  const error = document.getElementById("error");
+  const status = document.getElementById("status");
+  const diffBody = document.getElementById("diffBody");
+  
+  // Reset UI
+  error.style.display = "none";
+  loading.style.display = "block";
+  compareBtn.disabled = true;
+  compareBtn.textContent = "Comparing...";
+  diffBody.innerHTML = "";
+  
+  try {
+    // Fetch both files in parallel
+    const [response1, response2] = await Promise.all([
+      fetch(u1).then(r => {
+        if (!r.ok) throw new Error(`Failed to fetch ${u1}: ${r.status} ${r.statusText}`);
+        return r.text();
+      }),
+      fetch(u2).then(r => {
+        if (!r.ok) throw new Error(`Failed to fetch ${u2}: ${r.status} ${r.statusText}`);
+        return r.text();
+      })
+    ]);
+
+    const a = response1.split("\n");
+    const b = response2.split("\n");
+    const diff = alignedDiff(a, b);
+    
+    let leftLineNum = 1, rightLineNum = 1;
+    let html = "";
+    
+    diff.forEach(d => {
+      const leftNum = d.left !== "" ? leftLineNum++ : "";
+      const rightNum = d.right !== "" ? rightLineNum++ : "";
+      
+      // Determine CSS classes
+      const leftClass = d.type === "added" ? "" : d.type;
+      const rightClass = d.type === "removed" ? "" : d.type;
+      
+      html += createLineRow(d.left, d.right, leftClass, rightClass, leftNum, rightNum);
+    });
+    
+    diffBody.innerHTML = html;
+    
+    // Update status
+    const changes = diff.filter(d => d.type !== "same").length;
+    status.textContent = `Total lines: ${diff.length} | Changes: ${changes} | Identical lines: ${diff.length - changes}`;
+    
+    // Update URL with current comparison
+    const url = new URL(window.location);
+    url.searchParams.set('url1', u1);
+    url.searchParams.set('url2', u2);
+    window.history.replaceState({}, '', url.toString());
+    
+  } catch (err) {
+    showError(err.message);
+    console.error("Comparison error:", err);
+  } finally {
+    loading.style.display = "none";
+    compareBtn.disabled = false;
+    compareBtn.textContent = "Compare";
+  }
+}
+
+function showError(message) {
+  const errorDiv = document.getElementById("error");
+  errorDiv.textContent = message;
+  errorDiv.style.display = "block";
+  
+  // Auto-hide error after 5 seconds
+  setTimeout(() => {
+    errorDiv.style.display = "none";
+  }, 5000);
+}
+
+function clearAll() {
+  document.getElementById("url1").value = "";
+  document.getElementById("url2").value = "";
+  document.getElementById("diffBody").innerHTML = "";
+  document.getElementById("error").style.display = "none";
+  document.getElementById("status").textContent = "";
+  
+  // Clear URL parameters
+  const url = new URL(window.location);
+  url.searchParams.delete('url1');
+  url.searchParams.delete('url2');
+  window.history.replaceState({}, '', url.toString());
+}
+
+// Auto-run from query string
+window.addEventListener("DOMContentLoaded", () => {
+  const params = getQueryParams();
+  const url1Input = document.getElementById("url1");
+  const url2Input = document.getElementById("url2");
+  
+  if(params.url1) url1Input.value = params.url1;
+  if(params.url2) url2Input.value = params.url2;
+  if(params.url1 && params.url2) {
+    // Small delay to ensure DOM is ready
+    setTimeout(() => run(), 100);
+  }
+});
+
+// Allow pressing Enter in textareas to run comparison
+document.getElementById("url1").addEventListener("keypress", (e) => {
+  if (e.key === "Enter" && e.ctrlKey) run();
+});
+document.getElementById("url2").addEventListener("keypress", (e) => {
+  if (e.key === "Enter" && e.ctrlKey) run();
+});
+</script>
+
+</body>
+</html>

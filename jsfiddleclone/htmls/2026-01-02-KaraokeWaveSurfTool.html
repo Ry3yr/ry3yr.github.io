@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wavesurfer.js - SRT + Silence Detection</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+    #waveform { width: 100%; height: 300px; margin-bottom: 20px; border: 1px solid #ddd; }
+    .controls { margin-bottom: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .file-input { margin: 10px 0; }
+    .slider-container { margin: 15px 0; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; }
+    input[type="range"] { width: 100%; }
+    .value-display { font-size: 1.1em; color: #444; }
+    .pauses { margin-top: 20px; }
+    .region-item { padding: 10px; background: #fff; border: 1px solid #eee; margin-bottom: 8px; border-radius: 4px; }
+    .srt-region { border-left: 4px solid #4285f4; }
+    .silence-region { border-left: 4px solid #db4437; }
+  </style>
+</head>
+<body>
+  <h1>Wavesurfer.js: Word/Phrase Regions from SRT or Silence Detection</h1>
+  
+  <div class="controls">
+    <div class="file-input">
+      <label for="audioFile">Audio File (MP3, etc.):</label>
+      <input type="file" id="audioFile" accept="audio/*" />
+    </div>
+    
+    <div class="file-input">
+      <label for="srtFile">Subtitle File (.srt) - Optional but Recommended:</label>
+      <input type="file" id="srtFile" accept=".srt,text/srt" />
+    </div>
+    
+    <div class="slider-container">
+      <label for="minPause">Minimum Silence Duration (for fallback detection):</label>
+      <input type="range" id="minPause" min="0.05" max="1.0" step="0.05" value="0.2">
+      <span class="value-display" id="minPauseValue">0.20s</span>
+    </div>
+    
+    <button id="detect">Show Regions (SRT if loaded, else silence detection)</button>
+  </div>
+  
+  <div id="waveform"></div>
+  
+  <div class="pauses">
+    <h2>Detected Regions:</h2>
+    <div id="regionList"></div>
+  </div>
+
+  <!-- Wavesurfer -->
+  <script src="https://unpkg.com/wavesurfer.js@7"></script>
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+
+  <script>
+    const wavesurfer = WaveSurfer.create({
+      container: '#waveform',
+      waveColor: 'violet',
+      progressColor: 'purple',
+      height: 300,
+    });
+
+    const regions = wavesurfer.registerPlugin(WaveSurfer.Regions.create({
+      dragSelection: { slop: 5 }
+    }));
+
+    let audioBuffer = null;
+    let srtContent = null; // Will hold parsed SRT entries
+
+    // Slider
+    const minPauseSlider = document.getElementById('minPause');
+    const minPauseValue = document.getElementById('minPauseValue');
+    minPauseSlider.addEventListener('input', () => {
+      minPauseValue.textContent = parseFloat(minPauseSlider.value).toFixed(2) + 's';
+    });
+
+    // Parse SRT text into array of {start, end, text}
+    function parseSRT(text) {
+      const lines = text.trim().split('\n');
+      const entries = [];
+      let current = null;
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (/^\d+$/.test(trimmed)) {
+          if (current) entries.push(current);
+          current = { text: '' };
+        } else if (trimmed.includes('-->')) {
+          const [start, end] = trimmed.split('-->').map(s => s.trim());
+          current.start = timeToSeconds(start);
+          current.end = timeToSeconds(end);
+        } else if (trimmed && current) {
+          current.text += (current.text ? ' ' : '') + trimmed;
+        }
+      }
+      if (current) entries.push(current);
+      return entries;
+    }
+
+    function timeToSeconds(timeStr) {
+      const parts = timeStr.replace(',', '.').split(':');
+      const hours = parseInt(parts[0]);
+      const minutes = parseInt(parts[1]);
+      const seconds = parseFloat(parts[2]);
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+
+    // Load audio
+    document.getElementById('audioFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      regions.clearRegions();
+      document.getElementById('regionList').innerHTML = '';
+      audioBuffer = null;
+      srtContent = null;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+      const url = URL.createObjectURL(file);
+      const peaks = [];
+      for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+        peaks.push(audioBuffer.getChannelData(c));
+      }
+      wavesurfer.load(url, peaks, audioBuffer.duration);
+    });
+
+    // Load SRT
+    document.getElementById('srtFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        srtContent = null;
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        srtContent = parseSRT(ev.target.result);
+        console.log('SRT loaded:', srtContent.length, 'entries');
+      };
+      reader.readAsText(file);
+    });
+
+    // Main detection button
+    document.getElementById('detect').addEventListener('click', () => {
+      if (!audioBuffer) {
+        alert('Load an audio file first!');
+        return;
+      }
+
+      regions.clearRegions();
+      document.getElementById('regionList').innerHTML = '';
+
+      let regionArray = [];
+
+      if (srtContent && srtContent.length > 0) {
+        // Use SRT regions (much more accurate for lyrics/speech)
+        regionArray = srtContent;
+        regionArray.forEach((entry, i) => {
+          regions.addRegion({
+            start: entry.start,
+            end: entry.end,
+            content: entry.text || `Line ${i+1}`,
+            color: 'rgba(66, 133, 244, 0.4)', // Google blue
+            drag: false,
+            resize: false
+          });
+
+          const div = document.createElement('div');
+          div.className = 'region-item srt-region';
+          div.innerHTML = `<strong>${i+1} (SRT):</strong> ${entry.start.toFixed(2)}s → ${entry.end.toFixed(2)}s<br><em>"${entry.text || '(no text)'}"</em>`;
+          document.getElementById('regionList').appendChild(div);
+        });
+        console.log(`Loaded ${regionArray.length} regions from SRT`);
+      } else {
+        // Fallback: silence detection
+        const minSilenceDuration = parseFloat(minPauseSlider.value);
+        const amplitudeThreshold = 0.01;
+        const mergeThreshold = 0.15;
+
+        const channelData = audioBuffer.getChannelData(0);
+        const sampleRate = audioBuffer.sampleRate;
+
+        let silences = [];
+        let silenceStart = null;
+
+        for (let i = 0; i < channelData.length; i++) {
+          if (Math.abs(channelData[i]) < amplitudeThreshold) {
+            if (silenceStart === null) silenceStart = i;
+          } else {
+            if (silenceStart !== null) {
+              const dur = (i - silenceStart) / sampleRate;
+              if (dur >= minSilenceDuration) {
+                silences.push({ start: silenceStart / sampleRate, end: i / sampleRate });
+              }
+              silenceStart = null;
+            }
+          }
+        }
+        if (silenceStart !== null) {
+          const dur = (channelData.length - silenceStart) / sampleRate;
+          if (dur >= minSilenceDuration) {
+            silences.push({ start: silenceStart / sampleRate, end: audioBuffer.duration });
+          }
+        }
+
+        // Merge close
+        if (silences.length > 1) {
+          const merged = [];
+          let cur = silences[0];
+          for (let i = 1; i < silences.length; i++) {
+            if (silences[i].start - cur.end < mergeThreshold) {
+              cur.end = silences[i].end;
+            } else {
+              merged.push(cur);
+              cur = silences[i];
+            }
+          }
+          merged.push(cur);
+          silences = merged;
+        }
+
+        regionArray = silences;
+        silences.forEach((s, i) => {
+          regions.addRegion({
+            start: s.start,
+            end: s.end,
+            content: `Silence ${i+1}`,
+            color: 'rgba(219, 68, 55, 0.4)', // Google red
+            drag: false,
+            resize: false
+          });
+
+          const div = document.createElement('div');
+          div.className = 'region-item silence-region';
+          div.innerHTML = `<strong>Silence ${i+1}:</strong> ${s.start.toFixed(2)}s → ${s.end.toFixed(2)}s (len: ${(s.end - s.start).toFixed(2)}s)`;
+          document.getElementById('regionList').appendChild(div);
+        });
+        console.log(`Detected ${silences.length} silence pauses`);
+      }
+    });
+  </script>
+</body>
+</html>

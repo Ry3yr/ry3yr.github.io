@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ZIP File Explorer</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+#header {
+    margin-bottom: 10px;
+}
+
+input {
+    width: 80%;
+    padding: 6px;
+}
+
+button {
+    padding: 6px 10px;
+    margin-left: 5px;
+}
+
+#explorer {
+    border: 1px solid #ccc;
+    margin-top: 15px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: monospace;
+}
+
+.item {
+    cursor: pointer;
+    padding: 4px;
+}
+
+.item:hover {
+    background: #eee;
+}
+
+.folder::before { content: "📁 "; }
+.file::before { content: "📄 "; }
+.back::before { content: "⬅️ "; }
+
+#pathBar {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+#fileDisplay {
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="header">
+    <h2>ZIP File Viewer</h2>
+
+    <label>ZIP URL:</label><br>
+    <input id="zipUrl" placeholder="https://example.com/files.zip">
+    <button onclick="loadZip()">Browse ZIP</button>
+
+    <br><br>
+
+    <label>Path in ZIP:</label><br>
+    <input id="filePath" placeholder="path/to/file.ext or folder/">
+    <button onclick="openInNewTab()">Open File/Folder</button>
+</div>
+
+<div id="explorer" style="display:none;">
+    <div id="pathBar"></div>
+    <div id="list"></div>
+</div>
+
+<div id="fileDisplay"></div>
+
+<script>
+const header = document.getElementById("header");
+const zipUrlInput = document.getElementById("zipUrl");
+const filePathInput = document.getElementById("filePath");
+const explorer = document.getElementById("explorer");
+const list = document.getElementById("list");
+const pathBar = document.getElementById("pathBar");
+const fileDisplay = document.getElementById("fileDisplay");
+
+let zipData = null;
+let currentPath = "";
+
+/* ---------- QUERY STRING ---------- */
+function getQueryParams() {
+    const p = new URLSearchParams(location.search);
+    return {
+        zipUrl: p.get("zipUrl"),
+        filePath: p.get("filePath")
+    };
+}
+
+/* ---------- LOAD ZIP ---------- */
+function loadZip() {
+    if (!zipUrlInput.value) return alert("Enter ZIP URL");
+
+    fetch(zipUrlInput.value)
+        .then(r => r.arrayBuffer())
+        .then(b => JSZip.loadAsync(b))
+        .then(zip => {
+            zipData = zip;
+            currentPath = "";
+            explorer.style.display = "block";
+            renderFolder();
+        })
+        .catch(() => alert("Failed to load ZIP"));
+}
+
+/* ---------- RENDER FOLDER VIEW ---------- */
+function renderFolder() {
+    list.innerHTML = "";
+    pathBar.textContent = "/" + currentPath;
+
+    const folders = new Set();
+    const files = [];
+
+    zipData.forEach((path) => {
+        if (!path.startsWith(currentPath)) return;
+
+        const rest = path.slice(currentPath.length);
+        if (!rest) return;
+
+        const parts = rest.split("/");
+
+        if (parts.length > 1) {
+            folders.add(parts[0]);
+        } else {
+            files.push(parts[0]);
+        }
+    });
+
+    /* BACK */
+    if (currentPath) {
+        const back = document.createElement("div");
+        back.className = "item back";
+        back.textContent = "..";
+        back.onclick = () => {
+            currentPath = currentPath.split("/").slice(0, -2).join("/");
+            if (currentPath) currentPath += "/";
+            renderFolder();
+        };
+        list.appendChild(back);
+    }
+
+    /* FOLDERS */
+    [...folders].sort().forEach(f => {
+        const div = document.createElement("div");
+        div.className = "item folder";
+        div.textContent = f;
+        div.onclick = () => {
+            filePathInput.value = currentPath + f + "/";
+            currentPath += f + "/";
+            renderFolder();
+        };
+        list.appendChild(div);
+    });
+
+    /* FILES */
+    files.sort().forEach(f => {
+        const div = document.createElement("div");
+        div.className = "item file";
+        div.textContent = f;
+        div.onclick = () => {
+            filePathInput.value = currentPath + f;
+            openInNewTab();
+        };
+        list.appendChild(div);
+    });
+}
+
+/* ---------- OPEN IN NEW TAB ---------- */
+function openInNewTab() {
+    if (!zipUrlInput.value || !filePathInput.value) {
+        alert("ZIP URL and file/folder path required");
+        return;
+    }
+    const url =
+        location.pathname +
+        "?zipUrl=" + encodeURIComponent(zipUrlInput.value) +
+        "&filePath=" + encodeURIComponent(filePathInput.value);
+
+    window.open(url, "_blank");
+}
+
+/* ---------- DISPLAY FILE ---------- */
+function fetchAndDisplayFile(zipUrl, filePath) {
+    fetch(zipUrl)
+        .then(r => r.arrayBuffer())
+        .then(b => JSZip.loadAsync(b))
+        .then(zip => zip.file(filePath).async("blob"))
+        .then(blob => displayFile(blob, filePath))
+        .catch(() => fileDisplay.textContent = "Unable to load file");
+}
+
+function displayFile(blob, filePath) {
+    fileDisplay.innerHTML = "";
+
+    const ext = filePath.split(".").pop().toLowerCase();
+    const url = URL.createObjectURL(blob);
+
+    if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.maxWidth = "100%";
+        img.style.maxHeight = "80vh";
+        img.style.display = "block";
+        img.style.margin = "0 auto";
+        fileDisplay.appendChild(img);
+        return;
+    }
+
+    if (["mp3","wav","ogg"].includes(ext)) {
+        const a = document.createElement("audio");
+        a.controls = true;
+        a.src = url;
+        fileDisplay.appendChild(a);
+        return;
+    }
+
+    if (["mp4","webm","ogg"].includes(ext)) {
+        const v = document.createElement("video");
+        v.controls = true;
+        v.src = url;
+        v.style.maxWidth = "100%";
+        fileDisplay.appendChild(v);
+        return;
+    }
+
+    if (ext === "html" || ext === "htm") {
+        const i = document.createElement("iframe");
+        i.src = url;
+        i.style.width = "100%";
+        i.style.height = "500px";
+        fileDisplay.appendChild(i);
+        return;
+    }
+
+    const r = new FileReader();
+    r.onload = () => {
+        const pre = document.createElement("pre");
+        pre.textContent = r.result;
+        fileDisplay.appendChild(pre);
+    };
+    r.readAsText(blob);
+}
+
+/* ---------- PROCESS ZIP URL AND PATH ---------- */
+function processZipUrl(zipUrl, filePath) {
+    fetch(zipUrl)
+        .then(r => r.arrayBuffer())
+        .then(b => JSZip.loadAsync(b))
+        .then(zip => {
+            zipData = zip;
+            
+            // Check if the path is a folder (ends with / or doesn't exist as a file but exists as a folder)
+            const isFolder = filePath.endsWith('/') || 
+                           zipData.files[filePath] === undefined && 
+                           Object.keys(zipData.files).some(key => 
+                               key.startsWith(filePath + '/') || key === filePath + '/'
+                           );
+            
+            if (isFolder) {
+                // Show the explorer and navigate to the folder
+                explorer.style.display = "block";
+                currentPath = filePath.endsWith('/') ? filePath : filePath + '/';
+                
+                // Ensure the path exists in the zip
+                const folderExists = Object.keys(zipData.files).some(key => 
+                    key.startsWith(currentPath)
+                );
+                
+                if (!folderExists && currentPath !== "/") {
+                    alert("Folder not found in ZIP");
+                    currentPath = "";
+                }
+                
+                renderFolder();
+                header.style.display = "none"; // Hide header for direct folder links
+            } else {
+                // It's a file - display it
+                fetchAndDisplayFile(zipUrl, filePath);
+                header.style.display = "none"; // Hide header for direct file links
+            }
+        })
+        .catch(() => alert("Failed to load ZIP"));
+}
+
+/* ---------- AUTO LOAD ---------- */
+window.onload = () => {
+    const q = getQueryParams();
+    if (q.zipUrl && q.filePath) {
+        zipUrlInput.value = q.zipUrl;
+        filePathInput.value = q.filePath;
+        processZipUrl(q.zipUrl, q.filePath);
+    }
+};
+</script>
+
+</body>
+</html>

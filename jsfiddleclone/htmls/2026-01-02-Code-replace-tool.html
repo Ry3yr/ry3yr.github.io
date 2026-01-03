@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Delimiter Replace Tool</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+
+  .row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  textarea {
+    width: 100%;
+    height: 160px;
+    font-family: monospace;
+  }
+
+  .small-input {
+    width: 180px;
+  }
+
+  button {
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .preview {
+    border: 1px solid #ccc;
+    padding: 10px;
+    height: 120px;
+    overflow: auto;
+    font-family: monospace;
+    font-size: 11px; /* zoomed out */
+    white-space: pre-wrap;
+    background: #f9f9f9;
+  }
+
+  .column {
+    flex: 1;
+  }
+
+  h3 {
+    margin: 6px 0;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>Delimiter Replace Tool</h2>
+
+<div class="row">
+  <div class="column">
+    <h3>Original Text</h3>
+    <textarea id="originalText"></textarea>
+  </div>
+
+  <div class="column">
+    <h3>Replacement Text</h3>
+    <textarea id="replacementText"></textarea>
+  </div>
+</div>
+
+<div class="row">
+  <input id="startDelim" class="small-input" placeholder="Start delimiter">
+  <input id="endDelim" class="small-input" placeholder="End delimiter">
+  <button onclick="extractDelimiters()">Extract</button>
+  <button onclick="replaceText()">Replace</button>
+</div>
+
+<div class="row">
+  <div class="column">
+    <h3>Before (zoomed out)</h3>
+    <div id="beforePreview" class="preview"></div>
+    <button onclick="copyText('beforePreview')">Copy Old</button>
+  </div>
+
+  <div class="column">
+    <h3>After (zoomed out)</h3>
+    <div id="afterPreview" class="preview"></div>
+    <button onclick="copyText('afterPreview')">Copy New</button>
+  </div>
+</div>
+
+<script>
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function replaceText() {
+  const original = document.getElementById("originalText").value;
+  const replacement = document.getElementById("replacementText").value;
+  const start = document.getElementById("startDelim").value;
+  const end = document.getElementById("endDelim").value;
+
+  if (!start || !end) {
+    alert("Please enter both delimiters.");
+    return;
+  }
+
+  const pattern = new RegExp(
+    escapeRegex(start) + "[\\s\\S]*?" + escapeRegex(end),
+    "g"
+  );
+
+  const updated = original.replace(pattern, replacement);
+
+  document.getElementById("beforePreview").textContent = original;
+  document.getElementById("afterPreview").textContent = updated;
+}
+
+function extractDelimiters() {
+  const text = document.getElementById("replacementText").value;
+
+  // Split lines and remove empty lines at start/end
+  const lines = text
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  if (lines.length < 2) {
+    alert("Replacement text must contain at least two lines.");
+    return;
+  }
+
+  document.getElementById("startDelim").value = lines[0];
+  document.getElementById("endDelim").value = lines[lines.length - 1];
+}
+
+function copyText(elementId) {
+  const text = document.getElementById(elementId).textContent;
+  navigator.clipboard.writeText(text);
+}
+</script>
+
+</body>
+</html>

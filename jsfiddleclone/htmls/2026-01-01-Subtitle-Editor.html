@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root { --accent: #007bff; --bg: #0f0f0f; --card: #1e1e1e; --text: #e0e0e0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; }
+        
+        #toolbar { padding: 10px 20px; background: #222; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #333; z-index: 100; }
+        .file-btn { background: #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; border: 1px solid #444; font-size: 12px; color: white; }
+        .export-btn { background: var(--accent); color: white; font-weight: bold; margin-left: auto; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+
+        #workspace { display: flex; flex: 1; overflow: hidden; flex-direction: column; }
+        #top-row { display: flex; flex: 3; overflow: hidden; min-height: 0; }
+        
+        #video-section { flex: 1; background: #000; position: relative; display: flex; justify-content: center; }
+        video { height: 100%; max-width: 100%; }
+        #sub-overlay {
+            position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%);
+            text-align: center; width: 80%; pointer-events: none;
+            text-shadow: 2px 2px 4px #000; font-size: 24px; font-weight: bold; color: white;
+            background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 4px; display: none; z-index: 10;
+        }
+
+        #sidebar { width: 400px; background: #181818; border-left: 1px solid #333; display: flex; flex-direction: column; }
+        #sub-list { flex: 1; overflow-y: auto; padding: 12px; scroll-behavior: smooth; }
+        
+        .sub-card { background: var(--card); border-radius: 6px; padding: 12px; margin-bottom: 12px; border: 2px solid transparent; }
+        .sub-card.active { border-color: var(--accent); background: #2a2a2a; }
+        
+        .time-row { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; font-family: monospace; font-size: 11px; }
+        .time-row input { background: #000; border: 1px solid #444; color: #0f0; width: 70px; padding: 3px; border-radius: 3px; }
+        
+        .snap-btn { background: #444; border: 1px solid #666; color: white; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .snap-btn:hover { background: var(--accent); }
+
+        textarea { width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px; resize: none; min-height: 40px; box-sizing: border-box; font-size: 13px; }
+        
+        .card-btns { display: flex; gap: 5px; margin-top: 8px; }
+        .btn-sm { flex: 1; padding: 5px; font-size: 10px; cursor: pointer; border: none; border-radius: 3px; background: #333; color: white; }
+        .btn-del { background: #500; }
+
+        #timeline-container { height: 100px; background: #111; border-top: 2px solid #333; position: relative; overflow-x: auto; overflow-y: hidden; }
+        #timeline-canvas { display: block; }
+        #playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #ff0000; pointer-events: none; z-index: 20; }
+        
+        #nudge-layer { position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; }
+        .nudge-group { position: absolute; display: flex; gap: 2px; z-index: 30; pointer-events: auto; }
+        .nudge-btn { 
+            width: 20px; height: 20px; background: #333; color: white; border: 1px solid #555; 
+            border-radius: 2px; font-size: 14px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <label class="file-btn">📁 Video <input type="file" id="videoInput" accept="video/*" hidden></label>
+    <label class="file-btn">📄 SRT <input type="file" id="srtInput" accept=".srt" hidden></label>
+    <div style="font-size:12px; color:#aaa">Zoom: <input type="range" id="zoomRange" min="50" max="300" value="100"></div>
+    <button class="export-btn" onclick="exportSRT()">Export SRT</button>
+</div>
+
+<div id="workspace">
+    <div id="top-row">
+        <div id="video-section">
+            <video id="videoPlayer" controls></video>
+            <div id="sub-overlay"></div>
+        </div>
+        <div id="sidebar">
+            <div id="sub-list"></div>
+            <button onclick="addSubtitle()" style="margin:10px; padding:10px; background:#333; color:white; border:none; border-radius:4px; cursor:pointer;">+ Add Subtitle</button>
+        </div>
+    </div>
+
+    <div id="timeline-container">
+        <div id="playhead"></div>
+        <div id="nudge-layer"></div>
+        <canvas id="timeline-canvas"></canvas>
+    </div>
+</div>
+
+<script>
+let subtitles = [];
+const video = document.getElementById('videoPlayer');
+const canvas = document.getElementById('timeline-canvas');
+const ctx = canvas.getContext('2d');
+const playhead = document.getElementById('playhead');
+const subList = document.getElementById('sub-list');
+const timelineContainer = document.getElementById('timeline-container');
+const nudgeLayer = document.getElementById('nudge-layer');
+const overlay = document.getElementById('sub-overlay');
+
+let pixelsPerSecond = 100;
+const trackY = 30;
+
+// --- URL Parameter Handling ---
+
+window.onload = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const videoUrl = params.get('video');
+    const srtUrl = params.get('subtitle');
+
+    if (videoUrl) {
+        video.src = videoUrl;
+        console.log("Loading video from URL...");
+    }
+
+    if (srtUrl) {
+        try {
+            const response = await fetch(srtUrl);
+            const text = await response.text();
+            subtitles = parseSRT(text);
+            refreshUI();
+            console.log("Loading subtitles from URL...");
+        } catch (e) {
+            console.error("Failed to fetch subtitle URL. Ensure CORS is enabled on the source.", e);
+        }
+    }
+};
+
+// --- Standard Handlers ---
+
+document.getElementById('zoomRange').oninput = (e) => { pixelsPerSecond = parseInt(e.target.value); refreshUI(); };
+document.getElementById('videoInput').onchange = (e) => { if(e.target.files[0]) video.src = URL.createObjectURL(e.target.files[0]); };
+document.getElementById('srtInput').onchange = (e) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => { subtitles = parseSRT(ev.target.result); refreshUI(); };
+    reader.readAsText(e.target.files[0]);
+};
+
+video.ontimeupdate = () => {
+    const time = video.currentTime;
+    const x = time * pixelsPerSecond;
+    playhead.style.left = x + "px";
+    
+    const cWidth = timelineContainer.clientWidth;
+    if (x > timelineContainer.scrollLeft + cWidth * 0.8 || x < timelineContainer.scrollLeft) {
+        timelineContainer.scrollLeft = x - cWidth * 0.2;
+    }
+
+    const active = subtitles.find(s => time >= s.start && time <= s.end);
+    if (active) {
+        overlay.innerText = active.text;
+        overlay.style.display = 'block';
+        document.querySelectorAll('.sub-card').forEach(c => c.classList.remove('active'));
+        const card = document.querySelector(`[data-id="${active.id}"]`);
+        if (card) {
+            card.classList.add('active');
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    } else {
+        overlay.style.display = 'none';
+    }
+};
+
+// --- Core UI Logic ---
+
+function refreshUI() {
+    canvas.width = (video.duration || 600) * pixelsPerSecond;
+    canvas.height = 100;
+    drawTimeline();
+    renderNudgeButtons();
+    renderSidebar();
+}
+
+function drawTimeline() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#222';
+    for(let i=0; i < canvas.width; i += pixelsPerSecond) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+    }
+    subtitles.forEach((sub) => {
+        const x = sub.start * pixelsPerSecond;
+        const w = (sub.end - sub.start) * pixelsPerSecond;
+        ctx.fillStyle = '#444';
+        ctx.fillRect(x, trackY, w, 25);
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px sans-serif';
+        ctx.fillText(sub.text.substring(0, 15), x + 5, trackY + 16);
+    });
+}
+
+function renderNudgeButtons() {
+    nudgeLayer.innerHTML = '';
+    subtitles.forEach((sub) => {
+        nudgeLayer.appendChild(createNudge(sub.id, 'start', sub.start * pixelsPerSecond - 45, trackY));
+        nudgeLayer.appendChild(createNudge(sub.id, 'end', sub.end * pixelsPerSecond + 5, trackY));
+    });
+}
+
+function createNudge(id, type, x, y) {
+    const div = document.createElement('div');
+    div.className = 'nudge-group';
+    div.style.left = x + 'px';
+    div.style.top = y + 'px';
+    div.innerHTML = `<div class="nudge-btn">-</div><div class="nudge-btn">+</div>`;
+    div.children[0].onclick = () => updateTime(id, type, -0.1);
+    div.children[1].onclick = () => updateTime(id, type, 0.1);
+    return div;
+}
+
+function updateTime(id, type, delta) {
+    const sub = subtitles.find(s => s.id === id);
+    if (sub) {
+        sub[type] = Math.max(0, sub[type] + delta);
+        if (sub.start >= sub.end) sub.end = sub.start + 0.1;
+        refreshUI();
+    }
+}
+
+function renderSidebar() {
+    subList.innerHTML = '';
+    subtitles.forEach(sub => {
+        const card = document.createElement('div');
+        card.className = 'sub-card';
+        card.dataset.id = sub.id;
+        card.innerHTML = `
+            <div class="time-row">
+                <button class="snap-btn" onclick="snapTime('${sub.id}','start')">⇤</button>
+                <input type="number" step="0.1" value="${sub.start.toFixed(2)}" onchange="updateSubVal('${sub.id}','start',this.value)">
+                <span>→</span>
+                <input type="number" step="0.1" value="${sub.end.toFixed(2)}" onchange="updateSubVal('${sub.id}','end',this.value)">
+                <button class="snap-btn" onclick="snapTime('${sub.id}','end')">⇥</button>
+            </div>
+            <textarea oninput="subtitles.find(s=>s.id==='${sub.id}').text=this.value; drawTimeline();">${sub.text}</textarea>
+            <div class="card-btns">
+                <button class="btn-sm" onclick="video.currentTime=${sub.start}; video.play()">▶ Jump</button>
+                <button class="btn-sm btn-del" onclick="deleteSub('${sub.id}')">Delete</button>
+            </div>
+        `;
+        subList.appendChild(card);
+    });
+}
+
+function snapTime(id, field) {
+    const sub = subtitles.find(s => s.id === id);
+    if (sub) {
+        sub[field] = video.currentTime;
+        if (sub.start >= sub.end) sub.end = sub.start + 1;
+        refreshUI();
+    }
+}
+
+function updateSubVal(id, field, val) {
+    const sub = subtitles.find(s => s.id === id);
+    if (sub) { sub[field] = parseFloat(val); refreshUI(); }
+}
+
+function deleteSub(id) {
+    subtitles = subtitles.filter(s => s.id !== id);
+    refreshUI();
+}
+
+function addSubtitle() {
+    subtitles.push({ id: 's'+Math.random(), start: video.currentTime, end: video.currentTime + 2, text: "" });
+    subtitles.sort((a,b) => a.start - b.start);
+    refreshUI();
+}
+
+function parseSRT(data) {
+    return data.split(/\n\s*\n/).filter(b => b.trim()).map(block => {
+        const lines = block.trim().split('\n');
+        const tm = (lines[1] || "").match(/(\d+:\d+:\d+,\d+) --> (\d+:\d+:\d+,\d+)/);
+        return { id: 's'+Math.random(), start: tm ? sToSec(tm[1]) : 0, end: tm ? sToSec(tm[2]) : 2, text: lines.slice(2).join('\n') };
+    }).sort((a,b) => a.start - b.start);
+}
+
+function sToSec(t) { const p = t.split(':'); return parseFloat(p[0])*3600 + parseFloat(p[1])*60 + parseFloat(p[2].replace(',','.')); }
+function formatSRTTime(s) { 
+    const ms = Math.floor((s % 1) * 1000);
+    return new Date(Math.max(0, s) * 1000).toISOString().substr(11, 8) + ',' + ms.toString().padStart(3, '0');
+}
+
+function exportSRT() {
+    let out = '';
+    subtitles.sort((a,b) => a.start - b.start).forEach((s, i) => {
+        out += `${i+1}\n${formatSRTTime(s.start)} --> ${formatSRTTime(s.end)}\n${s.text}\n\n`;
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], {type: 'text/plain'}));
+    a.download = 'edited.srt'; a.click();
+}
+</script>
+</body>
+</html>
+
+<details><summary></summary><plaintext>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SRT Master - Snap & Sync</title>
+    <style>
+        :root { --accent: #007bff; --bg: #0f0f0f; --card: #1e1e1e; --text: #e0e0e0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; }
+        
+        #toolbar { padding: 10px 20px; background: #222; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #333; z-index: 100; }
+        .file-btn { background: #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; border: 1px solid #444; font-size: 12px; color: white; }
+        .export-btn { background: var(--accent); color: white; font-weight: bold; margin-left: auto; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+
+        #workspace { display: flex; flex: 1; overflow: hidden; flex-direction: column; }
+        #top-row { display: flex; flex: 3; overflow: hidden; min-height: 0; }
+        
+        #video-section { flex: 1; background: #000; position: relative; display: flex; justify-content: center; }
+        video { height: 100%; max-width: 100%; }
+        #sub-overlay {
+            position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%);
+            text-align: center; width: 80%; pointer-events: none;
+            text-shadow: 2px 2px 4px #000; font-size: 24px; font-weight: bold; color: white;
+            background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 4px; display: none; z-index: 10;
+        }
+
+        #sidebar { width: 400px; background: #181818; border-left: 1px solid #333; display: flex; flex-direction: column; }
+        #sub-list { flex: 1; overflow-y: auto; padding: 12px; scroll-behavior: smooth; }
+        
+        .sub-card { background: var(--card); border-radius: 6px; padding: 12px; margin-bottom: 12px; border: 2px solid transparent; }
+        .sub-card.active { border-color: var(--accent); background: #2a2a2a; }
+        
+        .time-row { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; font-family: monospace; font-size: 11px; }
+        .time-row input { background: #000; border: 1px solid #444; color: #0f0; width: 70px; padding: 3px; border-radius: 3px; }
+        
+        .snap-btn { background: #444; border: 1px solid #666; color: white; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .snap-btn:hover { background: var(--accent); border-color: white; }
+
+        textarea { width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 4px; padding: 6px; resize: none; min-height: 40px; box-sizing: border-box; font-size: 13px; }
+        
+        .card-btns { display: flex; gap: 5px; margin-top: 8px; }
+        .btn-sm { flex: 1; padding: 5px; font-size: 10px; cursor: pointer; border: none; border-radius: 3px; background: #333; color: white; }
+        .btn-del { background: #500; }
+        .btn-del:hover { background: #800; }
+
+        /* Timeline - Single Track Row */
+        #timeline-container { height: 100px; background: #111; border-top: 2px solid #333; position: relative; overflow-x: auto; overflow-y: hidden; }
+        #timeline-canvas { display: block; }
+        #playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #ff0000; pointer-events: none; z-index: 20; }
+        
+        #nudge-layer { position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; }
+        .nudge-group { position: absolute; display: flex; gap: 2px; z-index: 30; pointer-events: auto; }
+        .nudge-btn { 
+            width: 20px; height: 20px; background: #333; color: white; border: 1px solid #555; 
+            border-radius: 2px; font-size: 14px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; user-select: none;
+        }
+        .nudge-btn:active { background: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <label class="file-btn">📁 Video <input type="file" id="videoInput" accept="video/*" hidden></label>
+    <label class="file-btn">📄 SRT <input type="file" id="srtInput" accept=".srt" hidden></label>
+    <div style="font-size:12px; color:#aaa">Zoom: <input type="range" id="zoomRange" min="50" max="300" value="100"></div>
+    <button class="export-btn" onclick="exportSRT()">Export SRT</button>
+</div>
+
+<div id="workspace">
+    <div id="top-row">
+        <div id="video-section">
+            <video id="videoPlayer" controls></video>
+            <div id="sub-overlay"></div>
+        </div>
+        <div id="sidebar">
+            <div id="sub-list"></div>
+            <button onclick="addSubtitle()" style="margin:10px; padding:10px; background:#333; color:white; border:none; border-radius:4px; cursor:pointer;">+ Add Subtitle</button>
+        </div>
+    </div>
+
+    <div id="timeline-container">
+        <div id="playhead"></div>
+        <div id="nudge-layer"></div>
+        <canvas id="timeline-canvas"></canvas>
+    </div>
+</div>
+
+<script>
+let subtitles = [];
+const video = document.getElementById('videoPlayer');
+const canvas = document.getElementById('timeline-canvas');
+const ctx = canvas.getContext('2d');
+const playhead = document.getElementById('playhead');
+const subList = document.getElementById('sub-list');
+const timelineContainer = document.getElementById('timeline-container');
+const nudgeLayer = document.getElementById('nudge-layer');
+const overlay = document.getElementById('sub-overlay');
+
+let pixelsPerSecond = 100;
+const trackY = 30;
+
+// --- Load ---
+
+document.getElementById('zoomRange').oninput = (e) => { pixelsPerSecond = parseInt(e.target.value); refreshUI(); };
+document.getElementById('videoInput').onchange = (e) => { if(e.target.files[0]) video.src = URL.createObjectURL(e.target.files[0]); };
+document.getElementById('srtInput').onchange = (e) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => { subtitles = parseSRT(ev.target.result); refreshUI(); };
+    reader.readAsText(e.target.files[0]);
+};
+
+// --- Player Logic ---
+
+video.ontimeupdate = () => {
+    const time = video.currentTime;
+    const x = time * pixelsPerSecond;
+    playhead.style.left = x + "px";
+    
+    // Auto Scroll X
+    const cWidth = timelineContainer.clientWidth;
+    if (x > timelineContainer.scrollLeft + cWidth * 0.8 || x < timelineContainer.scrollLeft) {
+        timelineContainer.scrollLeft = x - cWidth * 0.2;
+    }
+
+    const active = subtitles.find(s => time >= s.start && time <= s.end);
+    if (active) {
+        overlay.innerText = active.text;
+        overlay.style.display = 'block';
+        
+        document.querySelectorAll('.sub-card').forEach(c => c.classList.remove('active'));
+        const card = document.querySelector(`[data-id="${active.id}"]`);
+        if (card) {
+            card.classList.add('active');
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    } else {
+        overlay.style.display = 'none';
+    }
+};
+
+// --- Logic ---
+
+function refreshUI() {
+    canvas.width = (video.duration || 600) * pixelsPerSecond;
+    canvas.height = 100;
+    drawTimeline();
+    renderNudgeButtons();
+    renderSidebar();
+}
+
+function drawTimeline() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#222';
+    for(let i=0; i < canvas.width; i += pixelsPerSecond) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+    }
+    subtitles.forEach((sub) => {
+        const x = sub.start * pixelsPerSecond;
+        const w = (sub.end - sub.start) * pixelsPerSecond;
+        ctx.fillStyle = '#444';
+        ctx.fillRect(x, trackY, w, 25);
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px sans-serif';
+        ctx.fillText(sub.text.substring(0, 15), x + 5, trackY + 16);
+    });
+}
+
+function renderNudgeButtons() {
+    nudgeLayer.innerHTML = '';
+    subtitles.forEach((sub) => {
+        nudgeLayer.appendChild(createNudge(sub.id, 'start', sub.start * pixelsPerSecond - 45, trackY));
+        nudgeLayer.appendChild(createNudge(sub.id, 'end', sub.end * pixelsPerSecond + 5, trackY));
+    });
+}
+
+function createNudge(id, type, x, y) {
+    const div = document.createElement('div');
+    div.className = 'nudge-group';
+    div.style.left = x + 'px';
+    div.style.top = y + 'px';
+    div.innerHTML = `<div class="nudge-btn">-</div><div class="nudge-btn">+</div>`;
+    div.children[0].onclick = () => updateTime(id, type, -0.1);
+    div.children[1].onclick = () => updateTime(id, type, 0.1);
+    return div;
+}
+
+function updateTime(id, type, delta) {
+    const sub = subtitles.find(s => s.id === id);
+    if (sub) {
+        sub[type] = Math.max(0, sub[type] + delta);
+        if (sub.start >= sub.end) sub.end = sub.start + 0.1;
+        refreshUI();
+    }
+}
+
+function renderSidebar() {
+    subList.innerHTML = '';
+    subtitles.forEach(sub => {
+        const card = document.createElement('div');
+        card.className = 'sub-card';
+        card.dataset.id = sub.id;
+        card.innerHTML = `
+            <div class="time-row">
+                <button class="snap-btn" title="Snap to video time" onclick="snapTime('${sub.id}','start')">⇤</button>
+                <input type="number" step="0.1" value="${sub.start.toFixed(2)}" onchange="updateSubVal('${sub.id}','start',this.value)">
+                <span>→</span>
+                <input type="number" step="0.1" value="${sub.end.toFixed(2)}" onchange="updateSubVal('${sub.id}','end',this.value)">
+                <button class="snap-btn" title="Snap to video time" onclick="snapTime('${sub.id}','end')">⇥</button>
+            </div>
+            <textarea oninput="subtitles.find(s=>s.id==='${sub.id}').text=this.value; drawTimeline();">${sub.text}</textarea>
+            <div class="card-btns">
+                <button class="btn-sm" onclick="video.currentTime=${sub.start}; video.play()">▶ Jump</button>
+                <button class="btn-sm btn-del" onclick="deleteSub('${sub.id}')">Delete</button>
+            </div>
+        `;
+        subList.appendChild(card);
+    });
+}
+
+function snapTime(id, field) {
+    const sub = subtitles.find(s => s.id === id);
+    if (sub) {
+        sub[field] = video.currentTime;
+        if (sub.start >= sub.end) sub.end = sub.start + 1; // Basic validation
+        refreshUI();
+    }
+}
+
+function updateSubVal(id, field, val) {
+    const sub = subtitles.find(s => s.id === id);
+    if (sub) { sub[field] = parseFloat(val); refreshUI(); }
+}
+
+function deleteSub(id) {
+    subtitles = subtitles.filter(s => s.id !== id);
+    refreshUI();
+}
+
+function addSubtitle() {
+    subtitles.push({ id: 's'+Math.random(), start: video.currentTime, end: video.currentTime + 2, text: "" });
+    subtitles.sort((a,b) => a.start - b.start);
+    refreshUI();
+}
+
+function parseSRT(data) {
+    return data.split(/\n\s*\n/).filter(b => b.trim()).map(block => {
+        const lines = block.trim().split('\n');
+        const tm = (lines[1] || "").match(/(\d+:\d+:\d+,\d+) --> (\d+:\d+:\d+,\d+)/);
+        return { id: 's'+Math.random(), start: tm ? sToSec(tm[1]) : 0, end: tm ? sToSec(tm[2]) : 2, text: lines.slice(2).join('\n') };
+    }).sort((a,b) => a.start - b.start);
+}
+
+function sToSec(t) { const p = t.split(':'); return parseFloat(p[0])*3600 + parseFloat(p[1])*60 + parseFloat(p[2].replace(',','.')); }
+function formatSRTTime(s) { 
+    const ms = Math.floor((s % 1) * 1000);
+    return new Date(Math.max(0, s) * 1000).toISOString().substr(11, 8) + ',' + ms.toString().padStart(3, '0');
+}
+
+function exportSRT() {
+    let out = '';
+    subtitles.sort((a,b) => a.start - b.start).forEach((s, i) => {
+        out += `${i+1}\n${formatSRTTime(s.start)} --> ${formatSRTTime(s.end)}\n${s.text}\n\n`;
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], {type: 'text/plain'}));
+    a.download = 'edited.srt'; a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to HTML Converter with Styling Options</title>
+    <style>
+        *{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}body{margin:0;padding:20px;background-color:#f5f5f5;color:#333;line-height:1.6}.container{max-width:1200px;margin:0 auto;background-color:white;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);padding:20px}h1,h2,h3{color:#2c3e50;margin-top:0}h1{text-align:center;margin-bottom:30px;padding-bottom:10px;border-bottom:1px solid #eee}.editor-container,.output-container{margin-bottom:20px}#editor{border:1px solid #ccc;padding:15px;min-height:200px;background-color:#fff;border-radius:4px;margin-bottom:15px;overflow:auto}.controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;padding:15px;background-color:#f9f9f9;border-radius:4px}.control-group{display:flex;flex-direction:column;flex:1;min-width:200px}.control-group h4{margin:0 0 10px 0;font-size:14px;color:#555}.checkbox-group{display:flex;flex-wrap:wrap;gap:10px}.checkbox-item{display:flex;align-items:center;gap:5px}button{background-color:#3498db;color:white;border:none;padding:10px 15px;border-radius:4px;cursor:pointer;font-size:16px;transition:background-color 0.3s}button:hover{background-color:#2980b9}#output{width:100%;height:300px;border:1px solid #ccc;padding:15px;background-color:#f9f9f9;white-space:pre-wrap;font-family:monospace;border-radius:4px;overflow:auto}.action-buttons{display:flex;gap:10px;margin-top:15px}.action-buttons button{flex:1}.clear-btn{background-color:#e74c3c}.clear-btn:hover{background-color:#c0392b}.copy-btn{background-color:#2ecc71}.copy-btn:hover{background-color:#27ae60}.info{background-color:#e8f4fd;padding:10px 15px;border-radius:4px;margin-bottom:20px;border-left:4px solid #3498db}.warning{background-color:#fff8e1;padding:10px 15px;border-radius:4px;margin-bottom:20px;border-left:4px solid #ffc107;font-size:14px}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Text to HTML Converter with Styling Options</h1>
+        <div class="info">
+            <p>Paste your styled content (like text from Word or Google Docs) into the box below. Use the checkboxes to select which styling elements to keep in the output HTML, then click "Convert".</p>
+        </div>
+        <div class="editor-container">
+            <h2>Paste Your Styled Content</h2>
+            <div id="editor" contenteditable="true"></div>
+            <div class="controls">
+                <div class="control-group">
+                    <h4>Keep in Output:</h4>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-bold" checked>
+                            <label for="keep-bold">Bold Text</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-italic" checked>
+                            <label for="keep-italic">Italic Text</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-underline" checked>
+                            <label for="keep-underline">Underlined Text</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-fonts" checked>
+                            <label for="keep-fonts">Font Styles</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-colors" checked>
+                            <label for="keep-colors">Colors</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-margins" checked>
+                            <label for="keep-margins">Margins & Padding</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-links" checked>
+                            <label for="keep-links">Links (a href)</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="keep-only-selected">
+                            <label for="keep-only-selected">Keep Only Selected Elements</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <h4>Quick Actions:</h4>
+                    <div class="action-buttons">
+                        <button id="select-all">Select All</button>
+                        <button id="deselect-all">Deselect All</button>
+                    </div>
+                </div>
+            </div>
+            <div class="warning">
+                <strong>Note:</strong> When "Keep Only Selected Elements" is checked, only the elements you've selected will be kept in the output. All other text and elements will be removed.
+            </div>
+            <button id="convert-btn">Convert to HTML</button>
+        </div>
+        <div class="output-container">
+            <h2>Generated HTML Code</h2>
+            <textarea id="output" readonly></textarea>
+            <div class="action-buttons">
+                <button id="copy-btn" class="copy-btn">Copy HTML</button>
+                <button id="clear-btn" class="clear-btn">Clear All</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editor = document.getElementById('editor');
+            const output = document.getElementById('output');
+            const convertBtn = document.getElementById('convert-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const selectAllBtn = document.getElementById('select-all');
+            const deselectAllBtn = document.getElementById('deselect-all');
+            const keepBold = document.getElementById('keep-bold');
+            const keepItalic = document.getElementById('keep-italic');
+            const keepUnderline = document.getElementById('keep-underline');
+            const keepFonts = document.getElementById('keep-fonts');
+            const keepColors = document.getElementById('keep-colors');
+            const keepMargins = document.getElementById('keep-margins');
+            const keepLinks = document.getElementById('keep-links');
+            const keepOnlySelected = document.getElementById('keep-only-selected');
+            convertBtn.addEventListener('click', function() {
+                let editorContent = editor.innerHTML;
+                
+                // If nothing is checked and "Keep Only Selected Elements" is not checked, keep everything intact
+                const nothingChecked = !keepBold.checked && !keepItalic.checked && !keepUnderline.checked && 
+                                     !keepFonts.checked && !keepColors.checked && !keepMargins.checked && 
+                                     !keepLinks.checked;
+                
+                if (keepOnlySelected.checked) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = editorContent;
+                    function removeUnwantedElements(element) {
+                        for (let i = element.childNodes.length - 1; i >= 0; i--) {
+                            const node = element.childNodes[i];
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                const shouldKeep = (
+                                    (keepBold.checked && (node.tagName === 'B' || node.tagName === 'STRONG')) ||
+                                    (keepItalic.checked && (node.tagName === 'I' || node.tagName === 'EM')) ||
+                                    (keepUnderline.checked && node.tagName === 'U') ||
+                                    (keepLinks.checked && node.tagName === 'A') ||
+                                    (keepFonts.checked && node.style && (
+                                        node.style.fontFamily || node.style.fontSize || node.style.fontWeight
+                                    )) ||
+                                    (keepColors.checked && node.style && (
+                                        node.style.color || node.style.backgroundColor
+                                    )) ||
+                                    (keepMargins.checked && node.style && (
+                                        node.style.margin || node.style.padding
+                                    ))
+                                );
+                                if (shouldKeep) {
+                                    removeUnwantedElements(node);
+                                } else {
+                                    const textContent = node.textContent;
+                                    const textNode = document.createTextNode(textContent);
+                                    element.replaceChild(textNode, node);
+                                }
+                            }
+                        }
+                    }
+                    removeUnwantedElements(tempDiv);
+                    editorContent = tempDiv.innerHTML;
+                } else if (nothingChecked) {
+                    // If nothing is checked and not in "Keep Only Selected" mode, keep everything as is
+                    // No processing needed, just use the original content
+                } else {
+                    if (!keepBold.checked) {
+                        editorContent = editorContent.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '$1');
+                        editorContent = editorContent.replace(/<b[^>]*>(.*?)<\/b>/gi, '$1');
+                    }
+                    if (!keepItalic.checked) {
+                        editorContent = editorContent.replace(/<em[^>]*>(.*?)<\/em>/gi, '$1');
+                        editorContent = editorContent.replace(/<i[^>]*>(.*?)<\/i>/gi, '$1');
+                    }
+                    if (!keepUnderline.checked) {
+                        editorContent = editorContent.replace(/<u[^>]*>(.*?)<\/u>/gi, '$1');
+                        editorContent = editorContent.replace(/style="[^"]*text-decoration:\s*underline[^"]*"/gi, '');
+                    }
+                    if (!keepFonts.checked) {
+                        editorContent = editorContent.replace(/style="[^"]*font-[^:]*:[^;"]*[;"]/gi, '');
+                        editorContent = editorContent.replace(/<font[^>]*>(.*?)<\/font>/gi, '$1');
+                    }
+                    if (!keepColors.checked) {
+                        editorContent = editorContent.replace(/style="[^"]*color:[^;"]*[;"]/gi, '');
+                        editorContent = editorContent.replace(/style="[^"]*background-color:[^;"]*[;"]/gi, '');
+                    }
+                    if (!keepMargins.checked) {
+                        editorContent = editorContent.replace(/style="[^"]*margin[^:]*:[^;"]*[;"]/gi, '');
+                        editorContent = editorContent.replace(/style="[^"]*padding[^:]*:[^;"]*[;"]/gi, '');
+                    }
+                    if (!keepLinks.checked) {
+                        editorContent = editorContent.replace(/<a\b[^>]*>(.*?)<\/a>/gi, '$1');
+                    }
+                }
+                
+                editorContent = editorContent.replace(/style=""/g, '');
+                editorContent = editorContent.replace(/<[^>]*style="[^"]*"\s*>/g, function(match) {
+                    return match.replace(/style="[^"]*"/, '');
+                });
+                output.value = editorContent;
+            });
+            copyBtn.addEventListener('click', function() {
+                output.select();
+                document.execCommand('copy');
+                alert('HTML copied to clipboard!');
+            });
+            clearBtn.addEventListener('click', function() {
+                editor.innerHTML = 'Paste styled text here...';
+                output.value = '';
+            });
+            selectAllBtn.addEventListener('click', function() {
+                keepBold.checked = true;
+                keepItalic.checked = true;
+                keepUnderline.checked = true;
+                keepFonts.checked = true;
+                keepColors.checked = true;
+                keepMargins.checked = true;
+                keepLinks.checked = true;
+                keepOnlySelected.checked = false;
+            });
+            deselectAllBtn.addEventListener('click', function() {
+                keepBold.checked = false;
+                keepItalic.checked = false;
+                keepUnderline.checked = false;
+                keepFonts.checked = false;
+                keepColors.checked = false;
+                keepMargins.checked = false;
+                keepLinks.checked = false;
+                keepOnlySelected.checked = false;
+            });
+            editor.addEventListener('focus', function() {
+                if (editor.innerHTML === 'Paste styled text here...') {
+                    editor.innerHTML = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

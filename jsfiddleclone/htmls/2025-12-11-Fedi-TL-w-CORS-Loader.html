@@ -1,0 +1,1695 @@
+<a href="https://alceawis.de/other/extra/fetchdata/2024-03-07-FediTools/2025-12-11-FediTLFetch/fetchtl.html?url=https://woof.tech" style=color:blue>woof.tech</a> 
+<a href="https://alceawis.de/other/extra/fetchdata/2024-03-07-FediTools/2025-12-11-FediTLFetch/fetchtl.html?url=https://alceawis.com&cors=yes" style=color:blue>acws</a>
+<a href="https://alceawis.de/other/extra/fetchdata/2024-03-07-FediTools/2025-12-11-FediTLFetch/fetchtl.html?url=https://mastodon.social&cors=yes" style=color:blue>mastodon.social</a>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastodon Timeline</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f8fa;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .header h1 {
+            color: #2b90d9;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #657786;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-row label {
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        .timeline-selector select {
+            padding: 10px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 25px;
+            font-size: 1rem;
+            background-color: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            flex: 1;
+        }
+
+        .timeline-selector select:focus {
+            outline: none;
+            border-color: #2b90d9;
+        }
+
+        .instance-selector input {
+            padding: 10px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 25px;
+            font-size: 1rem;
+            flex: 1;
+            transition: border-color 0.3s;
+        }
+
+        .instance-selector input:focus {
+            outline: none;
+            border-color: #2b90d9;
+        }
+
+        .instance-selector button {
+            background-color: #2b90d9;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+
+        .instance-selector button:hover {
+            background-color: #1c6ca5;
+        }
+
+        .instance-selector button:disabled {
+            background-color: #a0c5e0;
+            cursor: not-allowed;
+        }
+
+        .filter-container input {
+            padding: 10px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 25px;
+            font-size: 1rem;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
+
+        .filter-container input:focus {
+            outline: none;
+            border-color: #38a169;
+        }
+
+        .filter-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #657786;
+        }
+
+        .filter-status.active {
+            color: #38a169;
+        }
+
+        .filter-status .filter-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #e1e8ed;
+        }
+
+        .filter-status.active .filter-indicator {
+            background-color: #38a169;
+        }
+
+        .clear-filter {
+            background: none;
+            border: none;
+            color: #2b90d9;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+            transition: background-color 0.2s;
+            margin-left: 10px;
+        }
+
+        .clear-filter:hover {
+            background-color: #f0f8ff;
+        }
+
+        .config-info {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #657786;
+            border-left: 4px solid #2b90d9;
+        }
+
+        .config-info h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #2b90d9;
+            font-size: 1rem;
+        }
+
+        .config-info p {
+            margin: 5px 0;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background-color: #e8f4fc;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #657786;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stats span {
+            font-weight: 600;
+        }
+
+        .timeline-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .public-badge {
+            background-color: #38a169;
+            color: white;
+        }
+
+        .local-badge {
+            background-color: #d69e2e;
+            color: white;
+        }
+
+        .trending-badge {
+            background-color: #9b59b6;
+            color: white;
+        }
+
+        .mode-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-button {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            background: white;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .mode-button.active {
+            background-color: #2b90d9;
+            color: white;
+            border-color: #2b90d9;
+        }
+
+        .mode-button:hover:not(.active) {
+            background-color: #f0f8ff;
+            border-color: #2b90d9;
+        }
+
+        #timeline {
+            margin-bottom: 50px;
+        }
+
+        .post {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        .post.hidden {
+            display: none;
+        }
+
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .post.sensitive {
+            border: 2px solid #ff6b6b;
+        }
+
+        .sensitive-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sensitive-overlay:hover {
+            background-color: rgba(0, 0, 0, 0.92);
+        }
+
+        .sensitive-overlay.hidden {
+            display: none;
+        }
+
+        .sensitive-icon {
+            font-size: 3rem;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        .sensitive-warning {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .sensitive-message {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            margin-bottom: 20px;
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        .sensitive-hint {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .sensitive-reason {
+            background-color: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.5);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .sensitive-label {
+            display: inline-block;
+            background-color: #ff6b6b;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            vertical-align: middle;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 2px solid #e1e8ed;
+        }
+
+        .user-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .user-info .username {
+            color: #657786;
+            font-size: 0.9rem;
+        }
+
+        .post-content {
+            margin-bottom: 15px;
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+
+        .post-content a {
+            color: #2b90d9;
+            text-decoration: none;
+        }
+
+        .post-content a:hover {
+            text-decoration: underline;
+        }
+
+        .filter-highlight {
+            background-color: #ffeb3b;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+
+        .post-media {
+            margin-top: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: 400px;
+            position: relative;
+        }
+
+        .post-media img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: filter 0.3s;
+        }
+
+        .post-media.blurred img {
+            filter: blur(20px);
+        }
+
+        .post-footer {
+            display: flex;
+            justify-content: space-between;
+            color: #657786;
+            font-size: 0.9rem;
+            padding-top: 15px;
+            border-top: 1px solid #e1e8ed;
+            margin-top: 15px;
+        }
+
+        .post-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .post-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #e1e8ed;
+        }
+
+        .post-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background-color: #f0f8ff;
+            border-radius: 20px;
+            color: #2b90d9;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            border: 1px solid #d1e7ff;
+        }
+
+        .post-action:hover {
+            background-color: #2b90d9;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(43, 144, 217, 0.2);
+            text-decoration: none;
+        }
+
+        .post-action.reply {
+            background-color: #f0fff4;
+            border-color: #c6f6d5;
+            color: #38a169;
+        }
+
+        .post-action.reply:hover {
+            background-color: #38a169;
+            color: white;
+            box-shadow: 0 3px 8px rgba(56, 161, 105, 0.2);
+        }
+
+        .post-action i {
+            font-size: 0.8rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #657786;
+            font-size: 1.1rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(43, 144, 217, 0.3);
+            border-radius: 50%;
+            border-top-color: #2b90d9;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background-color: #ffeaea;
+            color: #d30000;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #657786;
+            font-size: 1.1rem;
+        }
+
+        .no-filter-results {
+            text-align: center;
+            padding: 40px;
+            color: #657786;
+            font-size: 1.1rem;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #657786;
+            font-size: 0.9rem;
+            border-top: 1px solid #e1e8ed;
+            margin-top: 30px;
+        }
+
+        .footer a {
+            color: #2b90d9;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-row label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+
+            .instance-selector input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .mode-switcher {
+                flex-direction: column;
+            }
+
+            .post {
+                padding: 15px;
+            }
+
+            .post-stats {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .post-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .post-action {
+                justify-content: center;
+            }
+            
+            .sensitive-overlay {
+                padding: 20px;
+            }
+            
+            .sensitive-icon {
+                font-size: 2.5rem;
+            }
+            
+            .sensitive-warning {
+                font-size: 1.1rem;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-broadcast-tower"></i> Mastodon Timeline</h1>
+        <p>Public posts from the fediverse with trending statuses</p>
+    </div>
+
+    <div id="config-display" class="config-info" style="display: none;">
+        <h3><i class="fas fa-cog"></i> Configuration</h3>
+        <p><strong>CORS Proxy:</strong> <span id="cors-status">Disabled</span></p>
+        <p><strong>Prefilled URL:</strong> From query parameter</p>
+        <p><strong>Mode:</strong> <span id="mode-type">Timeline</span></p>
+    </div>
+
+    <div class="mode-switcher">
+        <button class="mode-button active" data-mode="timeline">Timeline</button>
+        <button class="mode-button" data-mode="trending">Trending Statuses</button>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <div class="control-row timeline-selector" id="timeline-controls">
+                <label for="timeline-type-select">Timeline:</label>
+                <select id="timeline-type-select">
+                    <option value="public">Public Timeline</option>
+                    <option value="local">Local Timeline</option>
+                </select>
+            </div>
+            
+            <div class="control-row instance-selector">
+                <label for="instance-url">Mastodon Instance:</label>
+                <input type="text" id="instance-url" value="https://mas.to" placeholder="https://your.instance">
+                <button id="load-timeline">Load</button>
+            </div>
+            
+            <div class="control-row filter-container">
+                <label for="post-filter">Filter Posts:</label>
+                <input type="text" id="post-filter" placeholder="Type to filter by username or content...">
+            </div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div>Posts loaded: <span id="post-count">0</span></div>
+        <div>Visible posts: <span id="visible-post-count">0</span></div>
+        <div>Filter: <span id="filter-status">None</span></div>
+        <div>Current instance: <span id="current-instance">https://mas.to</span></div>
+        <div>Mode: <span id="current-mode">Timeline</span></div>
+    </div>
+
+    <div id="timeline">
+        <div class="loading" id="initial-loading">
+            <div class="loading-spinner"></div>
+            Loading public timeline...
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Data from the <a href="https://joinmastodon.org" target="_blank">Mastodon</a> network. 
+        This viewer uses the public API and respects instance rate limits.</p>
+        <p>Each post includes direct links and reply handler links that open in new tabs.</p>
+        <p>Sensitive posts are hidden behind a click-through overlay for protection.</p>
+        <p>Use <code>?url=https://your.instance</code> in URL to prefill, <code>?cors=yes</code> to enable CORS proxy, <code>?tl=local</code> for local timeline, and <code>?filter=term</code> to pre-set filter.</p>
+        <p>Made with <i class="fas fa-heart" style="color:#e74c3c"></i> for the fediverse</p>
+    </div>
+
+    <script>
+        class MastodonTimelineLoader {
+            constructor() {
+                this.timelineContainer = document.getElementById('timeline');
+                this.instanceInput = document.getElementById('instance-url');
+                this.timelineTypeSelect = document.getElementById('timeline-type-select');
+                this.loadButton = document.getElementById('load-timeline');
+                this.postFilterInput = document.getElementById('post-filter');
+                this.postCountElement = document.getElementById('post-count');
+                this.visiblePostCountElement = document.getElementById('visible-post-count');
+                this.filterStatusElement = document.getElementById('filter-status');
+                this.currentInstanceElement = document.getElementById('current-instance');
+                this.currentModeElement = document.getElementById('current-mode');
+                this.modeTypeElement = document.getElementById('mode-type');
+                this.configDisplay = document.getElementById('config-display');
+                this.corsStatusElement = document.getElementById('cors-status');
+                this.timelineControls = document.getElementById('timeline-controls');
+                
+                // Mode switcher buttons
+                this.modeButtons = document.querySelectorAll('.mode-button');
+                
+                // Reply handler base URL
+                this.replyHandlerBaseUrl = 'https://alceawis.de/other/extra/scripts/fakesocialmedia/replyhandler.html?url=';
+                
+                // Parse query string parameters
+                this.urlParams = new URLSearchParams(window.location.search);
+                this.useCorsProxy = this.urlParams.get('cors') === 'yes';
+                this.prefilledUrl = this.urlParams.get('url');
+                this.timelineTypeParam = this.urlParams.get('tl');
+                this.filterParam = this.urlParams.get('filter');
+                this.modeParam = this.urlParams.get('mode');
+                
+                // Set mode from query parameter or default
+                this.currentMode = this.modeParam === 'trending' ? 'trending' : 'timeline';
+                
+                // Set timeline type from query parameter or default
+                this.timelineType = this.timelineTypeParam === 'local' ? 'local' : 'public';
+                this.timelineTypeSelect.value = this.timelineType;
+                
+                // Set initial instance URL from query parameter or default
+                this.instanceUrl = this.prefilledUrl || 'https://mas.to';
+                this.instanceInput.value = this.instanceUrl;
+                
+                // Set filter from query parameter
+                this.currentFilter = this.filterParam || '';
+                this.postFilterInput.value = this.currentFilter;
+                
+                // Variables for pagination (for trending mode)
+                this.offset = 0;
+                this.limit = 10;
+                this.hasMorePosts = true;
+                
+                // Update display based on config
+                this.updateConfigDisplay();
+                this.updateFilterDisplay();
+                this.updateModeDisplay();
+                
+                this.loading = false;
+                this.maxId = null;
+                this.allPosts = [];
+                this.filteredPosts = [];
+                this.postCount = 0;
+                this.visiblePostCount = 0;
+                
+                this.init();
+            }
+            
+            updateConfigDisplay() {
+                if (this.useCorsProxy || this.prefilledUrl || this.timelineTypeParam || this.filterParam || this.modeParam) {
+                    this.configDisplay.style.display = 'block';
+                    this.corsStatusElement.textContent = this.useCorsProxy ? 'Enabled' : 'Disabled';
+                    this.modeTypeElement.textContent = this.currentMode === 'trending' ? 'Trending Statuses' : 'Timeline';
+                }
+            }
+            
+            updateFilterDisplay() {
+                if (this.currentFilter) {
+                    this.filterStatusElement.textContent = `"${this.currentFilter}"`;
+                    this.filterStatusElement.classList.add('active');
+                } else {
+                    this.filterStatusElement.textContent = 'None';
+                    this.filterStatusElement.classList.remove('active');
+                }
+            }
+            
+            updateModeDisplay() {
+                // Update mode buttons
+                this.modeButtons.forEach(button => {
+                    if (button.dataset.mode === this.currentMode) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+                
+                // Update mode text
+                this.currentModeElement.textContent = this.currentMode === 'trending' ? 'Trending Statuses' : 'Timeline';
+                this.modeTypeElement.textContent = this.currentMode === 'trending' ? 'Trending Statuses' : 'Timeline';
+                
+                // Show/hide timeline controls based on mode
+                if (this.currentMode === 'trending') {
+                    this.timelineControls.style.display = 'none';
+                    this.loadButton.textContent = 'Load Trending';
+                } else {
+                    this.timelineControls.style.display = 'flex';
+                    this.loadButton.textContent = 'Load Timeline';
+                }
+            }
+            
+            getApiUrl(maxId = null) {
+                if (this.currentMode === 'trending') {
+                    // Trending statuses endpoint
+                    let apiEndpoint = `${this.instanceUrl}/api/v1/trends/statuses`;
+                    
+                    // Add offset and limit parameters for pagination
+                    if (apiEndpoint.includes('?')) {
+                        apiEndpoint += `&offset=${this.offset}&limit=${this.limit}`;
+                    } else {
+                        apiEndpoint += `?offset=${this.offset}&limit=${this.limit}`;
+                    }
+                    
+                    // Use CORS proxy if enabled
+                    if (this.useCorsProxy) {
+                        const encodedApiUrl = encodeURIComponent(apiEndpoint);
+                        return `/cors.php?query=${encodedApiUrl}`;
+                    } else {
+                        // Direct API call
+                        return apiEndpoint;
+                    }
+                } else {
+                    // Regular timeline endpoint
+                    let apiEndpoint = this.timelineType === 'local' 
+                        ? `${this.instanceUrl}/api/v1/timelines/public?local=true`
+                        : `${this.instanceUrl}/api/v1/timelines/public`;
+                    
+                    // Add max_id parameter for pagination if provided
+                    if (maxId) {
+                        if (apiEndpoint.includes('?')) {
+                            apiEndpoint += `&max_id=${maxId}`;
+                        } else {
+                            apiEndpoint += `?max_id=${maxId}`;
+                        }
+                    }
+                    
+                    // Use CORS proxy if enabled
+                    if (this.useCorsProxy) {
+                        const encodedApiUrl = encodeURIComponent(apiEndpoint);
+                        return `/cors.php?query=${encodedApiUrl}`;
+                    } else {
+                        // Direct API call
+                        return apiEndpoint;
+                    }
+                }
+            }
+            
+            getModeDisplayName() {
+                return this.currentMode === 'trending' ? 'Trending Statuses' : 'Timeline';
+            }
+            
+            getTimelineDisplayName() {
+                return this.timelineType === 'local' ? 'Local Timeline' : 'Public Timeline';
+            }
+            
+            getTimelineBadgeClass() {
+                if (this.currentMode === 'trending') {
+                    return 'trending-badge';
+                }
+                return this.timelineType === 'local' ? 'local-badge' : 'public-badge';
+            }
+            
+            init() {
+                // Update current instance display
+                this.currentInstanceElement.textContent = this.instanceUrl;
+                
+                // Load initial data
+                this.loadTimeline();
+                
+                // Set up event listeners
+                this.loadButton.addEventListener('click', () => this.changeInstance());
+                this.instanceInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.changeInstance();
+                    }
+                });
+                
+                // Set up timeline type change listener
+                this.timelineTypeSelect.addEventListener('change', () => {
+                    this.changeTimelineType();
+                });
+                
+                // Set up filter input listener
+                this.postFilterInput.addEventListener('input', () => {
+                    this.applyFilter();
+                });
+                
+                // Set up clear filter on Escape key
+                this.postFilterInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.clearFilter();
+                    }
+                });
+                
+                // Set up mode switcher buttons
+                this.modeButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        this.changeMode(button.dataset.mode);
+                    });
+                });
+                
+                // Set up infinite scroll
+                window.addEventListener('scroll', () => {
+                    this.handleScroll();
+                });
+            }
+            
+            changeMode(newMode) {
+                if (newMode === this.currentMode) return;
+                
+                this.currentMode = newMode;
+                this.updateModeDisplay();
+                
+                // Reset state and reload
+                this.resetAndReload();
+            }
+            
+            changeTimelineType() {
+                const newTimelineType = this.timelineTypeSelect.value;
+                
+                if (newTimelineType === this.timelineType || this.currentMode === 'trending') {
+                    return; // No change or not applicable
+                }
+                
+                this.timelineType = newTimelineType;
+                
+                // Reset state and reload
+                this.resetAndReload();
+            }
+            
+            changeInstance() {
+                const newInstance = this.instanceInput.value.trim();
+                
+                if (!newInstance) {
+                    this.showError('Please enter a Mastodon instance URL');
+                    return;
+                }
+                
+                // Basic URL validation
+                try {
+                    new URL(newInstance);
+                } catch {
+                    this.showError('Please enter a valid URL (include https://)');
+                    return;
+                }
+                
+                this.instanceUrl = newInstance;
+                this.currentInstanceElement.textContent = this.instanceUrl;
+                
+                // Reset state and reload
+                this.resetAndReload();
+            }
+            
+            applyFilter() {
+                const filterValue = this.postFilterInput.value.trim().toLowerCase();
+                
+                // Update current filter
+                this.currentFilter = filterValue;
+                this.updateFilterDisplay();
+                
+                // Update URL without reloading page
+                this.updateUrlWithFilter();
+                
+                if (filterValue === '') {
+                    // If filter is empty, show all posts
+                    this.showAllPosts();
+                } else {
+                    // Apply filter to all posts
+                    this.filteredPosts = this.allPosts.filter(post => {
+                        // Check username/handle (full acct)
+                        const usernameMatch = post.account.acct.toLowerCase().includes(filterValue);
+                        
+                        // Check display name
+                        const displayNameMatch = post.account.display_name && 
+                                               post.account.display_name.toLowerCase().includes(filterValue);
+                        
+                        // Check content (remove HTML tags for matching)
+                        const contentText = this.stripHtml(post.content).toLowerCase();
+                        const contentMatch = contentText.includes(filterValue);
+                        
+                        // Check spoiler/cw text
+                        const spoilerMatch = post.spoiler_text && 
+                                           post.spoiler_text.toLowerCase().includes(filterValue);
+                        
+                        return usernameMatch || displayNameMatch || contentMatch || spoilerMatch;
+                    });
+                    
+                    // Hide/show posts based on filter
+                    this.updatePostVisibility();
+                }
+                
+                // Update visible post count
+                this.visiblePostCount = this.currentFilter ? this.filteredPosts.length : this.allPosts.length;
+                this.visiblePostCountElement.textContent = this.visiblePostCount;
+                
+                // Show no results message if needed
+                if (filterValue && this.filteredPosts.length === 0 && this.allPosts.length > 0) {
+                    this.showNoFilterResults(filterValue);
+                } else {
+                    this.hideNoFilterResults();
+                }
+            }
+            
+            showAllPosts() {
+                // Remove any existing no-filter-results message
+                this.hideNoFilterResults();
+                
+                // Show all posts
+                const allPostElements = this.timelineContainer.querySelectorAll('.post');
+                allPostElements.forEach(postElement => {
+                    postElement.classList.remove('hidden');
+                });
+                
+                // Update all posts with highlighted content (removing highlights)
+                this.updateAllPostsContent();
+            }
+            
+            updatePostVisibility() {
+                // Get all post elements
+                const allPostElements = this.timelineContainer.querySelectorAll('.post');
+                
+                // Create a Set of IDs that should be visible
+                const visiblePostIds = new Set(this.filteredPosts.map(post => post.id));
+                
+                // Hide/show posts and update content
+                let visibleCount = 0;
+                allPostElements.forEach(postElement => {
+                    const postId = postElement.dataset.id;
+                    const shouldBeVisible = visiblePostIds.has(postId);
+                    
+                    if (shouldBeVisible) {
+                        postElement.classList.remove('hidden');
+                        visibleCount++;
+                        
+                        // Update content with highlights if needed
+                        const post = this.allPosts.find(p => p.id === postId);
+                        if (post && this.currentFilter) {
+                            this.updatePostContent(postElement, post);
+                        }
+                    } else {
+                        postElement.classList.add('hidden');
+                    }
+                });
+                
+                // Also update posts that might have been loaded but not rendered yet
+                this.updateAllPostsContent();
+            }
+            
+            updateAllPostsContent() {
+                // Update all rendered posts with appropriate content (highlighted or not)
+                const allPostElements = this.timelineContainer.querySelectorAll('.post');
+                allPostElements.forEach(postElement => {
+                    const postId = postElement.dataset.id;
+                    const post = this.allPosts.find(p => p.id === postId);
+                    if (post) {
+                        this.updatePostContent(postElement, post);
+                    }
+                });
+            }
+            
+            updatePostContent(postElement, post) {
+                // Check if this post should have highlighted content
+                const isVisible = !postElement.classList.contains('hidden');
+                const shouldHighlight = isVisible && this.currentFilter;
+                
+                // Get the post's original HTML content
+                const postHtml = this.createPostHtml(post, shouldHighlight);
+                
+                // Replace the post content
+                postElement.innerHTML = postHtml;
+                
+                // Reattach event listeners for sensitive content
+                this.attachSensitiveOverlayListeners(postElement);
+            }
+            
+            attachSensitiveOverlayListeners(postElement) {
+                const overlay = postElement.querySelector('.sensitive-overlay');
+                if (overlay) {
+                    overlay.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        overlay.classList.add('hidden');
+                        
+                        // Remove blur from any blurred images
+                        const blurredMedia = postElement.querySelector('.post-media.blurred');
+                        if (blurredMedia) {
+                            blurredMedia.classList.remove('blurred');
+                        }
+                    });
+                }
+            }
+            
+            clearFilter() {
+                this.postFilterInput.value = '';
+                this.applyFilter();
+            }
+            
+            updateUrlWithFilter() {
+                // Update URL in browser without reloading
+                const url = new URL(window.location);
+                
+                if (this.currentFilter) {
+                    url.searchParams.set('filter', this.currentFilter);
+                } else {
+                    url.searchParams.delete('filter');
+                }
+                
+                // Update mode parameter
+                if (this.currentMode === 'trending') {
+                    url.searchParams.set('mode', 'trending');
+                } else {
+                    url.searchParams.delete('mode');
+                }
+                
+                // Update browser URL without reloading
+                window.history.pushState({}, '', url.toString());
+            }
+            
+            stripHtml(html) {
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                return div.textContent || div.innerText || '';
+            }
+            
+            resetAndReload() {
+                // Reset state
+                if (this.currentMode === 'trending') {
+                    this.offset = 0;
+                    this.hasMorePosts = true;
+                } else {
+                    this.maxId = null;
+                }
+                
+                this.allPosts = [];
+                this.filteredPosts = [];
+                this.postCount = 0;
+                this.visiblePostCount = 0;
+                this.postCountElement.textContent = '0';
+                this.visiblePostCountElement.textContent = '0';
+                
+                // Clear filter input
+                this.postFilterInput.value = '';
+                this.currentFilter = '';
+                this.updateFilterDisplay();
+                this.updateUrlWithFilter();
+                this.hideNoFilterResults();
+                
+                // Update loading message
+                const loadingText = this.currentMode === 'trending' 
+                    ? `Loading trending statuses from ${this.instanceUrl}...`
+                    : `Loading ${this.getTimelineDisplayName().toLowerCase()} from ${this.instanceUrl}...`;
+                
+                // Clear timeline and show loading
+                this.timelineContainer.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        ${loadingText}
+                    </div>
+                `;
+                
+                // Load new data
+                this.loadTimeline();
+            }
+            
+            async loadTimeline() {
+                if (this.loading) return;
+                
+                this.loading = true;
+                this.showLoading();
+                
+                try {
+                    const url = this.currentMode === 'trending' 
+                        ? this.getApiUrl() 
+                        : this.getApiUrl(this.maxId);
+                    
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    let newPosts;
+                    if (this.useCorsProxy) {
+                        // For CORS proxy, we might need to parse the response differently
+                        const responseText = await response.text();
+                        try {
+                            newPosts = JSON.parse(responseText);
+                        } catch (e) {
+                            console.warn('Direct JSON parse failed, trying alternative parsing');
+                            newPosts = JSON.parse(responseText);
+                        }
+                    } else {
+                        newPosts = await response.json();
+                    }
+                    
+                    if (!Array.isArray(newPosts)) {
+                        throw new Error('Invalid response format from server');
+                    }
+                    
+                    if (newPosts.length === 0) {
+                        if (this.allPosts.length === 0) {
+                            this.showEmptyMessage();
+                        }
+                        return;
+                    }
+                    
+                    // Store pagination info based on mode
+                    if (this.currentMode === 'trending') {
+                        // For trending, update offset
+                        this.offset += newPosts.length;
+                        this.hasMorePosts = newPosts.length >= this.limit;
+                    } else {
+                        // For timeline, update max_id
+                        this.maxId = newPosts[newPosts.length - 1].id;
+                    }
+                    
+                    // Add new posts to our collection
+                    this.allPosts = [...this.allPosts, ...newPosts];
+                    this.postCount = this.allPosts.length;
+                    this.postCountElement.textContent = this.postCount;
+                    
+                    // Apply current filter to new posts
+                    if (this.currentFilter) {
+                        const newlyFilteredPosts = newPosts.filter(post => {
+                            const usernameMatch = post.account.acct.toLowerCase().includes(this.currentFilter);
+                            const displayNameMatch = post.account.display_name && 
+                                                   post.account.display_name.toLowerCase().includes(this.currentFilter);
+                            const contentText = this.stripHtml(post.content).toLowerCase();
+                            const contentMatch = contentText.includes(this.currentFilter);
+                            const spoilerMatch = post.spoiler_text && 
+                                               post.spoiler_text.toLowerCase().includes(this.currentFilter);
+                            
+                            return usernameMatch || displayNameMatch || contentMatch || spoilerMatch;
+                        });
+                        
+                        this.filteredPosts = [...this.filteredPosts, ...newlyFilteredPosts];
+                    } else {
+                        this.filteredPosts = [...this.allPosts];
+                    }
+                    
+                    this.visiblePostCount = this.currentFilter ? this.filteredPosts.length : this.allPosts.length;
+                    this.visiblePostCountElement.textContent = this.visiblePostCount;
+                    
+                    // Render posts
+                    this.renderPosts(newPosts);
+                    
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    let errorMessage = `Failed to load ${this.getModeDisplayName().toLowerCase()}: ${error.message}`;
+                    
+                    if (this.useCorsProxy) {
+                        errorMessage += '. The CORS proxy might not be properly configured.';
+                    } else {
+                        errorMessage += '. Make sure the instance allows public API access and CORS.';
+                        if (this.currentMode === 'timeline' && this.timelineType === 'local') {
+                            errorMessage += ' Note: Some instances may restrict local timeline access.';
+                        } else if (this.currentMode === 'trending') {
+                            errorMessage += ' Note: The trending API endpoint may not be available on all instances.';
+                        }
+                    }
+                    
+                    this.showError(errorMessage);
+                } finally {
+                    this.loading = false;
+                    this.hideLoading();
+                }
+            }
+            
+            renderPosts(posts) {
+                // Remove loading indicator if it exists
+                const loadingElement = this.timelineContainer.querySelector('.loading');
+                if (loadingElement && this.allPosts.length > posts.length) {
+                    loadingElement.remove();
+                }
+                
+                // Remove empty message if it exists
+                const emptyElement = this.timelineContainer.querySelector('.empty');
+                if (emptyElement) {
+                    emptyElement.remove();
+                }
+                
+                // Remove no filter results message if it exists
+                this.hideNoFilterResults();
+                
+                // Create HTML for each post
+                posts.forEach(post => {
+                    // Check if this post should be visible based on current filter
+                    const shouldBeVisible = this.currentFilter ? 
+                        this.filteredPosts.some(p => p.id === post.id) : true;
+                    
+                    const postElement = this.createPostElement(post, shouldBeVisible);
+                    this.timelineContainer.appendChild(postElement);
+                });
+                
+                // If no posts at all and no filter is active, show empty message
+                if (this.allPosts.length === 0 && !this.currentFilter) {
+                    this.showEmptyMessage();
+                }
+            }
+            
+            createPostElement(post, isVisible) {
+                const postDiv = document.createElement('div');
+                postDiv.className = 'post';
+                postDiv.dataset.id = post.id;
+                
+                if (!isVisible) {
+                    postDiv.classList.add('hidden');
+                }
+                
+                // Check if post is sensitive
+                const isSensitive = post.sensitive === true || 
+                                   (post.spoiler_text && post.spoiler_text.length > 0) ||
+                                   post.filtered && post.filtered.some(f => f.filter.title.toLowerCase().includes('sensitive'));
+                
+                if (isSensitive) {
+                    postDiv.classList.add('sensitive');
+                }
+                
+                // Set the post content
+                const shouldHighlight = isVisible && this.currentFilter;
+                postDiv.innerHTML = this.createPostHtml(post, shouldHighlight);
+                
+                // Add click event to sensitive overlay if present
+                if (isSensitive) {
+                    const overlay = postDiv.querySelector('.sensitive-overlay');
+                    overlay.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        overlay.classList.add('hidden');
+                        
+                        // Remove blur from any blurred images
+                        const blurredMedia = postDiv.querySelector('.post-media.blurred');
+                        if (blurredMedia) {
+                            blurredMedia.classList.remove('blurred');
+                        }
+                    });
+                }
+                
+                return postDiv;
+            }
+            
+            createPostHtml(post, shouldHighlight = false) {
+                // Format date
+                const postDate = new Date(post.created_at);
+                const formattedDate = postDate.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Get display name or username
+                const displayName = post.account.display_name || post.account.username;
+                
+                // Create content HTML
+                let content = post.content;
+                
+                // Handle media attachments
+                let mediaHtml = '';
+                if (post.media_attachments && post.media_attachments.length > 0) {
+                    post.media_attachments.forEach(media => {
+                        if (media.type === 'image') {
+                            // Check if media is marked as sensitive
+                            const mediaIsSensitive = media.description && 
+                                                   (media.description.toLowerCase().includes('sensitive') ||
+                                                    media.description.toLowerCase().includes('content warning'));
+                            
+                            const mediaClass = mediaIsSensitive ? 'post-media blurred' : 'post-media';
+                            mediaHtml += `<div class="${mediaClass}"><img src="${media.url}" alt="${media.description || 'Mastodon image'}"></div>`;
+                        }
+                    });
+                }
+                
+                // Get post URL (some instances might not have the url field)
+                let postUrl = post.url;
+                if (!postUrl && post.account && post.account.url) {
+                    // Construct a URL if not provided
+                    const username = post.account.acct.split('@')[0];
+                    postUrl = `${this.instanceUrl}/@${username}/${post.id}`;
+                }
+                
+                // Create action links if we have a post URL
+                let actionLinks = '';
+                if (postUrl) {
+                    // Encode the post URL for the reply handler
+                    const encodedPostUrl = encodeURIComponent(postUrl);
+                    const replyHandlerUrl = `${this.replyHandlerBaseUrl}${encodedPostUrl}`;
+                    
+                    actionLinks = `
+                        <div class="post-actions">
+                            <a href="${postUrl}" class="post-action" target="_blank" title="Open original post in new tab">
+                                <i class="fas fa-external-link-alt"></i>
+                                Open Post
+                            </a>
+                            <a href="${replyHandlerUrl}" class="post-action reply" target="_blank" title="Open with reply handler in new tab">
+                                <i class="fas fa-reply"></i>
+                                Reply Handler
+                            </a>
+                        </div>
+                    `;
+                }
+                
+                // Create sensitive content warning if needed
+                const isSensitive = post.sensitive === true || 
+                                   (post.spoiler_text && post.spoiler_text.length > 0) ||
+                                   post.filtered && post.filtered.some(f => f.filter.title.toLowerCase().includes('sensitive'));
+                
+                let sensitiveOverlay = '';
+                if (isSensitive) {
+                    const warningText = post.spoiler_text || 'Content Warning';
+                    const reason = post.spoiler_text ? `Reason: ${post.spoiler_text}` : 'This post has been marked as sensitive';
+                    
+                    sensitiveOverlay = `
+                        <div class="sensitive-overlay">
+                            <div class="sensitive-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="sensitive-warning">Sensitive Content</div>
+                            ${warningText !== 'Content Warning' ? `<div class="sensitive-reason">${this.escapeHtml(reason)}</div>` : ''}
+                            <div class="sensitive-message">
+                                This post has been marked as containing sensitive content.<br>
+                                Click anywhere to view the content.
+                            </div>
+                            <div class="sensitive-hint">
+                                <i class="fas fa-mouse-pointer"></i> Click to reveal
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Add sensitive label to post header if needed
+                const sensitiveLabel = isSensitive ? '<span class="sensitive-label">SENSITIVE</span> ' : '';
+                
+                // Add mode badge
+                const modeBadge = `<span class="timeline-type-badge ${this.getTimelineBadgeClass()}">${this.currentMode === 'trending' ? 'TRENDING' : (this.timelineType === 'local' ? 'LOCAL' : 'PUBLIC')}</span>`;
+                
+                // Highlight filter term in content if filter is active and should highlight
+                if (shouldHighlight) {
+                    // Highlight in display name
+                    const highlightedDisplayName = this.highlightText(displayName, this.currentFilter);
+                    
+                    // Highlight in username
+                    const highlightedUsername = this.highlightText(`@${post.account.acct}`, this.currentFilter);
+                    
+                    // Highlight in content
+                    const contentText = this.stripHtml(content);
+                    const highlightedContent = this.highlightText(contentText, this.currentFilter);
+                    content = content.replace(/(?<=>)([^<]+)(?=<)/g, (match) => {
+                        return this.highlightText(match, this.currentFilter);
+                    });
+                    
+                    // Use highlighted versions
+                    return `
+                        ${sensitiveOverlay}
+                        <div class="post-header">
+                            <img src="${post.account.avatar}" alt="${displayName}'s avatar" class="avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyNSIgY3k9IjI1IiByPSIyNSIgZmlsbD0iI2UxZThlZCIvPjx0ZXh0IHg9IjI1IiB5PSIyOCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjU3Nzg2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+${displayName.charAt(0).toUpperCase()}</dGV4dD48L3N2Zz4='">
+                            <div class="user-info">
+                                <h3>${modeBadge} ${sensitiveLabel}${highlightedDisplayName}</h3>
+                                <div class="username">${highlightedUsername}</div>
+                            </div>
+                        </div>
+                        <div class="post-content">${content}</div>
+                        ${mediaHtml}
+                        ${actionLinks}
+                        <div class="post-footer">
+                            <div class="post-date">
+                                <i class="far fa-clock"></i>
+                                ${formattedDate}
+                            </div>
+                            <div class="post-stats">
+                                <div class="post-stat">
+                                    <i class="far fa-comment"></i>
+                                    ${post.replies_count}
+                                </div>
+                                <div class="post-stat">
+                                    <i class="fas fa-retweet"></i>
+                                    ${post.reblogs_count}
+                                </div>
+                                <div class="post-stat">
+                                    <i class="far fa-heart"></i>
+                                    ${post.favourites_count}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Regular version without highlighting
+                    return `
+                        ${sensitiveOverlay}
+                        <div class="post-header">
+                            <img src="${post.account.avatar}" alt="${displayName}'s avatar" class="avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyNSIgY3k9IjI1IiByPSIyNSIgZmlsbD0iI2UxZThlZCIvPjx0ZXh0IHg9IjI1IiB5PSIyOCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjU3Nzg2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+${displayName.charAt(0).toUpperCase()}</dGV4dD48L3N2Zz4='">
+                            <div class="user-info">
+                                <h3>${modeBadge} ${sensitiveLabel}${this.escapeHtml(displayName)}</h3>
+                                <div class="username">@${post.account.acct}</div>
+                            </div>
+                        </div>
+                        <div class="post-content">${content}</div>
+                        ${mediaHtml}
+                        ${actionLinks}
+                        <div class="post-footer">
+                            <div class="post-date">
+                                <i class="far fa-clock"></i>
+                                ${formattedDate}
+                            </div>
+                            <div class="post-stats">
+                                <div class="post-stat">
+                                    <i class="far fa-comment"></i>
+                                    ${post.replies_count}
+                                </div>
+                                <div class="post-stat">
+                                    <i class="fas fa-retweet"></i>
+                                    ${post.reblogs_count}
+                                </div>
+                                <div class="post-stat">
+                                    <i class="far fa-heart"></i>
+                                    ${post.favourites_count}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            highlightText(text, searchTerm) {
+                if (!searchTerm || !text) return this.escapeHtml(text);
+                
+                const escapedText = this.escapeHtml(text);
+                const regex = new RegExp(`(${this.escapeRegex(searchTerm)})`, 'gi');
+                return escapedText.replace(regex, '<mark class="filter-highlight">$1</mark>');
+            }
+            
+            escapeRegex(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            showLoading() {
+                // Only show loading if we're at the bottom
+                if (this.allPosts.length > 0) {
+                    const loadingText = this.currentMode === 'trending'
+                        ? `Loading more trending statuses...`
+                        : `Loading more ${this.getTimelineDisplayName().toLowerCase()} posts...`;
+                    
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'loading';
+                    loadingDiv.id = 'loading-more';
+                    loadingDiv.innerHTML = `<div class="loading-spinner"></div>${loadingText}`;
+                    this.timelineContainer.appendChild(loadingDiv);
+                }
+            }
+            
+            hideLoading() {
+                const loadingElement = this.timelineContainer.querySelector('#loading-more');
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+            }
+            
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.innerHTML = `<p><i class="fas fa-exclamation-triangle"></i> ${message}</p>`;
+                
+                // Remove existing error if any
+                const existingError = this.timelineContainer.querySelector('.error');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                // If there are no posts yet, replace the content
+                if (this.allPosts.length === 0) {
+                    this.timelineContainer.innerHTML = '';
+                    this.timelineContainer.appendChild(errorDiv);
+                } else {
+                    // Otherwise, add it to the top
+                    this.timelineContainer.prepend(errorDiv);
+                }
+            }
+            
+            showEmptyMessage() {
+                const message = this.currentMode === 'trending'
+                    ? `The trending statuses for this instance appear to be empty or not accessible.`
+                    : `The ${this.getTimelineDisplayName().toLowerCase()} for this instance appears to be empty or not accessible.`;
+                
+                const note = this.currentMode === 'trending'
+                    ? '<p>Note: Some instances may not support the trending statuses endpoint.</p>'
+                    : (this.timelineType === 'local' ? '<p>Note: Some instances may restrict access to local timelines.</p>' : '');
+                
+                this.timelineContainer.innerHTML = `
+                    <div class="empty">
+                        <i class="far fa-comment-dots fa-3x" style="margin-bottom: 15px; color: #bdc3c7;"></i>
+                        <h3>No posts found</h3>
+                        <p>${message}</p>
+                        ${note}
+                    </div>
+                `;
+            }
+            
+            showNoFilterResults(filterTerm) {
+                // Remove existing no-filter-results message if any
+                this.hideNoFilterResults();
+                
+                const noResultsDiv = document.createElement('div');
+                noResultsDiv.className = 'no-filter-results';
+                noResultsDiv.innerHTML = `
+                    <i class="fas fa-search fa-3x" style="margin-bottom: 15px; color: #bdc3c7;"></i>
+                    <h3>No matching posts found</h3>
+                    <p>No posts found containing "<strong>${this.escapeHtml(filterTerm)}</strong>" in username or content.</p>
+                    <button class="clear-filter" onclick="window.timelineLoader.clearFilter()">
+                        <i class="fas fa-times"></i> Clear filter
+                    </button>
+                `;
+                
+                this.timelineContainer.appendChild(noResultsDiv);
+            }
+            
+            hideNoFilterResults() {
+                const noResultsElement = this.timelineContainer.querySelector('.no-filter-results');
+                if (noResultsElement) {
+                    noResultsElement.remove();
+                }
+            }
+            
+            handleScroll() {
+                // Check if we've scrolled near the bottom of the page
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                const windowHeight = window.innerHeight;
+                const documentHeight = document.documentElement.scrollHeight;
+                
+                // Load more when 80% from the bottom
+                if (scrollTop + windowHeight >= documentHeight * 0.8) {
+                    this.loadTimeline();
+                }
+            }
+        }
+        
+        // Initialize the timeline loader when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.timelineLoader = new MastodonTimelineLoader();
+        });
+    </script>
+</body>
+</html>

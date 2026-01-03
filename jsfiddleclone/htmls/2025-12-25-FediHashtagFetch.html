@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mastodon Hashtag Feed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  background:#f5f8fa;
+  color:#0f1419;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width:600px;
+  margin:auto;
+  padding:10px;
+}
+
+h2 { margin:10px 0; }
+
+.post {
+  display:flex;
+  background:#fff;
+  padding:15px;
+  margin-bottom:12px;
+  border-radius:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+
+.avatar {
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  margin-right:12px;
+}
+
+.content { flex:1; }
+
+.header {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-weight:bold;
+}
+
+.handle { color:#536471; font-weight:normal; }
+
+.date {
+  color:#536471;
+  font-weight:normal;
+  font-size:13px;
+  margin-left:auto;
+}
+
+.text { margin:6px 0; line-height:1.4; }
+
+.media img,
+.media video {
+  width:100%;
+  border-radius:14px;
+  margin-top:8px;
+}
+
+.actions {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:8px;
+  color:#536471;
+  font-size:14px;
+}
+
+.view-btn {
+  background:#1d9bf0;
+  color:#fff;
+  padding:6px 12px;
+  border-radius:999px;
+  text-decoration:none;
+  font-size:13px;
+}
+
+.cw {
+  background:#eef3f6;
+  padding:6px;
+  border-radius:8px;
+  cursor:pointer;
+  color:#1d9bf0;
+  margin-top:6px;
+}
+
+#autoScrollBtn {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#1d9bf0;
+  color:#fff;
+  border:none;
+  padding:12px 16px;
+  border-radius:999px;
+  font-size:14px;
+  cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,.2);
+  z-index:100;
+}
+#autoScrollBtn.off { background:#8899a6; }
+</style>
+</head>
+<body>
+
+<h2 id="title"></h2>
+<div id="feed">Loading…</div>
+
+<button id="autoScrollBtn" class="off">Auto-scroll</button>
+
+<script>
+const INSTANCES = [
+  "https://mastodon.social",
+  "https://infosec.exchange",
+  "https://hachyderm.io"
+];
+const LIMIT = 10;
+const SCROLL_SPEED = 2;
+
+let seen = new Set();
+let maxId = {};
+let loading = false;
+let autoScroll = false;
+let scrollAnimationId = null;
+
+const params = new URLSearchParams(window.location.search);
+const TAG = params.get("hashtag")?.replace(/[^a-z0-9_]/gi, "") || "cats";
+document.getElementById("title").textContent = `#${TAG}`;
+
+function timeAgo(date) {
+  const seconds = Math.floor((Date.now() - date) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+async function fetchMore() {
+  if (loading) return;
+  loading = true;
+
+  const requests = INSTANCES.map(async instance => {
+    let url = `${instance}/api/v1/timelines/tag/${TAG}?limit=${LIMIT}`;
+    if (maxId[instance]) url += `&max_id=${maxId[instance]}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (data.length) maxId[instance] = data[data.length - 1].id;
+      return data.map(p => ({ ...p, instance }));
+    } catch {
+      return [];
+    }
+  });
+
+  const batch = (await Promise.all(requests)).flat();
+  batch.forEach(post => {
+    if (post.reblog) post = post.reblog;
+    const key = `${post.instance}|${post.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    renderPost(post);
+  });
+
+  loading = false;
+}
+
+function renderPost(post) {
+  const feed = document.getElementById("feed");
+
+  const div = document.createElement("div");
+  div.className = "post";
+
+  const avatar = document.createElement("img");
+  avatar.className = "avatar";
+  avatar.src = post.account.avatar;
+
+  const content = document.createElement("div");
+  content.className = "content";
+
+  const header = document.createElement("div");
+  header.className = "header";
+
+  const name = document.createElement("span");
+  name.textContent = post.account.display_name || post.account.username;
+
+  const handle = document.createElement("span");
+  handle.className = "handle";
+  handle.textContent = `@${post.account.acct}`;
+
+  const date = document.createElement("span");
+  date.className = "date";
+  const created = new Date(post.created_at);
+  date.textContent = timeAgo(created.getTime());
+  date.title = created.toLocaleString();
+
+  header.append(name, handle, date);
+
+  const text = document.createElement("div");
+  text.className = "text";
+  text.innerHTML = post.content;
+
+  content.appendChild(header);
+
+  if (post.spoiler_text) {
+    const cw = document.createElement("div");
+    cw.className = "cw";
+    cw.textContent = post.spoiler_text + " (click to show)";
+    cw.onclick = () => {
+      cw.remove();
+      content.appendChild(text);
+      renderMedia(post, content);
+    };
+    content.appendChild(cw);
+  } else {
+    content.appendChild(text);
+    renderMedia(post, content);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  actions.innerHTML = `
+    <span>💬 ${post.replies_count}</span>
+    <span>🔁 ${post.reblogs_count}</span>
+    <span>❤️ ${post.favourites_count}</span>
+    <a class="view-btn" href="${post.url}" target="_blank">View post</a>
+  `;
+  content.appendChild(actions);
+
+  div.appendChild(avatar);
+  div.appendChild(content);
+  feed.appendChild(div);
+}
+
+function renderMedia(post, container) {
+  if (!post.media_attachments.length) return;
+  const media = document.createElement("div");
+  media.className = "media";
+
+  post.media_attachments.forEach(m => {
+    if (m.type === "image") {
+      const img = document.createElement("img");
+      img.src = m.preview_url || m.url;
+      media.appendChild(img);
+    }
+    if (m.type === "video" || m.type === "gifv") {
+      const video = document.createElement("video");
+      video.src = m.url;
+      video.controls = true;
+      media.appendChild(video);
+    }
+  });
+  container.appendChild(media);
+}
+
+function scrollStep() {
+  if (!autoScroll) return;
+
+  const isNearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 100;
+
+  if (isNearBottom) {
+    fetchMore();
+  }
+
+  window.scrollBy(0, SCROLL_SPEED);
+
+  if (autoScroll) {
+    scrollAnimationId = requestAnimationFrame(scrollStep);
+  }
+}
+
+function startAutoScroll() {
+  if (!scrollAnimationId) {
+    autoScroll = true;
+    btn.textContent = "Stop Auto-scroll";
+    btn.classList.remove("off");
+    scrollStep();
+  }
+}
+
+function stopAutoScroll() {
+  autoScroll = false;
+  btn.textContent = "Auto-scroll";
+  btn.classList.add("off");
+  if (scrollAnimationId) {
+    cancelAnimationFrame(scrollAnimationId);
+    scrollAnimationId = null;
+  }
+}
+
+const btn = document.getElementById("autoScrollBtn");
+btn.onclick = () => {
+  if (autoScroll) {
+    stopAutoScroll();
+  } else {
+    startAutoScroll();
+  }
+};
+
+window.addEventListener("scroll", () => {
+  if (autoScroll) {
+    const currentScroll = window.scrollY;
+    clearTimeout(window.scrollTimeout);
+    window.scrollTimeout = setTimeout(() => {
+      if (currentScroll < window.scrollY - 50) {
+        stopAutoScroll();
+      }
+    }, 100);
+  }
+
+  if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 800) {
+    fetchMore();
+  }
+});
+
+fetchMore();
+</script>
+
+</body>
+</html>

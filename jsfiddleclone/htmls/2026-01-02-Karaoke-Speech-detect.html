@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Vosk Offline Karaoke Transcription (Safe 16kHz)</title>
+<script src="https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js"></script>
+<style>
+  body { font-family: sans-serif; background: #eef; padding: 20px; }
+  button { padding: 10px; margin-top: 10px; font-size: 16px; }
+  #status { margin-top: 10px; font-weight: bold; }
+  #bar { width: 100%; height: 20px; background: #ccc; margin-top: 8px; border-radius: 10px; overflow: hidden; }
+  #barInner { height: 100%; width: 0%; background: #4caf50; transition: width 0.2s; }
+  #log { white-space: pre-wrap; background: #fff; padding: 10px; margin-top: 10px; height: 200px; overflow: auto; border: 1px solid #ddd; }
+  #transcript { margin-top: 30px; font-size: 28px; line-height: 2; text-align: center; }
+  #transcript span { transition: all 0.3s; padding: 2px 6px; border-radius: 4px; }
+  #transcript span.active { color: white; background: red; font-weight: bold; }
+  #player { width: 100%; margin-top: 20px; }
+
+  /* Warning overlay */
+  #warnOverlay {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 9999;
+  }
+  #warnBox {
+    background: #fff; padding: 20px; border-radius: 10px; max-width: 500px; text-align: center;
+  }
+  #warnBox button { margin: 5px; }
+  #ffmpegCmd { margin-top: 10px; font-family: monospace; background:#eee; padding:5px; display:block; word-break: break-all; }
+  #ffmpegLink { display:block; margin-top:10px; }
+</style>
+</head>
+<body>
+<h1>Vosk Offline Karaoke Transcription</h1>
+<input type="file" id="file" accept="audio/*"><br>
+<button id="load">Load Model</button>
+<button id="go" disabled>Transcribe</button>
+<div id="status">idle</div>
+<div id="bar"><div id="barInner"></div></div>
+<div id="log"></div>
+<div id="transcript"></div>
+<audio id="player" controls></audio>
+
+<!-- Warning overlay -->
+<div id="warnOverlay">
+  <div id="warnBox">
+    <p>Decoding for this file is necessary. Are you sure you want to continue in the browser?</p>
+    <button id="warnYes">Yes</button>
+    <button id="warnNo">No</button>
+    <button id="warnSkip">I already resampled, keep going</button>
+    <div id="ffmpegAdvice" style="display:none;">
+      <p>Or resample offline using ffmpeg:</p>
+      <code id="ffmpegCmd"></code>
+      <a id="ffmpegLink" target="_blank">Resample with ffmpegresample.php</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const bar = document.getElementById('barInner');
+const logEl = document.getElementById('log');
+const transcriptEl = document.getElementById('transcript');
+const player = document.getElementById('player');
+
+const warnOverlay = document.getElementById('warnOverlay');
+const warnYes = document.getElementById('warnYes');
+const warnNo = document.getElementById('warnNo');
+const warnSkip = document.getElementById('warnSkip');
+const ffmpegCmdEl = document.getElementById('ffmpegCmd');
+const ffmpegLinkEl = document.getElementById('ffmpegLink');
+const ffmpegAdvice = document.getElementById('ffmpegAdvice');
+
+const log = m => { 
+  logEl.textContent += m + '\n'; 
+  logEl.scrollTop = logEl.scrollHeight; 
+};
+
+let model = null;
+let audioFile = null;
+let readyToTranscribe = false;
+
+// File selection
+document.getElementById('file').onchange = async e => {
+  audioFile = e.target.files[0];
+  if (!audioFile) return;
+
+  log('Audio file selected: ' + audioFile.name + ' (' + (audioFile.size / 1024 / 1024).toFixed(2) + ' MB)');
+
+  // Automatically skip overlay if _resampledsuccessfully.wav
+  if (audioFile.name.toLowerCase().includes('_resampledsuccessfully') && audioFile.name.toLowerCase().endsWith('.wav')) {
+    readyToTranscribe = true;
+    warnOverlay.style.display = 'none';
+    log('Detected _resampledsuccessfully file, skipping overlay.');
+    return;
+  }
+
+  // Otherwise show warning overlay
+  warnOverlay.style.display = 'flex';
+  ffmpegAdvice.style.display = 'none';
+
+  const nameOnly = audioFile.name.replace(/\.[^/.]+$/, "");
+  const safeName = nameOnly.replace(/"/g, '\\"');
+  ffmpegCmdEl.textContent = `ffmpeg -i "${safeName}.wav" -ar 16000 -ac 1 "${safeName}_resampledsuccessfully.wav"`;
+  const blobUrl = URL.createObjectURL(audioFile);
+  ffmpegLinkEl.href = `ffmpegresample.php?file=${encodeURIComponent(blobUrl)}`;
+
+  readyToTranscribe = false;
+};
+
+// Warning buttons
+warnYes.onclick = () => { readyToTranscribe = true; warnOverlay.style.display = 'none'; log('User confirmed decoding in browser.'); };
+warnNo.onclick = () => { readyToTranscribe = false; ffmpegAdvice.style.display = 'block'; log('User chose offline ffmpeg resampling.'); };
+warnSkip.onclick = () => { readyToTranscribe = true; warnOverlay.style.display = 'none'; log('User skipped resampling check.'); };
+
+// Load model
+document.getElementById('load').onclick = async () => {
+  if (model) { log('Model already loaded'); document.getElementById('go').disabled = false; return; }
+  bar.style.width = '0%';
+  log('Starting model download… (~40MB)');
+  statusEl.textContent = 'Downloading model...';
+
+  const url = 'https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz';
+  try {
+    const resp = await fetch(url);
+    const total = Number(resp.headers.get('content-length')) || 0;
+    const reader = resp.body.getReader();
+    let received = 0;
+    const chunks = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (total) bar.style.width = Math.round((received / total) * 50) + '%';
+    }
+
+    statusEl.textContent = 'Initializing model…';
+    log('Download complete. Initializing...');
+    const blob = new Blob(chunks, { type: 'application/gzip' });
+    const modelUrl = URL.createObjectURL(blob);
+    model = await Vosk.createModel(modelUrl);
+    URL.revokeObjectURL(modelUrl);
+
+    bar.style.width = '100%';
+    statusEl.textContent = 'Model ready';
+    document.getElementById('go').disabled = false;
+    document.getElementById('load').disabled = true;
+    document.getElementById('load').textContent = 'Model loaded';
+    log('Model loaded and ready!');
+  } catch (err) {
+    statusEl.textContent = 'Model load failed';
+    log('Error: ' + err.message);
+  }
+};
+
+// Transcribe button
+document.getElementById('go').onclick = async () => {
+  if (!audioFile) { log('Please select an audio file first!'); return; }
+  if (!model) { log('Please load the model first!'); return; }
+  if (!readyToTranscribe) { log('User has not confirmed decoding yet.'); return; }
+
+  statusEl.textContent = 'Decoding audio…';
+  bar.style.width = '5%';
+
+  try {
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+
+    log(`Audio decoded: ${decoded.numberOfChannels} ch, ${decoded.sampleRate.toFixed(2)} Hz, ${decoded.duration.toFixed(2)}s`);
+
+    const rec = new model.KaldiRecognizer(16000);
+    rec.setWords(true);
+
+    // Always resample using OfflineAudioContext to ensure 16kHz
+    const chunkSize = 16000 * 2; // 2 seconds
+    const totalChunks = Math.ceil(decoded.length / chunkSize);
+    for (let c = 0; c < totalChunks; c++) {
+      const start = c * chunkSize;
+      const end = Math.min(decoded.length, start + chunkSize);
+      const offline = new OfflineAudioContext(1, end - start, 16000);
+      const buffer = offline.createBuffer(1, end - start, decoded.sampleRate);
+      const channelData = new Float32Array(end - start);
+      for (let i = start; i < end; i++) {
+        let sum = 0;
+        for (let ch = 0; ch < decoded.numberOfChannels; ch++) sum += decoded.getChannelData(ch)[i];
+        channelData[i - start] = sum / decoded.numberOfChannels;
+      }
+      buffer.copyToChannel(channelData, 0);
+      const source = offline.createBufferSource();
+      source.buffer = buffer;
+      source.connect(offline.destination);
+      source.start();
+      const rendered = await offline.startRendering();
+
+      const floatData = rendered.getChannelData(0);
+      const pcmChunk = new Int16Array(floatData.length);
+      for (let i = 0; i < floatData.length; i++) {
+        let s = Math.max(-1, Math.min(1, floatData[i]));
+        pcmChunk[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+
+      rec.acceptWaveform(pcmChunk);
+      bar.style.width = 5 + Math.round((c + 1) / totalChunks * 90) + '%';
+      statusEl.textContent = `Transcribing… chunk ${c + 1} of ${totalChunks}`;
+      await new Promise(r => setTimeout(r, 10));
+    }
+
+    const result = rec.result();
+    log('\n--- FULL TRANSCRIPT ---\n' + (result.text || 'No speech detected'));
+    statusEl.textContent = 'Transcription complete';
+    bar.style.width = '100%';
+
+    transcriptEl.innerHTML = '';
+    const words = result.result || [];
+    words.forEach(wordObj => {
+      const span = document.createElement('span');
+      span.textContent = wordObj.word + ' ';
+      span.dataset.start = wordObj.start;
+      span.dataset.end = wordObj.end || wordObj.start + 0.5;
+      transcriptEl.appendChild(span);
+    });
+
+    player.src = URL.createObjectURL(audioFile);
+    player.ontimeupdate = () => {
+      const t = player.currentTime;
+      transcriptEl.querySelectorAll('span').forEach(span => {
+        const start = parseFloat(span.dataset.start);
+        const end = parseFloat(span.dataset.end);
+        if (t >= start && t < end) {
+          span.classList.add('active');
+          span.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          span.classList.remove('active');
+        }
+      });
+    };
+
+  } catch (err) {
+    statusEl.textContent = 'Error';
+    log('Error: ' + err.message);
+  }
+};
+</script>
+</body>
+</html>
