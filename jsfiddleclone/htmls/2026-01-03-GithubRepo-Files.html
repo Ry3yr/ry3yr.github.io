@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List HTML Files from GitHub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #fff;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .button {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTML Files in the GitHub Repository</h1>
+    <ul id="file-list">
+        <!-- List of HTML files will be displayed here -->
+    </ul>
+
+    <script>
+        // Default repository values
+        let repoOwner = 'ry3yr';
+        let repoName = 'ry3yr.github.io';
+        let nameFilter = [];
+
+        // Check for URL query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('repoowner')) {
+            repoOwner = urlParams.get('repoowner');
+        }
+        if (urlParams.has('reponame')) {
+            repoName = urlParams.get('reponame');
+        }
+        if (urlParams.has('namefilter')) {
+            nameFilter = urlParams.get('namefilter').split(',').map(keyword => keyword.trim().toLowerCase());
+        }
+
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
+
+        // Function to fetch repository content and list HTML files
+        async function fetchHTMLFiles() {
+            try {
+                // Fetch the content of the GitHub repository
+                const response = await fetch(apiUrl);
+                
+                // Check if the response is OK (status code 200)
+                if (!response.ok) {
+                    throw new Error('Failed to fetch repository content.');
+                }
+                
+                // Parse the response JSON
+                const data = await response.json();
+
+                // Filter the files that end with ".html"
+                let htmlFiles = data.filter(file => file.name.endsWith('.html'));
+
+                // Apply the namefilter filter if specified
+                if (nameFilter.length > 0) {
+                    htmlFiles = htmlFiles.filter(file => {
+                        return nameFilter.some(keyword => file.name.toLowerCase().includes(keyword));
+                    });
+                }
+
+                // Get the file-list element
+                const fileList = document.getElementById('file-list');
+
+                // If no HTML files found, display a message
+                if (htmlFiles.length === 0) {
+                    fileList.innerHTML = '<li>No HTML files found in the repository.</li>';
+                } else {
+                    // Loop through the HTML files and add them to the list
+                    htmlFiles.forEach(file => {
+                        const listItem = document.createElement('li');
+                        
+                        // Create the file link to the GitHub Pages site
+                        const fileLink = document.createElement('a');
+                        fileLink.href = `https://${repoOwner}.github.io/${file.name}`;
+                        fileLink.target = '_blank';
+                        fileLink.textContent = file.name;
+
+                        // Create the button to open the raw file (GitHub link)
+                        const button = document.createElement('button');
+                        button.classList.add('button');
+                        button.textContent = '>>';
+                        button.onclick = function() {
+                            window.open(file.download_url, '_blank');
+                        };
+
+                        // Append both the file link and the button
+                        listItem.appendChild(fileLink);
+                        listItem.appendChild(button);
+                        fileList.appendChild(listItem);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching data from GitHub:', error);
+                document.getElementById('file-list').innerHTML = '<li>Failed to load data. Please try again later.</li>';
+            }
+        }
+
+        // Call the function to fetch HTML files when the page loads
+        fetchHTMLFiles();
+    </script>
+</body>
+</html>

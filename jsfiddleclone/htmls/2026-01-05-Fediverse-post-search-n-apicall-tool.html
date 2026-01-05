@@ -1,0 +1,1469 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fediverse Brute Force Search</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #0d1117;
+            --border: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-success: #7ee787;
+            --text-error: #ff7b72;
+            --text-info: #58a6ff;
+            --text-accent: #d2a8ff;
+            --button-primary: #238636;
+            --button-hover: #2ea043;
+            --success-bg: #0c2d1a;
+            --error-bg: #490202;
+            --info-bg: #0d2136;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h1, h2, h3, h4 {
+            color: var(--text-info);
+            margin-bottom: 15px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .box {
+            background: var(--bg-secondary);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--text-info);
+        }
+        
+        button {
+            background: var(--button-primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: var(--button-hover);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        button.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        button.secondary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .error {
+            background: var(--error-bg);
+            border-left: 4px solid var(--text-error);
+            padding: 20px;
+            color: var(--text-error);
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .success {
+            background: var(--success-bg);
+            border-left: 4px solid var(--text-success);
+            padding: 20px;
+            color: var(--text-success);
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .info {
+            background: var(--info-bg);
+            border-left: 4px solid var(--text-info);
+            padding: 20px;
+            color: var(--text-info);
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .log {
+            background: var(--bg-secondary);
+            border-left: 4px solid var(--text-info);
+            padding: 20px;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .log-line {
+            margin-bottom: 5px;
+        }
+        
+        .log-line.success {
+            color: var(--text-success);
+        }
+        
+        .log-line.error {
+            color: var(--text-error);
+        }
+        
+        .log-line.info {
+            color: var(--text-info);
+        }
+        
+        .post-info {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+        
+        .response-box {
+            margin: 20px 0;
+        }
+        
+        .endpoint-try {
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        
+        .endpoint-try h4 {
+            margin-top: 0;
+        }
+        
+        .success-tick {
+            color: var(--text-success);
+            font-weight: bold;
+        }
+        
+        .error-cross {
+            color: var(--text-error);
+            font-weight: bold;
+        }
+        
+        pre {
+            background: var(--bg-tertiary);
+            color: var(--text-success);
+            padding: 15px;
+            border-radius: 6px;
+            overflow: auto;
+            max-height: 400px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            margin: 10px 0;
+        }
+        
+        .post-content {
+            color: var(--text-accent);
+        }
+        
+        details {
+            margin: 10px 0;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        summary {
+            padding: 12px 15px;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        summary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        details pre {
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            max-height: 200px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--text-info);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-info);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .box {
+                padding: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span>🔍</span> Fediverse Brute Force Search</h1>
+            <p>Trying ALL endpoints until we find the post - Client-side JavaScript version</p>
+        </header>
+        
+        <div class="box">
+            <h2>Enter Details</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="apiKey">API Key:</label>
+                    <input type="text" id="apiKey" name="apiKey" placeholder="Enter your Fediverse API key">
+                </div>
+                
+                <div class="form-group">
+                    <label for="instance">Instance (without https://):</label>
+                    <input type="text" id="instance" name="instance" placeholder="mastodon.social">
+                </div>
+                
+                <div class="form-group">
+                    <label for="url">Post URL:</label>
+                    <input type="text" id="url" name="url" placeholder="https://mk.absturztau.be/notes/ah4ir0s0m2pj01ca">
+                </div>
+                
+                <div class="controls">
+                    <button type="submit" id="submitBtn">
+                        <span>🚀</span> BRUTE FORCE SEARCH
+                    </button>
+                    <button type="button" id="stopBtn" class="secondary hidden">
+                        <span>⏹️</span> STOP SEARCH
+                    </button>
+                    <button type="button" id="clearBtn" class="secondary">
+                        <span>🗑️</span> CLEAR RESULTS
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="statsContainer" class="hidden">
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="triedCount">0</div>
+                    <div class="stat-label">Endpoints Tried</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="successCount">0</div>
+                    <div class="stat-label">Successful Calls</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="foundCount">0</div>
+                    <div class="stat-label">Posts Found</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="timeElapsed">0s</div>
+                    <div class="stat-label">Time Elapsed</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="resultContainer" class="hidden">
+            <!-- Results will be populated here -->
+        </div>
+        
+        <div id="logContainer" class="box hidden">
+            <h2>📋 Execution Log</h2>
+            <div class="log" id="executionLog">
+                <!-- Log entries will be added here -->
+            </div>
+            <div class="controls" style="margin-top: 15px;">
+                <button type="button" id="copyLogBtn" class="secondary">
+                    <span>📋</span> COPY LOG
+                </button>
+                <button type="button" id="clearLogBtn" class="secondary">
+                    <span>🗑️</span> CLEAR LOG
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Fediverse Brute Force Search v1.0 - Pure HTML/JavaScript Client</p>
+            <p>This tool makes API calls directly from your browser. Your API key is not sent to any server.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        const state = {
+            isSearching: false,
+            abortController: null,
+            startTime: null,
+            endpointsTried: 0,
+            successfulCalls: 0,
+            postsFound: 0,
+            logEntries: []
+        };
+        
+        // DOM Elements
+        const searchForm = document.getElementById('searchForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statsContainer = document.getElementById('statsContainer');
+        const resultContainer = document.getElementById('resultContainer');
+        const logContainer = document.getElementById('logContainer');
+        const executionLog = document.getElementById('executionLog');
+        const copyLogBtn = document.getElementById('copyLogBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        
+        // Stats elements
+        const triedCountEl = document.getElementById('triedCount');
+        const successCountEl = document.getElementById('successCount');
+        const foundCountEl = document.getElementById('foundCount');
+        const timeElapsedEl = document.getElementById('timeElapsed');
+        
+        // Define all possible endpoints to try
+        const endpoints = [
+            // Mastodon API v1 endpoints
+            {
+                name: 'Mastodon v1 Search with resolve',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}&resolve=true&type=statuses`
+            },
+            {
+                name: 'Mastodon v1 Search (no type filter)',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}&resolve=true`
+            },
+            {
+                name: 'Mastodon v1 Search (URL only)',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}`
+            },
+            
+            // Mastodon API v2 endpoints (if available)
+            {
+                name: 'Mastodon v2 Search',
+                url: (instance, url) => `https://${instance}/api/v2/search?q=${encodeURIComponent(url)}&resolve=true&type=statuses`
+            },
+            {
+                name: 'Mastodon v2 Search (no type)',
+                url: (instance, url) => `https://${instance}/api/v2/search?q=${encodeURIComponent(url)}&resolve=true`
+            },
+            
+            // ActivityPub lookup style
+            {
+                name: 'ActivityPub lookup',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}&resolve=true&type=accounts,statuses`
+            }
+        ];
+        
+        // Initialize
+        function init() {
+            // Load saved values from localStorage
+            const savedApiKey = localStorage.getItem('fediverse_api_key');
+            const savedInstance = localStorage.getItem('fediverse_instance');
+            const savedUrl = localStorage.getItem('fediverse_url');
+            
+            if (savedApiKey) document.getElementById('apiKey').value = savedApiKey;
+            if (savedInstance) document.getElementById('instance').value = savedInstance;
+            if (savedUrl) document.getElementById('url').value = savedUrl;
+            
+            // Set up event listeners
+            searchForm.addEventListener('submit', handleFormSubmit);
+            stopBtn.addEventListener('click', stopSearch);
+            clearBtn.addEventListener('click', clearResults);
+            copyLogBtn.addEventListener('click', copyLogToClipboard);
+            clearLogBtn.addEventListener('click', clearLog);
+        }
+        
+        // Handle form submission
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const instance = document.getElementById('instance').value.trim();
+            let url = document.getElementById('url').value.trim();
+            
+            // Clean inputs
+            url = url.replace(/https:\/\/https:\/\//g, 'https://').replace(/http:\/\/http:\/\//g, 'http://');
+            const cleanInstance = instance.replace(/https?:\/\//, '');
+            
+            // Validation
+            if (!apiKey || !cleanInstance || !url) {
+                showError("All fields are required!");
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('fediverse_api_key', apiKey);
+            localStorage.setItem('fediverse_instance', cleanInstance);
+            localStorage.setItem('fediverse_url', url);
+            
+            // Start search
+            startSearch(apiKey, cleanInstance, url);
+        }
+        
+        // Start the brute force search
+        async function startSearch(apiKey, instance, url) {
+            // Reset state
+            state.isSearching = true;
+            state.abortController = new AbortController();
+            state.startTime = Date.now();
+            state.endpointsTried = 0;
+            state.successfulCalls = 0;
+            state.postsFound = 0;
+            state.logEntries = [];
+            
+            // Update UI
+            submitBtn.disabled = true;
+            stopBtn.classList.remove('hidden');
+            statsContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            logContainer.classList.remove('hidden');
+            
+            // Clear previous logs
+            executionLog.innerHTML = '';
+            resultContainer.innerHTML = '';
+            
+            // Add initial log entries
+            addLogEntry("=== STARTING BRUTE FORCE SEARCH ===", 'info');
+            addLogEntry(`Time: ${new Date().toLocaleString()}`, 'info');
+            addLogEntry(`Instance: ${instance}`, 'info');
+            addLogEntry(`API Key (first 10 chars): ${apiKey.substring(0, 10)}...`, 'info');
+            addLogEntry(`URL to search: ${url}`, 'info');
+            addLogEntry("", 'info');
+            
+            // Update stats
+            updateStats();
+            
+            // Start timer for elapsed time
+            const timerInterval = setInterval(() => {
+                if (!state.isSearching) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+                timeElapsedEl.textContent = `${elapsed}s`;
+            }, 1000);
+            
+            try {
+                // Try standard endpoints first
+                for (const endpoint of endpoints) {
+                    if (!state.isSearching) break;
+                    
+                    addLogEntry("", 'info');
+                    addLogEntry(`--- ${endpoint.name} ---`, 'info');
+                    
+                    const apiUrl = endpoint.url(instance, url);
+                    const result = await makeApiCall(apiUrl, apiKey);
+                    
+                    state.endpointsTried++;
+                    updateStats();
+                    
+                    if (result.success) {
+                        state.successfulCalls++;
+                        
+                        // Check if we found a post
+                        const foundPost = checkForPost(result.data);
+                        if (foundPost) {
+                            state.postsFound++;
+                            updateStats();
+                            addLogEntry(`🎉 FOUND POST in ${endpoint.name}!`, 'success');
+                            
+                            // Show the found post
+                            showFoundPost(foundPost, result, endpoint.name);
+                            
+                            // Stop further searches
+                            clearInterval(timerInterval);
+                            stopSearch();
+                            return;
+                        } else {
+                            addLogEntry(`✓ Got response but no post found in expected format`, 'info');
+                        }
+                    }
+                    
+                    // Small delay to not hammer the server
+                    await delay(100);
+                }
+                
+                // If we get here, try special handlers
+                if (state.isSearching) {
+                    addLogEntry("", 'info');
+                    addLogEntry("--- Trying special handlers ---", 'info');
+                    
+                    // Try Misskey direct fetch
+                    const misskeyResult = await tryMisskeyDirect(url, instance, apiKey);
+                    if (misskeyResult.success && misskeyResult.data) {
+                        state.postsFound++;
+                        updateStats();
+                        addLogEntry(`🎉 FOUND POST via Misskey API!`, 'success');
+                        showFoundPost(misskeyResult.data, misskeyResult, 'Misskey Direct API');
+                        clearInterval(timerInterval);
+                        stopSearch();
+                        return;
+                    }
+                    
+                    // Try extracted note ID
+                    const noteIdResult = await tryNoteIdOnly(url, instance, apiKey);
+                    if (noteIdResult.success && noteIdResult.data) {
+                        const foundPost = checkForPost(noteIdResult.data);
+                        if (foundPost) {
+                            state.postsFound++;
+                            updateStats();
+                            addLogEntry(`🎉 FOUND POST via extracted ID!`, 'success');
+                            showFoundPost(foundPost, noteIdResult, 'Extracted ID Search');
+                            clearInterval(timerInterval);
+                            stopSearch();
+                            return;
+                        }
+                    }
+                }
+                
+                addLogEntry("", 'info');
+                addLogEntry("=== SEARCH COMPLETE ===", 'info');
+                addLogEntry(`Total endpoints tried: ${state.endpointsTried}`, 'info');
+                addLogEntry(`Success: NO 😞`, 'error');
+                
+                showError("Could not find the post. Check the log for details.");
+                
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    addLogEntry(`❌ Error during search: ${error.message}`, 'error');
+                    showError(`Search failed: ${error.message}`);
+                }
+            } finally {
+                if (state.isSearching) {
+                    clearInterval(timerInterval);
+                    stopSearch();
+                }
+            }
+        }
+        
+        // Stop the search
+        function stopSearch() {
+            state.isSearching = false;
+            if (state.abortController) {
+                state.abortController.abort();
+            }
+            
+            submitBtn.disabled = false;
+            stopBtn.classList.add('hidden');
+            
+            addLogEntry("=== SEARCH STOPPED ===", 'info');
+        }
+        
+        // Clear results
+        function clearResults() {
+            resultContainer.classList.add('hidden');
+            resultContainer.innerHTML = '';
+            executionLog.innerHTML = '';
+            logContainer.classList.add('hidden');
+            statsContainer.classList.add('hidden');
+            
+            // Reset stats
+            state.endpointsTried = 0;
+            state.successfulCalls = 0;
+            state.postsFound = 0;
+            updateStats();
+        }
+        
+        // Clear log
+        function clearLog() {
+            executionLog.innerHTML = '';
+            state.logEntries = [];
+        }
+        
+        // Copy log to clipboard
+        function copyLogToClipboard() {
+            const logText = state.logEntries.map(entry => entry.text).join('\n');
+            navigator.clipboard.writeText(logText).then(() => {
+                alert('Log copied to clipboard!');
+            });
+        }
+        
+        // Make API call
+        async function makeApiCall(apiUrl, apiKey) {
+            addLogEntry(`Trying: ${apiUrl}`, 'info');
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Accept': 'application/json',
+                        'User-Agent': 'FediverseBruteForce/1.0 (Browser)'
+                    },
+                    signal: state.abortController?.signal
+                });
+                
+                const totalTime = Date.now() - startTime;
+                const responseTime = Math.round(totalTime);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const bodySize = JSON.stringify(data).length;
+                    
+                    addLogEntry(`✓ HTTP ${response.status} in ${responseTime}ms (Body: ${bodySize} bytes)`, 'success');
+                    
+                    return {
+                        success: true,
+                        httpCode: response.status,
+                        responseTime,
+                        bodySize,
+                        data,
+                        url: apiUrl,
+                        headers: Object.fromEntries(response.headers.entries())
+                    };
+                } else {
+                    addLogEntry(`✗ HTTP ${response.status} in ${responseTime}ms`, 'error');
+                    return {
+                        success: false,
+                        httpCode: response.status,
+                        responseTime,
+                        error: `HTTP ${response.status}`,
+                        url: apiUrl
+                    };
+                }
+            } catch (error) {
+                const totalTime = Date.now() - startTime;
+                addLogEntry(`✗ Error: ${error.message} in ${totalTime}ms`, 'error');
+                return {
+                    success: false,
+                    responseTime: totalTime,
+                    error: error.message,
+                    url: apiUrl
+                };
+            }
+        }
+        
+        // Try Misskey direct fetch
+        async function tryMisskeyDirect(url, instance, apiKey) {
+            // Check if it looks like a Misskey URL
+            const noteIdMatch = url.match(/\/notes\/([a-z0-9]+)/i);
+            if (!noteIdMatch) {
+                return { success: false };
+            }
+            
+            const noteId = noteIdMatch[1];
+            addLogEntry(`Extracted Misskey note ID: ${noteId}`, 'info');
+            
+            // Try Misskey API endpoint
+            const misskeyUrl = `https://${instance}/api/notes/show`;
+            addLogEntry(`Trying Misskey API: ${misskeyUrl}`, 'info');
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(misskeyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ noteId }),
+                    signal: state.abortController?.signal
+                });
+                
+                const responseTime = Date.now() - startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addLogEntry(`✓ Misskey API returned HTTP ${response.status} in ${responseTime}ms`, 'success');
+                    return {
+                        success: true,
+                        httpCode: response.status,
+                        responseTime,
+                        data,
+                        url: misskeyUrl,
+                        noteId,
+                        source: 'misskey'
+                    };
+                } else {
+                    addLogEntry(`✗ Misskey API returned HTTP ${response.status} in ${responseTime}ms`, 'error');
+                    return { success: false };
+                }
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                addLogEntry(`✗ Misskey API error: ${error.message} in ${responseTime}ms`, 'error');
+                return { success: false };
+            }
+        }
+        
+        // Try extracted note ID
+        async function tryNoteIdOnly(url, instance, apiKey) {
+            // Try to extract any ID-looking thing
+            const idMatch = url.match(/([a-z0-9]{8,})/i);
+            if (!idMatch) {
+                return { success: false };
+            }
+            
+            const possibleId = idMatch[1];
+            addLogEntry(`Trying extracted ID: ${possibleId}`, 'info');
+            
+            // Try search with just the ID
+            const searchUrls = [
+                `https://${instance}/api/v1/search?q=${possibleId}&resolve=true`,
+                `https://${instance}/api/v2/search?q=${possibleId}&resolve=true`
+            ];
+            
+            for (const searchUrl of searchUrls) {
+                if (!state.isSearching) break;
+                
+                addLogEntry(`Trying search with ID: ${searchUrl}`, 'info');
+                const result = await makeApiCall(searchUrl, apiKey);
+                
+                if (result.success) {
+                    return result;
+                }
+                
+                await delay(50);
+            }
+            
+            return { success: false };
+        }
+        
+        // Check if response contains a post
+        function checkForPost(data) {
+            // Check Mastodon response format
+            if (data.statuses && Array.isArray(data.statuses) && data.statuses.length > 0) {
+                return { ...data.statuses[0], source: 'mastodon' };
+            }
+            
+            // Check direct status response
+            if (data.id && data.content) {
+                return { ...data, source: 'mastodon_direct' };
+            }
+            
+            // Check Misskey response format
+            if (data.id && data.text) {
+                return { ...data, source: 'misskey' };
+            }
+            
+            // Check if it's a single status
+            if (data.uri && data.content) {
+                return { ...data, source: 'activitypub' };
+            }
+            
+            return null;
+        }
+        
+        // Show found post
+        function showFoundPost(post, apiResponse, endpointName) {
+            resultContainer.classList.remove('hidden');
+            
+            let postHtml = '';
+            
+            if (post.source === 'mastodon' || post.source === 'mastodon_direct' || post.source === 'activitypub') {
+                postHtml = `
+                    <div class="box success">
+                        <h2>✅ POST FOUND!</h2>
+                        <p>Found via: ${endpointName}</p>
+                        
+                        <div class="post-info">
+                            <h3>📝 Post Information</h3>
+                            <p><strong>ID:</strong> ${post.id}</p>
+                            ${post.account ? `<p><strong>Author:</strong> @${post.account.acct || 'unknown'}</p>` : ''}
+                            ${post.created_at ? `<p><strong>Date:</strong> ${post.created_at}</p>` : ''}
+                            <p><strong>Content:</strong></p>
+                            <pre class="post-content">${stripHtmlTags(post.content || 'No content')}</pre>
+                        </div>
+                    </div>
+                `;
+            } else if (post.source === 'misskey') {
+                postHtml = `
+                    <div class="box success">
+                        <h2>✅ POST FOUND!</h2>
+                        <p>Found via: ${endpointName}</p>
+                        
+                        <div class="post-info">
+                            <h3>📝 Post Information</h3>
+                            <p><strong>ID:</strong> ${post.id}</p>
+                            ${post.user ? `<p><strong>Author:</strong> @${post.user.username || 'unknown'}</p>` : ''}
+                            ${post.createdAt ? `<p><strong>Date:</strong> ${post.createdAt}</p>` : ''}
+                            <p><strong>Text:</strong></p>
+                            <pre class="post-content">${post.text || 'No text'}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add raw response data
+            if (apiResponse) {
+                postHtml += `
+                    <div class="box">
+                        <h3>📄 API Response Details</h3>
+                        <p><strong>URL:</strong> ${apiResponse.url}</p>
+                        <p><strong>HTTP Status:</strong> ${apiResponse.httpCode}</p>
+                        <p><strong>Response Time:</strong> ${apiResponse.responseTime}ms</p>
+                        
+                        <details>
+                            <summary>View Raw JSON Response</summary>
+                            <pre>${JSON.stringify(apiResponse.data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+            
+            resultContainer.innerHTML = postHtml;
+        }
+        
+        // Show error message
+        function showError(message) {
+            resultContainer.classList.remove('hidden');
+            resultContainer.innerHTML = `
+                <div class="box error">
+                    <h2>❌ Search Result</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        // Add log entry
+        function addLogEntry(text, type = 'info') {
+            const logEntry = {
+                text,
+                type,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            state.logEntries.push(logEntry);
+            
+            const logLine = document.createElement('div');
+            logLine.className = `log-line ${type}`;
+            logLine.textContent = `[${logEntry.timestamp}] ${text}`;
+            
+            executionLog.appendChild(logLine);
+            
+            // Auto-scroll to bottom
+            executionLog.scrollTop = executionLog.scrollHeight;
+        }
+        
+        // Update stats display
+        function updateStats() {
+            triedCountEl.textContent = state.endpointsTried;
+            successCountEl.textContent = state.successfulCalls;
+            foundCountEl.textContent = state.postsFound;
+        }
+        
+        // Utility function to strip HTML tags
+        function stripHtmlTags(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            return div.textContent || div.innerText || '';
+        }
+        
+        // Utility function for delay
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
+
+
+
+<details><plaintext>
+<?php
+// fediverse_bruteforce.php
+// Try EVERY search endpoint
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $api_key = trim($_POST['api_key'] ?? '');
+    $instance = trim($_POST['instance'] ?? '');
+    $url = trim($_POST['url'] ?? '');
+    
+    // Clean inputs
+    $url = str_replace(['https://https://', 'http://http://'], ['https://', 'http://'], $url);
+    $instance = rtrim($instance, '/');
+    $instance = str_replace(['https://', 'http://'], '', $instance);
+    
+    if (empty($api_key) || empty($instance) || empty($url)) {
+        $error = "All fields are required!";
+    } else {
+        $log = [];
+        $all_responses = [];
+        $found_post = null;
+        $success = false;
+        
+        $log[] = "=== STARTING BRUTE FORCE SEARCH ===";
+        $log[] = "Time: " . date('Y-m-d H:i:s');
+        $log[] = "Instance: $instance";
+        $log[] = "API Key (first 10 chars): " . substr($api_key, 0, 10) . "...";
+        $log[] = "URL to search: $url";
+        $log[] = "";
+        
+        // Define ALL possible endpoints to try
+        $endpoints = [
+            // Mastodon API v1 endpoints
+            [
+                'name' => 'Mastodon v1 Search with resolve',
+                'url' => "https://$instance/api/v1/search?q=" . urlencode($url) . "&resolve=true&type=statuses"
+            ],
+            [
+                'name' => 'Mastodon v1 Search (no type filter)',
+                'url' => "https://$instance/api/v1/search?q=" . urlencode($url) . "&resolve=true"
+            ],
+            [
+                'name' => 'Mastodon v1 Search (URL only)',
+                'url' => "https://$instance/api/v1/search?q=" . urlencode($url)
+            ],
+            
+            // Mastodon API v2 endpoints (if available)
+            [
+                'name' => 'Mastodon v2 Search',
+                'url' => "https://$instance/api/v2/search?q=" . urlencode($url) . "&resolve=true&type=statuses"
+            ],
+            [
+                'name' => 'Mastodon v2 Search (no type)',
+                'url' => "https://$instance/api/v2/search?q=" . urlencode($url) . "&resolve=true"
+            ],
+            
+            // Try to extract post ID if it looks like a Misskey/Calckey URL
+            [
+                'name' => 'Misskey style direct fetch attempt',
+                'url' => null, // Will be built dynamically
+                'handler' => 'try_misskey_direct'
+            ],
+            
+            // Try Peertube/Plume style
+            [
+                'name' => 'ActivityPub lookup',
+                'url' => "https://$instance/api/v1/search?q=" . urlencode($url) . "&resolve=true&type=accounts,statuses"
+            ],
+            
+            // Try with just the note ID part
+            [
+                'name' => 'Extracted note ID search',
+                'url' => null,
+                'handler' => 'try_note_id_only'
+            ],
+        ];
+        
+        // Make API call function
+        function make_api_call($api_url, $api_key, &$log) {
+            $log[] = "Trying: $api_url";
+            $start_time = microtime(true);
+            
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $api_url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . $api_key,
+                    'Accept: application/json',
+                    'User-Agent: FediverseBruteForce/1.0'
+                ],
+                CURLOPT_HEADER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLINFO_HEADER_OUT => true
+            ]);
+            
+            $response = curl_exec($ch);
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $total_time = curl_getinfo($ch, CURLINFO_TOTAL_TIME);
+            $curl_error = curl_error($ch);
+            $curl_errno = curl_errno($ch);
+            
+            curl_close($ch);
+            
+            $end_time = microtime(true);
+            
+            $result = [
+                'url' => $api_url,
+                'http_code' => $http_code,
+                'total_time' => round($total_time, 3),
+                'curl_error' => $curl_error,
+                'curl_errno' => $curl_errno,
+                'success' => ($http_code == 200 && !$curl_errno)
+            ];
+            
+            if ($result['success']) {
+                $headers = substr($response, 0, $header_size);
+                $body = substr($response, $header_size);
+                
+                $result['headers'] = $headers;
+                $result['body'] = $body;
+                $result['body_size'] = strlen($body);
+                
+                $log[] = "  ✓ HTTP $http_code in {$result['total_time']}s (Body: {$result['body_size']} bytes)";
+            } else {
+                $log[] = "  ✗ HTTP $http_code in {$result['total_time']}s" . ($curl_error ? " - $curl_error" : "");
+            }
+            
+            return $result;
+        }
+        
+        // Try Misskey direct fetch (different API structure)
+        function try_misskey_direct($url, $instance, $api_key, &$log) {
+            // Check if it looks like a Misskey URL
+            if (preg_match('/\/notes\/([a-z0-9]+)/i', $url, $matches)) {
+                $note_id = $matches[1];
+                $log[] = "Extracted Misskey note ID: $note_id";
+                
+                // Try Misskey API endpoint
+                $misskey_url = "https://$instance/api/notes/show?noteId=$note_id";
+                $log[] = "Trying Misskey API: $misskey_url";
+                
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => $misskey_url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER => [
+                        'Authorization: Bearer ' . $api_key,
+                        'Accept: application/json'
+                    ],
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => json_encode(['noteId' => $note_id]),
+                    CURLOPT_HEADER => true,
+                    CURLOPT_TIMEOUT => 10
+                ]);
+                
+                $response = curl_exec($ch);
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                
+                curl_close($ch);
+                
+                if ($http_code == 200) {
+                    $body = substr($response, $header_size);
+                    $log[] = "  ✓ Misskey API returned HTTP 200";
+                    return [
+                        'success' => true,
+                        'body' => $body,
+                        'headers' => substr($response, 0, $header_size),
+                        'note_id' => $note_id,
+                        'source' => 'misskey'
+                    ];
+                }
+            }
+            return ['success' => false];
+        }
+        
+        // Try extracting just the note ID
+        function try_note_id_only($url, $instance, $api_key, &$log) {
+            // Try to extract any ID-looking thing
+            if (preg_match('/([a-z0-9]{8,})/i', $url, $matches)) {
+                $possible_id = $matches[1];
+                $log[] = "Trying extracted ID: $possible_id";
+                
+                // Try Mastodon search with just the ID
+                $search_urls = [
+                    "https://$instance/api/v1/search?q=$possible_id&resolve=true",
+                    "https://$instance/api/v2/search?q=$possible_id&resolve=true"
+                ];
+                
+                foreach ($search_urls as $search_url) {
+                    $result = make_api_call($search_url, $api_key, $log);
+                    if ($result['success']) {
+                        return $result;
+                    }
+                }
+            }
+            return ['success' => false];
+        }
+        
+        // TRY EVERYTHING
+        foreach ($endpoints as $endpoint) {
+            $log[] = "";
+            $log[] = "--- " . $endpoint['name'] . " ---";
+            
+            if (isset($endpoint['handler'])) {
+                // Special handler
+                $result = call_user_func($endpoint['handler'], $url, $instance, $api_key, $log);
+            } else {
+                // Regular API call
+                $result = make_api_call($endpoint['url'], $api_key, $log);
+            }
+            
+            $all_responses[$endpoint['name']] = $result;
+            
+            // Check if we found a post
+            if ($result['success'] && isset($result['body'])) {
+                $data = json_decode($result['body'], true);
+                
+                // Check Mastodon response format
+                if (isset($data['statuses']) && !empty($data['statuses'])) {
+                    $found_post = $data['statuses'][0];
+                    $log[] = "  🎉 FOUND POST in statuses array!";
+                    $success = true;
+                    break;
+                }
+                // Check direct status response
+                elseif (isset($data['id']) && isset($data['content'])) {
+                    $found_post = $data;
+                    $log[] = "  🎉 FOUND POST as direct status!";
+                    $success = true;
+                    break;
+                }
+                // Check Misskey response format
+                elseif (isset($data['id']) && isset($data['text'])) {
+                    $found_post = $data;
+                    $log[] = "  🎉 FOUND POST in Misskey format!";
+                    $success = true;
+                    break;
+                } else {
+                    $log[] = "  ✓ Got response but no post found in expected format";
+                }
+            }
+            
+            // Small delay to not hammer the server
+            usleep(100000); // 0.1 second
+        }
+        
+        $log[] = "";
+        $log[] = "=== SEARCH COMPLETE ===";
+        $log[] = "Total endpoints tried: " . count($endpoints);
+        $log[] = "Success: " . ($success ? "YES 🎉" : "NO 😞");
+        
+        if (!$success) {
+            $error = "Could not find the post. Here's what we tried:";
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fediverse Brute Force Search</title>
+    <style>
+        body { font-family: monospace; margin: 20px; background: #0d1117; color: #c9d1d9; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .box { background: #161b22; padding: 20px; margin: 10px 0; border: 1px solid #30363d; border-radius: 6px; }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0 15px 0; 
+            background: #0d1117; 
+            border: 1px solid #30363d; 
+            color: #c9d1d9;
+            border-radius: 3px; 
+        }
+        button { 
+            background: #238636; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 3px; 
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #2ea043; }
+        pre { 
+            background: #0d1117; 
+            color: #7ee787; 
+            padding: 15px; 
+            border-radius: 5px; 
+            overflow: auto; 
+            max-height: 500px; 
+            font-size: 12px;
+            border: 1px solid #30363d;
+        }
+        .error { 
+            background: #490202; 
+            border-left: 4px solid #ff7b72; 
+            padding: 15px;
+            color: #ff7b72;
+        }
+        .success { 
+            background: #0c2d1a; 
+            border-left: 4px solid #7ee787; 
+            padding: 15px;
+            color: #7ee787;
+        }
+        .log { 
+            background: #161b22; 
+            border-left: 4px solid #58a6ff; 
+            padding: 15px;
+            color: #c9d1d9;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        h1, h2, h3 { color: #58a6ff; }
+        .post-info { background: #0d1117; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .response-box { margin: 20px 0; }
+        .endpoint-try { margin: 10px 0; padding: 10px; background: #0d1117; border-radius: 5px; }
+        .success-tick { color: #7ee787; }
+        .error-cross { color: #ff7b72; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Fediverse Brute Force Search</h1>
+        <h3>Trying ALL endpoints until we find the post</h3>
+        
+        <div class="box">
+            <h2>Enter Details</h2>
+            <form method="post">
+                <label>API Key:</label><br>
+                <input type="text" name="api_key" value="<?= htmlspecialchars($_POST['api_key'] ?? '') ?>"><br>
+                
+                <label>Instance (no https://):</label><br>
+                <input type="text" name="instance" value="<?= htmlspecialchars($_POST['instance'] ?? '') ?>" placeholder="mastodon.social"><br>
+                
+                <label>Post URL:</label><br>
+                <input type="text" name="url" value="<?= htmlspecialchars($_POST['url'] ?? '') ?>" placeholder="https://mk.absturztau.be/notes/ah4ir0s0m2pj01ca"><br>
+                
+                <button type="submit">🚀 BRUTE FORCE SEARCH</button>
+            </form>
+        </div>
+        
+        <?php if (isset($error)): ?>
+            <div class="box error">
+                <h2>❌ Result</h2>
+                <p><?= htmlspecialchars($error) ?></p>
+                
+                <?php if (isset($all_responses)): ?>
+                    <h3>📊 All Attempts:</h3>
+                    <?php foreach ($all_responses as $name => $response): ?>
+                        <div class="endpoint-try">
+                            <strong><?= htmlspecialchars($name) ?></strong><br>
+                            URL: <?= htmlspecialchars($response['url'] ?? 'N/A') ?><br>
+                            Status: 
+                            <?php if ($response['success'] ?? false): ?>
+                                <span class="success-tick">✓ HTTP <?= $response['http_code'] ?></span>
+                                <?php if (isset($response['body_size'])): ?>
+                                    (<?= $response['body_size'] ?> bytes)
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="error-cross">✗ HTTP <?= $response['http_code'] ?? 'N/A' ?></span>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($log)): ?>
+            <div class="box log">
+                <h2>📋 Execution Log</h2>
+                <pre><?= htmlspecialchars(implode("\n", $log)) ?></pre>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($success) && $success && isset($found_post)): ?>
+            <div class="box success">
+                <h2>✅ POST FOUND!</h2>
+                
+                <div class="post-info">
+                    <h3>📝 Post Information</h3>
+                    <?php if (isset($found_post['account'])): // Mastodon format ?>
+                        <p><strong>ID:</strong> <?= htmlspecialchars($found_post['id']) ?></p>
+                        <p><strong>Author:</strong> @<?= htmlspecialchars($found_post['account']['acct'] ?? 'unknown') ?></p>
+                        <p><strong>Date:</strong> <?= htmlspecialchars($found_post['created_at'] ?? 'unknown') ?></p>
+                        <p><strong>Content:</strong></p>
+                        <pre style="color: #d2a8ff;"><?= htmlspecialchars(strip_tags($found_post['content'] ?? 'No content')) ?></pre>
+                    <?php elseif (isset($found_post['text'])): // Misskey format ?>
+                        <p><strong>ID:</strong> <?= htmlspecialchars($found_post['id'] ?? 'unknown') ?></p>
+                        <p><strong>Text:</strong></p>
+                        <pre style="color: #d2a8ff;"><?= htmlspecialchars($found_post['text'] ?? 'No text') ?></pre>
+                    <?php else: ?>
+                        <pre><?= htmlspecialchars(json_encode($found_post, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+                    <?php endif; ?>
+                </div>
+                
+                <?php 
+                // Find which response worked
+                $working_response = null;
+                foreach ($all_responses as $name => $resp) {
+                    if ($resp['success'] ?? false) {
+                        $working_response = $resp;
+                        break;
+                    }
+                }
+                ?>
+                
+                <?php if ($working_response): ?>
+                    <div class="response-box">
+                        <h3>📄 Raw Response Headers (from successful endpoint)</h3>
+                        <pre><?= htmlspecialchars($working_response['headers'] ?? 'No headers') ?></pre>
+                        
+                        <h3>📦 Raw JSON Response</h3>
+                        <pre><?php 
+                            if (isset($working_response['body'])) {
+                                $body_data = json_decode($working_response['body'], true);
+                                echo htmlspecialchars(json_encode($body_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                            } else {
+                                echo "No body";
+                            }
+                        ?></pre>
+                        
+                        <h3>🔧 Complete Raw Response</h3>
+                        <pre><?= htmlspecialchars($working_response['headers'] ?? '') . "\n\n" . htmlspecialchars($working_response['body'] ?? '') ?></pre>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($all_responses) && !empty($all_responses)): ?>
+            <div class="box">
+                <h2>🔧 All API Responses</h2>
+                <?php foreach ($all_responses as $name => $response): ?>
+                    <div class="endpoint-try">
+                        <h4><?= htmlspecialchars($name) ?></h4>
+                        <p><strong>URL:</strong> <?= htmlspecialchars($response['url'] ?? 'Special handler') ?></p>
+                        <p><strong>Result:</strong> 
+                            <?php if ($response['success'] ?? false): ?>
+                                <span class="success-tick">✓ Success (HTTP <?= $response['http_code'] ?>)</span>
+                            <?php else: ?>
+                                <span class="error-cross">✗ Failed (HTTP <?= $response['http_code'] ?? 'N/A' ?>)</span>
+                            <?php endif; ?>
+                        </p>
+                        
+                        <?php if (isset($response['body'])): ?>
+                            <details>
+                                <summary>View Response Body (<?= strlen($response['body']) ?> bytes)</summary>
+                                <pre style="font-size: 10px; max-height: 200px;"><?= htmlspecialchars(substr($response['body'], 0, 1000)) . (strlen($response['body']) > 1000 ? "\n\n... truncated ..." : '') ?></pre>
+                            </details>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</body>
+</html>

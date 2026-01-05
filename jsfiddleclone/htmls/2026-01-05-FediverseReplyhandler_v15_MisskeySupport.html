@@ -1,0 +1,734 @@
+<a href="#" onclick="window.location.href = window.location.href.split('?')[0] + '?url=https://mk.absturztau.be/notes/99bptvzrhw'; return false;">Demo</a>
+<br><hr><br>
+
+<!--<button onclick="
+  location.href = location.href
+    .replace(/[?&]sorted(&|$|#)/, (m, g) => g ? (g === '&' ? '&' : '#') : '?')
+    .replace(/[?&]$/, '');
+">
+  Unsorted
+</button>
+
+<button onclick="
+  (function() {
+    const u = new URL(location.href);
+    if (!u.searchParams.has('sorted')) {
+      u.searchParams.set('sorted', 'true');
+      location.href = u.toString();
+    }
+  })();
+">
+  Sorted
+</button>
+<hr>-->
+
+
+<!DOCTYPE html>
+<base href="https://" target="_blank" rel="noopener noreferrer">
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background-color: #ffffff;
+      color: #333;
+      line-height: 1.6;
+      padding: 1rem;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: #2b6dad;
+    }
+    
+    .description {
+      color: #666;
+      margin-bottom: 1rem;
+    }
+    
+    .url-input {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+    
+    input[type="url"] {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    
+    button {
+      background: #2b6dad;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #1a4d80;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .toggle-label {
+      font-size: 0.9rem;
+    }
+    
+    .loader {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+    
+    .error {
+      background: #ffffff;
+      color: #ffeeff;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      text-align: center;
+    }
+    
+    .toot {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 1rem;
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      object-fit: cover;
+    }
+    
+    .content {
+      flex: 1;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    
+    .user {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    
+    .handle {
+      color: #657786;
+      margin-left: 0.5rem;
+      font-size: 0.95rem;
+    }
+    
+    .post-content {
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    
+    .post-content p {
+      margin-bottom: 0.5rem;
+    }
+    
+    .post-content a {
+      color: #2b6dad;
+      text-decoration: none;
+    }
+    
+    .post-content a:hover {
+      text-decoration: underline;
+    }
+    
+    .media-attachments {
+      margin: 1rem 0;
+    }
+    
+    .media-attachments img,
+    .media-attachments video {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+    }
+    
+    .counts {
+      display: flex;
+      gap: 1.5rem;
+      color: #657786;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+      padding-top: 0.5rem;
+      border-top: 1px solid #eee;
+    }
+    
+    .count-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    
+    .view-post {
+      margin-top: 0.5rem;
+    }
+    
+    .view-post a {
+      color: #2b6dad;
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    
+    .view-post a:hover {
+      text-decoration: underline;
+    }
+    
+    .reply {
+      margin-left: 2.5rem;
+      border-left: 3px solid #e0e0e0;
+      padding-left: 1rem;
+    }
+    
+    .parent-stats {
+      background: #f5f8fa;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: #657786;
+    }
+    
+    .emoji {
+      vertical-align: middle;
+      height: 20px;
+      width: 20px;
+    }
+    
+    .reaction-emoji {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 0.75rem;
+    }
+    
+    .reactions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    @media (max-width: 600px) {
+      .toot {
+        flex-direction: column;
+        padding: 1rem;
+      }
+      
+      .reply {
+        margin-left: 1rem;
+      }
+      
+      .url-input {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <details style="display: none;">
+  <div class="container">
+    <header>
+      <div class="url-input">
+     <input type="url" id="postUrl" placeholder="Paste post URL here" />
+        <button id="fetchButton">View Post</button>
+      </div>
+      
+      <div class="controls">
+        <div class="toggle">
+          <input type="checkbox" id="sortedReplies" checked />
+          <label for="sortedReplies" class="toggle-label">Threaded view</label>
+        </div>
+      </div>
+    </header></details>
+    
+    <div id="results"></div>
+  </div>
+
+  <script>
+    // DOM elements
+    const postUrlInput = document.getElementById('postUrl');
+    const fetchButton = document.getElementById('fetchButton');
+    const sortedRepliesCheckbox = document.getElementById('sortedReplies');
+    const resultsContainer = document.getElementById('results');
+    
+    // Set initial URL from query parameter if available
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialUrl = urlParams.get('url');
+    if (initialUrl) {
+      postUrlInput.value = initialUrl;
+    }
+    
+    // Event listeners
+    fetchButton.addEventListener('click', () => {
+      const url = postUrlInput.value.trim();
+      if (url) {
+        // Update URL with the new post URL
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set('url', url);
+        window.history.replaceState({}, '', newUrl);
+        
+        fetchPostStats(url);
+      } else {
+        showError('Please enter a post URL');
+      }
+    });
+    
+    // Load post if URL is provided on page load
+    if (initialUrl) {
+      fetchPostStats(initialUrl);
+    }
+    
+    // Show loading state
+    function showLoading() {
+      resultsContainer.innerHTML = '<div class="loader">Loading post and replies...</div>';
+    }
+    
+    // Show error message
+    function showError(message) {
+      resultsContainer.innerHTML = `<div class="error">${message}</div>`;
+    }
+    
+    // Extract instance and status ID from post URL
+    function extractInstanceAndStatus(postUrl) {
+      try {
+        const url = new URL(postUrl);
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        
+        // Check for Misskey pattern: /notes/noteId
+        const notesIndex = pathParts.indexOf('notes');
+        if (notesIndex !== -1 && notesIndex + 1 < pathParts.length) {
+          return {
+            instance: url.hostname,
+            statusId: pathParts[notesIndex + 1],
+            platform: 'misskey'
+          };
+        }
+        
+        // For Mastodon pattern: last segment is ID
+        const statusId = pathParts[pathParts.length - 1];
+        
+        if (!statusId) {
+          throw new Error('Invalid post URL');
+        }
+        
+        return { 
+          instance: url.hostname, 
+          statusId: statusId,
+          platform: 'mastodon'
+        };
+      } catch (e) {
+        throw new Error('Invalid URL format');
+      }
+    }
+    
+    // Fetch custom emojis from an instance
+    async function fetchEmojis(instance, platform) {
+      try {
+        if (platform === 'misskey') {
+          // Misskey uses different API for emojis
+          const url = `https://${instance}/api/emojis`;
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+          });
+          
+          if (!response.ok) return [];
+          const data = await response.json();
+          
+          // Convert Misskey emoji format to Mastodon-like format
+          return Object.values(data.emojis || {}).map(emoji => ({
+            shortcode: emoji.name,
+            url: emoji.url || emoji.uri
+          }));
+        } else {
+          const url = `https://${instance}/api/v1/custom_emojis`;
+          const response = await fetch(url);
+          if (!response.ok) return [];
+          return await response.json();
+        }
+      } catch (error) {
+        console.error("Error fetching emojis: ", error);
+        return [];
+      }
+    }
+    
+    // Replace emoji shortcodes with images
+    function replaceEmojis(content, emojis) {
+      emojis.forEach(emoji => {
+        const regex = new RegExp(`:${emoji.shortcode}:`, 'g');
+        const imgTag = `<img src="${emoji.url}" alt=":${emoji.shortcode}:" class="emoji">`;
+        content = content.replace(regex, imgTag);
+      });
+      return content;
+    }
+    
+    // Render Pleroma/Akkoma reactions
+    function renderPleromaReactions(post) {
+      if (!post.pleroma || !post.pleroma.emoji_reactions) return '';
+      
+      return post.pleroma.emoji_reactions.map(reaction => {
+        const emojiHtml = reaction.url
+          ? `<img src="${reaction.url}" alt="${reaction.name}" class="emoji">`
+          : reaction.name;
+        return `<span class="reaction-emoji">${emojiHtml} ${reaction.count}</span>`;
+      }).join('');
+    }
+    
+    // Format the post date
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    }
+    
+    // Render media attachments
+    function renderMedia(mediaAttachments, platform) {
+      if (!mediaAttachments || mediaAttachments.length === 0) return '';
+      
+      return mediaAttachments.map(media => {
+        if (platform === 'misskey') {
+          const url = media.url || media.thumbnailUrl || media.originalUrl;
+          return `<img src="${url}" alt="Image attachment">`;
+        } else {
+          if (media.type === 'image') {
+            return `<img src="${media.url}" alt="${media.description || 'Image attachment'}">`;
+          } else if (media.type === 'video') {
+            return `<video controls><source src="${media.url}" type="video/mp4">Your browser does not support the video tag.</video>`;
+          } else if (media.type === 'gifv') {
+            return `<video autoplay loop muted playsinline><source src="${media.url}" type="video/mp4">Your browser does not support the video tag.</video>`;
+          }
+        }
+        return '';
+      }).join('');
+    }
+    
+    // Convert Misskey note to Mastodon-like format - FIXED
+    function convertMisskeyNote(note, instance) {
+      const user = note.user || {};
+      const files = note.files || [];
+      
+      return {
+        id: note.id,
+        content: note.text || '',
+        created_at: note.createdAt,
+        url: `https://${instance}/notes/${note.id}`,
+        replies_count: note.repliesCount || 0,
+        reblogs_count: note.renoteCount || 0,
+        favourites_count: note.reactionsCount || 0,
+        media_attachments: files.map(file => ({
+          url: file.url || file.thumbnailUrl || file.originalUrl,
+          type: file.type?.startsWith('image/') ? 'image' : 'video'
+        })),
+        account: {
+          username: user.username || 'unknown',
+          acct: user.username || 'unknown',
+          display_name: user.name || user.username || 'Unknown',
+          avatar_static: user.avatarUrl || '',
+          avatar: user.avatarUrl || ''
+        }
+      };
+    }
+    
+    // Main function to fetch and display post stats
+    async function fetchPostStats(postUrl) {
+      showLoading();
+      
+      try {
+        const { instance, statusId, platform } = extractInstanceAndStatus(postUrl);
+        
+        let data;
+        if (platform === 'misskey') {
+          const response = await fetch(`https://${instance}/api/notes/show`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ noteId: statusId })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Misskey API error: ${response.status}`);
+          }
+          
+          const misskeyData = await response.json();
+          data = convertMisskeyNote(misskeyData, instance);
+        } else {
+          const response = await fetch(`https://${instance}/api/v1/statuses/${statusId}`);
+          
+          if (!response.ok) {
+            throw new Error("Failed to fetch post. Make sure the post is public.");
+          }
+          
+          data = await response.json();
+        }
+        
+        const emojis = await fetchEmojis(instance, platform);
+        
+        // Process main post content
+        let content = replaceEmojis(data.content, emojis);
+        const reactionHtml = renderPleromaReactions(data);
+        const mediaHtml = renderMedia(data.media_attachments, platform);
+        const sorted = sortedRepliesCheckbox.checked;
+        const postHtml = `
+          <details><summary>OG Post</summary><div class="toot">
+            <img src="${data.account.avatar_static}" alt="avatar" class="avatar">
+            <div class="content">
+              <div class="user-info">
+                <span class="user">${data.account.display_name || data.account.username}</span>
+                <span class="handle">@${data.account.acct}@${instance}</span>
+              </div>
+              <div class="post-content">${content}</div></details>
+              
+              ${mediaHtml ? `<div class="media-attachments">${mediaHtml}</div>` : ''}
+              
+              <div class="counts">
+                <span class="count-item">❤️ ${data.favourites_count}</span>
+                <span class="count-item">🔁 ${data.reblogs_count}</span>
+                <span class="count-item">💬 ${data.replies_count}</span>
+              </div>
+              
+              ${reactionHtml ? `<div class="reactions">${reactionHtml}</div>` : ''}
+              
+              <div class="view-post">
+                <!--<a href="${data.url}" target="_blank">View original post ↗</a>-->
+              </div>
+            </div>
+          </div>
+          <div class="replies" id="replies-${statusId}"></div>
+        `;
+        
+        resultsContainer.innerHTML = postHtml;
+        
+        // Fetch replies if any
+        if (data.replies_count > 0) {
+          await fetchReplies(statusId, instance, platform, sorted);
+        }
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+    
+    // Fetch replies to a post
+    async function fetchReplies(statusId, instance, platform, sorted = false) {
+      let url, method, body;
+      
+      if (platform === 'misskey') {
+        url = `https://${instance}/api/notes/children`;
+        method = 'POST';
+        body = JSON.stringify({ noteId: statusId, limit: 100 });
+      } else {
+        url = `https://${instance}/api/v1/statuses/${statusId}/context`;
+        method = 'GET';
+      }
+      
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: method === 'POST' ? { 'Content-Type': 'application/json' } : {},
+          body: method === 'POST' ? body : null
+        });
+        
+        if (!response.ok) throw new Error("Failed to fetch replies");
+        
+        let responseData, replies;
+        
+        if (platform === 'misskey') {
+          responseData = await response.json();
+          replies = responseData.map(note => convertMisskeyNote(note, instance));
+        } else {
+          responseData = await response.json();
+          replies = responseData.descendants;
+        }
+        
+        const container = document.getElementById(`replies-${statusId}`);
+        
+        if (replies.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #666; padding: 1rem;">No replies found</p>';
+          return;
+        }
+        
+        if (sorted && platform !== 'misskey') {
+          const tree = buildReplyTree(replies);
+          renderReplyTree(tree, container, instance, platform);
+        } else {
+          for (const reply of replies) {
+            const replyHtml = await renderPost(reply, instance, platform);
+            container.innerHTML += replyHtml;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching replies: ", error);
+        const container = document.getElementById(`replies-${statusId}`);
+        container.innerHTML = '<p style="color: #666;">Error loading replies</p>';
+      }
+    }
+    
+    // Build a tree structure from replies
+    function buildReplyTree(replies) {
+      const idToNode = {};
+      const roots = [];
+      
+      // Create nodes for all replies
+      replies.forEach(reply => {
+        idToNode[reply.id] = { post: reply, children: [] };
+      });
+      
+      // Build the tree structure
+      replies.forEach(reply => {
+        if (reply.in_reply_to_id && idToNode[reply.in_reply_to_id]) {
+          idToNode[reply.in_reply_to_id].children.push(idToNode[reply.id]);
+        } else {
+          roots.push(idToNode[reply.id]);
+        }
+      });
+      
+      return roots;
+    }
+    
+    // Render the reply tree
+    async function renderReplyTree(tree, container, instance, platform) {
+      for (const node of tree) {
+        const html = await renderPost(node.post, instance, platform);
+        const replyElement = document.createElement('div');
+        replyElement.innerHTML = html;
+        container.appendChild(replyElement);
+        
+        if (node.children.length > 0) {
+          const childContainer = document.createElement('div');
+          childContainer.classList.add('reply');
+          replyElement.appendChild(childContainer);
+          await renderReplyTree(node.children, childContainer, instance, platform);
+        }
+      }
+    }
+    
+    // Render a single post
+    async function renderPost(post, instance, platform) {
+      const acct = post.account;
+      const emojis = await fetchEmojis(instance, platform);
+      let content = replaceEmojis(post.content, emojis);
+      const reactionHtml = renderPleromaReactions(post);
+      const mediaHtml = renderMedia(post.media_attachments, platform);
+      
+      return `
+        <div class="toot">
+          <img src="${acct.avatar_static}" alt="avatar" class="avatar">
+          <div class="content">
+            <div class="user-info">
+              <span class="user">${acct.display_name || acct.username}</span>
+              <span class="handle">@${acct.acct}</span>
+            </div>
+            
+            <div class="post-content">${content}</div>
+            
+            ${mediaHtml ? `<div class="media-attachments">${mediaHtml}</div>` : ''}
+            
+            <div class="counts">
+              <span class="count-item">❤️ ${post.favourites_count}</span>
+              <span class="count-item">🔁 ${post.reblogs_count}</span>
+              <span class="count-item">💬 ${post.replies_count}</span>
+            </div>
+            
+            ${reactionHtml ? `<div class="reactions">${reactionHtml}</div>` : ''}
+            
+            <div class="view-post">
+              <a href="${post.url}" target="_blank">View this reply ↗</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
+
+<!--
+    <div id="page-height-display"></div>
+    <script>
+        function updatePageHeight() {
+            var resultsDiv = document.getElementById("results");
+            var divHeight = resultsDiv ? resultsDiv.scrollHeight : 0;
+            
+            // Display height on page
+            document.getElementById("page-height-display").textContent = "Height: " + divHeight + "px";
+
+            // Send height to parent window
+            if (window.parent) {
+                window.parent.postMessage({
+                    id: "current url displayed",
+                    height: divHeight
+                }, "*");
+            }
+
+            // If height is 0, wait 1.5 seconds and try again
+            if (divHeight === 0) {
+                setTimeout(updatePageHeight, 1500);
+            }
+        }
+
+        // Trigger function when window is resized
+        window.addEventListener("resize", updatePageHeight);
+
+        // Initial call to update the height when the page loads
+        window.addEventListener("load", updatePageHeight);
+    </script>-->
+
+</body>
+</html>

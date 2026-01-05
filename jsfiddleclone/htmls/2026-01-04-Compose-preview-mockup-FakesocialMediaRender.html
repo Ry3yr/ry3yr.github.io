@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter-style Preview</title>
+    <style>
+        /* Your Twitter-esque styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f8fa;
+        }
+
+        .post {
+            background-color: white;
+            border: 1px solid #ccd6dd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .post img {
+            border-radius: 5%;
+            vertical-align: middle;
+            margin-bottom: 10px;
+            max-width: 100%;
+        }
+
+        .post a {
+            color: #1da1f2;
+            text-decoration: none;
+        }
+
+        .post a:hover {
+            text-decoration: underline;
+        }
+
+        .post p {
+            margin: 10px 0;
+            color: #14171a;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        /* Textbox and controls styling */
+        .input-area {
+            margin-bottom: 30px;
+            max-width: 600px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccd6dd;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .btn {
+            background-color: #1da1f2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .preview-label {
+            font-weight: bold;
+            color: #657786;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .empty-preview {
+            color: #657786;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #ccd6dd;
+            border-radius: 8px;
+            max-width: 600px;
+        }
+
+        /* Modal for images */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+            display: block;
+            margin: auto;
+            max-width: 90%;
+            max-height: 80%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .modal-close:hover {
+            color: #bbb;
+        }
+
+        #modalCaption {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            width: 80%;
+        }
+
+        .post img {
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .post img:hover {
+            opacity: 0.7;
+        }
+
+        blockquote {
+            border-left: 4px solid #657786;
+            background-color: #f5f8fa;
+            padding: 10px;
+            margin: 10px 0;
+            font-style: italic;
+            color: #657786;
+        }
+    </style>
+</head>
+<body>
+    <div class="input-area">
+        <textarea id="textbox" name="textbox" rows="8" cols="50" placeholder=""></textarea>
+        
+        <div class="controls">
+            <div style="font-size: 14px; color: #657786;">
+                <span id="charCount">0</span> characters
+            </div>
+            <button id="renderBtn" class="btn" style="height: 0; padding: 0; margin: 0; border: 0; line-height: 0; overflow: hidden;">
+    Preview Post
+</button>
+
+        </div>
+    </div>
+
+    <div id="previewArea">
+        <div id="postPreview" class="post" style="display: none;">
+            <!-- Post content will be rendered here -->
+        </div>
+        <div id="emptyPreview" class="empty-preview" style="display: block;">
+        </div>
+    </div>
+
+    <!-- Modal for image preview -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div id="modalCaption"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const baseurl = "https://alcea-wisteria.de/z_files/emoji";
+        const defaultAvatar = "https://alcea-wisteria.de/z_files/emoji/alcea.png";
+        const defaultUsername = "alcea";
+
+        // DOM Elements
+        const textbox = document.getElementById('textbox');
+        const renderBtn = document.getElementById('renderBtn');
+        const postPreview = document.getElementById('postPreview');
+        const emptyPreview = document.getElementById('emptyPreview');
+        const charCount = document.getElementById('charCount');
+
+        // Character counter
+        textbox.addEventListener('input', updatePreview);
+
+        // Render button click handler
+        renderBtn.addEventListener('click', updatePreview);
+
+        // Auto-update preview on typing (with slight delay for performance)
+        let updateTimeout;
+        textbox.addEventListener('input', function() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(updatePreview, 100);
+        });
+
+        // Initial character count
+        charCount.textContent = textbox.value.length;
+
+        function updatePreview() {
+            const text = textbox.value.trim();
+            charCount.textContent = textbox.value.length;
+            
+            if (!text) {
+                // Hide post preview, show empty message
+                postPreview.style.display = 'none';
+                emptyPreview.style.display = 'block';
+                emptyPreview.textContent = '';
+                return;
+            }
+
+            // Hide empty message, show post preview
+            emptyPreview.style.display = 'none';
+            
+            // Create post structure
+            const postContent = document.createElement('div');
+            
+            // Add avatar and username
+            const userInfo = document.createElement('p');
+            userInfo.innerHTML = `<img src="${defaultAvatar}" width="50px" height="50px" style="border-radius: 50%; margin-right: 10px;" alt="${defaultUsername} avatar">@<a href="#" style="color: pink;">${defaultUsername}</a>`;
+            
+            // Process text content
+            const content = document.createElement('div');
+            content.innerHTML = processTextContent(text);
+            
+            const timestamp = document.createElement('p');
+            timestamp.style.color = '#657786';
+            timestamp.style.fontSize = '14px';
+            timestamp.style.marginTop = '10px';
+            timestamp.innerHTML = `<hr>Date: ${new Date().toLocaleString()}`;
+            
+            // Add hashtags section (extract from text)
+            const hashtags = extractHashtags(text);
+            const hashtagsElement = document.createElement('p');
+            hashtagsElement.style.color = '#1da1f2';
+            hashtagsElement.style.fontSize = '14px';
+            hashtagsElement.textContent = `Hashtags: ${hashtags.join(' ') || 'none'}`;
+            
+            // Add action buttons
+            const actions = document.createElement('div');
+            actions.style.marginTop = '15px';
+            
+            const commentBtn = document.createElement('button');
+            commentBtn.className = 'btn';
+            commentBtn.textContent = 'Comment';
+            commentBtn.onclick = () => {
+                window.open(`/other/extra/scripts/fakesocialmedia/comment.php?text=${encodeURIComponent(text.slice(0, 60))}`, '_blank');
+            };
+            
+            const viewCommentsBtn = document.createElement('a');
+            viewCommentsBtn.className = 'btn';
+            viewCommentsBtn.style.backgroundColor = '#657786';
+            viewCommentsBtn.style.marginLeft = '10px';
+            viewCommentsBtn.textContent = 'Load Comments';
+            viewCommentsBtn.href = `/other/extra/scripts/fakesocialmedia/commentload.html?number=8000&text=${encodeURIComponent(text.slice(0, 60))}`;
+            viewCommentsBtn.target = '_blank';
+            
+            actions.appendChild(commentBtn);
+            actions.appendChild(viewCommentsBtn);
+            
+            // Assemble post
+            postContent.appendChild(userInfo);
+            postContent.appendChild(content);
+            postContent.appendChild(timestamp);
+            postContent.appendChild(hashtagsElement);
+            postContent.appendChild(actions);
+            
+            // Handle embedded content
+            handleEmbeddedContent(text, postContent);
+            
+            // Update preview
+            postPreview.innerHTML = '';
+            postPreview.appendChild(postContent);
+            postPreview.style.display = 'block';
+            
+            // Initialize image modal for this post
+            initImageModal();
+        }
+
+        function processTextContent(text) {
+    let processed = text;
+    
+    // First, replace emojis with URLs (not <img> tags)
+    processed = processed.replace(/:(\w+):/g, (match, emoji) => {
+        return `${baseurl}/${emoji}.gif`;
+    });
+    
+    // Handle blockquotes (𒐫...𒐫 syntax)
+    processed = processed.replace(/𒐫([\s\S]*?)𒐫/g, (match, quoteContent) => {
+        return `<blockquote>${quoteContent.replace(/\n/g, '<br>')}</blockquote>`;
+    });
+    
+    // Handle URLs - this will catch both regular URLs and emoji URLs
+    processed = processed.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+        // Pixiv URLs
+        if (url.includes('pixiv.net')) {
+            const pixivRegex = /https?:\/\/(?:www\.)?pixiv\.net\/(?:en\/)?artworks\/(\d+)/;
+            const match = url.match(pixivRegex);
+            if (match) {
+                const artworkId = match[1];
+                return `<div style="margin: 10px 0;"><img src="https://embed.pixiv.net/decorate.php?illust_id=${artworkId}&mode=sns-automator" style="max-width: 100%; border-radius: 8px;"></div><br><a href="${url}" target="_blank">${url}</a>`;
+            }
+        }
+        
+        // Image URLs - including emoji URLs from the baseurl
+        if (url.match(/\.(gif|png|webp|jpg|jpeg)$/i)) {
+            // Check if it's an emoji URL
+            if (url.startsWith(baseurl) && url.endsWith('.gif')) {
+                // It's an emoji - use small size without link
+                return `<img src="${url}" width="24px" height="24px" alt="${url}" title="${url}" style="vertical-align: middle;">`;
+            } else {
+                // It's a regular image - use appropriate size with link
+                const imageWidth = url.includes(baseurl) ? "45px" : "50%";
+                const imageElement = `<img src="${url}" style="max-width: ${imageWidth}; border-radius: 8px; cursor: pointer;" alt="${url}" data-full="${url}">`;
+                
+                if (url.includes(baseurl)) {
+                    return imageElement;
+                } else {
+                    return `${imageElement}<br><a href="${url}" target="_blank">${url}</a>`;
+                }
+            }
+        }
+        
+        // Regular URLs
+        return `<a href="${url}" target="_blank">${url}</a>`;
+    });
+    
+    // Convert line breaks
+    processed = processed.replace(/\n/g, '<br>');
+    
+    // Handle hashtags in text
+    processed = processed.replace(/#(\w+)/g, '<span style="color: #1da1f2;">#$1</span>');
+    
+    return processed;
+        }
+
+        function extractHashtags(text) {
+            const hashtagRegex = /#(\w+)/g;
+            const matches = text.match(hashtagRegex);
+            return matches ? [...new Set(matches)] : []; // Remove duplicates
+        }
+
+        function handleEmbeddedContent(text, container) {
+            // Check for SoundCloud
+            const soundcloudRegex = /https?:\/\/(?:www\.|m\.)?soundcloud\.com\/[^\s'"\)]+/g;
+            const soundcloudMatch = text.match(soundcloudRegex);
+            if (soundcloudMatch) {
+                const embed = document.createElement('iframe');
+                embed.width = '100%';
+                embed.height = '166';
+                embed.scrolling = 'no';
+                embed.frameBorder = 'no';
+                embed.allow = 'autoplay';
+                embed.style.marginTop = '10px';
+                embed.style.borderRadius = '8px';
+                embed.src = `/other/extra/scripts/fakesocialmedia/soundcloudfetch.php?scurl=${soundcloudMatch[0]}`;
+                container.appendChild(embed);
+            }
+            
+            // Check for YouTube (excluding shorts)
+            const youtubeRegex = /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g;
+            const youtubeMatch = text.match(youtubeRegex);
+            if (youtubeMatch && !text.includes('youtube.com/shorts')) {
+                const videoId = youtubeMatch[0].match(/v=([a-zA-Z0-9_-]{11})/)[1];
+                const embed = document.createElement('iframe');
+                embed.width = '100%';
+                embed.height = '315';
+                embed.src = `https://www.youtube.com/embed/${videoId}`;
+                embed.frameBorder = '0';
+                embed.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                embed.allowFullscreen = true;
+                embed.style.marginTop = '10px';
+                embed.style.borderRadius = '8px';
+                container.appendChild(embed);
+            }
+        }
+
+        function initImageModal() {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const caption = document.getElementById('modalCaption');
+            const closeBtn = document.querySelector('.modal-close');
+            
+            // Add click handlers to images in the post
+            postPreview.querySelectorAll('img[data-full]').forEach(img => {
+                img.addEventListener('click', function() {
+                    modal.style.display = 'block';
+                    modalImg.src = this.getAttribute('data-full');
+                    caption.textContent = this.alt;
+                });
+            });
+            
+            // Close modal handlers
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+            
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Clear the textbox when page loads (no sample text)
+        window.addEventListener('DOMContentLoaded', function() {
+            textbox.value = '';
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
+
+<!--in--use--example----
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Twitter-style Preview</title>
+<style>body{font-family:Arial,sans-serif;margin:0;padding:20px;background-color:#f5f8fa}.post{background-color:#fff;border:1px solid #ccd6dd;border-radius:8px;padding:15px;margin-bottom:20px;max-width:600px;box-shadow:0 2px 4px rgba(0,0,0,.05)}.post img{border-radius:5%;vertical-align:middle;margin-bottom:10px;max-width:100%}.post a{color:#1da1f2;text-decoration:none}.post a:hover{text-decoration:underline}.post p{margin:10px 0;color:#14171a;font-size:15px;line-height:1.5}.input-area{margin-bottom:30px;max-width:600px}.input-area:not(.hidden){display:block}.input-area.hidden{display:none}textarea{width:100%;padding:10px;border:1px solid #ccd6dd;border-radius:8px;font-family:Arial,sans-serif;font-size:15px;resize:vertical;box-sizing:border-box}.controls{display:flex;justify-content:space-between;align-items:center;margin-top:10px}.btn{background-color:#1da1f2;color:#fff;border:none;padding:8px 16px;border-radius:9999px;cursor:pointer;font-size:14px;text-decoration:none}.btn:hover{opacity:.9}.empty-preview{color:#657786;font-style:italic;text-align:center;padding:20px;border:2px dashed #ccd6dd;border-radius:8px;max-width:600px}.parent-status{background-color:#e8f4f9;border:1px solid #a6d9f3;border-radius:8px;padding:10px;margin-bottom:15px;color:#1da1f2;font-size:14px;text-align:center}.parent-status.connected{background-color:#e8f9e8;border-color:#a6f3a6;color:#25a825}.parent-status.error{background-color:#f9e8e8;border-color:#f3a6a6;color:#d93025}.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,.9)}.modal-content{display:block;margin:auto;max-width:90%;max-height:80%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.modal-close{position:absolute;top:15px;right:35px;color:#f1f1f1;font-size:40px;font-weight:bold;cursor:pointer;z-index:1001}.modal-close:hover{color:#bbb}#modalCaption{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#fff;text-align:center;width:80%}.post img{cursor:pointer;transition:.3s}.post img:hover{opacity:.7}blockquote{border-left:4px solid #657786;background-color:#f5f8fa;padding:10px;margin:10px 0;font-style:italic;color:#657786}</style>
+</head>
+<body>
+<div class="input-area" id="localInputArea"><details><summary style="color:transparent;text-decoration:none">title</summary><textarea id="textbox" name="textbox" rows="8" cols="50" placeholder=""></textarea></details><div class="controls"><div style="font-size:14px;color:#657786"><span id="charCount">0</span> characters</div><button id="renderBtn" class="btn" style="height:0;padding:0;margin:0;border:0;line-height:0;overflow:hidden">Preview Post</button></div></div>
+<div id="parentStatus" class="parent-status" style="display:none">Connecting to parent textarea...</div>
+<div id="previewArea"><div id="postPreview" class="post" style="display:none"></div><div id="emptyPreview" class="empty-preview" style="display:block"></div></div>
+<div id="imageModal" class="modal"><span class="modal-close">&times;</span><img class="modal-content" id="modalImage"><div id="modalCaption"></div></div>
+<script>const isFramed=window!==window.top;const baseurl="https://alcea-wisteria.de/z_files/emoji";const defaultAvatar="https://alcea-wisteria.de/z_files/emoji/alcea.png";const defaultUsername="alcea";let textbox;const renderBtn=document.getElementById('renderBtn');const postPreview=document.getElementById('postPreview');const emptyPreview=document.getElementById('emptyPreview');const charCount=document.getElementById('charCount');const localInputArea=document.getElementById('localInputArea');const parentStatus=document.getElementById('parentStatus');
+if(isFramed){console.log("Running in iframe, connecting to parent window");localInputArea.classList.add('hidden');parentStatus.style.display='block';
+function connectToParentTextarea(){try{if(window.parent&&window.parent.document){textbox=window.parent.document.querySelector('textarea#textbox');if(textbox){console.log("Strategy 1: Found textarea#textbox directly:",textbox)}else{const parentForm=window.parent.document.querySelector('form[action*="post_barebones.php"]');if(parentForm){textbox=parentForm.querySelector('textarea#textbox');if(textbox){console.log("Strategy 2: Found textarea in post_barebones.php form:",textbox)}}}if(!textbox){const forms=window.parent.document.querySelectorAll('form');for(const form of forms){const textarea=form.querySelector('textarea[name="textbox"]');if(textarea){textbox=textarea;console.log("Strategy 3: Found textarea[name='textbox'] in form:",textbox);break}}}if(!textbox){textbox=window.parent.document.querySelector('textarea[id*="textbox"]');if(textbox){console.log("Strategy 4: Found textarea with id containing 'textbox':",textbox)}}if(textbox){console.log("Connected to parent textarea:",textbox);parentStatus.textContent="✓ Connected to parent textarea. Type in the form above to see preview here.";parentStatus.className='parent-status connected';updateCharCount();const eventTypes=['input','keyup','change','propertychange'];eventTypes.forEach(eventType=>{textbox.addEventListener(eventType,function(){updateCharCount();updatePreview()})});textbox.addEventListener('paste',function(){setTimeout(()=>{updateCharCount();updatePreview()},10)});updatePreview();setInterval(()=>{if(textbox.value!==textbox.lastValue){textbox.lastValue=textbox.value;updateCharCount();updatePreview()}},500);return true}else{console.warn("Textarea not found using any strategy")}}}catch(error){console.error("Cannot access parent window:",error)}fallbackToLocal();return false}
+function fallbackToLocal(){console.log("Falling back to local textarea");parentStatus.textContent="Could not connect to parent textarea. Using local preview only.";parentStatus.className='parent-status error';textbox=document.getElementById('textbox');localInputArea.classList.remove('hidden');setupLocalTextarea();setTimeout(()=>{parentStatus.textContent="Using local preview mode. Type below to see preview."},2000)}setTimeout(connectToParentTextarea,100)}else{console.log("Running as standalone page");textbox=document.getElementById('textbox');setupLocalTextarea();if(parentStatus){parentStatus.textContent="Running in standalone mode. Type in the textarea above to see preview.";parentStatus.style.display='block';parentStatus.className='parent-status'}}
+function setupLocalTextarea(){textbox.addEventListener('input',updateCharCount);renderBtn.addEventListener('click',updatePreview);let updateTimeout;textbox.addEventListener('input',function(){clearTimeout(updateTimeout);updateTimeout=setTimeout(updatePreview,100)});updateCharCount()}
+function updateCharCount(){if(textbox&&charCount){charCount.textContent=textbox.value.length}}
+function updatePreview(){if(!textbox)return;const text=textbox.value.trim();updateCharCount();if(!text){postPreview.style.display='none';emptyPreview.style.display='block';emptyPreview.textContent='Preview will appear here';return}emptyPreview.style.display='none';const postContent=document.createElement('div');const userInfo=document.createElement('p');userInfo.innerHTML=`<img src="${defaultAvatar}" width="50px" height="50px" style="border-radius:50%;margin-right:10px" alt="${defaultUsername} avatar">@<a href="#" style="color:pink">${defaultUsername}</a>`;const content=document.createElement('div');content.innerHTML=processTextContent(text);const timestamp=document.createElement('p');timestamp.style.color='#657786';timestamp.style.fontSize='14px';timestamp.style.marginTop='10px';timestamp.innerHTML=`<hr>Date: ${new Date().toLocaleString()}`;const hashtags=extractHashtags(text);const hashtagsElement=document.createElement('p');hashtagsElement.style.color='#1da1f2';hashtagsElement.style.fontSize='14px';hashtagsElement.textContent=`Hashtags: ${hashtags.join(' ')||'none'}`;const actions=document.createElement('div');actions.style.marginTop='15px';const commentBtn=document.createElement('button');commentBtn.className='btn';commentBtn.textContent='Comment';commentBtn.onclick=()=>{window.open(`/other/extra/scripts/fakesocialmedia/comment.php?text=${encodeURIComponent(text.slice(0,60))}`,'_blank')};const viewCommentsBtn=document.createElement('a');viewCommentsBtn.className='btn';viewCommentsBtn.style.backgroundColor='#657786';viewCommentsBtn.style.marginLeft='10px';viewCommentsBtn.textContent='Load Comments';viewCommentsBtn.href=`/other/extra/scripts/fakesocialmedia/commentload.html?number=8000&text=${encodeURIComponent(text.slice(0,60))}`;viewCommentsBtn.target='_blank';actions.appendChild(commentBtn);actions.appendChild(viewCommentsBtn);postContent.appendChild(userInfo);postContent.appendChild(content);postContent.appendChild(timestamp);postContent.appendChild(hashtagsElement);postContent.appendChild(actions);handleEmbeddedContent(text,postContent);postPreview.innerHTML='';postPreview.appendChild(postContent);postPreview.style.display='block';initImageModal()}
+function processTextContent(text){let processed=text;processed=processed.replace(/:(\w+):/g,(match,emoji)=>`${baseurl}/${emoji}.gif`);processed=processed.replace(/𒐫([\s\S]*?)𒐫/g,(match,quoteContent)=>`<blockquote>${quoteContent.replace(/\n/g,'<br>')}</blockquote>`);processed=processed.replace(/(https?:\/\/[^\s]+)/g,(url)=>{if(url.includes('pixiv.net')){const pixivRegex=/https?:\/\/(?:www\.)?pixiv\.net\/(?:en\/)?artworks\/(\d+)/;const match=url.match(pixivRegex);if(match){const artworkId=match[1];return`<div style="margin:10px 0"><img src="https://embed.pixiv.net/decorate.php?illust_id=${artworkId}&mode=sns-automator" style="max-width:100%;border-radius:8px"></div><br><a href="${url}" target="_blank">${url}</a>`}}if(url.match(/\.(gif|png|webp|jpg|jpeg)$/i)){if(url.startsWith(baseurl)&&url.endsWith('.gif')){return`<img src="${url}" width="24px" height="24px" alt="${url}" title="${url}" style="vertical-align:middle">`}else{const imageWidth=url.includes(baseurl)?"45px":"50%";const imageElement=`<img src="${url}" style="max-width:${imageWidth};border-radius:8px;cursor:pointer" alt="${url}" data-full="${url}">`;if(url.includes(baseurl)){return imageElement}else{return`${imageElement}<br><a href="${url}" target="_blank">${url}</a>`}}}return`<a href="${url}" target="_blank">${url}</a>`});processed=processed.replace(/\n/g,'<br>');processed=processed.replace(/#(\w+)/g,'<span style="color:#1da1f2">#$1</span>');return processed}
+function extractHashtags(text){const hashtagRegex=/#(\w+)/g;const matches=text.match(hashtagRegex);return matches?[...new Set(matches)]:[]}
+function handleEmbeddedContent(text,container){const soundcloudRegex=/https?:\/\/(?:www\.|m\.)?soundcloud\.com\/[^\s'"\)]+/g;const soundcloudMatch=text.match(soundcloudRegex);if(soundcloudMatch){const embed=document.createElement('iframe');embed.width='100%';embed.height='166';embed.scrolling='no';embed.frameBorder='no';embed.allow='autoplay';embed.style.marginTop='10px';embed.style.borderRadius='8px';embed.src=`/other/extra/scripts/fakesocialmedia/soundcloudfetch.php?scurl=${soundcloudMatch[0]}`;container.appendChild(embed)}const youtubeRegex=/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g;const youtubeMatch=text.match(youtubeRegex);if(youtubeMatch&&!text.includes('youtube.com/shorts')){const videoId=youtubeMatch[0].match(/v=([a-zA-Z0-9_-]{11})/)[1];const embed=document.createElement('iframe');embed.width='100%';embed.height='315';embed.src=`https://www.youtube.com/embed/${videoId}`;embed.frameBorder='0';embed.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';embed.allowFullscreen=true;embed.style.marginTop='10px';embed.style.borderRadius='8px';container.appendChild(embed)}}
+function initImageModal(){const modal=document.getElementById('imageModal');const modalImg=document.getElementById('modalImage');const caption=document.getElementById('modalCaption');const closeBtn=document.querySelector('.modal-close');postPreview.querySelectorAll('img[data-full]').forEach(img=>{img.addEventListener('click',function(){modal.style.display='block';modalImg.src=this.getAttribute('data-full');caption.textContent=this.alt})});closeBtn.onclick=function(){modal.style.display='none'};modal.onclick=function(e){if(e.target===modal){modal.style.display='none'}};document.addEventListener('keydown',function(e){if(e.key==='Escape'){modal.style.display='none'}})}
+window.addEventListener('DOMContentLoaded',function(){if(!isFramed&&textbox){textbox.value='';updatePreview()}});</script>
+</body>
+</html>
+<!-----old--ver---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter-style Preview</title>
+    <style>
+        /* Your Twitter-esque styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f8fa;
+        }
+
+        .post {
+            background-color: white;
+            border: 1px solid #ccd6dd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .post img {
+            border-radius: 5%;
+            vertical-align: middle;
+            margin-bottom: 10px;
+            max-width: 100%;
+        }
+
+        .post a {
+            color: #1da1f2;
+            text-decoration: none;
+        }
+
+        .post a:hover {
+            text-decoration: underline;
+        }
+
+        .post p {
+            margin: 10px 0;
+            color: #14171a;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        /* Textbox and controls styling */
+        .input-area {
+            margin-bottom: 30px;
+            max-width: 600px;
+        }
+
+        /* Only show input area when NOT in iframe */
+        .input-area:not(.hidden) {
+            display: block;
+        }
+
+        .input-area.hidden {
+            display: none;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccd6dd;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .btn {
+            background-color: #1da1f2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .preview-label {
+            font-weight: bold;
+            color: #657786;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .empty-preview {
+            color: #657786;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #ccd6dd;
+            border-radius: 8px;
+            max-width: 600px;
+        }
+
+        /* Status message for parent textarea */
+        .parent-status {
+            background-color: #e8f4f9;
+            border: 1px solid #a6d9f3;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            color: #1da1f2;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .parent-status.connected {
+            background-color: #e8f9e8;
+            border-color: #a6f3a6;
+            color: #25a825;
+        }
+
+        .parent-status.error {
+            background-color: #f9e8e8;
+            border-color: #f3a6a6;
+            color: #d93025;
+        }
+
+        /* Modal for images */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+            display: block;
+            margin: auto;
+            max-width: 90%;
+            max-height: 80%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .modal-close:hover {
+            color: #bbb;
+        }
+
+        #modalCaption {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            width: 80%;
+        }
+
+        .post img {
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .post img:hover {
+            opacity: 0.7;
+        }
+
+        blockquote {
+            border-left: 4px solid #657786;
+            background-color: #f5f8fa;
+            padding: 10px;
+            margin: 10px 0;
+            font-style: italic;
+            color: #657786;
+        }
+    </style>
+</head>
+<body>
+    <div class="input-area" id="localInputArea">
+        <details><summary style="color: transparent; text-decoration: none;">title</summary>  
+            <textarea id="textbox" name="textbox" rows="8" cols="50" placeholder=""></textarea>
+        </details>
+        
+        <div class="controls">
+            <div style="font-size: 14px; color: #657786;">
+                <span id="charCount">0</span> characters
+            </div>
+            <button id="renderBtn" class="btn" style="height: 0; padding: 0; margin: 0; border: 0; line-height: 0; overflow: hidden;">
+                Preview Post
+            </button>
+        </div>
+    </div>
+    <div id="parentStatus" class="parent-status" style="display: none;">
+        Connecting to parent textarea...
+    </div>
+
+    <div id="previewArea">
+        <div id="postPreview" class="post" style="display: none;">
+        </div>
+        <div id="emptyPreview" class="empty-preview" style="display: block;">
+        </div>
+    </div>
+    <div id="imageModal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div id="modalCaption"></div>
+    </div>
+
+    <script>
+        // Check if we're in an iframe
+        const isFramed = window !== window.top;
+        
+        // Configuration
+        const baseurl = "https://alcea-wisteria.de/z_files/emoji";
+        const defaultAvatar = "https://alcea-wisteria.de/z_files/emoji/alcea.png";
+        const defaultUsername = "alcea";
+
+        // DOM Elements
+        let textbox;
+        const renderBtn = document.getElementById('renderBtn');
+        const postPreview = document.getElementById('postPreview');
+        const emptyPreview = document.getElementById('emptyPreview');
+        const charCount = document.getElementById('charCount');
+        const localInputArea = document.getElementById('localInputArea');
+        const parentStatus = document.getElementById('parentStatus');
+
+        if (isFramed) {
+            // We're in an iframe - use parent window's textarea
+            console.log("Running in iframe, connecting to parent window");
+            
+            // Hide local input area
+            localInputArea.classList.add('hidden');
+            
+            // Show status message
+            parentStatus.style.display = 'block';
+            
+            // Try to find the specific textarea in parent form
+            function connectToParentTextarea() {
+                try {
+                    // Check if we can access parent
+                    if (window.parent && window.parent.document) {
+                        // Look for the specific textarea with id="textbox" inside the form
+                        const parentForm = window.parent.document.querySelector('form[action*="post_barebones.php"]');
+                        if (parentForm) {
+                            // Find the textarea inside the form
+                            textbox = parentForm.querySelector('textarea#textbox');
+                            
+                            if (textbox) {
+                                console.log("Connected to parent textarea:", textbox);
+                                
+                                // Update status
+                                parentStatus.textContent = "✓ Connected to parent textarea. Type in the form above to see preview here.";
+                                parentStatus.className = 'parent-status connected';
+                                
+                                // Update character count initially
+                                updateCharCount();
+                                
+                                // Set up event listeners on parent textarea
+                                const eventTypes = ['input', 'keyup', 'change', 'propertychange'];
+                                eventTypes.forEach(eventType => {
+                                    textbox.addEventListener(eventType, function() {
+                                        updateCharCount();
+                                        updatePreview();
+                                    });
+                                });
+                                
+                                // Also monitor for paste events
+                                textbox.addEventListener('paste', function() {
+                                    setTimeout(() => {
+                                        updateCharCount();
+                                        updatePreview();
+                                    }, 10);
+                                });
+                                
+                                // Initial preview
+                                updatePreview();
+                                
+                                // Set up a periodic check for text changes (in case events don't fire)
+                                setInterval(() => {
+                                    if (textbox.value !== textbox.lastValue) {
+                                        textbox.lastValue = textbox.value;
+                                        updateCharCount();
+                                        updatePreview();
+                                    }
+                                }, 500);
+                                
+                                return true;
+                            } else {
+                                console.warn("Textarea not found in parent form");
+                            }
+                        } else {
+                            console.warn("Parent form not found");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Cannot access parent window:", error);
+                }
+                
+                // If we get here, connection failed
+                fallbackToLocal();
+                return false;
+            }
+            
+            function fallbackToLocal() {
+                console.log("Falling back to local textarea");
+                parentStatus.textContent = "Could not connect to parent textarea. Using local preview only.";
+                parentStatus.className = 'parent-status error';
+                
+                // Use local textarea
+                textbox = document.getElementById('textbox');
+                localInputArea.classList.remove('hidden');
+                setupLocalTextarea();
+                
+                // Update status after a moment
+                setTimeout(() => {
+                    parentStatus.textContent = "Using local preview mode. Type below to see preview.";
+                }, 2000);
+            }
+            
+            // Try to connect to parent - wait a bit for parent to load
+            setTimeout(connectToParentTextarea, 100);
+            
+        } else {
+            // Not in an iframe - use local textarea
+            console.log("Running as standalone page");
+            textbox = document.getElementById('textbox');
+            setupLocalTextarea();
+            
+            // Update status if it exists
+            if (parentStatus) {
+                parentStatus.textContent = "Running in standalone mode. Type in the textarea above to see preview.";
+                parentStatus.style.display = 'block';
+                parentStatus.className = 'parent-status';
+            }
+        }
+        
+        function setupLocalTextarea() {
+            // Character counter for local textarea
+            textbox.addEventListener('input', updateCharCount);
+            
+            // Render button click handler (for local use)
+            renderBtn.addEventListener('click', updatePreview);
+            
+            // Auto-update preview on typing (with slight delay for performance)
+            let updateTimeout;
+            textbox.addEventListener('input', function() {
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(updatePreview, 100);
+            });
+            
+            // Initial character count
+            updateCharCount();
+        }
+        
+        function updateCharCount() {
+            if (textbox && charCount) {
+                charCount.textContent = textbox.value.length;
+            }
+        }
+
+        function updatePreview() {
+            if (!textbox) return;
+            
+            const text = textbox.value.trim();
+            updateCharCount();
+            
+            if (!text) {
+                // Hide post preview, show empty message
+                postPreview.style.display = 'none';
+                emptyPreview.style.display = 'block';
+                emptyPreview.textContent = 'Preview will appear here';
+                return;
+            }
+
+            // Hide empty message, show post preview
+            emptyPreview.style.display = 'none';
+            
+            // Create post structure
+            const postContent = document.createElement('div');
+            
+            // Add avatar and username
+            const userInfo = document.createElement('p');
+            userInfo.innerHTML = `<img src="${defaultAvatar}" width="50px" height="50px" style="border-radius: 50%; margin-right: 10px;" alt="${defaultUsername} avatar">@<a href="#" style="color: pink;">${defaultUsername}</a>`;
+            
+            // Process text content
+            const content = document.createElement('div');
+            content.innerHTML = processTextContent(text);
+            
+            const timestamp = document.createElement('p');
+            timestamp.style.color = '#657786';
+            timestamp.style.fontSize = '14px';
+            timestamp.style.marginTop = '10px';
+            timestamp.innerHTML = `<hr>Date: ${new Date().toLocaleString()}`;
+            
+            // Add hashtags section (extract from text)
+            const hashtags = extractHashtags(text);
+            const hashtagsElement = document.createElement('p');
+            hashtagsElement.style.color = '#1da1f2';
+            hashtagsElement.style.fontSize = '14px';
+            hashtagsElement.textContent = `Hashtags: ${hashtags.join(' ') || 'none'}`;
+            
+            // Add action buttons
+            const actions = document.createElement('div');
+            actions.style.marginTop = '15px';
+            
+            const commentBtn = document.createElement('button');
+            commentBtn.className = 'btn';
+            commentBtn.textContent = 'Comment';
+            commentBtn.onclick = () => {
+                window.open(`/other/extra/scripts/fakesocialmedia/comment.php?text=${encodeURIComponent(text.slice(0, 60))}`, '_blank');
+            };
+            
+            const viewCommentsBtn = document.createElement('a');
+            viewCommentsBtn.className = 'btn';
+            viewCommentsBtn.style.backgroundColor = '#657786';
+            viewCommentsBtn.style.marginLeft = '10px';
+            viewCommentsBtn.textContent = 'Load Comments';
+            viewCommentsBtn.href = `/other/extra/scripts/fakesocialmedia/commentload.html?number=8000&text=${encodeURIComponent(text.slice(0, 60))}`;
+            viewCommentsBtn.target = '_blank';
+            
+            actions.appendChild(commentBtn);
+            actions.appendChild(viewCommentsBtn);
+            
+            // Assemble post
+            postContent.appendChild(userInfo);
+            postContent.appendChild(content);
+            postContent.appendChild(timestamp);
+            postContent.appendChild(hashtagsElement);
+            postContent.appendChild(actions);
+            
+            // Handle embedded content
+            handleEmbeddedContent(text, postContent);
+            
+            // Update preview
+            postPreview.innerHTML = '';
+            postPreview.appendChild(postContent);
+            postPreview.style.display = 'block';
+            
+            // Initialize image modal for this post
+            initImageModal();
+        }
+
+        function processTextContent(text) {
+            let processed = text;
+            
+            // First, replace emojis with URLs (not <img> tags)
+            processed = processed.replace(/:(\w+):/g, (match, emoji) => {
+                return `${baseurl}/${emoji}.gif`;
+            });
+            
+            // Handle blockquotes (𒐫...𒐫 syntax)
+            processed = processed.replace(/𒐫([\s\S]*?)𒐫/g, (match, quoteContent) => {
+                return `<blockquote>${quoteContent.replace(/\n/g, '<br>')}</blockquote>`;
+            });
+            
+            // Handle URLs - this will catch both regular URLs and emoji URLs
+            processed = processed.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+                // Pixiv URLs
+                if (url.includes('pixiv.net')) {
+                    const pixivRegex = /https?:\/\/(?:www\.)?pixiv\.net\/(?:en\/)?artworks\/(\d+)/;
+                    const match = url.match(pixivRegex);
+                    if (match) {
+                        const artworkId = match[1];
+                        return `<div style="margin: 10px 0;"><img src="https://embed.pixiv.net/decorate.php?illust_id=${artworkId}&mode=sns-automator" style="max-width: 100%; border-radius: 8px;"></div><br><a href="${url}" target="_blank">${url}</a>`;
+                    }
+                }
+                
+                // Image URLs - including emoji URLs from the baseurl
+                if (url.match(/\.(gif|png|webp|jpg|jpeg)$/i)) {
+                    // Check if it's an emoji URL
+                    if (url.startsWith(baseurl) && url.endsWith('.gif')) {
+                        // It's an emoji - use small size without link
+                        return `<img src="${url}" width="24px" height="24px" alt="${url}" title="${url}" style="vertical-align: middle;">`;
+                    } else {
+                        // It's a regular image - use appropriate size with link
+                        const imageWidth = url.includes(baseurl) ? "45px" : "50%";
+                        const imageElement = `<img src="${url}" style="max-width: ${imageWidth}; border-radius: 8px; cursor: pointer;" alt="${url}" data-full="${url}">`;
+                        
+                        if (url.includes(baseurl)) {
+                            return imageElement;
+                        } else {
+                            return `${imageElement}<br><a href="${url}" target="_blank">${url}</a>`;
+                        }
+                    }
+                }
+                
+                // Regular URLs
+                return `<a href="${url}" target="_blank">${url}</a>`;
+            });
+            
+            // Convert line breaks
+            processed = processed.replace(/\n/g, '<br>');
+            
+            // Handle hashtags in text
+            processed = processed.replace(/#(\w+)/g, '<span style="color: #1da1f2;">#$1</span>');
+            
+            return processed;
+        }
+
+        function extractHashtags(text) {
+            const hashtagRegex = /#(\w+)/g;
+            const matches = text.match(hashtagRegex);
+            return matches ? [...new Set(matches)] : []; // Remove duplicates
+        }
+
+        function handleEmbeddedContent(text, container) {
+            // Check for SoundCloud
+            const soundcloudRegex = /https?:\/\/(?:www\.|m\.)?soundcloud\.com\/[^\s'"\)]+/g;
+            const soundcloudMatch = text.match(soundcloudRegex);
+            if (soundcloudMatch) {
+                const embed = document.createElement('iframe');
+                embed.width = '100%';
+                embed.height = '166';
+                embed.scrolling = 'no';
+                embed.frameBorder = 'no';
+                embed.allow = 'autoplay';
+                embed.style.marginTop = '10px';
+                embed.style.borderRadius = '8px';
+                embed.src = `/other/extra/scripts/fakesocialmedia/soundcloudfetch.php?scurl=${soundcloudMatch[0]}`;
+                container.appendChild(embed);
+            }
+            
+            // Check for YouTube (excluding shorts)
+            const youtubeRegex = /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g;
+            const youtubeMatch = text.match(youtubeRegex);
+            if (youtubeMatch && !text.includes('youtube.com/shorts')) {
+                const videoId = youtubeMatch[0].match(/v=([a-zA-Z0-9_-]{11})/)[1];
+                const embed = document.createElement('iframe');
+                embed.width = '100%';
+                embed.height = '315';
+                embed.src = `https://www.youtube.com/embed/${videoId}`;
+                embed.frameBorder = '0';
+                embed.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                embed.allowFullscreen = true;
+                embed.style.marginTop = '10px';
+                embed.style.borderRadius = '8px';
+                container.appendChild(embed);
+            }
+        }
+
+        function initImageModal() {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const caption = document.getElementById('modalCaption');
+            const closeBtn = document.querySelector('.modal-close');
+            
+            // Add click handlers to images in the post
+            postPreview.querySelectorAll('img[data-full]').forEach(img => {
+                img.addEventListener('click', function() {
+                    modal.style.display = 'block';
+                    modalImg.src = this.getAttribute('data-full');
+                    caption.textContent = this.alt;
+                });
+            });
+            
+            // Close modal handlers
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+            
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Clear the textbox when page loads (no sample text)
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!isFramed && textbox) {
+                textbox.value = '';
+                updatePreview();
+            }
+        });
+    </script>
+</body>
+</html>
