@@ -1,0 +1,115 @@
+<!---https://stackoverflow.com/questions/79692288/how-to-upload-images-via-api-on-postimages-org---->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PostImage Upload - Auto-Key</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.5; background: #f4f7f6; }
+        .container { max-width: 550px; margin: auto; border: 1px solid #ccc; padding: 25px; border-radius: 12px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        label { font-weight: bold; font-size: 14px; color: #555; }
+        input { width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        #result { margin-top: 20px; }
+        .url-box { background: #f9f9f9; padding: 10px; border: 1px solid #eee; margin-top: 10px; border-radius: 5px; word-break: break-all; }
+        #debug-log { background: #222; color: #0f0; padding: 10px; font-size: 11px; white-space: pre-wrap; margin-top: 20px; border-radius: 5px; max-height: 200px; overflow-y: auto; display: none; }
+        img { max-width: 100%; margin-top: 15px; border: 1px solid #ccc; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>PostImage Upload</h3>
+    
+    <label>API Key:</label>
+    <input id="apiKey" type="text" placeholder="Enter API Key or use ?apikey= in URL">
+    
+    <label>Select Image:</label>
+    <input type="file" id="fileInput" accept="image/*">
+    
+    <button onclick="upload()">Upload & Parse</button>
+
+    <div id="result"></div>
+    <div id="debug-log"></div>
+</div>
+
+<script>
+// --- NEW: Read QueryString on Page Load ---
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const keyFromUrl = urlParams.get('apikey');
+    if (keyFromUrl) {
+        document.getElementById('apiKey').value = keyFromUrl;
+        console.log("API Key loaded from URL parameters.");
+    }
+};
+
+async function upload() {
+    const key = document.getElementById('apiKey').value;
+    const file = document.getElementById('fileInput').files[0];
+    const resultArea = document.getElementById('result');
+    const debugLog = document.getElementById('debug-log');
+    
+    if (!key || !file) { alert('Please provide both Key and File'); return; }
+    
+    resultArea.innerHTML = "<b>Uploading...</b>";
+    debugLog.style.display = "none";
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64 = e.target.result.split(',')[1];
+        
+        const data = new URLSearchParams();
+        data.append('key', key);
+        data.append('image', base64);
+        data.append('o', '2b819584285c102318568238c7d4a4c7');
+        data.append('m', '59c2ad4b46b0c1e12d5703302bff0120');
+        data.append('version', '1.0.1');
+        data.append('name', file.name.split('.')[0]);
+        data.append('type', file.name.split('.').pop());
+
+        const proxy = 'https://corsproxy.io/?';
+        const target = 'https://api.postimage.org/1/upload';
+
+        try {
+            const res = await fetch(proxy + encodeURIComponent(target), {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: data
+            });
+
+            const responseText = await res.text();
+            
+            debugLog.style.display = "block";
+            debugLog.textContent = "RAW RESPONSE:\n" + responseText;
+
+            // Regex to grab the URLs from the XML/Text response
+            const galleryMatch = responseText.match(/https:\/\/postimg\.cc\/[a-zA-Z0-9]+/);
+            const directMatch = responseText.match(/https:\/\/i\.postimg\.cc\/[a-zA-Z0-9]+\/[a-zA-Z0-9._-]+/);
+
+            const galleryUrl = galleryMatch ? galleryMatch[0] : null;
+            const directUrl = directMatch ? directMatch[0] : null;
+
+            if (galleryUrl || directUrl) {
+                let html = `<p style="color:green;"><b>Upload Successful!</b></p>`;
+                if (galleryUrl) {
+                    html += `<div class="url-box"><strong>Gallery:</strong><br>${galleryUrl}</div>`;
+                }
+                if (directUrl) {
+                    html += `<div class="url-box"><br>${directUrl}</div>
+                             <img src="${directUrl}">`;
+                }
+                resultArea.innerHTML = html;
+            } else {
+                resultArea.innerHTML = `<p style="color:orange;">Uploaded, but couldn't find links. Check debug box.</p>`;
+            }
+
+        } catch(err) {
+            resultArea.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+        }
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+</body>
+</html>
