@@ -3306,4 +3306,268 @@
         "domainname": "alceawis.com",
         "response_code": 200
     }
+
+,
+    {
+        "date": "2026-01-23 03:50:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-23 11:00:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-23 14:00:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-23 17:00:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-24 03:50:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-24 11:00:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-24 17:00:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-25 03:50:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-25 11:00:03",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-25 14:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-25 17:00:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-26 03:50:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-26 11:00:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-26 14:00:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-26 17:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-27 03:50:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-27 11:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-27 14:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-27 17:01:16",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-28 03:50:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-28 11:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-28 14:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-28 17:00:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-29 03:50:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-29 11:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-29 14:00:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-29 17:00:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-30 03:50:02",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-30 11:00:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-30 14:00:00",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-30 16:59:59",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-31 00:05:14",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-01-31 03:50:01",
+        "mode": "file_check",
+        "domainname": "alceawis.com",
+        "response_code": 200
+    }
 ]
