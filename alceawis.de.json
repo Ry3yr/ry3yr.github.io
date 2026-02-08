@@ -3590,4 +3590,116 @@
         "domainname": "alceawis.de",
         "response_code": 200
     }
+
+,
+    {
+        "date": "2026-02-01 03:49:59",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-01 10:59:59",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-02 03:50:02",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-02 11:00:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-03 03:50:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-03 11:00:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-04 03:50:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-04 11:00:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-05 03:50:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-05 11:00:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-06 03:50:01",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-06 11:00:02",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-07 03:50:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
+
+,
+    {
+        "date": "2026-02-07 11:00:00",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    }
 ]
