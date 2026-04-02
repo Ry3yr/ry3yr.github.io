@@ -1,3 +1,19 @@
+<details><summary>-</summary><script>function stringToArrayBuffer(e){return new TextEncoder().encode(e)}function arrayBufferToString(e){return new TextDecoder().decode(e)}async function decryptAES(e,t,r){var n=await crypto.subtle.decrypt({name:"AES-CBC",iv:r},t,e);return new Uint8Array(n)}async function handleDecrypt(e){e.preventDefault();var t,r=document.getElementById("password").value,n=document.getElementById("encryptedOutput").value,a=await crypto.subtle.deriveKey({name:"PBKDF2",salt:new Uint8Array(16),iterations:1e5,hash:"SHA-256"},await crypto.subtle.importKey("raw",stringToArrayBuffer(r),{name:"PBKDF2"},!1,["deriveKey"]),{name:"AES-CBC",length:256},!0,["encrypt","decrypt"]),u=n.substr(0,32),y=n.substr(32),i=await decryptAES(new Uint8Array(y.match(/.{1,2}/g).map(e=>parseInt(e,16))),a,new Uint8Array(u.match(/.{1,2}/g).map(e=>parseInt(e,16)))),c=arrayBufferToString(i);document.getElementById("decryptedOutput").innerHTML=c}
+</script><form onsubmit="handleDecrypt(event)"><input type="password" id="password" required><textarea id="encryptedOutput" rows="10" cols="50" style="display: none;">none
+</textarea><input type="submit" value="Decrypt"></form><div><div id="decryptedOutput"></div></div></details>
+
+
+
+<a target="_blank" href="https://ry3yr.github.io/yt" style=color:gray>YT Link Relay</a><br>
+<a target="_blank" href="https://ry3yr.github.io/ytsearch">YT General Search</a><br>
+<a target="_blank" href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/ytchannelsearch-dkpr.html">YTChannel Search</a><br>
+<a target="_blank" href="https://ry3yr.github.io/ytstudio">YTStudio Overview</a><br>
+<a target="_blank" href="ytplaylists.html" style=color:blue>ytplaylists</a> <=> <a target="_blank" href="https://ry3yr.github.io/ytplaylistinfofetch">YTPL Info</a><br>
+
+<hr>
+
+
+
 <a target="_blank" href="?v=0SQ-TJKPPIg&t=1m02s" style="color:blue">Xmple</a><br><br>
 
 <script>
