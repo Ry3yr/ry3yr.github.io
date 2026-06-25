@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>YouTube Channel Video Stats Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #0f0f0f 0%, #1a1a1a 100%);
+            color: #f1f1f1;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 1.9rem;
+            background: linear-gradient(135deg, #ff3e3e, #ffaa00);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .sub {
+            color: #aaa;
+            margin-top: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        .query-info {
+            background: #2a2a2a;
+            border-radius: 28px;
+            padding: 0.6rem 1.2rem;
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.2rem;
+            margin: 1rem auto;
+            font-size: 0.85rem;
+            font-family: monospace;
+            border: 1px solid #3a3a3a;
+        }
+
+        .query-info span {
+            color: #ffaa66;
+        }
+
+        .video-url-section {
+            background: #1e1e1e;
+            border-radius: 32px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            border: 1px solid #2e2e2e;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .video-url-section label {
+            font-weight: 500;
+            color: #ddd;
+        }
+
+        .url-input {
+            flex: 2;
+            min-width: 240px;
+            padding: 12px 18px;
+            border-radius: 48px;
+            border: none;
+            background: #2c2c2c;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+            border: 1px solid #444;
+        }
+
+        .url-input:focus {
+            border-color: #ff7b2c;
+            background: #1f1f1f;
+        }
+
+        .load-btn {
+            background: #ff4d4d;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .load-btn:hover {
+            background: #ff1a1a;
+            transform: scale(0.97);
+        }
+
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.8rem;
+            margin-top: 1.2rem;
+        }
+
+        .video-card {
+            background: #181818;
+            border-radius: 20px;
+            overflow: visible;
+            transition: transform 0.2s ease, box-shadow 0.2s;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.4);
+            border: 1px solid #2c2c2c;
+            position: relative;
+        }
+
+        .video-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 28px rgba(0,0,0,0.5);
+            border-color: #ff884d;
+        }
+
+        /* Clickable thumbnail */
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #0a0a0a;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px 20px 0 0;
+            cursor: pointer;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .video-card:hover .thumbnail img {
+            transform: scale(1.02);
+        }
+
+        /* Play overlay on thumbnail hover */
+        .thumbnail-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .thumbnail:hover .thumbnail-overlay {
+            background: rgba(0,0,0,0.45);
+        }
+
+        .play-icon {
+            opacity: 0;
+            font-size: 3rem;
+            transition: opacity 0.2s;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+            line-height: 1;
+        }
+
+        .thumbnail:hover .play-icon {
+            opacity: 1;
+        }
+
+        .card-details {
+            padding: 1rem 1rem 1.2rem;
+        }
+
+        /* Clickable title */
+        .video-title {
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.4;
+            margin-bottom: 0.6rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .video-title:hover {
+            color: #ffaa66;
+        }
+
+        .video-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 8px;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #bdbdbd;
+        }
+
+        .views, .likes {
+            background: #252525;
+            padding: 4px 12px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .views::before {
+            content: "👁";
+            font-size: 0.7rem;
+        }
+
+        .likes::before {
+            content: "❤️";
+            font-size: 0.7rem;
+        }
+
+        .playlist-badge {
+            background: #2a2f36;
+            margin-top: 10px;
+            padding: 5px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ffb347;
+        }
+
+        /* ── Comment bubble ── */
+        .comment-bubble {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #1e90ff;
+            color: #fff;
+            border-radius: 50px;
+            padding: 4px 10px 4px 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+            border: 2px solid #0f0f0f;
+            white-space: nowrap;
+            transition: background 0.15s, transform 0.15s;
+            z-index: 10;
+            user-select: none;
+        }
+
+        .comment-bubble:hover {
+            background: #0070e0;
+            transform: scale(1.08);
+        }
+
+        .comment-bubble svg {
+            flex-shrink: 0;
+        }
+
+        /* tail of the bubble */
+        .comment-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            right: 12px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #1e90ff;
+        }
+
+        .comment-bubble:hover::after {
+            border-top-color: #0070e0;
+        }
+
+        .error-message {
+            background: #2c0f0f;
+            border-left: 6px solid #ff4d4d;
+            padding: 1rem;
+            border-radius: 20px;
+            margin: 1rem 0;
+            color: #ffaaaa;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: #ffaa66;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            background: #1e1e1e;
+            border-radius: 40px;
+        }
+
+        .success-badge {
+            background: #1e3a2f;
+            color: #6feb9e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            font-size: 0.7rem;
+            color: #5a5a5a;
+        }
+
+        /* ── Comments Modal ── */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal {
+            background: #1a1a1a;
+            border-radius: 24px;
+            border: 1px solid #333;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 1.2rem 1.4rem;
+            border-bottom: 1px solid #2e2e2e;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .modal-header-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #fff;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .modal-subtitle {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .modal-close {
+            background: #2e2e2e;
+            border: none;
+            color: #aaa;
+            font-size: 1.1rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .modal-close:hover {
+            background: #ff4d4d;
+            color: #fff;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.4rem;
+            scrollbar-width: thin;
+            scrollbar-color: #333 transparent;
+        }
+
+        .modal-body::-webkit-scrollbar { width: 5px; }
+        .modal-body::-webkit-scrollbar-track { background: transparent; }
+        .modal-body::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.2rem;
+        }
+
+        .comment-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #333;
+        }
+
+        .comment-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .comment-author {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #ffaa66;
+            margin-bottom: 3px;
+        }
+
+        .comment-text {
+            font-size: 0.85rem;
+            color: #ddd;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .comment-likes {
+            font-size: 0.72rem;
+            color: #777;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .modal-loading {
+            text-align: center;
+            padding: 2rem;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .modal-error {
+            background: #2c0f0f;
+            border-left: 4px solid #ff4d4d;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            color: #ffaaaa;
+            font-size: 0.85rem;
+        }
+
+        .view-on-yt {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 0.5rem;
+            font-size: 0.72rem;
+            color: #ff4d4d;
+            text-decoration: none;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(255,77,77,0.1);
+            border: 1px solid rgba(255,77,77,0.25);
+            transition: background 0.15s;
+        }
+
+        .view-on-yt:hover {
+            background: rgba(255,77,77,0.2);
+        }
+
+        @media (max-width: 640px) {
+            .video-url-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .query-info {
+                flex-direction: column;
+                gap: 0.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📺 YouTube Channel Explorer</h1>
+        <div class="sub">Last 15 videos + custom video stats | Smart thumbnails from YouTube API</div>
+        <div id="queryParamsDisplay" class="query-info"></div>
+    </div>
+
+    <div class="video-url-section">
+        <label>📽 Enter video URL or ID:</label>
+        <input type="text" id="videoUrlInput" class="url-input" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ or dQw4w9WgXcQ">
+        <button id="loadSingleVideoBtn" class="load-btn">🎬 Load Video Stats</button>
+    </div>
+
+    <div id="channelVideosTitle" style="margin: 0.5rem 0 0.2rem 0;">
+        <h2>🎯 Latest channel videos</h2>
+    </div>
+    <div id="videosContainer" class="videos-grid">
+        <div class="loading-spinner">⏳ Loading channel videos...</div>
+    </div>
+
+    <div id="singleResultSection" style="margin-top: 2.5rem;">
+        <h2>📍 Video lookup result</h2>
+        <div id="singleVideoContainer" style="display: flex; justify-content: center; margin-top: 1rem;"></div>
+    </div>
+    <footer>Data via YouTube Data API v3 | Thumbnails: best available from YouTube API</footer>
+</div>
+
+<!-- Comments Modal -->
+<div class="modal-backdrop" id="commentsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-header-text">
+                <div class="modal-title" id="modalVideoTitle"></div>
+                <div class="modal-subtitle" id="modalCommentCount"></div>
+            </div>
+            <button class="modal-close" id="modalCloseBtn">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <div class="modal-loading">⏳ Loading comments…</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    function formatNumber(num) {
+        if (num === undefined || num === null) return 'N/A';
+        if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
+        if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
+        return num.toString();
+    }
+
+    function extractVideoId(urlOrId) {
+        if (!urlOrId) return null;
+        const idPattern = /^[a-zA-Z0-9_-]{11}$/;
+        if (idPattern.test(urlOrId.trim())) return urlOrId.trim();
+        let input = urlOrId.trim();
+        const regExp = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/;
+        const match = input.match(regExp);
+        if (match && match[1]) return match[1];
+        const shortsReg = /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/;
+        const shortsMatch = input.match(shortsReg);
+        if (shortsMatch && shortsMatch[1]) return shortsMatch[1];
+        return null;
+    }
+
+    function getBestThumbnail(thumbnails) {
+        const qualityOrder = ['maxres', 'standard', 'high', 'medium', 'default'];
+        for (const quality of qualityOrder) {
+            if (thumbnails[quality] && thumbnails[quality].url) {
+                return thumbnails[quality].url;
+            }
+        }
+        return null;
+    }
+
+    function extractChannelHandle(input) {
+        if (!input) return null;
+        let clean = input.trim();
+        const urlHandlePattern = /youtube\.com\/@([a-zA-Z0-9_-]+)/i;
+        let match = clean.match(urlHandlePattern);
+        if (match && match[1]) return match[1];
+        const urlChannelPattern = /youtube\.com\/(c|channel)\/([a-zA-Z0-9_-]+)/i;
+        match = clean.match(urlChannelPattern);
+        if (match && match[2]) return match[2];
+        const handleOnly = clean.replace(/^@/, '');
+        if (handleOnly.match(/^[a-zA-Z0-9_-]+$/)) return handleOnly;
+        return null;
+    }
+
+    async function fetchVideoStats(apiKey, videoId) {
+        if (!apiKey || !videoId) throw new Error('Missing API key or video ID');
+        const url = `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoId}&key=${apiKey}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error?.message || `HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        if (!data.items || data.items.length === 0) throw new Error('Video not found or private');
+        const item = data.items[0];
+        const snippet = item.snippet;
+        const statistics = item.statistics || {};
+        const thumbnailUrl = getBestThumbnail(snippet.thumbnails);
+        return {
+            id: videoId,
+            title: snippet.title || 'Untitled',
+            views: statistics.viewCount ? parseInt(statistics.viewCount) : 0,
+            likes: statistics.likeCount ? parseInt(statistics.likeCount) : 0,
+            comments: statistics.commentCount ? parseInt(statistics.commentCount) : 0,
+            publishedAt: snippet.publishedAt,
+            thumbnailUrl: thumbnailUrl,
+            playlistName: snippet.channelTitle || 'YouTube Channel'
+        };
+    }
+
+    async function getChannelUploadsPlaylistId(apiKey, channelIdentifier) {
+        let actualChannelId = null;
+        const channelIdPattern = /^UC[\w-]{21}[AQgw]?$/i;
+        if (channelIdPattern.test(channelIdentifier)) {
+            actualChannelId = channelIdentifier;
+        } else {
+            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=id&type=channel&q=${encodeURIComponent(channelIdentifier)}&key=${apiKey}&maxResults=1`;
+            const searchResp = await fetch(searchUrl);
+            if (!searchResp.ok) throw new Error('Search channel failed');
+            const searchData = await searchResp.json();
+            if (!searchData.items || searchData.items.length === 0) throw new Error(`Channel not found for identifier: ${channelIdentifier}`);
+            actualChannelId = searchData.items[0].id.channelId;
+        }
+        const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${actualChannelId}&key=${apiKey}`;
+        const chanResp = await fetch(channelUrl);
+        if (!chanResp.ok) throw new Error('Failed to fetch channel details');
+        const chanData = await chanResp.json();
+        if (!chanData.items || chanData.items.length === 0) throw new Error('Invalid channel ID or no channel data');
+        const uploadsPlaylistId = chanData.items[0].contentDetails.relatedPlaylists.uploads;
+        if (!uploadsPlaylistId) throw new Error('No uploads playlist found');
+        return { uploadsPlaylistId, channelId: actualChannelId };
+    }
+
+    async function fetchPlaylistVideos(apiKey, playlistId, maxResults = 15) {
+        const playlistItemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=${maxResults}&playlistId=${playlistId}&key=${apiKey}`;
+        const resp = await fetch(playlistItemsUrl);
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error?.message || 'Playlist fetch failed');
+        }
+        const data = await resp.json();
+        if (!data.items) return [];
+        const videoIds = data.items.map(item => item.snippet.resourceId.videoId).filter(id => id);
+        if (videoIds.length === 0) return [];
+        const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoIds.join(',')}&key=${apiKey}`;
+        const statsResp = await fetch(statsUrl);
+        if (!statsResp.ok) throw new Error('Stats fetch error');
+        const statsData = await statsResp.json();
+        const videoMap = new Map();
+        if (statsData.items) {
+            for (const v of statsData.items) {
+                const thumbnailUrl = getBestThumbnail(v.snippet.thumbnails);
+                videoMap.set(v.id, {
+                    id: v.id,
+                    title: v.snippet.title,
+                    views: v.statistics?.viewCount ? parseInt(v.statistics.viewCount) : 0,
+                    likes: v.statistics?.likeCount ? parseInt(v.statistics.likeCount) : 0,
+                    comments: v.statistics?.commentCount ? parseInt(v.statistics.commentCount) : 0,
+                    publishedAt: v.snippet.publishedAt,
+                    thumbnailUrl: thumbnailUrl,
+                    playlistName: v.snippet.channelTitle || 'Channel'
+                });
+            }
+        }
+        const result = [];
+        for (const item of data.items) {
+            const vid = item.snippet.resourceId.videoId;
+            if (videoMap.has(vid)) {
+                result.push(videoMap.get(vid));
+            } else {
+                result.push({
+                    id: vid,
+                    title: item.snippet.title || 'Untitled',
+                    views: 0, likes: 0, comments: 0,
+                    thumbnailUrl: `https://img.youtube.com/vi/${vid}/hqdefault.jpg`,
+                    playlistName: item.snippet.channelTitle || 'Channel'
+                });
+            }
+        }
+        return result.slice(0, maxResults);
+    }
+
+    // ── Comment bubble SVG icon ──
+    const commentIconSVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z"/>
+    </svg>`;
+
+    function makeVideoCardHTML(video) {
+        const ytUrl = `https://www.youtube.com/watch?v=${video.id}`;
+        const commentsDisabled = video.comments === 0;
+        const bubbleTip = commentsDisabled ? 'Comments disabled or unavailable' : `${formatNumber(video.comments)} comments — click to read`;
+
+        return `
+            <div class="video-card" data-id="${video.id}" data-title="${escapeHtml(video.title)}">
+                <!-- Comment bubble -->
+                <div class="comment-bubble" 
+                     title="${bubbleTip}"
+                     data-action="open-comments"
+                     data-id="${video.id}"
+                     data-title="${escapeHtml(video.title)}"
+                     data-count="${video.comments}"
+                     style="${commentsDisabled ? 'background:#444;cursor:default;' : ''}">
+                    ${commentIconSVG}
+                    ${formatNumber(video.comments)}
+                </div>
+
+                <!-- Thumbnail — click to open video -->
+                <div class="thumbnail" onclick="window.open('${ytUrl}','_blank')" title="Watch on YouTube">
+                    <img src="${video.thumbnailUrl}" alt="${escapeHtml(video.title)}" loading="lazy"
+                         onerror="this.src='https://img.youtube.com/vi/${video.id}/mqdefault.jpg'">
+                    <div class="thumbnail-overlay">
+                        <span class="play-icon">▶️</span>
+                    </div>
+                </div>
+
+                <div class="card-details">
+                    <!-- Title — click to open video -->
+                    <div class="video-title" onclick="window.open('${ytUrl}','_blank')" title="${escapeHtml(video.title)}">${escapeHtml(video.title)}</div>
+                    <div class="video-meta">
+                        <span class="views">${formatNumber(video.views)} views</span>
+                        <span class="likes">${formatNumber(video.likes)} likes</span>
+                    </div>
+                    <div class="playlist-badge" title="From: ${escapeHtml(video.playlistName)}">
+                        📺 ${escapeHtml(video.playlistName.length > 28 ? video.playlistName.substring(0,25)+'...' : video.playlistName)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderVideos(videos, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (!videos || videos.length === 0) {
+            container.innerHTML = `<div class="no-results">📭 No videos found or channel has no uploads.</div>`;
+            return;
+        }
+        container.innerHTML = videos.map(makeVideoCardHTML).join('');
+        attachCommentBubbleListeners(container);
+    }
+
+    function attachCommentBubbleListeners(container) {
+        container.querySelectorAll('[data-action="open-comments"]').forEach(bubble => {
+            bubble.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const count = parseInt(bubble.dataset.count) || 0;
+                if (count === 0) return; // disabled
+                openCommentsModal(bubble.dataset.id, bubble.dataset.title, count);
+            });
+        });
+    }
+
+    // ── Modal ──
+    let _currentApiKey = null;
+
+    async function openCommentsModal(videoId, title, commentCount) {
+        const modal = document.getElementById('commentsModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalVideoTitle');
+        const modalSubtitle = document.getElementById('modalCommentCount');
+
+        modalTitle.textContent = title;
+        modalSubtitle.innerHTML = `${formatNumber(commentCount)} comments &nbsp;·&nbsp; <a class="view-on-yt" href="https://www.youtube.com/watch?v=${videoId}" target="_blank">▶ Watch on YouTube</a>`;
+        modalBody.innerHTML = `<div class="modal-loading">⏳ Loading top comments…</div>`;
+        modal.classList.add('open');
+
+        try {
+            if (!_currentApiKey) throw new Error('API key not available');
+            const url = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=20&order=relevance&key=${_currentApiKey}`;
+            const resp = await fetch(url);
+            if (!resp.ok) {
+                const err = await resp.json();
+                throw new Error(err.error?.message || `HTTP ${resp.status}`);
+            }
+            const data = await resp.json();
+            if (!data.items || data.items.length === 0) {
+                modalBody.innerHTML = `<div style="text-align:center;color:#888;padding:2rem;">No comments found.</div>`;
+                return;
+            }
+            modalBody.innerHTML = data.items.map(item => {
+                const c = item.snippet.topLevelComment.snippet;
+                const avatar = c.authorProfileImageUrl || '';
+                const author = escapeHtml(c.authorDisplayName || 'Anonymous');
+                const text = escapeHtml(c.textDisplay || '').replace(/\n/g, '<br>');
+                const likes = c.likeCount || 0;
+                return `
+                    <div class="comment-item">
+                        ${avatar ? `<img class="comment-avatar" src="${avatar}" alt="${author}" onerror="this.style.display='none'">` : `<div class="comment-avatar" style="background:#333;border-radius:50%;"></div>`}
+                        <div class="comment-content">
+                            <div class="comment-author">${author}</div>
+                            <div class="comment-text">${text}</div>
+                            ${likes > 0 ? `<div class="comment-likes">👍 ${formatNumber(likes)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            modalBody.innerHTML = `<div class="modal-error">⚠️ Could not load comments: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            if (m === '"') return '&quot;';
+            return m;
+        });
+    }
+
+    async function loadSingleVideoByUrl(apiKey) {
+        const inputEl = document.getElementById('videoUrlInput');
+        const rawInput = inputEl.value.trim();
+        if (!rawInput) { alert('Please enter a YouTube URL or video ID'); return; }
+        const videoId = extractVideoId(rawInput);
+        if (!videoId) {
+            document.getElementById('singleVideoContainer').innerHTML = `<div class="error-message">❌ Invalid YouTube URL or ID. Please check.</div>`;
+            return;
+        }
+        try {
+            document.getElementById('singleVideoContainer').innerHTML = `<div class="loading-spinner">⏳ Fetching video stats...</div>`;
+            const videoStats = await fetchVideoStats(apiKey, videoId);
+            const singleCardHtml = `<div style="max-width:380px;width:100%;">${makeVideoCardHTML(videoStats)}</div>`;
+            document.getElementById('singleVideoContainer').innerHTML = singleCardHtml;
+            attachCommentBubbleListeners(document.getElementById('singleVideoContainer'));
+        } catch (err) {
+            console.error(err);
+            document.getElementById('singleVideoContainer').innerHTML = `<div class="error-message">⚠️ Error: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    async function init() {
+        const apiKey = getQueryParam('apikey');
+        let channelParam = getQueryParam('channel');
+        const displayDiv = document.getElementById('queryParamsDisplay');
+        _currentApiKey = apiKey;
+
+        // Modal close handlers
+        document.getElementById('modalCloseBtn').addEventListener('click', () => {
+            document.getElementById('commentsModal').classList.remove('open');
+        });
+        document.getElementById('commentsModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') document.getElementById('commentsModal').classList.remove('open');
+        });
+
+        if (!apiKey) {
+            displayDiv.innerHTML = `<span style="color:#ff8888">⚠️ Missing 'apikey' in query string. Example: ?apikey=YOUR_KEY&channel=UCxxxx</span>`;
+            document.getElementById('videosContainer').innerHTML = `<div class="error-message">API key is required. Add ?apikey=YOUR_KEY&channel=CHANNEL_ID</div>`;
+            return;
+        }
+
+        if (!channelParam) {
+            displayDiv.innerHTML = `<span style="color:#ff8888">⚠️ Missing 'channel' parameter (Channel ID, @handle, or full URL).</span>`;
+            document.getElementById('videosContainer').innerHTML = `<div class="error-message">Channel parameter missing. Use &channel=UC... or &channel=@MrBeast or &channel=https://youtube.com/@handle</div>`;
+            return;
+        }
+
+        let originalParam = channelParam;
+        if (channelParam.includes('youtube.com') || channelParam.includes('youtu.be')) {
+            const extractedHandle = extractChannelHandle(channelParam);
+            if (extractedHandle) {
+                channelParam = extractedHandle;
+                displayDiv.innerHTML = `📡 API Key: <span>••••••••</span> &nbsp;| 📺 Channel: <span>${escapeHtml(originalParam)}</span><br><span class="success-badge">✔ Extracted handle: @${escapeHtml(channelParam)}</span>`;
+            } else {
+                displayDiv.innerHTML = `📡 API Key: <span>••••••••</span> &nbsp;| 📺 Channel: <span>${escapeHtml(originalParam)}</span><br><span style="color:#ffaa66;">⚠️ Could not extract handle, trying as-is...</span>`;
+            }
+        } else {
+            if (channelParam.startsWith('@')) channelParam = channelParam.substring(1);
+            displayDiv.innerHTML = `📡 API Key: <span>••••••••</span> &nbsp;| 📺 Channel: <span>@${escapeHtml(channelParam)}</span>`;
+        }
+
+        const videosContainer = document.getElementById('videosContainer');
+        videosContainer.innerHTML = `<div class="loading-spinner">⏳ Fetching channel uploads...</div>`;
+
+        try {
+            const { uploadsPlaylistId } = await getChannelUploadsPlaylistId(apiKey, channelParam);
+            const videos = await fetchPlaylistVideos(apiKey, uploadsPlaylistId, 15);
+            if (videos.length === 0) {
+                videosContainer.innerHTML = `<div class="no-results">This channel has no public videos.</div>`;
+            } else {
+                renderVideos(videos, 'videosContainer');
+            }
+        } catch (err) {
+            console.error(err);
+            videosContainer.innerHTML = `<div class="error-message">❌ Failed to load channel videos: ${escapeHtml(err.message)}. Check API key, channel ID, and quota.</div>`;
+        }
+
+        const loadBtn = document.getElementById('loadSingleVideoBtn');
+        if (loadBtn) {
+            const newBtn = loadBtn.cloneNode(true);
+            loadBtn.parentNode.replaceChild(newBtn, loadBtn);
+            newBtn.addEventListener('click', () => loadSingleVideoByUrl(apiKey));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
