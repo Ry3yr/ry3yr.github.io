@@ -1,0 +1,278 @@
+<script src="https://storage.googleapis.com/feednami-static/js/feednami-client-v1.0.1.js"></script>
+<script>
+function fetchRssFeed(feedUrl) {
+  feednami.load(feedUrl, function(result) {
+    if (result.error) {
+      console.error('Error fetching RSS feed:', result.error);
+    } else {
+      const entries = result.feed.entries;
+      displayBlueSkyEmbeds(entries);
+    }
+  });
+}
+
+// Fetch full post data from Bluesky public API
+async function fetchPostData(atUri) {
+  const apiUrl = 'https://public.api.bsky.app/xrpc/app.bsky.feed.getPosts?uris=' + encodeURIComponent(atUri);
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    if (data.posts && data.posts[0]) {
+      return data.posts[0];
+    }
+  } catch (e) {
+    console.error('API fetch failed for', atUri, e);
+  }
+  return null;
+}
+
+// Extract all images from any embed type
+function extractImages(postData) {
+  if (!postData || !postData.embed) return [];
+  
+  const embed = postData.embed;
+  const embedType = embed.$type || '';
+  
+  if (embedType.includes('app.bsky.embed.images')) {
+    return embed.images || [];
+  }
+  
+  if (embedType.includes('app.bsky.embed.gallery')) {
+    return embed.items || [];
+  }
+  
+  if (embedType.includes('app.bsky.embed.recordWithMedia') && embed.media) {
+    const media = embed.media;
+    const mediaType = media.$type || '';
+    if (mediaType.includes('images')) {
+      return media.images || [];
+    }
+    if (mediaType.includes('gallery')) {
+      return media.items || [];
+    }
+  }
+  
+  return [];
+}
+
+// Build a simple custom post card with all images
+function buildCustomPost(postData, atUri) {
+  const author = postData.author;
+  const record = postData.record;
+  const images = extractImages(postData);
+  
+  const wrapper = document.createElement('div');
+  wrapper.className = 'bsky-custom-post';
+  wrapper.style.marginBottom = '20px';
+  wrapper.style.border = '1px solid #e0e0e0';
+  wrapper.style.borderRadius = '8px';
+  wrapper.style.overflow = 'hidden';
+  wrapper.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+  wrapper.style.background = '#fff';
+  
+  // Author header
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.alignItems = 'center';
+  header.style.padding = '12px';
+  header.style.gap = '10px';
+  
+  const avatar = document.createElement('img');
+  avatar.src = author.avatar || '';
+  avatar.style.width = '40px';
+  avatar.style.height = '40px';
+  avatar.style.borderRadius = '50%';
+  avatar.style.objectFit = 'cover';
+  
+  const nameDiv = document.createElement('div');
+  const displayName = document.createElement('div');
+  displayName.textContent = author.displayName || author.handle;
+  displayName.style.fontWeight = '600';
+  displayName.style.fontSize = '14px';
+  
+  const handle = document.createElement('div');
+  handle.textContent = '@' + author.handle;
+  handle.style.color = '#666';
+  handle.style.fontSize = '13px';
+  
+  nameDiv.appendChild(displayName);
+  nameDiv.appendChild(handle);
+  header.appendChild(avatar);
+  header.appendChild(nameDiv);
+  wrapper.appendChild(header);
+  
+  // Post text
+  if (record.text) {
+    const textDiv = document.createElement('div');
+    textDiv.textContent = record.text;
+    textDiv.style.padding = '0 12px 12px';
+    textDiv.style.fontSize = '14px';
+    textDiv.style.lineHeight = '1.5';
+    textDiv.style.whiteSpace = 'pre-wrap';
+    wrapper.appendChild(textDiv);
+  }
+  
+  // Image gallery (ALL images)
+  if (images.length > 0) {
+    const gallery = document.createElement('div');
+    gallery.style.display = 'grid';
+    gallery.style.gridTemplateColumns = images.length === 1 ? '1fr' : 
+                                       images.length === 2 ? '1fr 1fr' : 
+                                       'repeat(auto-fill, minmax(200px, 1fr))';
+    gallery.style.gap = '2px';
+    gallery.style.padding = '0 12px 12px';
+    
+    images.forEach(img => {
+      const imgUrl = img.thumbnail || img.thumb || img.fullsize || '';
+      const fullSizeUrl = img.fullsize || imgUrl;
+      if (!imgUrl) return;
+      
+      const imgEl = document.createElement('img');
+      imgEl.src = imgUrl;
+      imgEl.alt = img.alt || '';
+      imgEl.style.width = '100%';
+      imgEl.style.height = images.length <= 2 ? '300px' : '200px';
+      imgEl.style.objectFit = 'cover';
+      imgEl.style.cursor = 'pointer';
+      imgEl.style.borderRadius = '4px';
+      imgEl.loading = 'lazy';
+      imgEl.onclick = () => window.open(fullSizeUrl, '_blank');
+      
+      gallery.appendChild(imgEl);
+    });
+    
+    wrapper.appendChild(gallery);
+  }
+  
+  // Footer with stats and (src) link
+  const footer = document.createElement('div');
+  footer.style.padding = '8px 12px';
+  footer.style.borderTop = '1px solid #eee';
+  footer.style.display = 'flex';
+  footer.style.justifyContent = 'space-between';
+  footer.style.alignItems = 'center';
+  footer.style.fontSize = '13px';
+  footer.style.color = '#666';
+  
+  const stats = document.createElement('span');
+  stats.textContent = `${postData.likeCount || 0} likes · ${postData.repostCount || 0} reposts`;
+  
+  const srcLink = document.createElement('a');
+  srcLink.textContent = '(src)';
+  srcLink.href = '#';
+  srcLink.style.color = '#0066cc';
+  srcLink.style.textDecoration = 'none';
+  srcLink.style.fontSize = '12px';
+  srcLink.onclick = (e) => {
+    e.preventDefault();
+    const jsonBlob = new Blob([JSON.stringify(postData, null, 2)], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    window.open(jsonUrl, '_blank');
+  };
+  
+  footer.appendChild(stats);
+  footer.appendChild(srcLink);
+  wrapper.appendChild(footer);
+  
+  return wrapper;
+}
+
+// Function to display BlueSky embeds
+async function displayBlueSkyEmbeds(feedItems) {
+  const container = document.createElement('div');
+  container.id = 'bsky-feed';
+  document.body.appendChild(container);
+
+  // Process all feed items
+  const posts = feedItems.map(item => {
+    const link = item.link;
+    const lastSlashPos = link.lastIndexOf('/');
+    const postId = link.substring(lastSlashPos + 1);
+
+    let guidValue = item.guid;
+    let didPrefix = 'did:plc:';
+    if (!guidValue.startsWith('http')) {
+      const startPos = guidValue.indexOf('plc:') + 4;
+      const endPos = guidValue.indexOf('/app.bsky');
+      const guidPart = guidValue.substring(startPos, endPos);
+      guidValue = `at://${didPrefix}${guidPart}/app.bsky.feed.post/${postId}`;
+    }
+
+    return {
+      atUri: guidValue,
+      postId: postId,
+      link: link
+    };
+  });
+
+  // Create placeholders for all posts
+  const wrappers = [];
+  for (const post of posts) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bsky-post-wrapper';
+    wrapper.style.marginBottom = '20px';
+    wrapper.dataset.atUri = post.atUri;
+    wrapper.dataset.postId = post.postId;
+    container.appendChild(wrapper);
+    wrappers.push(wrapper);
+  }
+
+  // Fetch all post data in parallel
+  const postDataPromises = posts.map(p => fetchPostData(p.atUri));
+  const postDataResults = await Promise.all(postDataPromises);
+
+  // For each post, decide: official embed (≤4 images) or custom renderer (5+ images)
+  for (let i = 0; i < posts.length; i++) {
+    const postData = postDataResults[i];
+    const wrapper = wrappers[i];
+    const images = extractImages(postData);
+    
+    if (postData && images.length > 4) {
+      // 5+ images: use custom renderer with ALL images
+      const customPost = buildCustomPost(postData, posts[i].atUri);
+      wrapper.appendChild(customPost);
+    } else {
+      // ≤4 images: use official embed
+      const embed = document.createElement('blockquote');
+      embed.classList.add('bluesky-embed');
+      embed.setAttribute('data-bluesky-uri', posts[i].atUri);
+      embed.setAttribute('data-bluesky-cid', '');
+      wrapper.appendChild(embed);
+      
+      // Add (src) link below official embed
+      const srcLink = document.createElement('a');
+      srcLink.textContent = '(src)';
+      srcLink.href = '#';
+      srcLink.style.display = 'block';
+      srcLink.style.padding = '8px 12px';
+      srcLink.style.fontSize = '12px';
+      srcLink.style.color = '#0066cc';
+      srcLink.style.textDecoration = 'none';
+      srcLink.style.borderTop = '1px solid #eee';
+      srcLink.onclick = (e) => {
+        e.preventDefault();
+        if (postData) {
+          const jsonBlob = new Blob([JSON.stringify(postData, null, 2)], { type: 'application/json' });
+          const jsonUrl = URL.createObjectURL(jsonBlob);
+          window.open(jsonUrl, '_blank');
+        }
+      };
+      wrapper.appendChild(srcLink);
+    }
+  }
+
+  // Load official embed script (only needed for ≤4 image posts)
+  const hasOfficialEmbed = postDataResults.some((pd, i) => extractImages(pd).length <= 4);
+  if (hasOfficialEmbed) {
+    const embedScript = document.createElement('script');
+    embedScript.async = true;
+    embedScript.src = 'https://embed.bsky.app/static/embed.js';
+    embedScript.charset = 'utf-8';
+    document.body.appendChild(embedScript);
+  }
+}
+
+// Example usage
+const feedUrl = new URL(window.location.href).searchParams.get('bskyurl') || 'https://bsky.app/profile/did:plc:g56cz7ahwtqie472syel4vm4/rss';
+fetchRssFeed(feedUrl);
+</script>
