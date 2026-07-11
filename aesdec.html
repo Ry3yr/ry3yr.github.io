@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            max-width: 820px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #f8f9fc;
+            color: #1e1e2f;
+        }
+        h1 {
+            font-weight: 600;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #d0d7de;
+            padding-bottom: 0.5rem;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 1.5rem 1.8rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e9ecf0;
+        }
+        label {
+            font-weight: 500;
+            display: block;
+            margin: 0.75rem 0 0.3rem 0;
+        }
+        textarea,
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.95rem;
+            font-family: 'Menlo', 'Cascadia Code', 'Consolas', monospace;
+            border: 1px solid #ccd2d9;
+            border-radius: 8px;
+            background: #fafbfc;
+            transition: border 0.15s;
+        }
+        textarea:focus,
+        input:focus {
+            border-color: #4f7df3;
+            outline: none;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.15);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 72px;
+        }
+        .row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .row .field {
+            flex: 1 1 200px;
+        }
+        .row .field label {
+            margin-top: 0;
+        }
+        button {
+            background: #1e1e2f;
+            color: white;
+            border: none;
+            padding: 0.7rem 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            height: 44px;
+            white-space: nowrap;
+        }
+        button:hover {
+            background: #2d2d44;
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        .output-box {
+            background: #f0f2f6;
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            min-height: 3.2rem;
+            font-family: 'Menlo', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            border: 1px solid #dce0e6;
+            margin-top: 0.3rem;
+        }
+        .output-box.is-empty {
+            color: #8b95a9;
+            font-style: italic;
+        }
+        .badge {
+            display: inline-block;
+            background: #eef2f7;
+            border-radius: 20px;
+            padding: 0.15rem 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #3d4a5c;
+            margin-left: 0.5rem;
+        }
+        .footnote {
+            font-size: 0.85rem;
+            color: #5a6a7e;
+            margin-top: 0.2rem;
+        }
+        .error {
+            color: #c72a2a;
+            background: #ffe8e8;
+            border: 1px solid #f5c2c2;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            margin-top: 0.5rem;
+        }
+        .success {
+            color: #1a6e3b;
+            background: #e2f3e8;
+            border: 1px solid #b8dcc8;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            margin-top: 0.5rem;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e2e6ec;
+            margin: 1.8rem 0;
+        }
+        .cipher-meta {
+            font-size: 0.85rem;
+            color: #4d5f73;
+            background: #f4f6fa;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 0.2rem;
+        }
+        @media (max-width: 560px) {
+            .card {
+                padding: 1rem;
+            }
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="card">
+        <p style="margin-top:0; color:#3d4a5c;">
+            Ciphertext is read from <code>?cipher=</code> in the URL.
+        </p>
+
+        <div>
+            <label for="cipherInput">Ciphertext </label>
+            <textarea id="cipherInput" spellcheck="false"></textarea>
+            <details><summary>-</summary><div class="cipher-meta" id="cipherMeta">—</div></details>
+        </div>
+
+        <div class="row" style="margin-top:1.2rem;">
+            <div class="field">
+                <label for="password">Password / Key</label>
+                <input type="password" id="password" placeholder="Enter password…" />
+            </div>
+            <div class="field" style="flex:0 0 auto;">
+                <button id="decryptBtn">🔓 Decrypt</button>
+            </div>
+        </div>
+
+        <div id="statusMsg"></div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <h3 style="margin:0; font-weight:600;">📄 Decrypted Output</h3>
+            <span class="badge" id="outputSize">—</span>
+        </div>
+        <div id="decryptedOutput" class="output-box is-empty">Waiting for decryption…</div>
+    </div>
+
+    <hr />
+
+
+    <script>
+        // ─── EXACT helpers from the original code ──────────────────────────────
+
+        function stringToArrayBuffer(str) {
+            var encoder = new TextEncoder();
+            return encoder.encode(str);
+        }
+
+        function arrayBufferToString(buffer) {
+            var decoder = new TextDecoder();
+            return decoder.decode(buffer);
+        }
+
+        async function decryptAES(ciphertext, key, iv) {
+            var decrypted = await crypto.subtle.decrypt({
+                    name: "AES-CBC",
+                    iv: iv
+                },
+                key,
+                ciphertext
+            );
+            return new Uint8Array(decrypted);
+        }
+
+        // ─── Decrypt handler (identical derivation to the original) ────────────
+
+        async function handleDecrypt(password, encryptedHex) {
+            if (!encryptedHex || encryptedHex.length < 32) {
+                throw new Error("Ciphertext too short.");
+            }
+
+
+            var passwordBuffer = stringToArrayBuffer(password);
+
+            var keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                passwordBuffer, { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+
+            var aesKey = await crypto.subtle.deriveKey({
+                    name: "PBKDF2",
+                    salt: new Uint8Array(16), // 16 bytes of zeros, same as original
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial, { name: "AES-CBC", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+
+       
+            var ivHex = encryptedHex.substring(0, 32);
+            var ciphertextHex = encryptedHex.substring(32);
+
+            if (ciphertextHex.length === 0) {
+                throw new Error("No ciphertext found after the IV.");
+            }
+
+
+            var ivBytes = new Uint8Array(
+                ivHex.match(/.{1,2}/g).map(function(byte) {
+                    return parseInt(byte, 16);
+                })
+            );
+
+            var ciphertextBytes = new Uint8Array(
+                ciphertextHex.match(/.{1,2}/g).map(function(byte) {
+                    return parseInt(byte, 16);
+                })
+            );
+
+   
+            var decryptedBytes = await decryptAES(ciphertextBytes, aesKey, ivBytes);
+            var decryptedHTML = arrayBufferToString(decryptedBytes);
+
+            return decryptedHTML;
+        }
+
+        // ─── UI logic ─────────────────────────────────────────────────────────────
+
+        (function() {
+            var cipherInput = document.getElementById('cipherInput');
+            var passwordInput = document.getElementById('password');
+            var decryptBtn = document.getElementById('decryptBtn');
+            var decryptedOutput = document.getElementById('decryptedOutput');
+            var outputSize = document.getElementById('outputSize');
+            var statusMsg = document.getElementById('statusMsg');
+            var cipherMeta = document.getElementById('cipherMeta');
+
+            // ── Read cipher from URL ──
+            var urlParams = new URLSearchParams(window.location.search);
+            var cipherFromUrl = urlParams.get('cipher') || '';
+
+            if (cipherFromUrl) {
+                cipherInput.value = cipherFromUrl;
+                updateCipherMeta(cipherFromUrl);
+            } else {
+                cipherMeta.textContent = 'No ciphertext in URL. Paste one or add ?cipher=...';
+            }
+
+            // ── Auto-trim and update meta ──
+            cipherInput.addEventListener('input', function() {
+                var raw = this.value.replace(/\s+/g, '');
+                if (raw !== this.value) {
+                    this.value = raw;
+                }
+                updateCipherMeta(raw);
+            });
+
+            function updateCipherMeta(hex) {
+                var clean = hex.replace(/\s+/g, '');
+                if (!clean) {
+                    cipherMeta.textContent = 'Empty ciphertext';
+                    return;
+                }
+                var ivPart = clean.substring(0, 32);
+                var ctPart = clean.substring(32);
+                var ivLen = ivPart.length;
+                var ctLen = ctPart.length;
+                var totalLen = clean.length;
+                cipherMeta.textContent =
+                    'IV: ' + ivLen + ' hex chars (' + (ivLen / 2) + ' bytes)  ·  Ciphertext: ' +
+                    ctLen + ' hex chars (' + (ctLen / 2) + ' bytes)  ·  Total: ' + totalLen + ' hex chars';
+                if (ivLen < 32) {
+                    cipherMeta.textContent += '  ⚠️ IV too short';
+                }
+            }
+
+            // ── Decrypt action ──
+            decryptBtn.addEventListener('click', async function() {
+                statusMsg.innerHTML = '';
+                var password = passwordInput.value;
+                var encryptedHex = cipherInput.value.replace(/\s+/g, '');
+
+                if (!password) {
+                    statusMsg.innerHTML = '<div class="error">Please enter a password.</div>';
+                    return;
+                }
+
+                if (!encryptedHex) {
+                    statusMsg.innerHTML = '<div class="error">No ciphertext to decrypt.</div>';
+                    return;
+                }
+
+                if (encryptedHex.length < 32) {
+                    statusMsg.innerHTML = '<div class="error">Ciphertext is too short </div>';
+                    return;
+                }
+
+                try {
+                    decryptBtn.disabled = true;
+                    decryptBtn.textContent = '⏳ Decrypting…';
+
+                    var result = await handleDecrypt(password, encryptedHex);
+
+                    // Display result
+                    decryptedOutput.textContent = result;
+                    decryptedOutput.classList.remove('is-empty');
+                    outputSize.textContent = result.length + ' chars';
+
+                    statusMsg.innerHTML = '<div class="success">✅ Decryption successful!</div>';
+
+                } catch (err) {
+                    console.error(err);
+                    statusMsg.innerHTML = '<div class="error">❌ ' + err.message + '</div>';
+                    decryptedOutput.textContent = 'Decryption failed.';
+                    decryptedOutput.classList.remove('is-empty');
+                    outputSize.textContent = '—';
+                } finally {
+                    decryptBtn.disabled = false;
+                    decryptBtn.textContent = '🔓 Decrypt';
+                }
+            });
+
+            // ── Enter key on password field triggers decrypt ──
+            passwordInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    decryptBtn.click();
+                }
+            });
+
+            // ── If cipher is present in URL, auto-focus password ──
+            if (cipherFromUrl) {
+                passwordInput.focus();
+            }
+
+            // ── Initial meta ──
+            if (cipherFromUrl) {
+                updateCipherMeta(cipherFromUrl);
+            }
+        })();
+    </script>
+
+</body>
+</html>
