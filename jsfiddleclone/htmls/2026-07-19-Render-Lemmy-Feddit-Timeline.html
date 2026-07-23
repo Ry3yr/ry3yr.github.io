@@ -1,0 +1,1968 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lemmy Feed Aggregator</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #f6f7f8;
+    color: #1a1a2e;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .picker-panel {
+    flex: 0 0 320px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 16px;
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .picker-panel h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .picker-panel h2 i {
+    color: #e94560;
+  }
+
+  #picker {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    min-height: 200px;
+    max-height: 500px;
+  }
+
+  .picker-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.15s;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .picker-item:last-child {
+    border-bottom: none;
+  }
+
+  .picker-item:hover {
+    background-color: #f0f7ff;
+  }
+
+  .picker-item.selected {
+    background-color: #e3f0ff;
+    border-left: 3px solid #e94560;
+  }
+
+  .picker-item .badge {
+    background: #e8e8e8;
+    border-radius: 12px;
+    padding: 0 8px;
+    font-size: 0.7rem;
+    color: #666;
+    margin-left: auto;
+  }
+
+  .picker-item.selected .badge {
+    background: #d4e4ff;
+  }
+
+  .picker-item .icon {
+    font-size: 1rem;
+  }
+
+  .content-panel {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .controls {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .controls .search-box {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    background: #f5f6f7;
+    border-radius: 8px;
+    padding: 0 12px;
+  }
+
+  .controls .search-box i {
+    color: #999;
+    font-size: 0.9rem;
+  }
+
+  .controls .search-box input {
+    border: none;
+    padding: 9px 10px;
+    font-size: 0.9rem;
+    width: 100%;
+    outline: none;
+    background: transparent;
+  }
+
+  .controls .pagination-info {
+    font-size: 0.85rem;
+    color: #666;
+    white-space: nowrap;
+  }
+
+  .controls .pagination-info span {
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+
+  .controls .refresh-btn {
+    background: #e94560;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+
+  .controls .refresh-btn:hover {
+    background: #d63851;
+  }
+
+  .controls .refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  #feedList {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+
+  .feed-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .feed-item:last-child {
+    border-bottom: none;
+  }
+
+  .feed-item:hover {
+    background: #fafbfc;
+  }
+
+  .feed-item .title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+  }
+
+  .feed-item .meta {
+    display: flex;
+    gap: 14px;
+    font-size: 0.78rem;
+    color: #888;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .feed-item .meta .source-tag {
+    background: #f0f2f5;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.75rem;
+  }
+
+  .feed-item .meta .date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .feed-item .meta .score {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #e94560;
+  }
+
+  .feed-item .meta .comments {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .feed-item .description {
+    font-size: 0.88rem;
+    color: #555;
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 16px 20px;
+    background: white;
+    border-top: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .pagination button {
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #555;
+  }
+
+  .pagination button:hover:not(:disabled):not(.active-page) {
+    background: #f0f7ff;
+    border-color: #b0c4de;
+  }
+
+  .pagination button.active-page {
+    background: #e94560;
+    color: white;
+    border-color: #e94560;
+  }
+
+  .pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .pagination .page-jump {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #666;
+    margin-left: 8px;
+  }
+
+  .pagination .page-jump input {
+    width: 44px;
+    padding: 4px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  .pagination .page-jump button {
+    padding: 4px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .pagination .page-jump button:hover {
+    background: #f0f0f0;
+  }
+
+  .loading, .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+  }
+
+  .loading i, .empty-state i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .loading i {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open {
+    display: flex;
+  }
+
+  .modal {
+    background: white;
+    border-radius: 16px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-header {
+    padding: 20px 24px 12px 24px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .modal-header .modal-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .modal-header .modal-source {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #999;
+    padding: 0 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .modal-close:hover {
+    color: #e94560;
+  }
+
+  .modal-body {
+    padding: 20px 24px 24px 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-body .modal-description {
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .modal-body .modal-description a {
+    color: #e94560;
+    word-break: break-all;
+    text-decoration: none;
+  }
+
+  .modal-body .modal-description a:hover {
+    text-decoration: underline;
+  }
+
+  .modal-body .modal-description .post-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: block;
+    cursor: pointer;
+  }
+
+  .modal-body .modal-description .post-image:hover {
+    opacity: 0.95;
+  }
+
+  .modal-body .modal-description .post-link {
+    display: inline-block;
+    background: #f0f7ff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin: 4px 0;
+    word-break: break-all;
+  }
+
+  .modal-body .modal-description .post-link a {
+    color: #e94560;
+  }
+
+  .modal-body .modal-description blockquote {
+    border-left: 3px solid #e94560;
+    padding-left: 12px;
+    margin: 8px 0;
+    color: #555;
+  }
+
+  .modal-body .modal-description code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .modal-body .modal-description pre {
+    background: #f5f5f5;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 8px 0;
+  }
+
+  .modal-body .modal-description pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .modal-body .modal-description ul, 
+  .modal-body .modal-description ol {
+    padding-left: 24px;
+    margin: 8px 0;
+  }
+
+  .modal-body .modal-description .embed-container {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    margin: 12px 0;
+    border-radius: 8px;
+  }
+
+  .modal-body .modal-description .embed-container iframe,
+  .modal-body .modal-description .embed-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+  }
+
+  .modal-body .modal-meta {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: #777;
+  }
+
+  .modal-body .modal-meta a {
+    color: #e94560;
+    text-decoration: none;
+  }
+
+  .modal-body .modal-meta a:hover {
+    text-decoration: underline;
+  }
+
+  /* Comments section */
+  .comments-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px solid #f0f0f0;
+  }
+
+  .comments-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .comments-section .comment-loading {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+  }
+
+  .comments-section .comment-loading i {
+    font-size: 1.5rem;
+    animation: spin 1s linear infinite;
+  }
+
+  .comment {
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  .comment:last-child {
+    border-bottom: none;
+  }
+
+  .comment .comment-header {
+    display: flex;
+    gap: 12px;
+    font-size: 0.82rem;
+    color: #888;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .comment .comment-header .comment-author {
+    font-weight: 600;
+  }
+
+  .comment .comment-header .comment-author a {
+    color: #1a1a2e;
+    text-decoration: none;
+  }
+
+  .comment .comment-header .comment-author a:hover {
+    color: #e94560;
+    text-decoration: underline;
+  }
+
+  .comment .comment-header .comment-author .user-instance {
+    font-weight: 400;
+    color: #999;
+    font-size: 0.8em;
+  }
+
+  .comment .comment-header .comment-score {
+    color: #e94560;
+  }
+
+  .comment .comment-header .comment-link {
+    font-size: 0.75rem;
+  }
+
+  .comment .comment-header .comment-link a {
+    color: #999;
+    text-decoration: none;
+  }
+
+  .comment .comment-header .comment-link a:hover {
+    color: #e94560;
+    text-decoration: underline;
+  }
+
+  .comment .comment-body {
+    font-size: 0.9rem;
+    color: #333;
+    line-height: 1.6;
+    padding-left: 4px;
+  }
+
+  .comment .comment-body a {
+    color: #e94560;
+    text-decoration: none;
+  }
+
+  .comment .comment-body a:hover {
+    text-decoration: underline;
+  }
+
+  .comment .comment-body blockquote {
+    border-left: 2px solid #e94560;
+    padding-left: 10px;
+    margin: 4px 0;
+    color: #555;
+  }
+
+  .comment .comment-body code {
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .comment .comment-body .comment-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 6px 0;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+
+  .comment .comment-body .comment-image:hover {
+    opacity: 0.95;
+  }
+
+  .comment .comment-body .comment-embed {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    margin: 6px 0;
+    border-radius: 4px;
+  }
+
+  .comment .comment-body .comment-embed iframe,
+  .comment .comment-body .comment-embed video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 4px;
+  }
+
+  .comment .comment-body .comment-link {
+    display: inline-block;
+    background: #f0f7ff;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin: 2px 0;
+    word-break: break-all;
+    font-size: 0.85em;
+  }
+
+  .comment .comment-body .comment-link a {
+    color: #e94560;
+  }
+
+  .comment .comment-replies {
+    padding-left: 20px;
+    margin-top: 8px;
+  }
+
+  .no-comments {
+    color: #999;
+    font-style: italic;
+    padding: 8px 0;
+  }
+
+  /* Lightbox */
+  .lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    cursor: pointer;
+  }
+
+  .lightbox.open {
+    display: flex;
+  }
+
+  .lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .lightbox .close-lightbox {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    z-index: 2001;
+  }
+
+  .lightbox .close-lightbox:hover {
+    color: #e94560;
+  }
+
+  /* Add Community Form */
+  .add-community-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .add-community-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .add-community-section .form-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .add-community-section .form-row input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .add-community-section .form-row input:focus {
+    outline: none;
+    border-color: #e94560;
+  }
+
+  .add-community-section .form-row button {
+    background: #e94560;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+
+  .add-community-section .form-row button:hover {
+    background: #d63851;
+  }
+
+  .add-community-section .form-row .download-btn {
+    background: #2ecc71;
+  }
+
+  .add-community-section .form-row .download-btn:hover {
+    background: #27ae60;
+  }
+
+  .add-community-section .status-msg {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #27ae60;
+  }
+
+  .add-community-section .status-msg.error {
+    color: #e74c3c;
+  }
+
+  @media (max-width: 900px) {
+    .container {
+      flex-direction: column;
+    }
+    .picker-panel {
+      flex: 1;
+      width: 100%;
+      position: static;
+      max-height: none;
+    }
+    #picker {
+      max-height: 200px;
+    }
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .controls .pagination-info {
+      text-align: center;
+    }
+    .add-community-section .form-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 12px; }
+    .feed-item { padding: 12px 16px; }
+    .modal { max-height: 95vh; }
+    .modal-header { padding: 16px 18px 10px 18px; }
+    .modal-body { padding: 16px 18px 18px 18px; }
+    .picker-panel { padding: 12px; }
+    .comment .comment-replies {
+      padding-left: 12px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="picker-panel">
+    <h2><i class="fas fa-rss"></i> Communities</h2>
+    <div id="picker"></div>
+    <div style="margin-top: 12px; font-size: 0.8rem; color: #999; text-align: center;">
+      Click a community to filter
+    </div>
+  </div>
+
+  <div class="content-panel">
+    <div class="controls">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Filter posts..." />
+      </div>
+      <div class="pagination-info">
+        <span id="itemCount">0</span> posts · Page <span id="currentPageDisplay">1</span>/<span id="totalPagesDisplay">1</span>
+      </div>
+      <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+
+    <div id="feedList">
+      <div class="loading">
+        <i class="fas fa-circle-notch"></i>
+        Loading posts...
+      </div>
+    </div>
+
+    <div class="pagination" id="paginationControls"></div>
+  </div>
+</div>
+
+<!-- Add Community Section -->
+<div class="add-community-section" id="addCommunitySection">
+  <h3><i class="fas fa-plus-circle"></i> Add New Community</h3>
+  <div class="form-row">
+    <input type="text" id="communityIdInput" placeholder="Community ID (e.g., 'linux')" />
+    <input type="text" id="communityInstanceInput" placeholder="Instance (e.g., 'lemmy.ml')" />
+    <input type="text" id="communityIconInput" placeholder="Icon (emoji, e.g., '🐧')" />
+    <input type="text" id="communityLabelInput" placeholder="Label (e.g., 'Linux')" />
+    <button id="addCommunityBtn"><i class="fas fa-plus"></i> Add</button>
+    <button id="downloadPageBtn" class="download-btn"><i class="fas fa-download"></i> Download Updated Page</button>
+  </div>
+  <div id="statusMsg" class="status-msg"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Title</div>
+        <div class="modal-source" id="modalSource">Source</div>
+      </div>
+      <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-description" id="modalDescription">Content</div>
+      <div class="modal-meta" id="modalMeta"></div>
+      <div class="comments-section" id="commentsSection">
+        <h3><i class="fas fa-comments"></i> Comments</h3>
+        <div id="commentsContainer">
+          <div class="comment-loading">
+            <i class="fas fa-circle-notch"></i>
+            Loading comments...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="close-lightbox" id="lightboxClose">&times;</button>
+  <img id="lightboxImage" src="" alt="Full size image" />
+</div>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<script>
+(function() {
+  // ============================================================
+  // ONLY THIS ARRAY GETS MODIFIED - NOTHING ELSE!
+  // ============================================================
+  let COMMUNITIES = [
+    { id: 'zocken', instance: 'feddit.org' },
+    { id: 'edv_sicherheit', instance: 'feddit.org' },
+    { id: 'wallstreetbets', instance: 'lemmy.world' },
+    { id: 'finanzen', instance: 'feddit.org' },
+    { id: 'emulationonandroid', instance: 'lemmy.world' },
+    { id: 'comicstrips', instance: 'lemmy.world' },
+    { id: 'diy', instance: 'beehaw.org' },
+    { id: 'houseplants', instance: 'mander.xyz' },
+    { id: 'programmer_humor', instance: 'programming.dev' },
+    { id: 'stocks', instance: 'lemmy.world' },
+    { id: 'technik', instance: 'feddit.org' },
+  ];
+
+  let COMMUNITY_ICONS = {
+    'zocken': '🎮',
+    'edv_sicherheit': '🔒',
+    'wallstreetbets': '📈',
+    'finanzen': '💰',
+    'emulationonandroid': '📱',
+    'comicstrips': '🎨',
+    'diy': '🔧',
+    'houseplants': '🌿',
+    'programmer_humor': '💻',
+    'technik': '📄'
+  };
+
+  let COMMUNITY_LABELS = {
+    'zocken': 'zocken',
+    'edv_sicherheit': 'EDV Sicherheit',
+    'wallstreetbets': 'Wallstreetbets',
+    'finanzen': 'Finanzen',
+    'emulationonandroid': 'Emulation on Android',
+    'comicstrips': 'Comic Strips',
+    'diy': 'DIY',
+    'houseplants': 'Houseplants',
+    'programmer_humor': 'Programmer Humor',
+    'stocks': 'Stocks',
+    'technik': 'technik'
+  };
+
+  // ----- STATE -----
+  let allPosts = [];
+  let filteredPosts = [];
+  let currentPage = 1;
+  let pageSize = 10;
+  let activeCommunityId = null;
+  let searchQuery = '';
+  let isLoading = false;
+
+  // DOM refs
+  const pickerEl = document.getElementById('picker');
+  const feedListEl = document.getElementById('feedList');
+  const searchInput = document.getElementById('searchInput');
+  const paginationControls = document.getElementById('paginationControls');
+  const itemCountSpan = document.getElementById('itemCount');
+  const currentPageSpan = document.getElementById('currentPageDisplay');
+  const totalPagesSpan = document.getElementById('totalPagesDisplay');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  // Modal refs
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSource = document.getElementById('modalSource');
+  const modalDescription = document.getElementById('modalDescription');
+  const modalMeta = document.getElementById('modalMeta');
+  const modalClose = document.getElementById('modalClose');
+  const commentsContainer = document.getElementById('commentsContainer');
+
+  // Lightbox refs
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImage = document.getElementById('lightboxImage');
+  const lightboxClose = document.getElementById('lightboxClose');
+
+  // Add community refs
+  const communityIdInput = document.getElementById('communityIdInput');
+  const communityInstanceInput = document.getElementById('communityInstanceInput');
+  const communityIconInput = document.getElementById('communityIconInput');
+  const communityLabelInput = document.getElementById('communityLabelInput');
+  const addCommunityBtn = document.getElementById('addCommunityBtn');
+  const downloadPageBtn = document.getElementById('downloadPageBtn');
+  const statusMsg = document.getElementById('statusMsg');
+
+  // ----- HELPERS -----
+  function formatDate(dateStr) {
+    if (!dateStr) return 'Unknown date';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) +
+             ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    } catch { return dateStr; }
+  }
+
+  function stripHtml(html) {
+    if (!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+
+  function truncateText(text, maxLen = 160) {
+    if (!text) return '';
+    const clean = stripHtml(text);
+    return clean.length > maxLen ? clean.slice(0, maxLen) + '…' : clean;
+  }
+
+  function isImageUrl(url) {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return lower.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i) || 
+           lower.includes('cdn') && (lower.includes('image') || lower.includes('img')) ||
+           lower.includes('media') && !lower.includes('.mp4') && !lower.includes('.webm');
+  }
+
+  function isVideoUrl(url) {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return lower.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i);
+  }
+
+  function isYouTubeUrl(url) {
+    if (!url) return false;
+    return url.includes('youtube.com/watch') || url.includes('youtu.be/');
+  }
+
+  function isVimeoUrl(url) {
+    if (!url) return false;
+    return url.includes('vimeo.com/');
+  }
+
+  function getEmbedUrl(url) {
+    if (!url) return null;
+    const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+    if (youtubeMatch) {
+      return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+    }
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+    return null;
+  }
+
+  function extractImagesFromMarkdown(markdown) {
+    if (!markdown) return [];
+    const images = [];
+    
+    const markdownMatches = markdown.match(/!\[[^\]]*\]\(([^)]+)\)/g);
+    if (markdownMatches) {
+      markdownMatches.forEach(match => {
+        const start = match.indexOf('(') + 1;
+        let depth = 1;
+        let end = start;
+        for (let i = start; i < match.length && depth > 0; i++) {
+          if (match[i] === '(') depth++;
+          else if (match[i] === ')') depth--;
+          if (depth === 0) {
+            end = i;
+            break;
+          }
+        }
+        if (end > start) {
+          const url = match.substring(start, end);
+          if (url && !images.includes(url)) {
+            images.push(url);
+          }
+        }
+      });
+    }
+    
+    const urlMatches = markdown.match(/(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|svg|bmp|ico))/gi);
+    if (urlMatches) {
+      urlMatches.forEach(url => {
+        if (!images.includes(url)) {
+          images.push(url);
+        }
+      });
+    }
+    
+    return images;
+  }
+
+  function renderCommentMedia(content) {
+    if (!content) return content;
+    
+    let html = content;
+    let searchPos = 0;
+    const matches = [];
+    
+    while (searchPos < html.length) {
+      const imgStart = html.indexOf('![', searchPos);
+      if (imgStart === -1) break;
+      
+      const altStart = imgStart + 2;
+      const altEnd = html.indexOf(']', altStart);
+      if (altEnd === -1) break;
+      
+      const urlStart = html.indexOf('(', altEnd);
+      if (urlStart === -1) break;
+      
+      let depth = 1;
+      let pos = urlStart + 1;
+      let urlEnd = -1;
+      while (pos < html.length && depth > 0) {
+        if (html[pos] === '(') depth++;
+        else if (html[pos] === ')') depth--;
+        if (depth === 0) {
+          urlEnd = pos;
+          break;
+        }
+        pos++;
+      }
+      
+      if (urlEnd === -1) break;
+      
+      const altText = html.substring(altStart, altEnd);
+      const url = html.substring(urlStart + 1, urlEnd);
+      
+      matches.push({
+        start: imgStart,
+        end: urlEnd + 1,
+        alt: altText,
+        url: url
+      });
+      
+      searchPos = urlEnd + 1;
+    }
+    
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const m = matches[i];
+      const isImage = isImageUrl(m.url);
+      const embedUrl = getEmbedUrl(m.url);
+      
+      let replacement = '';
+      if (isImage) {
+        replacement = `<img src="${m.url}" alt="${m.alt}" class="comment-image" onclick="openLightbox('${m.url}')" />`;
+      } else if (isYouTubeUrl(m.url) && embedUrl) {
+        replacement = `<div class="comment-embed"><iframe src="${embedUrl}" allowfullscreen loading="lazy"></iframe></div>`;
+      } else if (isVimeoUrl(m.url) && embedUrl) {
+        replacement = `<div class="comment-embed"><iframe src="${embedUrl}" allowfullscreen loading="lazy"></iframe></div>`;
+      } else if (isVideoUrl(m.url)) {
+        replacement = `<div class="comment-embed"><video controls preload="metadata"><source src="${m.url}"></video></div>`;
+      } else {
+        replacement = `<div class="comment-link"><i class="fas fa-link"></i> <a href="${m.url}" target="_blank" rel="noopener noreferrer">${m.url}</a></div>`;
+      }
+      
+      html = html.substring(0, m.start) + replacement + html.substring(m.end);
+    }
+    
+    // NOTE: excludes URLs already inside href="..." or src="..." attributes so it
+    // doesn't re-linkify the URL sitting inside an <img src="..."> tag that was
+    // just built above.
+    html = html.replace(/(?<!href=")(?<!src=")(?<!">)(https?:\/\/[^\s]+)/g, function(url) {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+    
+    return html;
+  }
+
+  function renderMediaContent(url, onClick = null) {
+    if (!url) return '';
+    
+    const embedUrl = getEmbedUrl(url);
+    
+    if (isImageUrl(url)) {
+      const onclickAttr = onClick ? ` onclick="${onClick}"` : '';
+      return `<img src="${url}" alt="Image" class="post-image" loading="lazy"${onclickAttr} />`;
+    } else if (isYouTubeUrl(url) && embedUrl) {
+      return `<div class="embed-container"><iframe src="${embedUrl}" allowfullscreen loading="lazy"></iframe></div>`;
+    } else if (isVimeoUrl(url) && embedUrl) {
+      return `<div class="embed-container"><iframe src="${embedUrl}" allowfullscreen loading="lazy"></iframe></div>`;
+    } else if (isVideoUrl(url)) {
+      return `<div class="embed-container"><video controls preload="metadata"><source src="${url}"></video></div>`;
+    } else {
+      return `<div class="post-link"><i class="fas fa-link"></i> <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></div>`;
+    }
+  }
+
+  function formatMarkdownToHtml(markdown) {
+    if (!markdown) return '';
+    
+    let html = markdown;
+    
+    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+    html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    // (?<!!) skips image markdown ![alt](url) so renderCommentMedia can still
+    // find and convert it into a real <img> tag afterward.
+    html = html.replace(/(?<!!)\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    // (?<!\]\() skips a URL that's actually sitting inside [text](url) or
+    // ![alt](url) markdown syntax, so it isn't double-wrapped/mangled.
+    html = html.replace(/(?<!href=")(?<!">)(?<!\]\()(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    html = html.replace(/^&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
+    html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+    html = html.replace(/^[-*] (.*$)/gim, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+  }
+
+  // ----- FETCH COMMENTS -----
+  async function fetchComments(instance, postId) {
+    try {
+      const url = `https://${instance}/api/v3/comment/list?post_id=${postId}&limit=50&sort=Hot`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      return data.comments || [];
+    } catch (err) {
+      console.warn('Failed to fetch comments:', err);
+      return [];
+    }
+  }
+
+  function extractUserInstance(actorId) {
+    if (!actorId) return null;
+    try {
+      const url = new URL(actorId);
+      return url.hostname;
+    } catch {
+      return null;
+    }
+  }
+
+  function renderComments(comments, postInstance) {
+    if (!comments || comments.length === 0) {
+      return '<div class="no-comments">No comments yet.</div>';
+    }
+
+    const commentMap = {};
+    const rootComments = [];
+
+    comments.forEach(c => {
+      const comment = c.comment;
+      const creator = c.creator || { name: 'Unknown', actor_id: null };
+      const counts = c.counts || { score: 0 };
+      const userInstance = extractUserInstance(creator.actor_id) || postInstance;
+      
+      commentMap[comment.id] = {
+        id: comment.id,
+        content: comment.content || '',
+        published: comment.published,
+        creator: creator.name,
+        creatorActorId: creator.actor_id,
+        userInstance: userInstance,
+        score: counts.score || 0,
+        parentId: comment.parent_id || null,
+        children: [],
+        postInstance: postInstance
+      };
+    });
+
+    Object.values(commentMap).forEach(comment => {
+      if (comment.parentId && commentMap[comment.parentId]) {
+        commentMap[comment.parentId].children.push(comment);
+      } else {
+        rootComments.push(comment);
+      }
+    });
+
+    rootComments.sort((a, b) => b.score - a.score);
+
+    function renderCommentTree(comment, depth = 0) {
+      const indent = depth > 0 ? ' style="padding-left: 20px;"' : '';
+      let contentHtml = formatMarkdownToHtml(comment.content);
+      contentHtml = renderCommentMedia(contentHtml);
+      contentHtml = contentHtml.replace(/<img([^>]*)src="([^"]+)"([^>]*)>/g, function(match, before, src, after) {
+        return `<img${before}src="${src}"${after} onclick="openLightbox('${src}')" style="cursor:pointer;" />`;
+      });
+      
+      const profileUrl = `https://${comment.userInstance}/u/${comment.creator}`;
+      const commentUrl = `https://${comment.postInstance}/comment/${comment.id}`;
+      const instanceDisplay = comment.userInstance !== comment.postInstance ? 
+        `<span class="user-instance">@${comment.userInstance}</span>` : '';
+      
+      let html = `
+        <div class="comment"${indent}>
+          <div class="comment-header">
+            <span class="comment-author">
+              <a href="${profileUrl}" target="_blank" rel="noopener noreferrer">
+                <i class="fas fa-user"></i> ${comment.creator}
+              </a>
+              ${instanceDisplay}
+            </span>
+            <span>${formatDate(comment.published)}</span>
+            <span class="comment-score"><i class="fas fa-arrow-up"></i> ${comment.score}</span>
+            <span class="comment-link">
+              <a href="${commentUrl}" target="_blank" rel="noopener noreferrer">
+                <i class="fas fa-link"></i> permalink
+              </a>
+            </span>
+          </div>
+          <div class="comment-body">${contentHtml}</div>
+      `;
+
+      if (comment.children.length > 0) {
+        html += `<div class="comment-replies">`;
+        comment.children.sort((a, b) => b.score - a.score);
+        comment.children.forEach(child => {
+          html += renderCommentTree(child, depth + 1);
+        });
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+      return html;
+    }
+
+    let html = '';
+    rootComments.forEach(comment => {
+      html += renderCommentTree(comment);
+    });
+
+    return html;
+  }
+
+  // ----- FETCH COMMUNITY POSTS -----
+  async function fetchCommunityPosts(community) {
+    try {
+      const url = `https://${community.instance}/api/v3/community?name=${community.id}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const communityId = data.community_view?.community?.id;
+      
+      if (!communityId) {
+        console.warn(`Community ${community.id} not found`);
+        return [];
+      }
+
+      const postsUrl = `https://${community.instance}/api/v3/post/list?community_id=${communityId}&limit=50&sort=Active`;
+      const postsResponse = await fetch(postsUrl);
+      if (!postsResponse.ok) throw new Error(`HTTP ${postsResponse.status}`);
+      const postsData = await postsResponse.json();
+
+      return postsData.posts.map(post => ({
+        title: post.post.name || 'Untitled',
+        link: `https://${community.instance}/post/${post.post.id}`,
+        description: post.post.body || '',
+        pubDate: post.post.published,
+        score: post.counts?.score || 0,
+        comments: post.counts?.comments || 0,
+        sourceId: community.id,
+        sourceLabel: COMMUNITY_LABELS[community.id] || community.id,
+        sourceIcon: COMMUNITY_ICONS[community.id] || '📄',
+        postId: post.post.id,
+        creator: post.creator?.name || 'Unknown',
+        creatorActorId: post.creator?.actor_id,
+        creatorInstance: post.creator?.actor_id ? extractUserInstance(post.creator.actor_id) : community.instance,
+        url: post.post.url || null,
+        thumbnail: post.post.thumbnail_url || null,
+        instance: community.instance
+      }));
+    } catch (err) {
+      console.warn(`Failed to fetch ${community.id}:`, err);
+      return [];
+    }
+  }
+
+  async function fetchAllCommunities() {
+    if (isLoading) return;
+    isLoading = true;
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+    try {
+      const fetchPromises = COMMUNITIES.map(community => fetchCommunityPosts(community));
+      const results = await Promise.all(fetchPromises);
+      allPosts = results.flat();
+
+      const seen = new Set();
+      allPosts = allPosts.filter(post => {
+        const key = post.link;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      allPosts.sort((a, b) => {
+        const da = new Date(a.pubDate);
+        const db = new Date(b.pubDate);
+        if (isNaN(da) && isNaN(db)) return 0;
+        if (isNaN(da)) return 1;
+        if (isNaN(db)) return -1;
+        return db - da;
+      });
+
+      applyFiltersAndRender();
+    } catch (err) {
+      console.error('Error fetching communities:', err);
+      feedListEl.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>Error loading posts. Please try again.</p>
+        </div>
+      `;
+    } finally {
+      isLoading = false;
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<i class="fas fa-sync"></i> Refresh';
+    }
+  }
+
+  // ----- FILTER & PAGINATE -----
+  function applyFiltersAndRender() {
+    let posts = allPosts;
+    if (activeCommunityId) {
+      posts = posts.filter(post => post.sourceId === activeCommunityId);
+    }
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      posts = posts.filter(post =>
+        (post.title && post.title.toLowerCase().includes(q)) ||
+        (post.description && post.description.toLowerCase().includes(q))
+      );
+    }
+
+    filteredPosts = posts;
+    currentPage = 1;
+    renderPage();
+    renderPagination();
+    renderPicker();
+  }
+
+  function renderPage() {
+    const total = filteredPosts.length;
+    const totalPages = Math.ceil(total / pageSize) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * pageSize;
+    const end = Math.min(start + pageSize, total);
+    const pagePosts = filteredPosts.slice(start, end);
+
+    itemCountSpan.textContent = total;
+    currentPageSpan.textContent = currentPage;
+    totalPagesSpan.textContent = totalPages;
+
+    if (total === 0) {
+      feedListEl.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>No posts found. Try adjusting your filters.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    pagePosts.forEach(post => {
+      const title = post.title || 'Untitled';
+      const desc = truncateText(post.description || '', 140);
+      const date = formatDate(post.pubDate);
+      const sourceLabel = post.sourceLabel || 'Unknown';
+      const icon = post.sourceIcon || '📄';
+      
+      const creatorDisplay = post.creatorInstance && post.creatorInstance !== post.instance ? 
+        `@${post.creatorInstance}` : '';
+      
+      html += `
+        <div class="feed-item" 
+             data-link="${post.link}" 
+             data-title="${encodeURIComponent(title)}" 
+             data-source="${sourceLabel}" 
+             data-icon="${icon}"
+             data-desc="${encodeURIComponent(post.description || '')}" 
+             data-date="${post.pubDate || ''}" 
+             data-score="${post.score || 0}" 
+             data-comments="${post.comments || 0}" 
+             data-creator="${post.creator || 'Unknown'}"
+             data-creator-instance="${post.creatorInstance || ''}"
+             data-instance="${post.instance || ''}"
+             data-postid="${post.postId || ''}"
+             data-url="${post.url || ''}"
+             data-thumbnail="${post.thumbnail || ''}">
+          <div class="title">${icon} ${title}</div>
+          <div class="meta">
+            <span class="source-tag"><i class="fas fa-tag"></i> ${sourceLabel}</span>
+            <span class="date"><i class="far fa-calendar-alt"></i> ${date}</span>
+            <span class="score"><i class="fas fa-arrow-up"></i> ${post.score || 0}</span>
+            <span class="comments"><i class="fas fa-comment"></i> ${post.comments || 0}</span>
+            ${creatorDisplay ? `<span class="source-tag"><i class="fas fa-user"></i> ${creatorDisplay}</span>` : ''}
+          </div>
+          ${desc ? `<div class="description">${desc}</div>` : ''}
+        </div>
+      `;
+    });
+
+    feedListEl.innerHTML = html;
+
+    feedListEl.querySelectorAll('.feed-item').forEach(el => {
+      el.addEventListener('click', function() {
+        const link = this.dataset.link;
+        const title = decodeURIComponent(this.dataset.title);
+        const source = this.dataset.source;
+        const icon = this.dataset.icon || '📄';
+        const desc = decodeURIComponent(this.dataset.desc || '');
+        const date = this.dataset.date || '';
+        const score = this.dataset.score || '0';
+        const comments = this.dataset.comments || '0';
+        const creator = this.dataset.creator || 'Unknown';
+        const creatorInstance = this.dataset.creatorInstance || '';
+        const instance = this.dataset.instance || '';
+        const postId = this.dataset.postid || '';
+        const url = this.dataset.url || '';
+        const thumbnail = this.dataset.thumbnail || '';
+        openModal(title, source, icon, desc, link, date, score, comments, creator, creatorInstance, instance, postId, url, thumbnail);
+      });
+    });
+  }
+
+  function renderPagination() {
+    const total = filteredPosts.length;
+    const totalPages = Math.ceil(total / pageSize) || 1;
+    let html = '';
+
+    html += `<button class="prev" ${currentPage <= 1 ? 'disabled' : ''} data-page="${currentPage - 1}"><i class="fas fa-chevron-left"></i></button>`;
+
+    const maxVisible = 7;
+    let startPage = Math.max(1, currentPage - 3);
+    let endPage = Math.min(totalPages, currentPage + 3);
+    if (endPage - startPage < maxVisible - 1) {
+      if (startPage === 1) endPage = Math.min(totalPages, startPage + maxVisible - 1);
+      else if (endPage === totalPages) startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (startPage > 1) {
+      html += `<button data-page="1">1</button>`;
+      if (startPage > 2) html += `<button disabled>…</button>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="${i === currentPage ? 'active-page' : ''}" data-page="${i}">${i}</button>`;
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) html += `<button disabled>…</button>`;
+      html += `<button data-page="${totalPages}">${totalPages}</button>`;
+    }
+
+    html += `<button class="next" ${currentPage >= totalPages ? 'disabled' : ''} data-page="${currentPage + 1}"><i class="fas fa-chevron-right"></i></button>`;
+
+    html += `
+      <div class="page-jump">
+        <span>Go</span>
+        <input type="number" id="pageJumpInput" min="1" max="${totalPages}" value="${currentPage}" />
+        <button id="pageJumpBtn"><i class="fas fa-arrow-right"></i></button>
+      </div>
+    `;
+
+    paginationControls.innerHTML = html;
+
+    paginationControls.querySelectorAll('button[data-page]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const page = parseInt(this.dataset.page);
+        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+          currentPage = page;
+          renderPage();
+          renderPagination();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    });
+
+    const jumpInput = document.getElementById('pageJumpInput');
+    const jumpBtn = document.getElementById('pageJumpBtn');
+    if (jumpInput && jumpBtn) {
+      jumpBtn.addEventListener('click', function() {
+        const val = parseInt(jumpInput.value);
+        if (!isNaN(val) && val >= 1 && val <= totalPages) {
+          currentPage = val;
+          renderPage();
+          renderPagination();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+      jumpInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') jumpBtn.click();
+      });
+    }
+  }
+
+  function renderPicker() {
+    let html = '';
+    const allCount = allPosts.length;
+    const allActive = activeCommunityId === null ? 'selected' : '';
+    html += `<div class="picker-item ${allActive}" data-communityid="">
+      <span class="icon">📋</span> All Communities
+      <span class="badge">${allCount}</span>
+    </div>`;
+
+    COMMUNITIES.forEach(community => {
+      const count = allPosts.filter(post => post.sourceId === community.id).length;
+      const active = activeCommunityId === community.id ? 'selected' : '';
+      const icon = COMMUNITY_ICONS[community.id] || '📄';
+      const label = COMMUNITY_LABELS[community.id] || community.id;
+      html += `<div class="picker-item ${active}" data-communityid="${community.id}">
+        <span class="icon">${icon}</span>
+        ${label}
+        <span class="badge">${count}</span>
+      </div>`;
+    });
+
+    pickerEl.innerHTML = html;
+
+    pickerEl.querySelectorAll('.picker-item').forEach(el => {
+      el.addEventListener('click', function() {
+        const id = this.dataset.communityid;
+        activeCommunityId = id || null;
+        currentPage = 1;
+        applyFiltersAndRender();
+        pickerEl.querySelectorAll('.picker-item').forEach(item => item.classList.remove('selected'));
+        this.classList.add('selected');
+      });
+    });
+  }
+
+  // ----- LIGHTBOX -----
+  window.openLightbox = function(imageUrl) {
+    if (imageUrl) {
+      lightboxImage.src = imageUrl;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+    lightboxImage.src = '';
+  }
+
+  // ----- MODAL -----
+  async function openModal(title, source, icon, description, link, date, score, comments, creator, creatorInstance, instance, postId, url, thumbnail) {
+    modalTitle.textContent = `${icon || '📄'} ${title || 'Untitled'}`;
+    
+    const creatorDisplay = creatorInstance && creatorInstance !== instance ? 
+      ` @${creatorInstance}` : '';
+    modalSource.textContent = `${source} • Posted by ${creator}${creatorDisplay}`;
+
+    let descHtml = '';
+    const mediaUrls = new Set();
+    const embeddedImages = extractImagesFromMarkdown(description);
+    
+    if (embeddedImages.length > 0) {
+      embeddedImages.forEach(imgUrl => {
+        if (imgUrl && imgUrl !== '#') {
+          mediaUrls.add(imgUrl);
+        }
+      });
+    }
+    
+    if (embeddedImages.length === 0) {
+      if (url && url !== '#' && url !== thumbnail) {
+        mediaUrls.add(url);
+      }
+      if (thumbnail && thumbnail !== '#') {
+        mediaUrls.add(thumbnail);
+      }
+    }
+    
+    mediaUrls.forEach(mediaUrl => {
+      const mediaHtml = renderMediaContent(mediaUrl, `openLightbox('${mediaUrl}')`);
+      if (mediaHtml) {
+        descHtml += mediaHtml;
+      }
+    });
+    
+    if (description) {
+      let formattedDesc = formatMarkdownToHtml(description);
+      formattedDesc = formattedDesc.replace(/<img([^>]*)src="([^"]+)"([^>]*)>/g, function(match, before, src, after) {
+        return `<img${before}src="${src}"${after} onclick="openLightbox('${src}')" style="cursor:pointer;" />`;
+      });
+      descHtml += formattedDesc;
+    }
+    
+    if (!descHtml) {
+      descHtml = 'No description available.';
+    }
+    
+    modalDescription.innerHTML = descHtml;
+
+    let metaHtml = '';
+    if (date) {
+      metaHtml += `<span><i class="far fa-calendar-alt"></i> ${formatDate(date)}</span>`;
+    }
+    if (score) {
+      metaHtml += `<span><i class="fas fa-arrow-up"></i> ${score} points</span>`;
+    }
+    if (comments) {
+      metaHtml += `<span><i class="fas fa-comment"></i> ${comments} comments</span>`;
+    }
+    if (link && link !== '#') {
+      metaHtml += `<span><i class="fas fa-external-link-alt"></i> <a href="${link}" target="_blank" rel="noopener noreferrer">View on Lemmy</a></span>`;
+    }
+    modalMeta.innerHTML = metaHtml;
+
+    commentsContainer.innerHTML = `
+      <div class="comment-loading">
+        <i class="fas fa-circle-notch"></i>
+        Loading comments...
+      </div>
+    `;
+
+    modalOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    if (postId && instance) {
+      try {
+        const commentsData = await fetchComments(instance, postId);
+        const commentsHtml = renderComments(commentsData, instance);
+        commentsContainer.innerHTML = commentsHtml;
+      } catch (err) {
+        commentsContainer.innerHTML = '<div class="no-comments">Error loading comments.</div>';
+      }
+    } else {
+      commentsContainer.innerHTML = '<div class="no-comments">Comments not available.</div>';
+    }
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // ----- ADD COMMUNITY - ONLY MODIFIES THE ARRAY! -----
+  function addCommunity() {
+    const id = communityIdInput.value.trim();
+    const instance = communityInstanceInput.value.trim();
+    const icon = communityIconInput.value.trim() || '📄';
+    const label = communityLabelInput.value.trim() || id;
+
+    if (!id || !instance) {
+      statusMsg.textContent = '❌ Please fill in Community ID and Instance fields.';
+      statusMsg.className = 'status-msg error';
+      return;
+    }
+
+    if (COMMUNITIES.find(c => c.id === id && c.instance === instance)) {
+      statusMsg.textContent = `⚠️ Community "${id}@${instance}" already exists.`;
+      statusMsg.className = 'status-msg error';
+      return;
+    }
+
+    // ONLY MODIFYING THE ARRAY - NOTHING ELSE!
+    COMMUNITIES.push({ id, instance });
+    COMMUNITY_ICONS[id] = icon;
+    COMMUNITY_LABELS[id] = label;
+
+    statusMsg.textContent = `✅ Added "${label}" (${id}@${instance}). Click "Download Updated Page" to save a copy with this community baked in.`;
+    statusMsg.className = 'status-msg';
+
+    communityIdInput.value = '';
+    communityInstanceInput.value = '';
+    communityIconInput.value = '';
+    communityLabelInput.value = '';
+
+    fetchAllCommunities();
+  }
+
+  // ----- SERIALIZATION HELPERS FOR DOWNLOAD -----
+  // These turn the live, in-memory COMMUNITIES / COMMUNITY_ICONS / COMMUNITY_LABELS
+  // back into JS source text, so the values can be written into the <script> block
+  // of the downloaded file. (document.documentElement.outerHTML alone does NOT do
+  // this: a <script> element's serialized text is always the original source code
+  // it was parsed from, regardless of how the variables it declares have mutated
+  // at runtime. That mismatch was why previously-added communities silently
+  // disappeared from the downloaded file.)
+  function escJsString(str) {
+    return String(str)
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'");
+  }
+
+  function serializeCommunities() {
+    let s = 'let COMMUNITIES = [\n';
+    COMMUNITIES.forEach(c => {
+      s += `    { id: '${escJsString(c.id)}', instance: '${escJsString(c.instance)}' },\n`;
+    });
+    s += '  ];';
+    return s;
+  }
+
+  function serializeIcons() {
+    let s = 'let COMMUNITY_ICONS = {\n';
+    const keys = Object.keys(COMMUNITY_ICONS);
+    keys.forEach((k, i) => {
+      s += `    '${escJsString(k)}': '${escJsString(COMMUNITY_ICONS[k])}'${i < keys.length - 1 ? ',' : ''}\n`;
+    });
+    s += '  };';
+    return s;
+  }
+
+  function serializeLabels() {
+    let s = 'let COMMUNITY_LABELS = {\n';
+    const keys = Object.keys(COMMUNITY_LABELS);
+    keys.forEach((k, i) => {
+      s += `    '${escJsString(k)}': '${escJsString(COMMUNITY_LABELS[k])}'${i < keys.length - 1 ? ',' : ''}\n`;
+    });
+    s += '  };';
+    return s;
+  }
+
+  // ----- DOWNLOAD - FETCHES THE ORIGINAL FILE SOURCE, SWAPS ONLY THE 3 BLOCKS -----
+  async function downloadUpdatedPage() {
+    statusMsg.textContent = '⏳ Fetching original page source...';
+    statusMsg.className = 'status-msg';
+
+    let htmlContent;
+    try {
+      const response = await fetch(window.location.href, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      htmlContent = await response.text();
+    } catch (err) {
+      console.warn('Could not fetch original page source:', err);
+      statusMsg.textContent = '❌ Could not load the original page source to update. Try opening this file via a local server instead of double-clicking it, then download again.';
+      statusMsg.className = 'status-msg error';
+      return;
+    }
+
+    // The fetched text is the untouched original file - only replace the
+    // three declarations below with the current, live values so anything
+    // added via the form is persisted. Everything else in the source
+    // (markup, other script logic, formatting) is left exactly as-is.
+    htmlContent = htmlContent.replace(/let COMMUNITIES = \[[\s\S]*?\];/, serializeCommunities());
+    htmlContent = htmlContent.replace(/let COMMUNITY_ICONS = \{[\s\S]*?\};/, serializeIcons());
+    htmlContent = htmlContent.replace(/let COMMUNITY_LABELS = \{[\s\S]*?\};/, serializeLabels());
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'renderfeddit.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    statusMsg.textContent = '✅ Page downloaded! Added communities are baked into the COMMUNITIES/COMMUNITY_ICONS/COMMUNITY_LABELS blocks, everything else in the source is unchanged.';
+    statusMsg.className = 'status-msg';
+  }
+
+  // ----- INIT -----
+  function init() {
+    modalClose.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    lightboxClose.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', function(e) {
+      if (e.target === this) closeLightbox();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+        closeLightbox();
+      }
+    });
+
+    searchInput.addEventListener('input', function() {
+      searchQuery = this.value;
+      currentPage = 1;
+      applyFiltersAndRender();
+    });
+
+    refreshBtn.addEventListener('click', function() {
+      allPosts = [];
+      applyFiltersAndRender();
+      fetchAllCommunities();
+    });
+
+    addCommunityBtn.addEventListener('click', addCommunity);
+    communityIdInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addCommunity();
+    });
+    communityInstanceInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addCommunity();
+    });
+
+    downloadPageBtn.addEventListener('click', downloadUpdatedPage);
+
+    fetchAllCommunities();
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
+
+

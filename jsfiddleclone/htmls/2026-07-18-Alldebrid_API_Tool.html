@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AllDebrid Link Converter</title>
+    <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.6/StreamSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/zip-stream@2.1.3/zip-stream.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f7fc;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            max-width: 860px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            padding: 32px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.02);
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #0b1b33;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .sub {
+            color: #4a5a72;
+            margin-top: -4px;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+            border-left: 3px solid #d0d9e8;
+            padding-left: 14px;
+            background: #f0f4fe;
+            border-radius: 0 12px 12px 0;
+            line-height: 1.5;
+        }
+        .row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 18px;
+        }
+        .row label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #1e2b41;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .row label small {
+            font-weight: 400;
+            color: #5f7390;
+            font-size: 0.8rem;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .input-group input,
+        .input-group textarea {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            border: 1.5px solid #dbe0ea;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            background: #fafbff;
+            transition: 0.2s;
+        }
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #3b6eff;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 110, 255, 0.08);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 12px 0 18px 0;
+        }
+        .btn {
+            background: white;
+            border: 1.5px solid #dbe0ea;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 550;
+            font-size: 0.95rem;
+            color: #1e2b41;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8faff;
+        }
+        .btn-primary {
+            background: #1a2e4f;
+            border: 1.5px solid #1a2e4f;
+            color: white;
+            box-shadow: 0 4px 8px rgba(26, 46, 79, 0.12);
+        }
+        .btn-primary:hover {
+            background: #0f2240;
+            transform: scale(0.98);
+        }
+        .btn-primary:active {
+            background: #0b1a30;
+        }
+        .btn-success {
+            background: #1f8b4c;
+            border: 1.5px solid #1f8b4c;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #16733e;
+            transform: scale(0.98);
+        }
+        .btn-success:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .btn-warning {
+            background: #d48c2c;
+            border: 1.5px solid #d48c2c;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #b87820;
+            transform: scale(0.98);
+        }
+        .btn-warning:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .btn-retry {
+            background: #d48c2c;
+            border: 1.5px solid #d48c2c;
+            color: white;
+            padding: 2px 12px;
+            font-size: 0.7rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: inherit;
+            margin-left: 8px;
+        }
+        .btn-retry:hover {
+            background: #b87820;
+        }
+        .btn-retry:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-retry-small {
+            font-size: 0.65rem;
+            padding: 1px 10px;
+        }
+        .btn-outline {
+            background: transparent;
+        }
+        .btn-outline:hover {
+            background: #eef3fd;
+            border-color: #b0c2dd;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(0.3);
+        }
+        .response-area {
+            margin-top: 24px;
+            border-top: 1.5px solid #ecf0f7;
+            padding-top: 20px;
+        }
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .response-header span {
+            font-weight: 500;
+            color: #1e2b41;
+        }
+        .badge {
+            background: #eaf0fa;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1f3b62;
+        }
+        #output {
+            background: #f4f8ff;
+            padding: 18px 20px;
+            border-radius: 20px;
+            border: 1px solid #e3eaf5;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.9rem;
+            max-height: 350px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            color: #142435;
+            line-height: 2;
+        }
+        #output a {
+            color: #1a2e4f;
+            text-decoration: none;
+            border-bottom: 1px solid #d0d9e8;
+            transition: 0.15s;
+            display: inline-block;
+            padding: 2px 0;
+        }
+        #output a:hover {
+            color: #3b6eff;
+            border-bottom-color: #3b6eff;
+        }
+        #output .line {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 4px;
+        }
+        #output .line-success {
+            background: #f0f7f0;
+        }
+        #output .line-error {
+            background: #fff8f8;
+        }
+        #output .error-link {
+            color: #a3322b;
+            border-bottom-color: #e34941;
+            cursor: pointer;
+        }
+        #output .error-link:hover {
+            background: #fff2f0;
+        }
+        #output .error-code {
+            font-size: 0.7rem;
+            color: #7a5a5a;
+            background: #f5e8e8;
+            padding: 1px 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+        #output .error-message {
+            color: #a3322b;
+        }
+        #output .link-preview {
+            color: #2a4b7a;
+            text-decoration: none;
+            border-bottom: 1px dashed #b0c2dd;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        #output .link-preview:hover {
+            border-bottom-color: #3b6eff;
+        }
+        #output .converted-link {
+            color: #1a6b2a;
+            text-decoration: none;
+            border-bottom: 1px solid #8bc99b;
+            word-break: break-all;
+        }
+        #output .converted-link:hover {
+            color: #1f8b4c;
+            border-bottom-color: #1f8b4c;
+        }
+        #output .preview-text {
+            color: #5f7390;
+            font-size: 0.85rem;
+        }
+        #output .status-badge {
+            font-size: 0.6rem;
+            padding: 1px 10px;
+            border-radius: 30px;
+            font-weight: 500;
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+        #output .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        #output .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        #output:empty::before {
+            content: "converted links will appear here";
+            color: #8699bb;
+            font-style: italic;
+            font-family: system-ui;
+        }
+        .hint {
+            font-size: 0.8rem;
+            color: #5f7390;
+            background: #f2f6fe;
+            padding: 6px 14px;
+            border-radius: 40px;
+            display: inline-block;
+            margin-top: 6px;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .action-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: #2a4b7a;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            transition: 0.1s;
+        }
+        .copy-btn:hover {
+            background: #dce6f5;
+        }
+        .error-msg {
+            background: #fff2f0;
+            border-left: 4px solid #e34941;
+            padding: 10px 16px;
+            border-radius: 12px;
+            color: #a3322b;
+            margin: 4px 0 12px 0;
+            font-size: 0.9rem;
+        }
+        .success-msg {
+            background: #f0f7f0;
+            border-left: 4px solid #2e9e3e;
+            padding: 10px 16px;
+            border-radius: 12px;
+            color: #1e6b2a;
+            margin: 4px 0 12px 0;
+            font-size: 0.9rem;
+        }
+        .debug-info {
+            background: #f8f4e8;
+            border: 1px solid #e8dcc8;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin: 8px 0 12px 0;
+            font-size: 0.8rem;
+            color: #6b5a3e;
+            font-family: monospace;
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e3eaf5;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1f8b4c, #3b6eff);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .storage-badge {
+            font-size: 0.7rem;
+            color: #5f7390;
+            background: #eef3fd;
+            padding: 2px 10px;
+            border-radius: 30px;
+            margin-left: 8px;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cdd9ed;
+            border-radius: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #edf2fa;
+        }
+        @media (max-width: 500px) {
+            .card { padding: 20px 16px; }
+            .input-group { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            #output .line { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="flex-between">
+        <h1>AllDebrid <span style="font-weight: 400; font-size: 1rem; color: #4a5a72;">link converter</span></h1>
+        <span style="background: #e8effa; padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; font-weight: 500;">API v4</span>
+    </div>
+    <div class="sub">
+        API key from <code>?apikey=</code> or textbox &middot; links via <code>?link=</code> (comma or newline separated) or textarea
+        <span class="storage-badge" id="storageBadge">saved locally</span>
+    </div>
+
+    <div class="row">
+        <label>API Key <small>(from query, localStorage, or paste)</small></label>
+        <div class="input-group">
+            <input type="text" id="apiKeyInput" placeholder="Paste your AllDebrid API key" value="">
+        </div>
+    </div>
+
+    <div class="row">
+        <label>Links <small>(comma or newline separated, one or many)</small></label>
+        <div class="input-group">
+            <textarea id="linksInput" placeholder="https://1fichier.com/?abc123&#10;https://example.com/file.zip"></textarea>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button class="btn btn-primary" id="convertBtn">Convert links</button>
+        <button class="btn btn-success" id="zipStreamBtn" disabled>Download ZIP</button>
+        <button class="btn btn-warning" id="retryFailedBtn" disabled>Retry All Failed</button>
+        <button class="btn btn-outline" id="clearBtn">Clear</button>
+        <button class="btn btn-outline" id="exampleBtn">Example</button>
+        <button class="btn btn-outline" id="debugBtn">Debug</button>
+    </div>
+
+    <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div id="errorDisplay" class="error-msg" style="display: none;"></div>
+    <div id="successDisplay" class="success-msg" style="display: none;"></div>
+    <div id="debugDisplay" class="debug-info"></div>
+
+    <div class="response-area">
+        <div class="response-header">
+            <span>AllDebrid links</span>
+            <span class="badge" id="linkCountBadge">0 links</span>
+        </div>
+        <div id="output"></div>
+        <div class="action-row">
+            <button class="copy-btn" id="copyOutputBtn">Copy all</button>
+            <button class="copy-btn" id="downloadTxtBtn">Download as TXT</button>
+        </div>
+    </div>
+    <div class="hint">
+        Query example: <code>?apikey=YOUR_KEY&link=https://1fichier.com/?abc123</code>
+    </div>
+</div>
+<script>
+    (function() {
+        var apiKeyInput = document.getElementById('apiKeyInput');
+        var linksInput = document.getElementById('linksInput');
+        var convertBtn = document.getElementById('convertBtn');
+        var zipStreamBtn = document.getElementById('zipStreamBtn');
+        var retryFailedBtn = document.getElementById('retryFailedBtn');
+        var clearBtn = document.getElementById('clearBtn');
+        var exampleBtn = document.getElementById('exampleBtn');
+        var debugBtn = document.getElementById('debugBtn');
+        var outputDiv = document.getElementById('output');
+        var errorDisplay = document.getElementById('errorDisplay');
+        var successDisplay = document.getElementById('successDisplay');
+        var debugDisplay = document.getElementById('debugDisplay');
+        var linkCountBadge = document.getElementById('linkCountBadge');
+        var copyOutputBtn = document.getElementById('copyOutputBtn');
+        var downloadTxtBtn = document.getElementById('downloadTxtBtn');
+        var progressBar = document.getElementById('progressBar');
+        var progressFill = document.getElementById('progressFill');
+        var storageBadge = document.getElementById('storageBadge');
+
+        var convertedLinks = [];
+        var failedLinksData = [];
+        // Tracks successful conversions as {url, link, index} so the rendered
+        // table can always look up a result by its ORIGINAL position, even
+        // after retries reorder/shrink the arrays involved.
+        var successLinksData = [];
+        var allOriginalLinks = [];
+        var debugMode = false;
+        var isConverting = false;
+        var isRetryingSingle = false;
+
+        function saveApiKey(apiKey) {
+            if (apiKey && apiKey.trim()) {
+                try {
+                    localStorage.setItem('alldebrid_api_key', apiKey.trim());
+                    storageBadge.style.display = 'inline';
+                } catch (e) {}
+            }
+        }
+
+        function loadApiKey() {
+            try {
+                return localStorage.getItem('alldebrid_api_key') || '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function clearApiKey() {
+            try {
+                localStorage.removeItem('alldebrid_api_key');
+                storageBadge.style.display = 'none';
+            } catch (e) {}
+        }
+
+        function setError(msg) {
+            if (msg) {
+                errorDisplay.style.display = 'block';
+                errorDisplay.textContent = msg;
+                successDisplay.style.display = 'none';
+            } else {
+                errorDisplay.style.display = 'none';
+                errorDisplay.textContent = '';
+            }
+        }
+
+        function setSuccess(msg) {
+            if (msg) {
+                successDisplay.style.display = 'block';
+                successDisplay.textContent = msg;
+                errorDisplay.style.display = 'none';
+            } else {
+                successDisplay.style.display = 'none';
+                successDisplay.textContent = '';
+            }
+        }
+
+        function setDebug(msg) {
+            if (msg && debugMode) {
+                debugDisplay.style.display = 'block';
+                debugDisplay.textContent = msg;
+            } else {
+                debugDisplay.style.display = 'none';
+                debugDisplay.textContent = '';
+            }
+        }
+
+        function updateBadge(linksArray) {
+            if (!linksArray || linksArray.length === 0) {
+                linkCountBadge.textContent = '0 links';
+                zipStreamBtn.disabled = true;
+                return;
+            }
+            var count = linksArray.length;
+            linkCountBadge.textContent = count + ' link' + (count > 1 ? 's' : '');
+            zipStreamBtn.disabled = false;
+        }
+
+        function truncateLink(link, maxLength) {
+            if (!link) return '';
+            maxLength = maxLength || 21;
+            if (link.length <= maxLength) return link;
+            return link.substring(0, maxLength) + '...';
+        }
+
+        function getLinkPreview(link) {
+            return '<a href="' + link + '" target="_blank" rel="noopener noreferrer" class="link-preview" title="' + link + '">' + truncateLink(link, 21) + '</a>';
+        }
+
+        function retrySingleLink(link, index) {
+            var apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                setError('API key is required.');
+                return;
+            }
+            if (isConverting || isRetryingSingle) return;
+            
+            isRetryingSingle = true;
+            var button = document.querySelector('.btn-retry[data-index="' + index + '"]');
+            if (button) {
+                button.disabled = true;
+                button.textContent = '...';
+            }
+            setError(null);
+            setSuccess(null);
+            
+            convertSingleLink(apiKey, link, index, 1).then(function(result) {
+                var line = document.querySelector('.line[data-index="' + index + '"]');
+                if (result.success) {
+                    convertedLinks.push(result.link);
+                    // Keep successLinksData in sync so a later "Retry All Failed"
+                    // (which rebuilds the whole table) still shows this line as OK.
+                    successLinksData = successLinksData.filter(function(item) {
+                        return item.index !== index;
+                    });
+                    successLinksData.push({ url: link, link: result.link, index: index });
+                    if (line) {
+                        line.className = 'line line-success';
+                        line.innerHTML = '<span class="status-badge status-success"> OK </span> ' + 
+                            getLinkPreview(link) + 
+                            ' <span class="preview-text">→</span> ' +
+                            '<a href="' + result.link + '" target="_blank" rel="noopener noreferrer" class="converted-link">' + result.link + '</a>';
+                    }
+                    // Remove from failed links
+                    failedLinksData = failedLinksData.filter(function(item) {
+                        return item.index !== index;
+                    });
+                    updateBadge(convertedLinks);
+                    setSuccess('Retried successfully: ' + truncateLink(link, 30));
+                } else {
+                    var errorMsg = result.error || 'Unknown error';
+                    if (result.code) {
+                        errorMsg += ' (code: ' + result.code + ')';
+                    }
+                    if (line) {
+                        var messageSpan = line.querySelector('.error-message');
+                        if (messageSpan) {
+                            messageSpan.textContent = errorMsg;
+                        }
+                    }
+                    setError('Retry failed: ' + errorMsg);
+                }
+                // Re-query the retry button: on success the line's innerHTML was
+                // just replaced above, so the original `button` reference is a
+                // detached node. Either way, leave the button enabled and
+                // labeled "Retry" so the user can retry again as many times as
+                // they want, instead of locking it to "Done".
+                var refreshedButton = document.querySelector('.btn-retry[data-index="' + index + '"]');
+                if (refreshedButton) {
+                    refreshedButton.disabled = false;
+                    refreshedButton.textContent = 'Retry';
+                }
+                if (failedLinksData.length === 0) {
+                    retryFailedBtn.disabled = true;
+                }
+                isRetryingSingle = false;
+            }).catch(function(err) {
+                setError('Retry error: ' + err.message);
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = 'Retry';
+                }
+                isRetryingSingle = false;
+            });
+        }
+
+        // successItems: array of {url, link, index} — index is the ORIGINAL
+        // position of the link in the list the user submitted. This is what
+        // lets every row be placed correctly regardless of conversion order.
+        function displayLinks(successItems, errors, failedData, originalLinks) {
+            if ((!successItems || successItems.length === 0) && (!errors || errors.length === 0)) {
+                outputDiv.innerHTML = '';
+                convertedLinks = [];
+                failedLinksData = [];
+                successLinksData = [];
+                allOriginalLinks = [];
+                updateBadge([]);
+                retryFailedBtn.disabled = true;
+                return;
+            }
+
+            var html = '';
+            var allLinks = [];
+
+            // Build a map of original links to their status, keyed by the
+            // ORIGINAL index of the link (not the index within whichever
+            // partial results array happened to produce this update).
+            var linkStatus = {};
+            if (originalLinks) {
+                originalLinks.forEach(function(origLink, idx) {
+                    linkStatus[idx] = { original: origLink, converted: null, error: null, done: false };
+                });
+            }
+
+            if (successItems && successItems.length > 0) {
+                successItems.forEach(function(item) {
+                    allLinks.push(item.link);
+                    var origLink = (originalLinks && originalLinks[item.index] !== undefined) ? originalLinks[item.index] : item.url;
+                    linkStatus[item.index] = { original: origLink, converted: item.link, error: null, done: true };
+                });
+            }
+
+            if (errors && errors.length > 0 && failedData) {
+                failedData.forEach(function(item) {
+                    var url = item.url || '';
+                    var message = item.message || 'Unknown error';
+                    var code = item.code || '';
+                    var index = item.index || 0;
+                    linkStatus[index] = { original: url, converted: null, error: message, code: code, done: false };
+                });
+            }
+
+            // Display all links in order
+            if (originalLinks) {
+                originalLinks.forEach(function(origLink, idx) {
+                    var status = linkStatus[idx] || { original: origLink, converted: null, error: null, done: false };
+                    var preview = getLinkPreview(origLink);
+                    
+                    if (status.done && status.converted) {
+                        html += '<div class="line line-success" data-index="' + idx + '">';
+                        html += '<span class="status-badge status-success"> OK </span> ';
+                        html += preview;
+                        html += ' <span class="preview-text">→</span> ';
+                        html += '<a href="' + status.converted + '" target="_blank" rel="noopener noreferrer" class="converted-link">' + status.converted + '</a>';
+                        html += '</div>';
+                    } else if (status.error) {
+                        html += '<div class="line line-error" data-index="' + idx + '">';
+                        html += '<span class="status-badge status-error">ERR</span> ';
+                        html += preview;
+                        html += ' <span class="error-message">' + status.error + '</span>';
+                        if (status.code) {
+                            html += ' <span class="error-code">' + status.code + '</span>';
+                        }
+                        html += ' <button class="btn-retry btn-retry-small" data-index="' + idx + '" onclick="retrySingleLink(\'' + origLink.replace(/'/g, "\\'") + '\', ' + idx + ')">Retry</button>';
+                        html += '</div>';
+                    } else {
+                        // Pending or not processed
+                        html += '<div class="line" data-index="' + idx + '">';
+                        html += '<span class="status-badge" style="background:#e9ecef;color:#6c757d;">...</span> ';
+                        html += preview;
+                        html += ' <span class="preview-text">pending</span>';
+                        html += '</div>';
+                    }
+                });
+            }
+
+            outputDiv.innerHTML = html;
+            convertedLinks = allLinks;
+            failedLinksData = failedData || [];
+            successLinksData = successItems || [];
+            allOriginalLinks = originalLinks || [];
+            updateBadge(allLinks);
+            
+            if (failedData && failedData.length > 0) {
+                retryFailedBtn.disabled = false;
+            } else {
+                retryFailedBtn.disabled = true;
+            }
+        }
+
+        function cleanLink(link) {
+            if (link.includes('drive.google.com/file/d/')) {
+                var match = link.match(/\/file\/d\/([^\/]+)\//);
+                if (match) {
+                    return 'https://drive.google.com/uc?export=download&id=' + match[1];
+                }
+            }
+            if (link.includes('1fichier.com')) {
+                var cleaned = link.replace(/\?af[=f][^&]*&?/, '?');
+                cleaned = cleaned.replace(/\?$/, '');
+                cleaned = cleaned.replace(/&+$/, '');
+                if (cleaned.endsWith('?')) {
+                    cleaned = cleaned.slice(0, -1);
+                }
+                return cleaned;
+            }
+            return link;
+        }
+
+        function splitLinks(text) {
+            if (!text) return [];
+            var lines = text.split(/\r?\n/);
+            var links = [];
+            lines.forEach(function(line) {
+                if (line.trim()) {
+                    var parts = line.split(',').map(function(s) { return s.trim(); });
+                    parts.forEach(function(part) {
+                        if (part) {
+                            links.push(part);
+                        }
+                    });
+                }
+            });
+            return links;
+        }
+
+        async function downloadZipStream(links) {
+            if (!links || links.length === 0) {
+                setError('No links to download. Convert some links first.');
+                return;
+            }
+
+            if (typeof window.streamSaver === 'undefined') {
+                setError('StreamSaver.js not loaded. Please check your internet connection.');
+                return;
+            }
+
+            try {
+                zipStreamBtn.disabled = true;
+                zipStreamBtn.textContent = 'Creating ZIP...';
+                progressBar.style.display = 'block';
+                progressFill.style.width = '0%';
+
+                var zipStream = new ZipStream();
+
+                var fileInfos = links.map(function(link, index) {
+                    try {
+                        var url = new URL(link);
+                        var pathParts = url.pathname.split('/');
+                        var filename = pathParts[pathParts.length - 1] || 'file_' + (index + 1);
+                        if (!filename || filename === '') {
+                            filename = 'file_' + (index + 1);
+                        }
+                        if (!filename.includes('.')) {
+                            filename += '.bin';
+                        }
+                        return { name: filename, link: link, index: index };
+                    } catch (e) {
+                        return { name: 'file_' + (index + 1) + '.bin', link: link, index: index };
+                    }
+                });
+
+                setDebug('Starting ZIP creation with ' + fileInfos.length + ' files');
+
+                for (var i = 0; i < fileInfos.length; i++) {
+                    var fileInfo = fileInfos[i];
+                    var progress = ((i + 1) / fileInfos.length) * 100;
+                    progressFill.style.width = progress + '%';
+
+                    setDebug('Fetching: ' + fileInfo.link);
+
+                    try {
+                        var response = await fetch(fileInfo.link);
+                        if (!response.ok) {
+                            throw new Error('HTTP ' + response.status);
+                        }
+
+                        var contentLength = response.headers.get('content-length');
+                        var total = contentLength ? parseInt(contentLength) : 0;
+                        var reader = response.body.getReader();
+
+                        await zipStream.addFile({
+                            name: fileInfo.name,
+                            stream: function() {
+                                return new ReadableStream({
+                                    async start(controller) {
+                                        while (true) {
+                                            var result = await reader.read();
+                                            if (result.done) {
+                                                controller.close();
+                                                break;
+                                            }
+                                            controller.enqueue(result.value);
+                                        }
+                                    }
+                                });
+                            },
+                            size: total || undefined
+                        });
+
+                        setDebug('Added: ' + fileInfo.name + ' (' + (total ? (total / 1024 / 1024).toFixed(2) : 'unknown') + ' MB)');
+
+                    } catch (fetchError) {
+                        setDebug('Error fetching ' + fileInfo.name + ': ' + fetchError.message);
+                        await zipStream.addFile({
+                            name: fileInfo.name + '.txt',
+                            stream: function() {
+                                return new ReadableStream({
+                                    start(controller) {
+                                        controller.enqueue(new TextEncoder().encode(fileInfo.link));
+                                        controller.close();
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+
+                progressFill.style.width = '100%';
+                setDebug('Finalizing ZIP...');
+
+                var zipBlob = await zipStream.finalize();
+                var downloadUrl = URL.createObjectURL(zipBlob);
+                var a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = 'alldebrid-links-' + new Date().toISOString().slice(0,10) + '.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function() { URL.revokeObjectURL(downloadUrl); }, 10000);
+
+                setSuccess('ZIP created with ' + fileInfos.length + ' files');
+
+            } catch (error) {
+                setError('ZIP creation failed: ' + error.message);
+                setDebug('Error details: ' + error.stack);
+            } finally {
+                zipStreamBtn.disabled = false;
+                zipStreamBtn.textContent = 'Download ZIP';
+                setTimeout(function() {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 3000);
+            }
+        }
+
+        async function convertSingleLink(apiKey, link, index, total) {
+            try {
+                var baseUrl = 'https://api.alldebrid.com/v4/link/unlock';
+                var params = new URLSearchParams();
+                params.append('link', link);
+
+                var url = baseUrl + '?' + params.toString();
+
+                var response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + apiKey.trim(),
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    },
+                    body: params.toString()
+                });
+
+                var rawText = await response.text();
+
+                var data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (e) {
+                    return { success: false, error: 'Invalid JSON response' };
+                }
+
+                if (data.status === 'error') {
+                    var errorMsg = data.error?.message || 'Unknown API error';
+                    var errorCode = data.error?.code || '';
+                    return { success: false, error: errorMsg, code: errorCode };
+                }
+
+                if (data.status !== 'success') {
+                    return { success: false, error: 'Unexpected response status: ' + data.status };
+                }
+
+                var resultLink = null;
+                if (data.data && data.data.link) {
+                    resultLink = data.data.link;
+                } else if (data.data && data.data.links && data.data.links.length > 0) {
+                    resultLink = data.data.links[0].link || data.data.links[0];
+                } else if (data.data && data.data.url) {
+                    resultLink = data.data.url;
+                }
+
+                if (resultLink) {
+                    return { success: true, link: resultLink };
+                } else if (data.data && data.data.delayed) {
+                    return { success: false, error: 'Delayed processing - try again later', code: 'DELAYED' };
+                } else {
+                    return { success: false, error: 'No link returned', code: 'NO_LINK' };
+                }
+
+            } catch (err) {
+                return { success: false, error: err.message };
+            }
+        }
+
+        async function convertLinks(apiKey, rawLinks, retryOnly) {
+            if (isConverting) return;
+
+            if (!apiKey || apiKey.trim() === '') {
+                setError('API key is required. Provide via ?apikey= or paste in the textbox.');
+                return;
+            }
+
+            saveApiKey(apiKey);
+
+            var linkArray = [];
+            var originalLinks = [];
+            // Maps the position within linkArray (0..n-1 for THIS batch) back
+            // to the original index in the full original link list. For a
+            // fresh conversion this is the identity map; for a retry batch
+            // it comes from each failed item's stored original index.
+            var indexMap = [];
+
+            if (retryOnly) {
+                if (failedLinksData.length === 0) {
+                    setError('No failed links to retry.');
+                    return;
+                }
+                linkArray = failedLinksData.map(function(item) { return item.url; });
+                originalLinks = linkArray.slice();
+                indexMap = failedLinksData.map(function(item) { return item.index; });
+            } else {
+                if (!rawLinks || rawLinks.trim() === '') {
+                    setError('No links provided. Add links via ?link= or paste in textarea.');
+                    return;
+                }
+                linkArray = splitLinks(rawLinks);
+                if (linkArray.length === 0) {
+                    setError('No valid links found.');
+                    return;
+                }
+                originalLinks = linkArray.slice();
+                linkArray = linkArray.map(function(link) { return cleanLink(link); });
+                indexMap = linkArray.map(function(_, i) { return i; });
+                convertedLinks = [];
+                failedLinksData = [];
+                successLinksData = [];
+            }
+
+            setError(null);
+            setSuccess(null);
+            setDebug(null);
+            isConverting = true;
+            convertBtn.disabled = true;
+            retryFailedBtn.disabled = true;
+            convertBtn.textContent = retryOnly ? 'Retrying...' : 'Converting...';
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            var newSuccesses = [];
+            var errors = [];
+            var failedData = [];
+            var successCount = 0;
+            var failedCount = 0;
+
+            for (var i = 0; i < linkArray.length; i++) {
+                var link = linkArray[i];
+                var origLink = originalLinks[i] || link;
+                var originalIndex = indexMap[i];
+                var progress = ((i + 1) / linkArray.length) * 100;
+                progressFill.style.width = progress + '%';
+                setDebug('Processing link ' + (i + 1) + '/' + linkArray.length + ': ' + link);
+
+                var result = await convertSingleLink(apiKey, link, originalIndex, linkArray.length);
+
+                if (result.success) {
+                    newSuccesses.push({ url: origLink, link: result.link, index: originalIndex });
+                    successCount++;
+                } else {
+                    var errorMsg = result.error || 'Unknown error';
+                    if (result.code) {
+                        errorMsg += ' (code: ' + result.code + ')';
+                    }
+                    var fullError = 'Link ' + (i + 1) + ' (' + link + '): ' + errorMsg;
+                    errors.push(fullError);
+                    failedData.push({
+                        url: origLink,
+                        message: result.error || 'Unknown error',
+                        code: result.code || '',
+                        index: originalIndex
+                    });
+                    failedCount++;
+                }
+
+                if (i < linkArray.length - 1) {
+                    await new Promise(function(resolve) { setTimeout(resolve, 500); });
+                }
+            }
+
+            progressFill.style.width = '100%';
+
+            if (retryOnly) {
+                // Combine previously successful links with the newly successful
+                // ones from this retry round, then re-render against the FULL
+                // original link list so every row (old successes, old failures
+                // that are still failing, and new successes) lands in the
+                // right place instead of collapsing to just the retried subset.
+                var combinedSuccesses = successLinksData.concat(newSuccesses);
+                displayLinks(combinedSuccesses, errors, failedData, allOriginalLinks);
+                if (newSuccesses.length > 0 && errors.length === 0) {
+                    setSuccess('Retried ' + newSuccesses.length + ' link(s) successfully');
+                } else if (newSuccesses.length > 0 && errors.length > 0) {
+                    setSuccess('Retried ' + newSuccesses.length + ' link(s), ' + errors.length + ' still failed');
+                } else {
+                    setError('All ' + errors.length + ' retry attempts failed');
+                }
+            } else {
+                displayLinks(newSuccesses, errors, failedData, originalLinks);
+                if (successCount > 0 && errors.length === 0) {
+                    setSuccess('Successfully converted ' + successCount + ' link(s)');
+                } else if (successCount > 0 && errors.length > 0) {
+                    setSuccess('Converted ' + successCount + ' link(s), ' + errors.length + ' failed');
+                } else {
+                    setError('Failed to convert ' + errors.length + ' link(s)');
+                }
+            }
+
+            isConverting = false;
+            convertBtn.disabled = false;
+            convertBtn.textContent = 'Convert links';
+            if (failedData.length > 0) {
+                retryFailedBtn.disabled = false;
+            } else {
+                retryFailedBtn.disabled = true;
+            }
+        }
+
+        function loadFromQuery() {
+            var params = new URLSearchParams(window.location.search);
+            var apikey = params.get('apikey');
+            var links = params.get('link');
+
+            if (apikey) {
+                apiKeyInput.value = apikey.trim();
+                saveApiKey(apikey.trim());
+            } else {
+                var savedKey = loadApiKey();
+                if (savedKey) {
+                    apiKeyInput.value = savedKey;
+                    storageBadge.style.display = 'inline';
+                }
+            }
+
+            if (links) {
+                linksInput.value = links.trim();
+            }
+
+            if ((apikey || loadApiKey()) && links) {
+                setTimeout(function() { convertBtn.click(); }, 400);
+            }
+        }
+
+        convertBtn.addEventListener('click', function() {
+            convertLinks(apiKeyInput.value.trim(), linksInput.value, false);
+        });
+
+        retryFailedBtn.addEventListener('click', function() {
+            if (failedLinksData.length === 0) {
+                setError('No failed links to retry.');
+                return;
+            }
+            convertLinks(apiKeyInput.value.trim(), null, true);
+        });
+
+        zipStreamBtn.addEventListener('click', function() {
+            if (convertedLinks.length === 0) {
+                setError('No links to download. Convert some links first.');
+                return;
+            }
+            downloadZipStream(convertedLinks);
+        });
+
+        clearBtn.addEventListener('click', function() {
+            apiKeyInput.value = '';
+            linksInput.value = '';
+            outputDiv.innerHTML = '';
+            convertedLinks = [];
+            failedLinksData = [];
+            successLinksData = [];
+            allOriginalLinks = [];
+            clearApiKey();
+            setError(null);
+            setSuccess(null);
+            setDebug(null);
+            updateBadge([]);
+            storageBadge.style.display = 'none';
+            retryFailedBtn.disabled = true;
+        });
+
+        exampleBtn.addEventListener('click', function() {
+            linksInput.value = 'https://1fichier.com/?ooiksb4qdj4wmn6s8bru\nhttps://uptobox.com/abc123';
+            if (!apiKeyInput.value) {
+                apiKeyInput.value = 'YOUR_API_KEY_HERE';
+            }
+            setError(null);
+        });
+
+        debugBtn.addEventListener('click', function() {
+            debugMode = !debugMode;
+            debugBtn.textContent = debugMode ? 'Hide Debug' : 'Debug';
+            if (!debugMode) {
+                debugDisplay.style.display = 'none';
+            }
+        });
+
+        copyOutputBtn.addEventListener('click', function() {
+            var text = outputDiv.textContent;
+            if (!text) {
+                setError('Nothing to copy.');
+                setTimeout(function() { setError(null); }, 1500);
+                return;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function() {
+                    copyOutputBtn.textContent = 'Copied!';
+                    setTimeout(function() { copyOutputBtn.textContent = 'Copy all'; }, 1800);
+                }).catch(function() {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        });
+
+        function fallbackCopy(text) {
+            var range = document.createRange();
+            range.selectNode(outputDiv);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            copyOutputBtn.textContent = 'Copied!';
+            setTimeout(function() { copyOutputBtn.textContent = 'Copy all'; }, 1800);
+        }
+
+        downloadTxtBtn.addEventListener('click', function() {
+            var text = outputDiv.textContent;
+            if (!text) {
+                setError('Nothing to download.');
+                setTimeout(function() { setError(null); }, 1500);
+                return;
+            }
+            var blob = new Blob([text], { type: 'text/plain' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'alldebrid-links-' + new Date().toISOString().slice(0,10) + '.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+            downloadTxtBtn.textContent = 'Downloaded!';
+            setTimeout(function() { downloadTxtBtn.textContent = 'Download as TXT'; }, 1800);
+        });
+
+        apiKeyInput.addEventListener('change', function() {
+            if (this.value.trim()) {
+                saveApiKey(this.value.trim());
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', loadFromQuery);
+
+        window.retrySingleLink = retrySingleLink;
+
+        if (typeof window.streamSaver === 'undefined') {
+            setDebug('StreamSaver.js not loaded. ZIP download may not work.');
+        }
+    })();
+</script>
+</body>
+</html>

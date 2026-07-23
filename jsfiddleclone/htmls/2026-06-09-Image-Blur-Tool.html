@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rectangle Blur Tool</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: #0f0f1a;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        h1 {
+            color: white;
+            font-size: 1.6rem;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sub {
+            color: #8899aa;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        .toolbar {
+            background: #1e1e2a;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            color: #ccddee;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, button {
+            background: #2a2a36;
+            border: 1px solid #3a3a4a;
+            padding: 10px 16px;
+            border-radius: 14px;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        input[type="range"] {
+            cursor: pointer;
+            width: 180px;
+        }
+
+        button {
+            background: #4a6fa5;
+            border-color: #5a7fb5;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #5a7fb5;
+            transform: scale(1.02);
+        }
+
+        .danger-btn {
+            background: #6a2a3a;
+            border-color: #8a4a5a;
+        }
+
+        .danger-btn:hover {
+            background: #8a4a5a;
+        }
+
+        .success-btn {
+            background: #2a6a4a;
+            border-color: #3a8a6a;
+        }
+
+        .workspace {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .canvas-panel {
+            flex: 1;
+            min-width: 500px;
+            background: #1a1a26;
+            border-radius: 20px;
+            padding: 16px;
+        }
+
+        .canvas-panel h3 {
+            color: white;
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+        }
+
+        canvas {
+            width: 100%;
+            background: #2a2a36;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: crosshair;
+        }
+
+        .rect-list {
+            background: #1a1a26;
+            border-radius: 20px;
+            padding: 16px;
+            width: 280px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .rect-list h3 {
+            color: white;
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+        }
+
+        .rect-item {
+            background: #2a2a36;
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .rect-item:hover {
+            background: #353545;
+        }
+
+        .rect-item.selected {
+            border-color: #4a6fa5;
+            background: #2a3a5a;
+        }
+
+        .rect-info {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #bbddff;
+            margin-bottom: 8px;
+        }
+
+        .rect-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .rect-actions button {
+            padding: 4px 10px;
+            font-size: 0.7rem;
+        }
+
+        .info-status {
+            color: #99aabb;
+            font-size: 0.75rem;
+            margin-top: 12px;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎨 Rectangle Blur Tool</h1>
+    <div class="sub">Draw rectangles on the image → set blur strength → apply → export</div>
+
+    <div class="toolbar">
+        <div class="control-group">
+            <label>📸 Upload image</label>
+            <input type="file" id="uploadInput" accept="image/jpeg,image/png,image/webp,image/bmp">
+        </div>
+        <div class="control-group">
+            <label>🌀 Blur strength (for new rectangles)</label>
+            <input type="range" id="blurStrength" min="1" max="20" value="8" step="0.5">
+            <span id="blurStrengthValue" style="color:#ccddee;">8.0</span>
+        </div>
+        <div class="control-group">
+            <label>⚙️ Actions</label>
+            <div class="flex-row">
+                <button id="applyAllBtn" class="success-btn">✨ Apply all blurs</button>
+                <button id="clearRectanglesBtn" class="danger-btn">🗑️ Clear rectangles</button>
+                <button id="downloadBtn" disabled>💾 Download (same name)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="canvas-panel">
+            <h3>🖼️ Draw rectangles (click & drag)</h3>
+            <canvas id="mainCanvas" width="800" height="500" style="width:100%; height:auto; aspect-ratio:800/500"></canvas>
+            <div class="info-status">
+                ✏️ <strong>Instructions:</strong> Click + drag to draw a rectangle → adjust strength in sidebar → click "Apply all blurs"
+            </div>
+        </div>
+        <div class="rect-list">
+            <h3>📐 Blur rectangles</h3>
+            <div id="rectListContainer">
+                <div style="color:#667788; text-align:center; padding:20px;">No rectangles yet<br>Draw on the image</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // DOM elements
+        const uploadInput = document.getElementById('uploadInput');
+        const mainCanvas = document.getElementById('mainCanvas');
+        const ctx = mainCanvas.getContext('2d');
+        const blurStrengthSlider = document.getElementById('blurStrength');
+        const blurStrengthVal = document.getElementById('blurStrengthValue');
+        const applyAllBtn = document.getElementById('applyAllBtn');
+        const clearRectanglesBtn = document.getElementById('clearRectanglesBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const rectListContainer = document.getElementById('rectListContainer');
+
+        // State
+        let originalImageData = null;      // ImageData of clean original
+        let canvasWidth = 800, canvasHeight = 500;
+        let currentFileName = "blurred_image.png";
+        let rectangles = [];               // { x, y, w, h, strength }
+        let selectedRectIndex = -1;
+        
+        // Drawing state
+        let isDrawingRect = false;
+        let rectStart = { x: 0, y: 0 };
+        let tempRect = null;               // preview while drawing
+        
+        // blur strength default
+        let currentBlurStrength = 8.0;
+        
+        // ---- helpers ----
+        function updateBlurDisplay() {
+            currentBlurStrength = parseFloat(blurStrengthSlider.value);
+            blurStrengthVal.innerText = currentBlurStrength.toFixed(1);
+        }
+        
+        // blur an image region (fast box blur)
+        function blurImageDataRegion(imgData, x, y, w, h, strength) {
+            const data = imgData.data;
+            const imgW = imgData.width;
+            const imgH = imgData.height;
+            
+            // clamp region
+            const startX = Math.max(0, Math.floor(x));
+            const startY = Math.max(0, Math.floor(y));
+            const endX = Math.min(imgW, Math.floor(x + w));
+            const endY = Math.min(imgH, Math.floor(y + h));
+            const regionW = endX - startX;
+            const regionH = endY - startY;
+            if (regionW <= 0 || regionH <= 0) return;
+            
+            // extract region
+            const regionData = new Uint8ClampedArray(regionW * regionH * 4);
+            for (let row = 0; row < regionH; row++) {
+                for (let col = 0; col < regionW; col++) {
+                    const srcIdx = ((startY + row) * imgW + (startX + col)) * 4;
+                    const dstIdx = (row * regionW + col) * 4;
+                    regionData[dstIdx] = data[srcIdx];
+                    regionData[dstIdx+1] = data[srcIdx+1];
+                    regionData[dstIdx+2] = data[srcIdx+2];
+                    regionData[dstIdx+3] = data[srcIdx+3];
+                }
+            }
+            
+            // blur region
+            const blurredRegion = boxBlur(regionData, regionW, regionH, Math.max(1, strength));
+            
+            // copy back
+            for (let row = 0; row < regionH; row++) {
+                for (let col = 0; col < regionW; col++) {
+                    const dstIdx = ((startY + row) * imgW + (startX + col)) * 4;
+                    const srcIdx = (row * regionW + col) * 4;
+                    data[dstIdx] = blurredRegion[srcIdx];
+                    data[dstIdx+1] = blurredRegion[srcIdx+1];
+                    data[dstIdx+2] = blurredRegion[srcIdx+2];
+                    data[dstIdx+3] = blurredRegion[srcIdx+3];
+                }
+            }
+        }
+        
+        function boxBlur(pixels, width, height, radius) {
+            const rad = Math.floor(radius);
+            const output = new Uint8ClampedArray(pixels.length);
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let r = 0, g = 0, b = 0, a = 0, count = 0;
+                    for (let dy = -rad; dy <= rad; dy++) {
+                        for (let dx = -rad; dx <= rad; dx++) {
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const idx = (ny * width + nx) * 4;
+                                r += pixels[idx];
+                                g += pixels[idx+1];
+                                b += pixels[idx+2];
+                                a += pixels[idx+3];
+                                count++;
+                            }
+                        }
+                    }
+                    const idx = (y * width + x) * 4;
+                    output[idx] = r / count;
+                    output[idx+1] = g / count;
+                    output[idx+2] = b / count;
+                    output[idx+3] = a / count;
+                }
+            }
+            return output;
+        }
+        
+        // render image from original + rectangles (preview without saving to originalImageData)
+        function renderPreview() {
+            if (!originalImageData) return;
+            
+            // reset to original
+            const tempImgData = new ImageData(
+                new Uint8ClampedArray(originalImageData.data),
+                canvasWidth,
+                canvasHeight
+            );
+            
+            // apply each rectangle blur (temporarily)
+            for (let rect of rectangles) {
+                blurImageDataRegion(tempImgData, rect.x, rect.y, rect.w, rect.h, rect.strength);
+            }
+            
+            ctx.putImageData(tempImgData, 0, 0);
+            
+            // draw rectangle outlines
+            ctx.save();
+            ctx.strokeStyle = "#ff6688";
+            ctx.lineWidth = 2;
+            for (let i = 0; i < rectangles.length; i++) {
+                const r = rectangles[i];
+                if (i === selectedRectIndex) {
+                    ctx.strokeStyle = "#88ff66";
+                    ctx.lineWidth = 3;
+                } else {
+                    ctx.strokeStyle = "#ffaa66";
+                    ctx.lineWidth = 2;
+                }
+                ctx.strokeRect(r.x, r.y, r.w, r.h);
+            }
+            
+            // draw temp rectangle while drawing
+            if (tempRect) {
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 8]);
+                ctx.strokeRect(tempRect.x, tempRect.y, tempRect.w, tempRect.h);
+                ctx.setLineDash([]);
+            }
+            ctx.restore();
+        }
+        
+        function commitBlursToOriginal() {
+            if (!originalImageData) return;
+            // apply all rectangles permanently to originalImageData
+            for (let rect of rectangles) {
+                blurImageDataRegion(originalImageData, rect.x, rect.y, rect.w, rect.h, rect.strength);
+            }
+            // clear rectangles after commit
+            rectangles = [];
+            selectedRectIndex = -1;
+            updateRectList();
+            renderPreview();
+            // originalImageData is now modified
+        }
+        
+        function addRectangle(x, y, w, h) {
+            if (w < 5 || h < 5) return;
+            // normalize dimensions (positive)
+            const normX = x;
+            const normY = y;
+            const normW = w;
+            const normH = h;
+            rectangles.push({
+                x: normX,
+                y: normY,
+                w: normW,
+                h: normH,
+                strength: currentBlurStrength
+            });
+            selectedRectIndex = rectangles.length - 1;
+            updateRectList();
+            renderPreview();
+        }
+        
+        function removeRectangle(index) {
+            if (index >= 0 && index < rectangles.length) {
+                rectangles.splice(index, 1);
+                if (selectedRectIndex >= rectangles.length) selectedRectIndex = rectangles.length - 1;
+                updateRectList();
+                renderPreview();
+            }
+        }
+        
+        function updateRectList() {
+            if (!rectListContainer) return;
+            if (rectangles.length === 0) {
+                rectListContainer.innerHTML = '<div style="color:#667788; text-align:center; padding:20px;">No rectangles yet<br>Draw on the image</div>';
+                return;
+            }
+            
+            let html = '';
+            for (let i = 0; i < rectangles.length; i++) {
+                const r = rectangles[i];
+                html += `
+                    <div class="rect-item ${i === selectedRectIndex ? 'selected' : ''}" data-index="${i}">
+                        <div class="rect-info">📐 ${Math.round(r.x)},${Math.round(r.y)} | ${Math.round(r.w)}×${Math.round(r.h)} | blur: ${r.strength.toFixed(1)}</div>
+                        <div class="rect-actions">
+                            <button class="delete-rect" data-index="${i}">Delete</button>
+                            <button class="edit-strength-rect" data-index="${i}">⚙️ Strength</button>
+                        </div>
+                    </div>
+                `;
+            }
+            rectListContainer.innerHTML = html;
+            
+            // attach events
+            document.querySelectorAll('.delete-rect').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.index);
+                    removeRectangle(idx);
+                });
+            });
+            document.querySelectorAll('.edit-strength-rect').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.index);
+                    const newStrength = parseFloat(prompt("Enter blur strength (1-20):", rectangles[idx].strength));
+                    if (!isNaN(newStrength) && newStrength >= 1 && newStrength <= 20) {
+                        rectangles[idx].strength = newStrength;
+                        updateRectList();
+                        renderPreview();
+                    }
+                });
+            });
+            document.querySelectorAll('.rect-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-rect') || e.target.classList.contains('edit-strength-rect')) return;
+                    const idx = parseInt(item.dataset.index);
+                    selectedRectIndex = idx;
+                    updateRectList();
+                    renderPreview();
+                });
+            });
+        }
+        
+        function clearAllRectangles() {
+            rectangles = [];
+            selectedRectIndex = -1;
+            updateRectList();
+            if (originalImageData) {
+                renderPreview();
+            }
+        }
+        
+        // canvas drawing logic
+        function getCanvasCoords(e) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const scaleX = mainCanvas.width / rect.width;
+            const scaleY = mainCanvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(Math.max(0, canvasX), canvasWidth);
+            canvasY = Math.min(Math.max(0, canvasY), canvasHeight);
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function onMouseDown(e) {
+            e.preventDefault();
+            const { x, y } = getCanvasCoords(e);
+            isDrawingRect = true;
+            rectStart = { x, y };
+            tempRect = null;
+        }
+        
+        function onMouseMove(e) {
+            if (!isDrawingRect) return;
+            e.preventDefault();
+            const { x, y } = getCanvasCoords(e);
+            const currentX = x;
+            const currentY = y;
+            const rectX = Math.min(rectStart.x, currentX);
+            const rectY = Math.min(rectStart.y, currentY);
+            const rectW = Math.abs(currentX - rectStart.x);
+            const rectH = Math.abs(currentY - rectStart.y);
+            tempRect = { x: rectX, y: rectY, w: rectW, h: rectH };
+            renderPreview();
+        }
+        
+        function onMouseUp(e) {
+            if (!isDrawingRect) return;
+            e.preventDefault();
+            const { x, y } = getCanvasCoords(e);
+            const finalX = x;
+            const finalY = y;
+            const rectX = Math.min(rectStart.x, finalX);
+            const rectY = Math.min(rectStart.y, finalY);
+            const rectW = Math.abs(finalX - rectStart.x);
+            const rectH = Math.abs(finalY - rectStart.y);
+            if (rectW > 5 && rectH > 5) {
+                addRectangle(rectX, rectY, rectW, rectH);
+            }
+            isDrawingRect = false;
+            tempRect = null;
+            renderPreview();
+        }
+        
+        function loadImage(file) {
+            if (!file) return;
+            currentFileName = file.name.replace(/\.[^/.]+$/, '') + '_blurred.png';
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    const maxW = 900;
+                    const maxH = 600;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxW) { h = (h * maxW) / w; w = maxW; }
+                    if (h > maxH) { w = (w * maxH) / h; h = maxH; }
+                    canvasWidth = Math.floor(w);
+                    canvasHeight = Math.floor(h);
+                    mainCanvas.width = canvasWidth;
+                    mainCanvas.height = canvasHeight;
+                    
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+                    originalImageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+                    
+                    // reset rectangles
+                    rectangles = [];
+                    selectedRectIndex = -1;
+                    updateRectList();
+                    renderPreview();
+                    downloadBtn.disabled = false;
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function downloadImage() {
+            if (!originalImageData) return;
+            // commit current preview as final (apply all blurs)
+            commitBlursToOriginal();
+            const link = document.createElement('a');
+            link.download = currentFileName;
+            link.href = mainCanvas.toDataURL('image/png');
+            link.click();
+            // reload original state after download (blurs already applied)
+        }
+        
+        // events
+        uploadInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) loadImage(e.target.files[0]);
+        });
+        
+        blurStrengthSlider.addEventListener('input', () => {
+            updateBlurDisplay();
+            // update strength for selected rectangle if any
+            if (selectedRectIndex >= 0 && rectangles[selectedRectIndex]) {
+                rectangles[selectedRectIndex].strength = currentBlurStrength;
+                updateRectList();
+                renderPreview();
+            }
+        });
+        
+        applyAllBtn.addEventListener('click', () => {
+            if (!originalImageData) return;
+            commitBlursToOriginal();
+            renderPreview();
+            alert("✅ Blurs applied permanently. You can draw new rectangles or download.");
+        });
+        
+        clearRectanglesBtn.addEventListener('click', () => {
+            clearAllRectangles();
+        });
+        
+        downloadBtn.addEventListener('click', downloadImage);
+        
+        // drawing events
+        mainCanvas.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        mainCanvas.addEventListener('touchstart', onMouseDown);
+        window.addEventListener('touchmove', onMouseMove);
+        window.addEventListener('touchend', onMouseUp);
+        
+        updateBlurDisplay();
+        
+        // initial placeholder
+        ctx.fillStyle = "#2a2a36";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.fillStyle = "#aaa";
+        ctx.font = "14px system-ui";
+        ctx.fillText("⬆️ Upload an image to start", canvasWidth/2-140, canvasHeight/2);
+    })();
+</script>
+</body>
+</html>

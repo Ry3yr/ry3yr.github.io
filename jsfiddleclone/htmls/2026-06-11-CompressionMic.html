@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Send to RVC - Adjustable Compression with Preview</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#1a1a2e;padding:20px}
+.container{max-width:550px;margin:0 auto;background:#fff;border-radius:20px;padding:25px}
+button{background:#007bff;color:#fff;padding:12px;border:none;border-radius:6px;cursor:pointer;width:100%;margin:8px 0}
+select{width:100%;padding:8px;margin:8px 0;border:1px solid #ccc;border-radius:6px}
+.file-path{background:#e9ecef;padding:10px;border-radius:6px;margin:10px 0;font-size:12px;word-break:break-all}
+.log-box{background:#111;color:#0f0;font-family:monospace;font-size:11px;padding:12px;height:150px;overflow:auto;border-radius:8px;margin-top:15px}
+.mic-button{background:#dc3545}
+.mic-button.recording{background:#28a745}
+.checkbox-row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.checkbox-row label{margin:0}
+.checkbox-row input{width:auto;margin:0}
+.url-status{font-size:12px;font-weight:bold}
+.url-status.ok{color:#28a745}
+.url-status.fail{color:#dc3545}
+.compress-row{display:flex;align-items:center;gap:12px;margin:15px 0;flex-wrap:wrap}
+.compress-row label{font-weight:bold;min-width:130px}
+input[type="range"]{flex:1;min-width:160px}
+.bitrate-value{background:#e9ecef;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:bold;color:#007bff}
+.compress-note{font-size:11px;color:#666;margin-top:5px;text-align:right}
+.preview-area{background:#f8f9fa;border-radius:12px;padding:15px;margin:15px 0;border:1px solid #dee2e6}
+.preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.preview-header h4{margin:0;color:#495057;font-size:14px}
+.preview-badge{background:#e7f1ff;color:#007bff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:bold}
+audio{width:100%;margin:8px 0;border-radius:8px}
+.preview-buttons{display:flex;gap:10px;margin-top:8px}
+.preview-buttons button{background:#6c757d;margin:0;padding:8px;font-size:12px}
+.preview-buttons button:first-child{background:#28a745}
+.no-preview{color:#adb5bd;text-align:center;padding:20px;font-style:italic}
+hr{margin:12px 0;border-color:#eee}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>🎤 Send to RVC</h2>
+  <div class="file-path" id="filePath">No file selected</div>
+  <input type="file" id="fileInput" accept="audio/*">
+  <button id="micBtn" class="mic-button">🎙️ Record</button>
+  <select id="modelSelect">
+    <option value="CeaLP">CeaLP</option>
+    <option value="CeaLP(17Min)">CeaLP(17Min)</option>
+    <option value="Taylor Swift">Taylor Swift</option>
+    <option value="James Hetfield">James Hetfield</option>
+    <option value="Eminem">Eminem</option>
+    <option value="Kurt Cobain">Kurt Cobain</option>
+  </select>
+  
+  <!-- Compression slider -->
+  <div class="compress-row">
+    <label>🔊 Compression quality:</label>
+    <input type="range" id="bitrateSlider" min="64" max="320" step="8" value="64">
+    <span class="bitrate-value" id="bitrateDisplay">64 kbps</span>
+  </div>
+  <div class="compress-note">
+    ⚡ 64 kbps = high compression &nbsp;&nbsp;|&nbsp;&nbsp; 320 kbps = near lossless
+  </div>
+  
+  <!-- PREVIEW SECTION: shows current audio with applied compression -->
+  <div class="preview-area" id="previewArea" style="display: none;">
+    <div class="preview-header">
+      <h4>🔊 Preview (compressed)</h4>
+      <span class="preview-badge" id="previewBitrateBadge">64 kbps</span>
+    </div>
+    <audio id="audioPreview" controls preload="metadata"></audio>
+    <div class="preview-buttons">
+      <button id="downloadPreviewBtn">⬇️ Download MP3</button>
+      <button id="refreshPreviewBtn">🔄 Refresh Preview</button>
+    </div>
+  </div>
+  
+  <div class="checkbox-row">
+    <input type="checkbox" id="base64OnlyCheckbox">
+    <label>📦 Base64 URL mode (open new tab)</label>
+    <span class="url-status" id="urlStatus">⏳</span>
+  </div>
+  <button id="sendBtn">📤 Send</button>
+  <div class="log-box" id="logBox"></div>
+</div>
+
+<script>
+let mediaRecorder, audioChunks = [];
+let currentFile = null;
+let resolvedUrl = null;
+let lastCompressedBlob = null;      // store current compressed MP3 blob for preview/download
+let lastCompressedBase64 = null;     // cache base64 for preview
+
+const LOCAL_FILE = "gradio_ver_voxonly.html";
+const REMOTE_URL = "http://192.168.0.1/card/ext/html/0000-00-00-AI-API/RVC/gradio_ver_voxonly.html";
+
+function log(msg) {
+  const div = document.createElement("div");
+  div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  const box = document.getElementById("logBox");
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// Update bitrate display
+const bitrateSlider = document.getElementById("bitrateSlider");
+const bitrateDisplay = document.getElementById("bitrateDisplay");
+const previewBitrateBadge = document.getElementById("previewBitrateBadge");
+
+bitrateSlider.addEventListener("input", (e) => {
+  const val = e.target.value;
+  bitrateDisplay.textContent = `${val} kbps`;
+  // When slider moves, invalidate preview (so next refresh uses new bitrate)
+  if (currentFile) {
+    log(`⚙️ Bitrate changed to ${val}kbps — click "Refresh Preview" to recompress with new quality.`);
+    lastCompressedBlob = null;
+    lastCompressedBase64 = null;
+    const previewArea = document.getElementById("previewArea");
+    if (previewArea.style.display !== 'none') {
+      // Optionally auto-refresh? But to save CPU, we just show hint.
+      document.getElementById("refreshPreviewBtn").style.background = "#ffc107";
+      document.getElementById("refreshPreviewBtn").style.color = "#000";
+    }
+  }
+});
+
+async function checkLocalAvailability() {
+  const status = document.getElementById("urlStatus");
+  try {
+    const dirUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+    const res = await fetch(dirUrl);
+    if (!res.ok) throw new Error("directory not reachable");
+    const html = await res.text();
+    if (html.includes(LOCAL_FILE)) {
+      resolvedUrl = LOCAL_FILE;
+      status.textContent = "✅ local";
+      status.className = "url-status ok";
+    } else {
+      throw new Error("file not in listing");
+    }
+  } catch (err) {
+    resolvedUrl = REMOTE_URL;
+    status.textContent = "🔴 192 fallback";
+    status.className = "url-status fail";
+  }
+}
+checkLocalAvailability();
+
+// Core: encode file to MP3 with given bitrate, returns {base64, blob, sizeInfo}
+async function encodeToMp3(file, targetBitrateKbps) {
+  log(`🔄 Decoding "${file.name}" -> ${targetBitrateKbps}kbps MP3`);
+  const arrayBuffer = await file.arrayBuffer();
+  const audioCtx = new AudioContext();
+  let decoded;
+  try {
+    decoded = await audioCtx.decodeAudioData(arrayBuffer);
+  } catch(e) {
+    audioCtx.close();
+    throw new Error(`Decode failed: ${e.message}`);
+  }
+  await audioCtx.close();
+
+  const targetSampleRate = 16000;
+  const offlineCtx = new OfflineAudioContext(1, Math.ceil(decoded.duration * targetSampleRate), targetSampleRate);
+  const source = offlineCtx.createBufferSource();
+  source.buffer = decoded;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+  const resampled = await offlineCtx.startRendering();
+  const samples = resampled.getChannelData(0);
+
+  let encBitrate = Math.min(320, Math.max(64, targetBitrateKbps));
+  const mp3enc = new lamejs.Mp3Encoder(1, targetSampleRate, encBitrate);
+  const blockSize = 1152;
+  const mp3Data = [];
+
+  const int16 = new Int16Array(samples.length);
+  for (let i = 0; i < samples.length; i++) {
+    let s = samples[i];
+    s = Math.max(-1, Math.min(1, s));
+    int16[i] = Math.max(-32768, Math.min(32767, s * 32767));
+  }
+
+  for (let i = 0; i < int16.length; i += blockSize) {
+    const chunk = int16.subarray(i, i + blockSize);
+    const encoded = mp3enc.encodeBuffer(chunk);
+    if (encoded.length > 0) mp3Data.push(encoded);
+  }
+  const final = mp3enc.flush();
+  if (final.length > 0) mp3Data.push(final);
+
+  const totalLen = mp3Data.reduce((acc, b) => acc + b.length, 0);
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of mp3Data) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const blob = new Blob([merged], { type: 'audio/mpeg' });
+  const base64 = btoa(String.fromCharCode(...merged));
+  const rawPcmSize = samples.length * 2;
+  const compressionRatio = ((1 - merged.length / rawPcmSize) * 100).toFixed(1);
+  log(`✅ MP3 (${encBitrate}kbps): ${(merged.length / 1024).toFixed(1)} KB | saved ${compressionRatio}% vs raw PCM`);
+  
+  return { base64, blob, sizeKB: (merged.length/1024).toFixed(1), bitrate: encBitrate };
+}
+
+// Update preview UI using currentFile + selected bitrate
+async function updatePreview() {
+  if (!currentFile) {
+    document.getElementById("previewArea").style.display = "none";
+    return;
+  }
+  
+  const selectedBitrate = parseInt(bitrateSlider.value, 10);
+  const previewArea = document.getElementById("previewArea");
+  const audioElem = document.getElementById("audioPreview");
+  const badge = document.getElementById("previewBitrateBadge");
+  
+  try {
+    log(`🔄 Generating preview with ${selectedBitrate}kbps compression...`);
+    const { blob, bitrate } = await encodeToMp3(currentFile, selectedBitrate);
+    lastCompressedBlob = blob;
+    lastCompressedBase64 = null; // we'll keep blob only for preview
+    
+    const url = URL.createObjectURL(blob);
+    audioElem.src = url;
+    audioElem.load();
+    badge.textContent = `${bitrate} kbps`;
+    previewArea.style.display = "block";
+    
+    // restore refresh button style
+    const refreshBtn = document.getElementById("refreshPreviewBtn");
+    refreshBtn.style.background = "";
+    refreshBtn.style.color = "";
+    log(`🎧 Preview ready (${bitrate}kbps) — you can play or download.`);
+    
+    // Cleanup old object URL on next preview
+    if (window._currentPreviewUrl && window._currentPreviewUrl !== url) {
+      URL.revokeObjectURL(window._currentPreviewUrl);
+    }
+    window._currentPreviewUrl = url;
+  } catch (err) {
+    log(`❌ Preview failed: ${err.message}`);
+    previewArea.style.display = "none";
+  }
+}
+
+// Download current compressed MP3
+function downloadCompressed() {
+  if (!lastCompressedBlob) {
+    log("⚠️ No compressed audio available. Click 'Refresh Preview' first.");
+    return;
+  }
+  const bitrate = bitrateSlider.value;
+  const originalName = currentFile ? currentFile.name.replace(/\.[^.]+$/, '') : 'audio';
+  const filename = `${originalName}_${bitrate}kbps.mp3`;
+  const url = URL.createObjectURL(lastCompressedBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+  log(`📥 Downloading "${filename}" (${(lastCompressedBlob.size/1024).toFixed(1)} KB)`);
+}
+
+// Auto-refresh preview on demand (user click)
+function refreshPreview() {
+  if (!currentFile) {
+    log("❌ No audio loaded. Please select file or record first.");
+    return;
+  }
+  updatePreview();
+}
+
+// When file changes (upload or record), invalidate preview and auto-generate with current compression
+async function onNewFile(file) {
+  currentFile = file;
+  document.getElementById("filePath").textContent = file.name + ` (${(file.size/1024).toFixed(1)} KB)`;
+  // clear preview cache
+  lastCompressedBlob = null;
+  lastCompressedBase64 = null;
+  // auto generate preview using current bitrate
+  await updatePreview();
+}
+
+// File input handler
+document.getElementById("fileInput").onchange = async e => {
+  if (e.target.files && e.target.files[0]) {
+    await onNewFile(e.target.files[0]);
+  }
+};
+
+// Microphone handler
+document.getElementById("micBtn").onclick = async () => {
+  const btn = document.getElementById("micBtn");
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    mediaRecorder.stop();
+    btn.textContent = "🎙️ Record";
+    btn.classList.remove("recording");
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(audioChunks, { type: 'audio/wav' });
+      const recordedFile = new File([blob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
+      await onNewFile(recordedFile);
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+    btn.textContent = "⏹️ Stop";
+    btn.classList.add("recording");
+    log("🎙️ Recording... (click stop when done)");
+  } catch(e) {
+    log(`Mic error: ${e.message}`);
+  }
+};
+
+// Send button: uses selected bitrate, stores in localStorage / BroadcastChannel
+document.getElementById("sendBtn").onclick = async () => {
+  if (!currentFile) { log("❌ No audio selected/recorded"); return; }
+  const model = document.getElementById("modelSelect").value;
+  const base64Mode = document.getElementById("base64OnlyCheckbox").checked;
+  const selectedBitrate = parseInt(bitrateSlider.value, 10);
+  
+  let result;
+  try {
+    result = await encodeToMp3(currentFile, selectedBitrate);
+  } catch(e) {
+    log(`❌ Send encode failed: ${e.message}`);
+    return;
+  }
+  
+  const { base64, blob, bitrate } = result;
+  // update last compressed blob for preview consistency
+  lastCompressedBlob = blob;
+  lastCompressedBase64 = base64;
+  
+  localStorage.setItem('rvc_audio', base64);
+  localStorage.setItem('rvc_model', model);
+  localStorage.setItem('rvc_filename', currentFile.name.replace(/\.[^.]+$/, '.mp3'));
+  localStorage.setItem('rvc_timestamp', Date.now());
+  localStorage.setItem('rvc_bitrate', bitrate);
+  log(`💾 Saved to localStorage (${bitrate}kbps, ${(blob.size/1024).toFixed(1)} KB)`);
+  
+  if (base64Mode) {
+    log(`📦 Base64 URL mode: opening new tab...`);
+    const encodedBase64 = encodeURIComponent(base64);
+    const fname = encodeURIComponent(currentFile.name.replace(/\.[^.]+$/, '.mp3'));
+    const url = `${resolvedUrl}?audio=${encodedBase64}&receiver&model=${encodeURIComponent(model)}&filename=${fname}&bitrate=${bitrate}`;
+    window.open(url, '_blank');
+    log(`📤 Opened: ${resolvedUrl}`);
+  } else {
+    try {
+      const channel = new BroadcastChannel('rvc_audio');
+      channel.postMessage({ 
+        audio: base64, 
+        model: model, 
+        filename: currentFile.name.replace(/\.[^.]+$/, '.mp3'), 
+        bitrate: bitrate 
+      });
+      channel.close();
+      log(`📡 Sent via BroadcastChannel (${bitrate}kbps)`);
+    } catch(e) {
+      log(`BroadcastChannel failed: ${e.message}`);
+    }
+  }
+};
+
+// Setup preview buttons
+document.getElementById("downloadPreviewBtn").addEventListener("click", downloadCompressed);
+document.getElementById("refreshPreviewBtn").addEventListener("click", refreshPreview);
+
+// If the user selects a file before preview area exists, also listen to initial call
+// Also allow drag-and-drop quick hint: but fine.
+window.addEventListener("load", () => {
+  // if any previously stored? no, just hide preview until file
+  document.getElementById("previewArea").style.display = "none";
+  log("✨ Ready — load audio, adjust compression slider, then use preview/play/download. Click 'Refresh Preview' after slider change.");
+});
+</script>
+</body>
+</html>

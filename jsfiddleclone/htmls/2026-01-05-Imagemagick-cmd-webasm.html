@@ -1,0 +1,193 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magick-WASM Ultimate Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --bg: #050505; --panel: #111; --accent: #38bdf8; --text: #eee; }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 450px; gap: 20px; }
+        .panel { background: var(--panel); border: 1px solid #333; padding: 20px; border-radius: 8px; }
+        textarea { width: 100%; height: 60px; background: #000; color: var(--accent); border: 1px solid #333; padding: 10px; margin: 10px 0; font-size: 13px; border-radius: 4px; }
+        .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .chip { background: #222; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; border: 1px solid #444; transition: 0.2s; }
+        .chip:hover { border-color: var(--accent); background: #1a1a1a; }
+        #dropzone { border: 2px dashed #444; padding: 30px; text-align: center; cursor: pointer; color: #888; border-radius: 8px; }
+        #log { background: #000; font-size: 11px; padding: 15px; height: 75vh; overflow-y: auto; border: 1px solid #222; color: #adbac7; line-height: 1.6; }
+        .btn { padding: 14px; width: 100%; cursor: pointer; font-weight: bold; border: none; border-radius: 4px; margin-top: 10px; }
+        .btn-run { background: #222; color: #444; }
+        .btn-run.ready { background: var(--accent); color: #000; }
+        .log-v { color: var(--accent); font-weight: bold; }
+        .log-s { color: #4ade80; }
+        .log-e { color: #f85149; }
+        #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 20px; }
+        .img-card { background: #111; padding: 8px; border-radius: 4px; border: 1px solid #222; text-align: center; font-size: 9px; }
+        .img-card img { max-width: 100%; height: auto; border-radius: 2px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <main>
+        <div class="panel">
+            <h3 style="margin:0 0 10px 0; color:var(--accent)">MAGICK COMMAND CONSOLE</h3>
+            <div class="presets" id="presets">
+                <div class="chip" data-cmd="-format gif -sanitize">Sanitize AniGIF (Max 1MB/256px)</div>
+                <div class="chip" data-cmd="-resize 50%">50% (Keep Ext)</div>
+                <div class="chip" data-cmd="-format png">All to PNG</div>
+                <div class="chip" data-cmd="-format ico -resize 256x256">All to ICO</div>
+                <div class="chip" data-cmd="-format png -density 300">PDF to PNG</div>
+                <div class="chip" data-cmd="-extract-frames -format png">Extract Frames</div>
+            </div>
+            <textarea id="cmd-input">-format gif -sanitize</textarea>
+            
+            <div id="dropzone">DROP FILES TO QUEUE</div>
+            <input type="file" id="file-input" multiple style="display:none">
+            
+            <button class="btn btn-run" id="run-btn" disabled>LOADING ENGINE...</button>
+            <button class="btn" id="zip-btn" style="background:#4ade80; color:#000; display:none">DOWNLOAD ZIP</button>
+        </div>
+        <div id="gallery"></div>
+    </main>
+    <aside><div id="log"></div></aside>
+</div>
+
+<script type="module">
+    import { 
+        initializeImageMagick, 
+        ImageMagick, 
+        MagickFormat, 
+        MagickGeometry 
+    } from 'https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.37/+esm';
+
+    const logEl = document.getElementById('log');
+    const runBtn = document.getElementById('run-btn');
+    const gallery = document.getElementById('gallery');
+    const zipBtn = document.getElementById('zip-btn');
+    const fileInput = document.getElementById('file-input');
+
+    function dbg(msg, type = '') {
+        const div = document.createElement('div');
+        if(type) div.className = `log-${type}`;
+        div.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function sanitizeName(name) {
+        return name.toLowerCase()
+            .replace(/\.[^/.]+$/, "") 
+            .replace(/[^a-z0-9]/gi, '_') 
+            .replace(/_+/g, '_')
+            .substring(0, 50);
+    }
+
+    async function boot() {
+        try {
+            const res = await fetch('https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.37/dist/magick.wasm');
+            await initializeImageMagick(new Uint8Array(await res.arrayBuffer()));
+            dbg("ENGINE READY: Commands Loaded.", "s");
+            runBtn.disabled = false;
+            runBtn.classList.add('ready');
+            runBtn.innerText = "EXECUTE BATCH";
+        } catch (e) { dbg("BOOT FAIL: " + e.message, "e"); }
+    }
+
+    let inputFiles = [];
+    let outputFiles = [];
+
+    document.getElementById('presets').onclick = (e) => {
+        if (e.target.dataset.cmd) document.getElementById('cmd-input').value = e.target.dataset.cmd;
+    };
+
+    document.getElementById('dropzone').onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+        inputFiles = Array.from(e.target.files);
+        dbg(`QUEUED: ${inputFiles.length} files.`);
+    };
+
+    runBtn.onclick = async () => {
+        const cmd = document.getElementById('cmd-input').value;
+        const parts = cmd.split(' ');
+        gallery.innerHTML = '';
+        outputFiles = [];
+
+        for (const file of inputFiles) {
+            try {
+                const data = new Uint8Array(await file.arrayBuffer());
+                
+                // Use readCollection to handle multi-frame sources correctly
+                ImageMagick.readCollection(data, (images) => {
+                    dbg(`PROC: ${file.name} (${images.length} frames)`);
+                    
+                    images.forEach((img, index) => {
+                        // FORCE POLICY: 256px Max
+                        if (img.width > 256 || img.height > 256) {
+                            img.resize(new MagickGeometry("256x256>"));
+                        }
+
+                        // Apply standard resize if requested
+                        if (cmd.includes("-resize") && !cmd.includes("256")) {
+                            const val = parts[parts.indexOf("-resize") + 1];
+                            img.resize(new MagickGeometry(val));
+                        }
+
+                        let fmt = img.format;
+                        let ext = file.name.split('.').pop().toLowerCase();
+
+                        if (cmd.includes("-format")) {
+                            const target = parts[parts.indexOf("-format") + 1].toLowerCase();
+                            ext = target;
+                            if (target === 'png') fmt = MagickFormat.Png;
+                            if (target === 'gif') fmt = MagickFormat.Gif;
+                            if (target === 'ico') fmt = MagickFormat.Ico;
+                        }
+
+                        let outName = cmd.includes("-sanitize") ? sanitizeName(file.name) + "." + ext : file.name;
+                        
+                        // If extracting frames, append index
+                        if (images.length > 1 && cmd.includes("-extract-frames")) {
+                            outName = sanitizeName(file.name) + `_frame_${index}.${ext}`;
+                        }
+
+                        img.write(fmt, (out) => {
+                            // 1MB GUARD for Sanitize/AniGIF mode
+                            if (cmd.includes("-sanitize") && out.length > 1048576) {
+                                dbg(`!! ${outName} too large (${(out.length/1024/1024).toFixed(2)}MB). Scale down manually.`, "e");
+                            }
+
+                            const blob = new Blob([out], { type: `image/${ext}` });
+                            outputFiles.push({ name: outName, blob: blob });
+
+                            const card = document.createElement('div');
+                            card.className = 'img-card';
+                            card.innerHTML = `<img src="${URL.createObjectURL(blob)}"><br>${outName}<br>${(out.length/1024).toFixed(1)} KB`;
+                            gallery.appendChild(card);
+                        });
+                    });
+                });
+            } catch (err) { dbg(`FAIL: ${file.name} - ${err.message}`, "e"); }
+        }
+        
+        if (outputFiles.length >= 1) zipBtn.style.display = 'block';
+    };
+
+    zipBtn.onclick = async () => {
+        const zip = new JSZip();
+        outputFiles.forEach(f => zip.file(f.name, f.blob));
+        const content = await zip.generateAsync({type:"blob"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(content);
+        a.download = "magick_batch_export.zip";
+        a.click();
+    };
+
+    boot();
+</script>
+
+</body>
+</html>

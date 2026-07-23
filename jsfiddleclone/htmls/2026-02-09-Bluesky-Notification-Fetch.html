@@ -1,0 +1,659 @@
+<meta charset="utf-8">
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bluesky Notifications</title>
+  <style>
+    #notification-counter {
+      background: #1d4ed8;
+      color: white;
+      padding: 8px 15px;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #counter-text {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .count {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 0 3px;
+    }
+    .counter-loading {
+      opacity: 0.8;
+    }
+    .counter-error {
+      background: #ef4444;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .notification {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .notification:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .notification .account {
+      font-weight: bold;
+      color: #1d4ed8;
+      font-size: 1.1em;
+      margin-bottom: 5px;
+    }
+    .notification .status {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      color: #333;
+    }
+    .notification .date {
+      font-size: 0.8em;
+      color: #666;
+      cursor: pointer;
+      text-decoration: underline;
+      display: inline-block;
+      margin-top: 5px;
+    }
+    .notification.reply {
+      border-left: 4px solid #3b82f6;
+      background-color: #eff6ff;
+    }
+    .notification.like {
+      border-left: 4px solid #ef4444;
+      background-color: #fef2f2;
+    }
+    .notification.repost {
+      border-left: 4px solid #10b981;
+      background-color: #f0fdf4;
+    }
+    .notification.follow {
+      border-left: 4px solid #8b5cf6;
+      background-color: #f5f3ff;
+    }
+    .notification.mention {
+      border-left: 4px solid #f59e0b;
+      background-color: #fffbeb;
+    }
+    .account-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      margin-right: 10px;
+      vertical-align: middle;
+      object-fit: cover;
+    }
+    .account-info {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .account-handle {
+      color: #6b7280;
+      font-size: 0.9em;
+      margin-left: 5px;
+    }
+    .notification-type {
+      font-size: 0.7em;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #e5e7eb;
+      color: #4b5563;
+      margin-left: 8px;
+      text-transform: capitalize;
+    }
+    .notification-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .notification-content {
+      margin-left: 50px;
+    }
+    .post-link {
+      color: #3b82f6;
+      text-decoration: none;
+      font-size: 0.9em;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .post-link:hover {
+      text-decoration: underline;
+    }
+    .post-link svg {
+      width: 14px;
+      height: 14px;
+    }
+    #loading {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .error {
+      color: #dc2626;
+      padding: 12px;
+      background: #fee2e2;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+    .debug-info {
+      font-size: 0.7em;
+      color: #888;
+      margin-top: 5px;
+      font-family: monospace;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div id="notification-counter">
+    <div id="counter-text" class="counter-loading">Loading notification count...</div>
+  </div>
+
+  <h1>Bluesky Notifications</h1>
+  <div id="loading">
+    <div class="loading-spinner"></div>
+    <div>Loading notifications...</div>
+  </div>
+  <div id="notifications"></div>
+  <div id="error"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('user');
+    const password = urlParams.get('pass');
+    
+    console.log('Username:', username ? 'Provided' : 'Missing');
+    console.log('Password:', password ? 'Provided' : 'Missing');
+
+    if (!username || !password) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.innerHTML = '<div class="error">Missing required query parameters: user and pass. Format: ?user=username.bsky.social&pass=app-password</div>';
+      document.getElementById('loading').style.display = 'none';
+      throw new Error('Missing query parameters');
+    }
+
+    const BLUESKY_BASE_URL = 'https://bsky.social';
+    let accessJwt = null;
+    let did = null;
+    let currentUserHandle = null;
+
+    async function updateNotificationCounter() {
+      try {
+        const counterText = document.getElementById('counter-text');
+        counterText.className = 'counter-loading';
+        counterText.textContent = 'Updating...';
+        
+        if (!accessJwt) {
+          const authResponse = await fetch(`${BLUESKY_BASE_URL}/xrpc/com.atproto.server.createSession`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier: username, password: password })
+          });
+          
+          if (!authResponse.ok) throw new Error('Counter auth failed');
+          
+          const authData = await authResponse.json();
+          accessJwt = authData.accessJwt;
+          currentUserHandle = authData.handle;
+        }
+        
+        const response = await fetch(
+          `${BLUESKY_BASE_URL}/xrpc/app.bsky.notification.listNotifications?limit=20`,
+          { headers: { 'Authorization': `Bearer ${accessJwt}` } }
+        );
+        
+        if (!response.ok) throw new Error('Counter fetch failed');
+        
+        const data = await response.json();
+        const totalNotifications = data.notifications?.length || 0;
+        
+        const unreadCount = data.notifications?.filter(n => !n.isRead)?.length || 0;
+        
+        counterText.className = '';
+        counterText.innerHTML = `🔔 <span class="count">${unreadCount}</span> new • ${totalNotifications} total`;
+        
+      } catch (error) {
+        const counterText = document.getElementById('counter-text');
+        counterText.className = 'counter-error';
+        counterText.textContent = 'Failed to load count';
+      }
+    }
+    
+    setTimeout(updateNotificationCounter, 100);
+    setInterval(updateNotificationCounter, 600000);
+    
+    async function authenticate() {
+      console.log('Starting authentication...');
+      
+      try {
+        const response = await fetch(`${BLUESKY_BASE_URL}/xrpc/com.atproto.server.createSession`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            identifier: username,
+            password: password
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Auth error response:', errorText);
+          throw new Error(`Authentication failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        accessJwt = data.accessJwt;
+        did = data.did;
+        currentUserHandle = data.handle;
+        
+        console.log('Authentication successful');
+        console.log('DID:', did);
+        console.log('Handle:', currentUserHandle);
+        return true;
+      } catch (error) {
+        console.error('Authentication error:', error);
+        throw error;
+      }
+    }
+
+    async function fetchNotifications() {
+      console.log('Fetching notifications...');
+      
+      try {
+        const response = await fetch(`${BLUESKY_BASE_URL}/xrpc/app.bsky.notification.listNotifications?limit=50`, {
+          headers: {
+            'Authorization': `Bearer ${accessJwt}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Received notifications:', data.notifications?.length || 0);
+        return data;
+      } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+      }
+    }
+
+    function getOriginalPostUri(notification) {
+      console.log('Getting original post URI for notification:', notification.reason, notification.uri);
+      
+      switch(notification.reason) {
+        case 'like':
+          if (notification.record && notification.record.subject) {
+            console.log('Found subject in like record:', notification.record.subject);
+            return notification.record.subject.uri;
+          }
+          break;
+          
+        case 'repost':
+          if (notification.record && notification.record.subject) {
+            console.log('Found subject in repost record:', notification.record.subject);
+            return notification.record.subject.uri;
+          }
+          break;
+          
+        case 'reply':
+        case 'mention':
+        case 'quote':
+          return notification.uri;
+          
+        case 'follow':
+          return null;
+      }
+      
+      console.log('Could not find original post URI in notification:', notification);
+      return null;
+    }
+
+    function getPostUrlFromUri(uri, authorHandle = null) {
+      if (!uri) return null;
+      
+      try {
+        console.log('Parsing URI:', uri);
+        
+        const match = uri.match(/at:\/\/([^/]+)\/([^/]+)\/(.+)/);
+        if (!match) {
+          console.log('URI does not match expected pattern');
+          return null;
+        }
+        
+        const [, uriDid, collection, rkey] = match;
+        
+        if (collection === 'app.bsky.feed.post' && rkey) {
+          if (authorHandle) {
+            return `https://bsky.app/profile/${authorHandle}/post/${rkey}`;
+          } else {
+            return `https://bsky.app/profile/${uriDid}/post/${rkey}`;
+          }
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('Error parsing URI:', uri, error);
+        return null;
+      }
+    }
+
+    async function getPostAuthor(uri) {
+      if (!uri) return null;
+      
+      try {
+        console.log('Fetching post author for URI:', uri);
+        const response = await fetch(`${BLUESKY_BASE_URL}/xrpc/app.bsky.feed.getPosts?uris=${encodeURIComponent(uri)}`, {
+          headers: {
+            'Authorization': `Bearer ${accessJwt}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.posts && data.posts.length > 0) {
+            const authorHandle = data.posts[0].author.handle;
+            console.log('Found author handle:', authorHandle);
+            return authorHandle;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching post author:', error);
+      }
+      
+      return null;
+    }
+
+    function getProfileUrl(authorHandle) {
+      if (!authorHandle) return null;
+      return `https://bsky.app/profile/${authorHandle}`;
+    }
+
+    async function createNotificationElement(notification) {
+      const notificationElement = document.createElement('div');
+      
+      const typeClasses = {
+        'like': 'like',
+        'repost': 'repost',
+        'follow': 'follow',
+        'mention': 'mention',
+        'reply': 'reply',
+        'quote': 'reply'
+      };
+      
+      const notificationClass = typeClasses[notification.reason] || '';
+      notificationElement.classList.add('notification');
+      if (notificationClass) {
+        notificationElement.classList.add(notificationClass);
+      }
+
+      const authorHandle = notification.author?.handle;
+      const displayName = notification.author?.displayName || authorHandle;
+      const avatarUrl = notification.author?.avatar || 
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authorHandle || 'unknown')}`;
+
+      const headerDiv = document.createElement('div');
+      headerDiv.classList.add('notification-header');
+      
+      const avatarImg = document.createElement('img');
+      avatarImg.classList.add('account-avatar');
+      avatarImg.src = avatarUrl;
+      avatarImg.alt = displayName;
+      avatarImg.onerror = function() {
+        this.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(authorHandle || 'unknown');
+      };
+      
+      const accountInfoDiv = document.createElement('div');
+      accountInfoDiv.classList.add('account-info');
+      
+      const accountElement = document.createElement('div');
+      accountElement.classList.add('account');
+      
+      const nameLink = document.createElement('a');
+      nameLink.href = getProfileUrl(authorHandle);
+      nameLink.target = '_blank';
+      nameLink.textContent = displayName;
+      nameLink.style.color = 'inherit';
+      nameLink.style.textDecoration = 'none';
+      
+      const handleElement = document.createElement('span');
+      handleElement.classList.add('account-handle');
+      handleElement.textContent = `@${authorHandle}`;
+      
+      const typeElement = document.createElement('span');
+      typeElement.classList.add('notification-type');
+      typeElement.textContent = notification.reason;
+      
+      accountElement.appendChild(nameLink);
+      accountElement.appendChild(handleElement);
+      accountElement.appendChild(typeElement);
+      
+      accountInfoDiv.appendChild(accountElement);
+      headerDiv.appendChild(avatarImg);
+      headerDiv.appendChild(accountInfoDiv);
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.classList.add('notification-content');
+      
+      const statusElement = document.createElement('div');
+      statusElement.classList.add('status');
+      
+      let targetPostUri = null;
+      let targetPostAuthorHandle = null;
+      let linkText = '';
+      
+      switch(notification.reason) {
+        case 'like':
+          statusElement.textContent = 'liked your post';
+          targetPostUri = getOriginalPostUri(notification);
+          targetPostAuthorHandle = currentUserHandle;
+          linkText = 'View Your Post';
+          break;
+          
+        case 'repost':
+          statusElement.textContent = 'reposted your post';
+          targetPostUri = getOriginalPostUri(notification);
+          targetPostAuthorHandle = currentUserHandle;
+          linkText = 'View Your Post';
+          break;
+          
+        case 'follow':
+          statusElement.textContent = 'started following you';
+          targetPostUri = null;
+          linkText = 'View Profile';
+          break;
+          
+        case 'mention':
+          statusElement.textContent = 'mentioned you';
+          targetPostUri = getOriginalPostUri(notification);
+          targetPostAuthorHandle = authorHandle;
+          linkText = 'View Post';
+          break;
+          
+        case 'reply':
+          statusElement.textContent = 'replied to your post';
+          targetPostUri = notification.uri;
+          linkText = 'View Conversation';
+          break;
+          
+        case 'quote':
+          statusElement.textContent = 'quoted your post';
+          targetPostUri = notification.uri;
+          targetPostAuthorHandle = authorHandle;
+          linkText = 'View Quote';
+          break;
+          
+        default:
+          statusElement.textContent = 'interacted with your post';
+      }
+      
+      const postLink = document.createElement('a');
+      postLink.classList.add('post-link');
+      postLink.target = '_blank';
+      
+      let postUrl = null;
+      
+      if (notification.reason === 'follow') {
+        postUrl = getProfileUrl(authorHandle);
+      } else if (targetPostUri) {
+        if (!targetPostAuthorHandle && notification.reason !== 'reply') {
+          targetPostAuthorHandle = await getPostAuthor(targetPostUri);
+        }
+        
+        postUrl = getPostUrlFromUri(targetPostUri, targetPostAuthorHandle);
+        
+        if (!postUrl && targetPostUri) {
+          const debugDiv = document.createElement('div');
+          debugDiv.classList.add('debug-info');
+          debugDiv.textContent = `URI: ${targetPostUri}`;
+          contentDiv.appendChild(debugDiv);
+        }
+      }
+      
+      if (postUrl) {
+        postLink.href = postUrl;
+        postLink.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+          </svg>
+          ${linkText}
+        `;
+      } else if (notification.reason !== 'follow') {
+        postLink.style.pointerEvents = 'none';
+        postLink.style.color = '#999';
+        postLink.textContent = 'Link not available';
+      }
+      
+      const dateElement = document.createElement('div');
+      dateElement.classList.add('date');
+      const date = new Date(notification.indexedAt);
+      dateElement.textContent = date.toLocaleString();
+      
+      if (postUrl) {
+        dateElement.style.cursor = 'pointer';
+        dateElement.style.textDecoration = 'underline';
+        dateElement.addEventListener('click', function() {
+          window.open(postUrl, '_blank');
+        });
+      }
+      
+      contentDiv.appendChild(statusElement);
+      if (postUrl || notification.reason !== 'follow') {
+        contentDiv.appendChild(postLink);
+      }
+      contentDiv.appendChild(dateElement);
+      
+      notificationElement.appendChild(headerDiv);
+      notificationElement.appendChild(contentDiv);
+      
+      return notificationElement;
+    }
+
+    async function loadNotifications() {
+      try {
+        console.log('Starting notification load process...');
+        
+        document.getElementById('loading').style.display = 'none';
+        
+        await authenticate();
+        
+        const notificationsData = await fetchNotifications();
+        
+        if (!notificationsData.notifications || notificationsData.notifications.length === 0) {
+          const notificationsDiv = document.getElementById('notifications');
+          notificationsDiv.innerHTML = '<div class="empty-state">No notifications found.</div>';
+          return;
+        }
+        
+        const notificationsDiv = document.getElementById('notifications');
+        
+        for (const notification of notificationsData.notifications) {
+          try {
+            const element = await createNotificationElement(notification);
+            notificationsDiv.appendChild(element);
+            console.log('Added notification:', notification.reason, 'from', notification.author?.handle);
+          } catch (elementError) {
+            console.error('Error creating notification element:', elementError);
+          }
+        }
+        
+        console.log('All notifications processed successfully');
+        
+      } catch (error) {
+        console.error('Main error:', error);
+        
+        const errorDiv = document.getElementById('error');
+        let errorMessage = error.message;
+        
+        if (error.message.includes('Authentication failed')) {
+          if (error.message.includes('401')) {
+            errorMessage = 'Authentication failed. Please check your username and app password.';
+          } else {
+            errorMessage = 'Authentication failed. Please check your credentials.';
+          }
+        } else if (error.message.includes('API request failed')) {
+          errorMessage = 'Failed to fetch notifications from Bluesky. Please try again later.';
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        }
+        
+        errorDiv.innerHTML = `<div class="error">Error: ${errorMessage}</div>`;
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadNotifications);
+  </script>
+
+  <div style="margin-top: 20px; text-align: center;">
+    <button onclick="window.location.reload()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+      🔄 Refresh Notifications
+    </button>
+    <div style="margin-top: 10px; font-size: 0.9em; color: #6b7280;">
+      Currently viewing notifications for: <strong id="currentAccount">@<?php echo htmlspecialchars($_GET['user'] ?? 'Not specified'); ?></strong>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (username) {
+        document.getElementById('currentAccount').textContent = '@' + username;
+      }
+    });
+  </script>
+</body>
+</html>

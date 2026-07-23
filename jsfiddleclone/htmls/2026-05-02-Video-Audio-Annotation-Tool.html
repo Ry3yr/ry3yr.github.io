@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Timeline Studio | Perfect FFmpeg + Clean Play + CD Prefix</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #0a0a0f;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .app-container {
+            max-width: 1500px;
+            width: 100%;
+            background: #14141f;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.6);
+        }
+        h1 { font-size: 1.6rem; margin: 0 0 6px; color: #f0f0f0; }
+        .sub { color: #aaa; margin-bottom: 24px; border-left: 3px solid #f59e0b; padding-left: 12px; font-size: 0.85rem; }
+        .video-section, .timeline-panel, .ffmpeg-panel, .export-panel {
+            background: #0b0b12;
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .upload-area { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+        .file-label { background: #3b82f6; padding: 8px 18px; border-radius: 60px; color: white; cursor: pointer; font-size: 0.85rem; }
+        video { width: 100%; border-radius: 20px; max-height: 380px; background: #000; }
+        .video-controls { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+        button { background: #2c2c3a; border: none; color: white; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+        button.primary { background: #3b82f6; }
+        button.primary:hover { background: #2563eb; }
+        button.success { background: #10b981; }
+        button.warning { background: #f59e0b; color: #14141f; }
+        button.ffmpeg-btn { background: #8b5cf6; }
+        .scrub-time { background: #0f0f17; padding: 5px 12px; border-radius: 40px; font-family: monospace; color: #ddd; }
+        .timeline-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 16px; }
+        .add-marker-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .timestamp-input-group { display: flex; gap: 8px; background: #0b0b12; padding: 4px 12px; border-radius: 40px; align-items: center; }
+        .timestamp-input-group input { background: #1a1a24; border: 1px solid #3b3b4a; color: white; padding: 6px 10px; border-radius: 30px; width: 130px; font-family: monospace; }
+        .timeline-canvas-wrapper { position: relative; background: #08080e; border-radius: 16px; padding: 8px 0; margin: 10px 0; }
+        canvas { width: 100%; height: 70px; background: #0f0f17; border-radius: 12px; cursor: pointer; }
+        .timeline-ruler { display: flex; justify-content: space-between; padding: 4px 8px; font-family: monospace; font-size: 10px; color: #6a6a7a; }
+        .playhead { position: absolute; top: 0; width: 3px; height: 100%; background: #facc15; pointer-events: none; border-radius: 2px; transition: left 0.05s linear; }
+        .markers-list { max-height: 240px; overflow-y: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .marker-item { background: #1a1a24; border-radius: 16px; padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border-left: 3px solid #f59e0b; }
+        .marker-time input { width: 85px; background: #0b0b12; border: 1px solid #3b3b4a; color: white; border-radius: 20px; padding: 4px 8px; font-family: monospace; }
+        .audio-file-label { background: #2c2c3a; padding: 4px 10px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; }
+        .audio-name { flex: 1; font-size: 0.75rem; color: #ccc; font-family: monospace; }
+        button.small { padding: 4px 10px; font-size: 0.7rem; }
+        .ffmpeg-command { background: #0a0a0f; padding: 12px; border-radius: 16px; font-family: monospace; font-size: 0.7rem; word-break: break-all; color: #a5f7a5; border: 1px solid #2a2a36; margin-top: 8px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+        .export-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+        .empty-message { color: #6b6b7a; text-align: center; padding: 20px; font-style: italic; }
+        .share-url { background: #0b0b12; padding: 8px 12px; border-radius: 12px; font-size: 0.7rem; font-family: monospace; color: #3b82f6; overflow-x: auto; white-space: nowrap; margin-top: 8px; }
+        .checkbox-row { display: flex; align-items: center; gap: 12px; background: #1a1a24; padding: 8px 16px; border-radius: 40px; }
+        .checkbox-row label { font-size: 0.8rem; color: #ddd; cursor: pointer; }
+        .cd-input-row { display: flex; align-items: center; gap: 12px; background: #1a1a24; padding: 8px 16px; border-radius: 40px; flex-wrap: wrap; }
+        .cd-input-row input[type="text"] { background: #0b0b12; border: 1px solid #3b3b4a; color: white; padding: 6px 12px; border-radius: 30px; font-family: monospace; font-size: 0.75rem; width: 240px; }
+        .note-box { background: #1a333a; padding: 8px 12px; border-radius: 12px; margin-top: 10px; font-size: 0.7rem; color: #7dd3fc; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <h1>Timeline Annotation Studio</h1>
+    <div class="sub">Optional cd command</div>
+
+    <div class="video-section">
+        <div class="upload-area">
+            <label class="file-label">📁 Upload Video<input type="file" id="videoUpload" accept="video/mp4,video/webm, video/ogg" style="display:none"></label>
+            <div id="videoStatus" style="color:#aaa;">No video loaded</div>
+        </div>
+        <video id="videoPlayer" controls></video>
+        <div class="video-controls">
+            <span class="scrub-time" id="currentTimeDisplay">0:00.00</span>
+            <button id="specialPlayBtn" class="primary">▶ Special Play (sync audio)</button>
+            <button id="exportAudioBtn" class="success">🎵 Export Full Mix WAV</button>
+            <button id="batchAutoBtn" class="warning">Batch Audio (auto timestamp)</button>
+        </div>
+    </div>
+
+    <div class="timeline-panel">
+        <div class="timeline-header">
+            <span class="timeline-title">🎚️ Audio Markers (click canvas to seek)</span>
+            <div class="add-marker-group">
+                <div class="timestamp-input-group">
+                    <span>⏱️</span>
+                    <input type="text" id="manualTimestamp" placeholder="12.5  or  1:23">
+                    <button id="addManualBtn" class="small">+ Add</button>
+                </div>
+                <button id="addCurrentBtn" class="small">📍 At current time</button>
+            </div>
+        </div>
+        <div class="timeline-canvas-wrapper">
+            <canvas id="timelineCanvas" width="1000" height="70"></canvas>
+            <div class="timeline-ruler" id="timelineRuler"></div>
+            <div id="playhead" class="playhead"></div>
+        </div>
+        <div id="markersList" class="markers-list"></div>
+    </div>
+
+    <!-- QUERYSTRING EXPORT PANEL -->
+    <div class="export-panel">
+        <div class="export-header">
+            <strong style="color:#f0f0f0;">🔗 QueryString Export / Import (Timestamps only)</strong>
+            <div style="display: flex; gap: 8px;">
+                <button id="exportQueryBtn" class="ffmpeg-btn small">📤 Export to URL</button>
+                <button id="copyUrlBtn" class="small">📋 Copy URL</button>
+                <button id="clearMarkersBtn" class="small" style="background:#b91c1c;">🗑️ Clear All</button>
+            </div>
+        </div>
+        <div class="share-url" id="shareUrlDisplay">No markers yet. Add markers and click "Export to URL"</div>
+    </div>
+
+    <!-- FFMPEG PANEL -->
+    <div class="ffmpeg-panel">
+        <div class="export-header">
+            <strong style="color:#f0f0f0;">🎞️ FFmpeg Overlay Command (YOUR WORKING FORMAT)</strong>
+            <div class="checkbox-row">
+                <input type="checkbox" id="retainVideoAudioCheckbox" checked>
+                <label for="retainVideoAudioCheckbox">🎧 Include original video audio (volume=0.7)</label>
+            </div>
+        </div>
+        <div class="cd-input-row">
+            <input type="checkbox" id="addCdPrefixCheckbox" checked>
+            <label for="addCdPrefixCheckbox">📂 Add cd command prefix</label>
+            <input type="text" id="cdPathInput" value="/storage/emulated/0/Movies" placeholder="cd /path/to/dir">
+            <span style="font-size:0.7rem; color:#6a6a7a;">→ adds "cd /path &amp;&amp; ffmpeg ..."</span>
+        </div>
+        <div class="ffmpeg-command" id="ffmpegCommandDisplay"># Add markers to generate command...</div>
+        <div style="display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end;">
+            <button id="refreshFfmpegCmd" class="ffmpeg-btn small">🔄 Refresh</button>
+            <button id="copyFfmpegBtn" class="copy-btn small">📋 Copy Command</button>
+        </div>
+        <div class="note-box">
+            💡 Uses YOUR exact format: [0:a]aresample=44100,volume=0.7[a0]; [N:a]aresample=44100,adelay=XXX|XXX,volume=1[aN]; then amix.
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM elements
+    const videoUpload = document.getElementById('videoUpload');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoStatus = document.getElementById('videoStatus');
+    const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+    const specialPlayBtn = document.getElementById('specialPlayBtn');
+    const exportAudioBtn = document.getElementById('exportAudioBtn');
+    const addCurrentBtn = document.getElementById('addCurrentBtn');
+    const addManualBtn = document.getElementById('addManualBtn');
+    const manualTimestampInput = document.getElementById('manualTimestamp');
+    const batchAutoBtn = document.getElementById('batchAutoBtn');
+    const refreshFfmpegCmd = document.getElementById('refreshFfmpegCmd');
+    const copyFfmpegBtn = document.getElementById('copyFfmpegBtn');
+    const ffmpegCommandDisplay = document.getElementById('ffmpegCommandDisplay');
+    const exportQueryBtn = document.getElementById('exportQueryBtn');
+    const copyUrlBtn = document.getElementById('copyUrlBtn');
+    const clearMarkersBtn = document.getElementById('clearMarkersBtn');
+    const shareUrlDisplay = document.getElementById('shareUrlDisplay');
+    const retainVideoAudioCheckbox = document.getElementById('retainVideoAudioCheckbox');
+    const addCdPrefixCheckbox = document.getElementById('addCdPrefixCheckbox');
+    const cdPathInput = document.getElementById('cdPathInput');
+    const markersContainer = document.getElementById('markersList');
+    const timelineCanvas = document.getElementById('timelineCanvas');
+    const playheadDiv = document.getElementById('playhead');
+
+    // Data
+    let markers = [];
+    let nextId = 1;
+    let syncActive = false;
+    let activeInterval = null;
+    let videoDuration = 0;
+    let currentVideoFile = null;
+
+    function formatTime(sec) {
+        if (isNaN(sec)) return "0:00.00";
+        const mins = Math.floor(sec / 60);
+        const secs = (sec % 60).toFixed(2);
+        return `${mins}:${secs.padStart(5, '0')}`;
+    }
+
+    function parseTimestamp(input) {
+        let str = String(input).trim();
+        if (str.includes(':')) {
+            const parts = str.split(':').map(Number);
+            if (parts.length === 2) return parts[0]*60 + parts[1];
+            if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+            return NaN;
+        }
+        return parseFloat(str);
+    }
+
+    function extractTimestampFromFilename(filename) {
+        const regex = /^\((\d{1,2})_(\d{1,2})(?:_(\d{1,2}))?\)/;
+        const match = filename.match(regex);
+        if (!match) return null;
+        if (match[3] !== undefined) return parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]);
+        else return parseInt(match[1])*60 + parseInt(match[2]);
+    }
+
+    // QueryString functions
+    function exportMarkersToQueryString() {
+        const markerData = markers.map(m => ({ t: m.timestamp }));
+        const encoded = encodeURIComponent(JSON.stringify(markerData));
+        const url = new URL(window.location.href);
+        url.searchParams.set('timeline', encoded);
+        return url.toString();
+    }
+
+    function updateShareUrlDisplay() {
+        if (markers.length === 0) {
+            shareUrlDisplay.innerText = "No markers. Add some then click 'Export to URL'";
+            return;
+        }
+        shareUrlDisplay.innerText = exportMarkersToQueryString();
+    }
+
+    function copyShareUrl() {
+        const text = shareUrlDisplay.innerText;
+        if (text && text.startsWith('http')) {
+            navigator.clipboard.writeText(text);
+            alert("URL copied!");
+        }
+    }
+
+    function importMarkersFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const timelineData = params.get('timeline');
+        if (!timelineData) return false;
+        try {
+            const decoded = JSON.parse(decodeURIComponent(timelineData));
+            if (Array.isArray(decoded)) {
+                markers = [];
+                nextId = 1;
+                for (const item of decoded) {
+                    if (typeof item.t === 'number') {
+                        markers.push({
+                            id: nextId++,
+                            timestamp: item.t,
+                            audioBlob: null,
+                            audioName: null,
+                            autoDetected: false
+                        });
+                    }
+                }
+                renderMarkersList();
+                drawTimeline();
+                updateFfmpegCommand();
+                updateShareUrlDisplay();
+                return true;
+            }
+        } catch(e) { console.warn(e); }
+        return false;
+    }
+
+    function clearAllMarkers() {
+        if (confirm("Clear all markers?")) {
+            markers = [];
+            nextId = 1;
+            renderMarkersList();
+            drawTimeline();
+            updateFfmpegCommand();
+            updateShareUrlDisplay();
+            const url = new URL(window.location.href);
+            url.searchParams.delete('timeline');
+            window.history.pushState({}, '', url);
+        }
+    }
+
+    async function addMarker(timestampSec, audioBlob = null, audioName = null, auto = false) {
+        if (!videoDuration || videoDuration <= 0) { alert("Load video first"); return false; }
+        if (timestampSec < 0) timestampSec = 0;
+        if (timestampSec > videoDuration) timestampSec = videoDuration;
+        markers.push({ id: nextId++, timestamp: timestampSec, audioBlob, audioName, autoDetected: auto });
+        renderMarkersList();
+        drawTimeline();
+        updateFfmpegCommand();
+        updateShareUrlDisplay();
+        return true;
+    }
+
+    async function replaceMarkerAudio(markerId, file) {
+        const marker = markers.find(m => m.id === markerId);
+        if (!marker) return;
+        const arrayBuf = await file.arrayBuffer();
+        marker.audioBlob = new Blob([arrayBuf], { type: file.type });
+        marker.audioName = file.name;
+        renderMarkersList();
+        updateFfmpegCommand();
+    }
+
+    function deleteMarker(markerId) {
+        markers = markers.filter(m => m.id !== markerId);
+        renderMarkersList();
+        drawTimeline();
+        updateFfmpegCommand();
+        updateShareUrlDisplay();
+    }
+
+    function renderMarkersList() {
+        if (markers.length === 0) {
+            markersContainer.innerHTML = `<div class="empty-message">🎙️ No markers. Add manually or import from URL.</div>`;
+            return;
+        }
+        markersContainer.innerHTML = '';
+        markers.sort((a,b) => a.timestamp - b.timestamp).forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'marker-item';
+            
+            const timeInput = document.createElement('input');
+            timeInput.type = 'number';
+            timeInput.step = '0.01';
+            timeInput.value = m.timestamp.toFixed(2);
+            timeInput.style.width = '85px';
+            timeInput.addEventListener('change', (e) => {
+                let newVal = parseFloat(e.target.value);
+                if (isNaN(newVal)) newVal = 0;
+                if (videoDuration && newVal > videoDuration) newVal = videoDuration;
+                m.timestamp = newVal;
+                renderMarkersList();
+                drawTimeline();
+                updateFfmpegCommand();
+                updateShareUrlDisplay();
+            });
+            
+            const replaceLabel = document.createElement('label');
+            replaceLabel.className = 'audio-file-label';
+            replaceLabel.innerHTML = '🎵 replace';
+            const replaceInput = document.createElement('input');
+            replaceInput.type = 'file';
+            replaceInput.accept = 'audio/*';
+            replaceInput.style.display = 'none';
+            replaceInput.onchange = async (e) => { if (e.target.files[0]) await replaceMarkerAudio(m.id, e.target.files[0]); };
+            replaceLabel.appendChild(replaceInput);
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'audio-name';
+            nameSpan.innerText = m.audioName ? (m.audioName.length > 40 ? m.audioName.slice(0,37)+'...' : m.audioName) : '(no audio)';
+            
+            const previewBtn = document.createElement('button');
+            previewBtn.className = 'small';
+            previewBtn.innerText = '🔊';
+            previewBtn.style.background = '#2c5f2d';
+            previewBtn.onclick = () => {
+                if (m.audioBlob) {
+                    const url = URL.createObjectURL(m.audioBlob);
+                    const a = new Audio(url);
+                    a.play().catch(e => alert("Cannot play"));
+                    a.onended = () => URL.revokeObjectURL(url);
+                } else alert("No audio assigned");
+            };
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'small';
+            deleteBtn.innerText = '🗑️';
+            deleteBtn.style.background = '#3a2e2e';
+            deleteBtn.onclick = () => deleteMarker(m.id);
+            
+            div.appendChild(timeInput);
+            div.appendChild(replaceLabel);
+            div.appendChild(nameSpan);
+            div.appendChild(previewBtn);
+            div.appendChild(deleteBtn);
+            markersContainer.appendChild(div);
+        });
+    }
+
+    function drawTimeline() {
+        if (!timelineCanvas || !videoDuration || videoDuration <= 0) return;
+        const canvas = timelineCanvas;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.clientWidth;
+        canvas.width = width;
+        canvas.height = 70;
+        ctx.fillStyle = '#0f0f17';
+        ctx.fillRect(0, 0, width, 70);
+        ctx.strokeStyle = '#2a2a36';
+        for (let i = 0; i <= 10; i++) {
+            let x = (i / 10) * width;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, 70);
+            ctx.stroke();
+        }
+        for (const m of markers) {
+            const x = (m.timestamp / videoDuration) * width;
+            ctx.beginPath();
+            ctx.arc(x, 35, 7, 0, 2*Math.PI);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+            ctx.fillStyle = '#ffc107';
+            ctx.arc(x, 35, 3, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.font = "8px monospace";
+            ctx.fillStyle = "#aaa";
+            ctx.fillText(formatTime(m.timestamp), x-18, 58);
+        }
+    }
+
+    function updateRuler() {
+        if (!videoDuration) return;
+        const ruler = document.getElementById('timelineRuler');
+        ruler.innerHTML = '';
+        for (let i = 0; i <= 10; i++) {
+            const time = (i / 10) * videoDuration;
+            const span = document.createElement('span');
+            span.innerText = formatTime(time);
+            ruler.appendChild(span);
+        }
+    }
+
+    function updatePlayhead() {
+        if (!videoPlayer || !videoDuration) return;
+        const percent = (videoPlayer.currentTime / videoDuration) * 100;
+        playheadDiv.style.left = `${Math.min(100, Math.max(0, percent))}%`;
+        currentTimeDisplay.innerText = formatTime(videoPlayer.currentTime);
+    }
+
+    // SPECIAL PLAY - FIXED: NO AUDIO RESTART, each marker plays once when crossing timestamp
+    function startSpecialPlay() {
+        if (!videoPlayer.src) { alert("Upload video first"); return; }
+        if (syncActive) cancelSync();
+        syncActive = true;
+        
+        videoPlayer.play();
+        
+        // Track which markers have been triggered during this playback session
+        const triggeredMarkers = new Set();
+        
+        activeInterval = setInterval(() => {
+            if (!syncActive || videoPlayer.paused || videoPlayer.ended) {
+                if (videoPlayer.paused || videoPlayer.ended) cancelSync();
+                return;
+            }
+            const ct = videoPlayer.currentTime;
+            for (const marker of markers) {
+                if (!marker.audioBlob) continue;
+                // Check if we should trigger: timestamp within 0.05 seconds AND not triggered yet
+                const shouldTrigger = Math.abs(marker.timestamp - ct) <= 0.05 && !triggeredMarkers.has(marker.id);
+                if (shouldTrigger) {
+                    triggeredMarkers.add(marker.id);
+                    const url = URL.createObjectURL(marker.audioBlob);
+                    const audio = new Audio(url);
+                    audio.volume = 1.0;
+                    audio.play().catch(e => console.log("play error"));
+                    audio.onended = () => URL.revokeObjectURL(url);
+                    setTimeout(() => URL.revokeObjectURL(url), 3000);
+                }
+            }
+        }, 40);
+        
+        // Reset triggered markers when seeking happens during special play
+        const seekHandler = () => {
+            // Clear triggered markers on seek so they can play again if user seeks back
+            triggeredMarkers.clear();
+            const ct = videoPlayer.currentTime;
+            for (const marker of markers) {
+                if (!marker.audioBlob) continue;
+                if (Math.abs(marker.timestamp - ct) <= 0.1 && !triggeredMarkers.has(marker.id)) {
+                    triggeredMarkers.add(marker.id);
+                    const url = URL.createObjectURL(marker.audioBlob);
+                    const audio = new Audio(url);
+                    audio.play().catch(e=>{});
+                    audio.onended = () => URL.revokeObjectURL(url);
+                    setTimeout(() => URL.revokeObjectURL(url), 3000);
+                }
+            }
+        };
+        videoPlayer.addEventListener('seeked', seekHandler);
+        
+        // When video ends or pauses, cleanup
+        const onEnded = () => cancelSync();
+        videoPlayer.addEventListener('ended', onEnded, { once: true });
+        
+        window.syncCleanup = () => {
+            clearInterval(activeInterval);
+            videoPlayer.removeEventListener('seeked', seekHandler);
+            videoPlayer.removeEventListener('ended', onEnded);
+            syncActive = false;
+        };
+    }
+
+    function cancelSync() {
+        if (activeInterval) clearInterval(activeInterval);
+        if (window.syncCleanup) window.syncCleanup();
+        syncActive = false;
+        document.querySelectorAll('.temp-sync-audio').forEach(a => { a.pause(); a.remove(); });
+    }
+
+    // YOUR PERFECT FFMPEG COMMAND GENERATION
+    function generateFfmpegCommand() {
+        if (!currentVideoFile) return "## No video loaded";
+        
+        const videoFileName = currentVideoFile.name;
+        const videoPath = `"${videoFileName.replace(/"/g, '\\"')}"`;
+        const validMarkers = markers.filter(m => m.audioBlob && m.audioName);
+        const retainVideo = retainVideoAudioCheckbox.checked;
+        
+        if (validMarkers.length === 0 && !retainVideo) return "# No audio to process";
+        
+        // Build filter complex lines exactly like your working example
+        let filterLines = [];
+        let amixInputs = [];
+        
+        // Video audio line (index 0)
+        if (retainVideo) {
+            filterLines.push(`[0:a]aresample=44100,volume=0.7[a0]`);
+            amixInputs.push(`[a0]`);
+        }
+        
+        // Snippet lines
+        for (let i = 0; i < validMarkers.length; i++) {
+            const m = validMarkers[i];
+            const delayMs = Math.round(m.timestamp * 1000);
+            const snippetIndex = retainVideo ? i + 1 : i;
+            const filterLabel = `a${retainVideo ? i+1 : i}`;
+            filterLines.push(`[${i+1}:a]aresample=44100,adelay=${delayMs}|${delayMs},volume=2[a${retainVideo ? i+1 : i}]`);
+            amixInputs.push(`[a${retainVideo ? i+1 : i}]`);
+        }
+        
+        const numInputs = amixInputs.length;
+        const amixLine = `${amixInputs.join('')}amix=inputs=${numInputs}:duration=longest[outa]`;
+        const filterComplex = filterLines.join('; \\\n') + '; \\\n' + amixLine;
+        
+        // Build input files part
+        let inputs = ` -i ${videoPath}`;
+        for (const m of validMarkers) {
+            const audioPath = `"${m.audioName.replace(/"/g, '\\"')}"`;
+            inputs += ` \\\n -i ${audioPath}`;
+        }
+        
+        const outputName = videoFileName.replace(/\.[^/.]+$/, '') + (retainVideo ? "_mixed.mp4" : "_snippets_only.mp4");
+        const outputPath = `"${outputName.replace(/"/g, '\\"')}"`;
+        
+        let ffmpegCmd = `ffmpeg ${inputs} \\\n-filter_complex "\\\n${filterComplex}\\\n" \\\n-map 0:v -map "[outa]" \\\n-c:v copy -c:a aac -b:a 192k -shortest \\\n${outputPath}`;
+        
+        // Add cd prefix if checkbox is checked
+        if (addCdPrefixCheckbox.checked) {
+            let cdPath = cdPathInput.value.trim();
+            if (cdPath) {
+                // Remove trailing slash if present
+                if (cdPath.endsWith('/')) cdPath = cdPath.slice(0, -1);
+                ffmpegCmd = `cd ${cdPath} && \\\n${ffmpegCmd}`;
+            }
+        }
+        
+        return ffmpegCmd;
+    }
+
+    function updateFfmpegCommand() {
+        ffmpegCommandDisplay.innerText = generateFfmpegCommand();
+    }
+
+    // Export WAV mix (simple preview)
+    async function exportFullMix() {
+        if (!videoDuration) { alert("Load video first"); return; }
+        const valid = markers.filter(m => m.audioBlob);
+        if (valid.length === 0) { alert("No audio snippets"); return; }
+        
+        const sampleRate = 44100;
+        const offlineCtx = new OfflineAudioContext({ numberOfChannels: 2, length: Math.ceil(videoDuration * sampleRate), sampleRate });
+        
+        for (const m of valid) {
+            const buf = await m.audioBlob.arrayBuffer();
+            const audioBuf = await offlineCtx.decodeAudioData(buf);
+            const src = offlineCtx.createBufferSource();
+            src.buffer = audioBuf;
+            src.connect(offlineCtx.destination);
+            src.start(m.timestamp);
+        }
+        
+        const rendered = await offlineCtx.startRendering();
+        const wav = bufferToWave(rendered);
+        const url = URL.createObjectURL(wav);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `audio_export_${Date.now()}.wav`;
+        a.click();
+        URL.revokeObjectURL(url);
+        alert("Export complete!");
+    }
+    
+    function bufferToWave(abuffer) {
+        const samples = abuffer.getChannelData(0);
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
+        function writeStr(offset, str) { for(let i=0;i<str.length;i++) view.setUint8(offset+i, str.charCodeAt(i)); }
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + samples.length * 2, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 2, true);
+        view.setUint32(24, 44100, true);
+        view.setUint32(28, 44100 * 4, true);
+        view.setUint16(32, 4, true);
+        view.setUint16(34, 16, true);
+        writeStr(36, 'data');
+        view.setUint32(40, samples.length * 2, true);
+        let offset = 44;
+        for (let i = 0; i < samples.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, samples[i]));
+            s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            view.setInt16(offset, s, true);
+        }
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    function batchAutoAdd() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'audio/*';
+        input.multiple = true;
+        input.onchange = async (e) => {
+            const files = Array.from(e.target.files);
+            for (const file of files) {
+                const ts = extractTimestampFromFilename(file.name);
+                if (ts !== null && videoDuration && ts >= 0 && ts <= videoDuration) {
+                    const blob = new Blob([await file.arrayBuffer()], { type: file.type });
+                    await addMarker(ts, blob, file.name, true);
+                } else if (ts !== null) alert(`Timestamp ${formatTime(ts)} out of range`);
+                else alert(`No timestamp prefix: ${file.name}`);
+            }
+        };
+        input.click();
+    }
+
+    // Video upload - PRESERVES markers from querystring
+    videoUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        currentVideoFile = file;
+        const url = URL.createObjectURL(file);
+        videoPlayer.src = url;
+        videoPlayer.load();
+        videoStatus.innerText = `✅ ${file.name}`;
+        
+        cancelSync();
+        
+        videoPlayer.addEventListener('loadedmetadata', () => {
+            videoDuration = videoPlayer.duration;
+            updateRuler();
+            drawTimeline();
+            updatePlayhead();
+            updateFfmpegCommand();
+            videoStatus.innerText += ` | ${formatTime(videoDuration)}`;
+        }, { once: true });
+    });
+
+    // Event listeners
+    videoPlayer.addEventListener('timeupdate', updatePlayhead);
+    specialPlayBtn.addEventListener('click', () => { cancelSync(); startSpecialPlay(); });
+    exportAudioBtn.addEventListener('click', exportFullMix);
+    addCurrentBtn.addEventListener('click', () => { if(videoDuration) addMarker(videoPlayer.currentTime); });
+    addManualBtn.addEventListener('click', () => {
+        const sec = parseTimestamp(manualTimestampInput.value);
+        if (isNaN(sec)) alert("Invalid timestamp. Use seconds like 12.5 or mm:ss");
+        else addMarker(sec);
+        manualTimestampInput.value = '';
+    });
+    batchAutoBtn.addEventListener('click', batchAutoAdd);
+    refreshFfmpegCmd.addEventListener('click', updateFfmpegCommand);
+    copyFfmpegBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(ffmpegCommandDisplay.innerText);
+        alert("Command copied!");
+    });
+    exportQueryBtn.addEventListener('click', () => {
+        if (markers.length === 0) { alert("Add markers first"); return; }
+        const url = exportMarkersToQueryString();
+        window.history.pushState({}, '', url);
+        updateShareUrlDisplay();
+        alert("URL updated! Share the link to preserve markers.");
+    });
+    copyUrlBtn.addEventListener('click', copyShareUrl);
+    clearMarkersBtn.addEventListener('click', clearAllMarkers);
+    retainVideoAudioCheckbox.addEventListener('change', updateFfmpegCommand);
+    addCdPrefixCheckbox.addEventListener('change', updateFfmpegCommand);
+    cdPathInput.addEventListener('input', updateFfmpegCommand);
+    
+    timelineCanvas.addEventListener('click', (e) => {
+        if (!videoDuration) return;
+        const rect = timelineCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percent = x / rect.width;
+        videoPlayer.currentTime = percent * videoDuration;
+    });
+    
+    window.addEventListener('resize', () => drawTimeline());
+    
+    // Initialize
+    importMarkersFromUrl();
+    renderMarkersList();
+    updateFfmpegCommand();
+</script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Encrypt / Decrypt</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #f6f9fc;
+      color: #1e1e2f;
+      padding: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1, h2 { font-weight: 600; }
+    h1 { font-size: 1.8rem; border-bottom: 2px solid #d0d7de; padding-bottom: 0.5rem; }
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 1.8rem;
+      margin: 1.5rem 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid #e6ecf2;
+    }
+    label {
+      font-weight: 500;
+      display: block;
+      margin: 0.8rem 0 0.25rem 0;
+    }
+    textarea, input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.95rem;
+      font-family: 'Menlo', 'Cascadia Code', 'Consolas', monospace;
+      border: 1px solid #ccd4de;
+      border-radius: 8px;
+      background: #fafbfc;
+      transition: border 0.15s;
+    }
+    textarea:focus, input:focus {
+      border-color: #4f7df3;
+      outline: none;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(79,125,243,0.15);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    button {
+      background: #1e1e2f;
+      color: white;
+      border: none;
+      padding: 0.7rem 2.2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      margin-top: 0.8rem;
+    }
+    button:hover { background: #2d3a4a; }
+    button:active { transform: scale(0.97); }
+    .output-box {
+      background: #f0f2f6;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      min-height: 3rem;
+      border: 1px solid #dce0e6;
+      margin-top: 0.4rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+    }
+    .output-box.is-empty { color: #8b95a9; font-style: italic; }
+    .status { margin-top: 0.6rem; padding: 0.5rem 1rem; border-radius: 6px; }
+    .status.error { background: #ffe8e8; color: #b91c1c; border: 1px solid #f5c2c2; }
+    .status.success { background: #e2f3e8; color: #1a6e3b; border: 1px solid #b8dcc8; }
+    .meta {
+      font-size: 0.8rem;
+      color: #4d5f73;
+      background: #f4f6fa;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 0.2rem;
+    }
+    details {
+      margin-top: 2rem;
+      border-top: 1px solid #dce0e6;
+      padding-top: 1rem;
+    }
+    summary {
+      font-weight: 600;
+      cursor: pointer;
+      color: #3a4d64;
+    }
+    summary:hover { color: #1e1e2f; }
+    .footnote {
+      font-size: 0.85rem;
+      color: #5a6a7e;
+      margin-top: 0.3rem;
+    }
+    .cipher-meta {
+      font-size: 0.8rem;
+      color: #4d5f73;
+      background: #f4f6fa;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🔐 Secure Decryption</h1>
+
+<!-- ====== DECRYPTION SECTION (main) ====== -->
+<div class="card">
+  <p style="margin-top:0; color:#3d4a5c;">
+    Ciphertext is read from <code>?cipher=</code> in the URL. You can also paste or edit below.
+  </p>
+
+  <label for="cipherInput">Ciphertext (must end with <strong>securever</strong>)</label>
+  <textarea id="cipherInput" spellcheck="false"></textarea>
+  <div class="cipher-meta" id="cipherMeta">—</div>
+
+  <label for="password">Password / Key</label>
+  <input type="password" id="password" placeholder="Enter password…" />
+
+  <button id="decryptBtn">🔓 Decrypt</button>
+
+  <div id="statusMsg"></div>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+    <h3 style="margin:0; font-weight:600;">📄 Decrypted Output</h3>
+    <span class="meta" id="outputSize">—</span>
+  </div>
+  <div id="decryptedOutput" class="output-box is-empty">Waiting for decryption…</div>
+</div>
+
+<!-- ====== ENCRYPTION SECTION (almost hidden at bottom) ====== -->
+<details>
+  <summary>⚙️ Encrypt (advanced) – click to expand</summary>
+  <div class="card" style="margin-top:1rem;">
+    <label for="plainText">Plaintext (HTML or text)</label>
+    <textarea id="plainText" rows="4" placeholder="Enter content to encrypt…"></textarea>
+
+    <label for="encPassword">Password</label>
+    <input type="password" id="encPassword" placeholder="Enter password…" />
+
+    <button id="encryptBtn">🔒 Encrypt</button>
+
+    <div id="encStatus"></div>
+
+    <label for="encOutput">Generated Ciphertext (ends with <strong>securever</strong>)</label>
+    <textarea id="encOutput" rows="3" readonly></textarea>
+  </div>
+</details>
+
+<script>
+  (function() {
+    'use strict';
+
+    // ─── Utilities ────────────────────────────────────────────────
+    function stringToArrayBuffer(str) {
+      return new TextEncoder().encode(str);
+    }
+
+    function arrayBufferToString(buffer) {
+      return new TextDecoder().decode(buffer);
+    }
+
+    function hexToBytes(hex) {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes[i/2] = parseInt(hex.substr(i, 2), 16);
+      }
+      return bytes;
+    }
+
+    function bytesToHex(bytes) {
+      return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ─── High‑security encryption (AES‑GCM, random salt, high iterations) ──
+    const ITERATIONS = 600000;
+    const SALT_LEN = 16;    // bytes
+    const IV_LEN = 12;      // bytes (GCM recommended)
+
+    async function encryptSecure(plaintext, password) {
+      // Generate random salt and IV
+      const salt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
+      const iv = crypto.getRandomValues(new Uint8Array(IV_LEN));
+
+      // Derive key using PBKDF2
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        stringToArrayBuffer(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+      const aesKey = await crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: salt,
+          iterations: ITERATIONS,
+          hash: 'SHA-256'
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      // Encrypt
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        aesKey,
+        stringToArrayBuffer(plaintext)
+      );
+
+      // Build final output: salt(hex) + iv(hex) + ciphertext(hex) + "securever"
+      const ciphertextBytes = new Uint8Array(encrypted);
+      const result = bytesToHex(salt) + bytesToHex(iv) + bytesToHex(ciphertextBytes) + 'securever';
+      return result;
+    }
+
+    async function decryptSecure(ciphertextWithSuffix, password) {
+      // Remove the trailing "securever"
+      if (!ciphertextWithSuffix.endsWith('securever')) {
+        throw new Error('Ciphertext must end with "securever"');
+      }
+      const hexPart = ciphertextWithSuffix.slice(0, -9); // remove "securever" (9 chars)
+
+      // Extract salt (32 hex chars = 16 bytes), iv (24 hex chars = 12 bytes)
+      if (hexPart.length < 32 + 24) {
+        throw new Error('Ciphertext too short after removing suffix.');
+      }
+      const saltHex = hexPart.slice(0, 32);
+      const ivHex = hexPart.slice(32, 32 + 24);
+      const cipherHex = hexPart.slice(32 + 24);
+
+      const salt = hexToBytes(saltHex);
+      const iv = hexToBytes(ivHex);
+      const ciphertext = hexToBytes(cipherHex);
+
+      // Derive key (same parameters)
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        stringToArrayBuffer(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+      const aesKey = await crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: salt,
+          iterations: ITERATIONS,
+          hash: 'SHA-256'
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      // Decrypt – will throw if authentication fails
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        aesKey,
+        ciphertext
+      );
+      return arrayBufferToString(decrypted);
+    }
+
+    // ─── DOM refs ───────────────────────────────────────────────────
+    const cipherInput = document.getElementById('cipherInput');
+    const passwordInput = document.getElementById('password');
+    const decryptBtn = document.getElementById('decryptBtn');
+    const decryptedOutput = document.getElementById('decryptedOutput');
+    const outputSize = document.getElementById('outputSize');
+    const statusMsg = document.getElementById('statusMsg');
+    const cipherMeta = document.getElementById('cipherMeta');
+
+    const plainText = document.getElementById('plainText');
+    const encPassword = document.getElementById('encPassword');
+    const encryptBtn = document.getElementById('encryptBtn');
+    const encOutput = document.getElementById('encOutput');
+    const encStatus = document.getElementById('encStatus');
+
+    // ─── Initialise cipher from URL ──────────────────────────────
+    function getCipherFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('cipher') || '';
+    }
+
+    const urlCipher = getCipherFromUrl();
+    if (urlCipher) {
+      cipherInput.value = urlCipher;
+    }
+    updateCipherMeta();
+
+    cipherInput.addEventListener('input', function() {
+      // Remove whitespace (if any) but keep the suffix
+      let val = this.value.replace(/\s/g, '');
+      if (val !== this.value) this.value = val;
+      updateCipherMeta();
+    });
+
+    function updateCipherMeta() {
+      const raw = cipherInput.value;
+      if (!raw) {
+        cipherMeta.textContent = 'Empty ciphertext';
+        return;
+      }
+      const hasSuffix = raw.endsWith('securever');
+      const len = raw.length;
+      const suffixMsg = hasSuffix ? '✅ ends with "securever"' : '⚠️ missing "securever" suffix';
+      cipherMeta.textContent = `Length: ${len} chars · ${suffixMsg}`;
+    }
+
+    // ─── Decrypt handler ───────────────────────────────────────────
+    decryptBtn.addEventListener('click', async function() {
+      statusMsg.innerHTML = '';
+      const password = passwordInput.value;
+      const cipher = cipherInput.value;
+
+      if (!password) {
+        statusMsg.innerHTML = '<div class="status error">Please enter a password.</div>';
+        return;
+      }
+      if (!cipher) {
+        statusMsg.innerHTML = '<div class="status error">No ciphertext provided.</div>';
+        return;
+      }
+
+      try {
+        decryptBtn.disabled = true;
+        decryptBtn.textContent = '⏳ Decrypting…';
+
+        const plain = await decryptSecure(cipher, password);
+
+        // ✅ Success – render with innerHTML (as requested)
+        decryptedOutput.innerHTML = plain;
+        decryptedOutput.classList.remove('is-empty');
+        outputSize.textContent = plain.length + ' chars';
+
+        statusMsg.innerHTML = '<div class="status success">✅ Decryption successful!</div>';
+      } catch (err) {
+        console.error(err);
+        decryptedOutput.innerHTML = '❌ Decryption failed.';
+        decryptedOutput.classList.remove('is-empty');
+        outputSize.textContent = '—';
+        statusMsg.innerHTML = `<div class="status error">❌ ${err.message}</div>`;
+      } finally {
+        decryptBtn.disabled = false;
+        decryptBtn.textContent = '🔓 Decrypt';
+      }
+    });
+
+    // Enter key on password triggers decrypt
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        decryptBtn.click();
+      }
+    });
+
+    // ─── Encrypt handler ───────────────────────────────────────────
+    encryptBtn.addEventListener('click', async function() {
+      encStatus.innerHTML = '';
+      const password = encPassword.value;
+      const plain = plainText.value;
+
+      if (!password) {
+        encStatus.innerHTML = '<div class="status error">Please enter a password.</div>';
+        return;
+      }
+      if (!plain) {
+        encStatus.innerHTML = '<div class="status error">Please enter text to encrypt.</div>';
+        return;
+      }
+
+      try {
+        encryptBtn.disabled = true;
+        encryptBtn.textContent = '⏳ Encrypting…';
+
+        const encrypted = await encryptSecure(plain, password);
+        encOutput.value = encrypted;
+        encStatus.innerHTML = '<div class="status success">✅ Encryption complete! Ciphertext ends with "securever".</div>';
+      } catch (err) {
+        console.error(err);
+        encStatus.innerHTML = `<div class="status error">❌ ${err.message}</div>`;
+      } finally {
+        encryptBtn.disabled = false;
+        encryptBtn.textContent = '🔒 Encrypt';
+      }
+    });
+
+    // If cipher is present in URL, auto-focus password
+    if (urlCipher) {
+      passwordInput.focus();
+    }
+  })();
+</script>
+
+<div class="footnote">
+  <strong>Security:</strong> AES‑GCM (authenticated) · PBKDF2‑SHA256 with 600,000 iterations · random salt + IV per encryption.
+  Ciphertext format: <code>[salt(32hex)][iv(24hex)][ciphertext(hex)]securever</code>.
+</div>
+
+</body>
+</html>

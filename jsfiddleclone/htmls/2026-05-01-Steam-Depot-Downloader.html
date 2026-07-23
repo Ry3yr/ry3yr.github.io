@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DepotDownloader Command Generator</title>
+</head>
+<body>
+    <h1><a target="_blank" href="https://github.com/steamre/depotdownloader">DepotDownloader</a> Command Generator</h1>
+    
+    <form onsubmit="event.preventDefault(); generateLinks();">
+        <label>Steam URL or AppID:</label><br>
+        <input type="text" id="steam_input" placeholder="https://store.steampowered.com/app/2830030/ or 2830030" style="width: 400px;"><br><br>
+        <button type="button" onclick="generateLinks()">Get SteamDB Depots Link</button>
+    </form>
+    
+    <div id="steamdbLinks" style="margin-top: 10px; margin-bottom: 20px;"></div>
+    
+    <hr>
+    
+    <form onsubmit="event.preventDefault(); generateCommand();">
+        <label>AppID:</label><br>
+        <input type="text" id="appid" placeholder="e.g., 2830030" value="2830030"><br><br>
+        
+        <label>Depot ID:</label><br>
+        <input type="text" id="depot" placeholder="e.g., 731" onkeyup="updateManifestLink()" onchange="updateManifestLink()"><br><br>
+        
+        <div id="manifestLinkDiv" style="margin-bottom: 10px; font-size: 14px;"></div>
+        
+        <label>Manifest ID (optional):</label><br>
+        <input type="text" id="manifest" placeholder="e.g., 1234567890123456789"><br><br>
+        
+        <label>Steam Username:</label><br>
+        <input type="text" id="username" placeholder="Your Steam username"><br><br>
+        
+        <label>Path to DepotDownloader.exe (optional):</label><br>
+        <input type="text" id="ddpath" placeholder="e.g., C:\tools\DepotDownloader.exe or ./DepotDownloader.exe" style="width: 400px;"><br><br>
+        
+        <button type="submit">Generate Command</button>
+    </form>
+    
+    <br>
+    
+    <div id="commandDisplay">Fill in the fields above and click Generate</div>
+    
+    <br>
+    <button onclick="copyCommand()">📋 Copy Command to Clipboard</button>
+
+    <script>
+    // Parse URL parameters on load
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('appid')) document.getElementById('appid').value = params.get('appid');
+    if (params.get('depot')) document.getElementById('depot').value = params.get('depot');
+    if (params.get('manifest')) document.getElementById('manifest').value = params.get('manifest');
+    if (params.get('username')) document.getElementById('username').value = params.get('username');
+    if (params.get('steam_url')) document.getElementById('steam_input').value = params.get('steam_url');
+    if (params.get('DepotDownloaderPath')) document.getElementById('ddpath').value = params.get('DepotDownloaderPath');
+    
+    // Auto-generate if URL has appid, otherwise generate with default
+    if (params.get('appid')) {
+        generateCommand();
+    } else {
+        generateCommand(); // Generate with default 2830030
+    }
+    if (params.get('steam_url')) generateLinks();
+    if (params.get('depot')) updateManifestLink();
+    
+    function extractAppId(input) {
+        if (/^\d+$/.test(input)) {
+            return parseInt(input);
+        }
+        const match = input.match(/\/app\/(\d+)/);
+        if (match) {
+            return parseInt(match[1]);
+        }
+        return null;
+    }
+    
+    function generateLinks() {
+        const steamInput = document.getElementById('steam_input').value.trim();
+        
+        if (!steamInput) {
+            document.getElementById('steamdbLinks').innerHTML = '<span style="color: red;">Please enter a Steam URL or AppID</span>';
+            return;
+        }
+        
+        const appId = extractAppId(steamInput);
+        
+        if (!appId) {
+            document.getElementById('steamdbLinks').innerHTML = '<span style="color: red;">Invalid Steam URL or AppID</span>';
+            return;
+        }
+        
+        const depotUrl = `https://steamdb.info/app/${appId}/depots/`;
+        
+        document.getElementById('steamdbLinks').innerHTML = `
+            <strong>SteamDB Link for AppID ${appId}:</strong><br>
+            <a href="${depotUrl}" target="_blank">📦 View Depots on SteamDB</a>
+        `;
+        
+        // Auto-fill the AppID field
+        document.getElementById('appid').value = appId;
+        generateCommand();
+    }
+    
+    function updateManifestLink() {
+        const depotId = document.getElementById('depot').value.trim();
+        const manifestLinkDiv = document.getElementById('manifestLinkDiv');
+        
+        if (depotId && /^\d+$/.test(depotId)) {
+            const manifestUrl = `https://steamdb.info/depot/${depotId}/manifests/`;
+            manifestLinkDiv.innerHTML = `
+                <a href="${manifestUrl}" target="_blank">📄 View Manifests for Depot ${depotId} on SteamDB</a>
+            `;
+        } else {
+            manifestLinkDiv.innerHTML = '';
+        }
+        
+        generateCommand();
+    }
+    
+    function generateCommand() {
+        const appid = document.getElementById('appid').value.trim();
+        const depot = document.getElementById('depot').value.trim();
+        const manifest = document.getElementById('manifest').value.trim();
+        const username = document.getElementById('username').value.trim();
+        let ddpath = document.getElementById('ddpath').value.trim();
+        
+        if (!appid) {
+            document.getElementById('commandDisplay').innerHTML = 'Error: Please enter an AppID';
+            return;
+        }
+        
+        // Use DepotDownloader.exe as default, or use custom path
+        let executable = 'DepotDownloader.exe';
+        if (ddpath) {
+            executable = ddpath;
+        }
+        
+        let command = `${executable} -username ${username || 'YOUR_USERNAME'} -app ${appid}`;
+        
+        if (depot) {
+            command += ` -depot ${depot}`;
+        }
+        
+        if (manifest && depot) {
+            command += ` -manifest ${manifest}`;
+        }
+        
+        document.getElementById('commandDisplay').innerHTML = command;
+    }
+    
+    function copyCommand() {
+        const command = document.getElementById('commandDisplay').innerText;
+        if (command && !command.includes('Error')) {
+            navigator.clipboard.writeText(command).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            }).catch(() => {
+                alert('Could not copy. Select the text manually.');
+            });
+        } else {
+            alert('Generate a valid command first');
+        }
+    }
+    
+    // Auto-generate command when any field changes
+    document.getElementById('appid').addEventListener('input', generateCommand);
+    document.getElementById('depot').addEventListener('input', generateCommand);
+    document.getElementById('manifest').addEventListener('input', generateCommand);
+    document.getElementById('username').addEventListener('input', generateCommand);
+    document.getElementById('ddpath').addEventListener('input', generateCommand);
+    </script>
+    
+    <hr>
+    <small>
+        Default AppID: 2830030 ( MOTORSLICE)<br>
+        URL parameters: <br>
+        ?steam_url=2830030&appid=2830030&depot=731&manifest=123456789&username=myuser&DepotDownloaderPath=C:\tools\DepotDownloader.exe
+    </small>
+</body>
+</html>

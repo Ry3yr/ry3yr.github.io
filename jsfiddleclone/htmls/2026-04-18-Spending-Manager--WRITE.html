@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Spending Manager — Keep Exactly What You Paste</title>
+<style>
+* {
+    box-sizing: border-box;
+}
+body {
+    background: #0a0c12;
+    color: #eef4ff;
+    font-family: 'Segoe UI', monospace;
+    padding: 24px;
+    margin: 0;
+}
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+h1 {
+    font-size: 2rem;
+    border-left: 5px solid #ffd966;
+    padding-left: 20px;
+    margin-bottom: 24px;
+}
+.section {
+    background: #12161f;
+    border: 1px solid #2a2f3f;
+    border-radius: 20px;
+    padding: 20px 24px;
+    margin: 24px 0;
+}
+.section h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    color: #ffd966;
+}
+input, button {
+    background: #1e2533;
+    color: #f0f3fa;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 10px 16px;
+    font-family: inherit;
+}
+button {
+    background: #2a3346;
+    cursor: pointer;
+}
+button:hover {
+    background: #ffd966;
+    color: #0a0c12;
+}
+.price { color: #ffd966; font-weight: bold; }
+.date { color: #7dd3fc; }
+#bulkInput {
+    background: #0e121b;
+    border: 2px solid #2d3a5e;
+    border-radius: 18px;
+    padding: 14px;
+    min-height: 200px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    font-family: 'Segoe UI', 'Times New Roman', monospace;
+    overflow: auto;
+}
+.raw-display {
+    background: #0d1222;
+    border-radius: 16px;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 0.8rem;
+    border-left: 3px solid #ffd966;
+}
+.raw-display a {
+    color: #ffd966;
+}
+.item-card {
+    background: #10141e;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    border: 1px solid #2a2f3f;
+}
+.preview-area {
+    background: #0b0e16;
+    border-radius: 16px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 0.85rem;
+}
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+details {
+    background: #10141e;
+    border-radius: 18px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-left: 3px solid #ffd966;
+}
+summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📦 Spending Manager — KEEPS EXACT HTML YOU PASTE</h1>
+
+<div class="section">
+<h3>➕ Add single item</h3>
+<input id="itemDate" placeholder="YYYY.MM.DD" size="12"> 
+<input id="itemPrice" placeholder="Price" size="8">
+<input id="itemDesc" placeholder="Description" size="40">
+<button onclick="addItem()">Add</button>
+</div>
+
+
+<div class="section">
+<h3>🌐 Fetch from Server or Load from Disk</h3>
+<div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+    <input type="text" id="jsonUrlInput" value="https://alcea-wisteria.de/PHP/xnotes/spending_exact.json" style="flex: 1; min-width: 300px;" placeholder="Enter JSON URL">
+    <button onclick="fetchJsonFromUrl()">📡 Fetch & Merge</button>
+    <button onclick="replaceWithFetchedJson()">🔄 Replace with Fetched</button>
+    <span style="color: #7dd3fc;">|</span>
+    <input type="file" id="jsonFileInput" accept=".json" onchange="loadJsonFromDisk(event)" style="display: none;">
+    <button onclick="document.getElementById('jsonFileInput').click()">📂 Load from Disk (Merge)</button>
+    <button onclick="document.getElementById('jsonFileInput').click(); replaceMode=true;">💾 Replace from Disk</button>
+</div>
+<div id="fetchStatus" style="margin-top: 12px; padding: 8px; background: #0f1420; border-radius: 12px; font-size: 0.85rem;"></div>
+</div>
+
+<script>
+// Add these functions - DO NOT modify existing code above
+let replaceMode = false;
+
+async function fetchJsonFromUrl() {
+    const url = document.getElementById('jsonUrlInput').value.trim();
+    if (!url) return;
+    
+    const statusDiv = document.getElementById('fetchStatus');
+    statusDiv.innerHTML = '⏳ Fetching...';
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) throw new Error('JSON must be an array');
+        
+        const beforeCount = spendingData.length;
+        
+        // Merge: add items that don't already exist (based on date+price+desc)
+        const existingKeys = new Set(spendingData.map(item => `${item.date}|${item.price}|${item.desc}`));
+        let added = 0;
+        
+        for (const item of data) {
+            const key = `${item.date}|${item.price}|${item.desc}`;
+            if (!existingKeys.has(key)) {
+                spendingData.push(item);
+                existingKeys.add(key);
+                added++;
+            }
+        }
+        
+        spendingData.sort((a, b) => b.date.localeCompare(a.date));
+        saveToStorage();
+        renderData();
+        
+        statusDiv.innerHTML = `✅ Merged: ${added} new items added (${beforeCount} → ${spendingData.length} total)`;
+    } catch (err) {
+        statusDiv.innerHTML = `❌ Error: ${err.message}`;
+    }
+}
+
+async function replaceWithFetchedJson() {
+    const url = document.getElementById('jsonUrlInput').value.trim();
+    if (!url) return;
+    
+    if (!confirm('Replace ALL current data with fetched JSON?')) return;
+    
+    const statusDiv = document.getElementById('fetchStatus');
+    statusDiv.innerHTML = '⏳ Fetching...';
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) throw new Error('JSON must be an array');
+        
+        spendingData = data;
+        spendingData.sort((a, b) => b.date.localeCompare(a.date));
+        saveToStorage();
+        renderData();
+        
+        statusDiv.innerHTML = `✅ Replaced with ${spendingData.length} items from server`;
+    } catch (err) {
+        statusDiv.innerHTML = `❌ Error: ${err.message}`;
+    }
+}
+
+function loadJsonFromDisk(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const statusDiv = document.getElementById('fetchStatus');
+    statusDiv.innerHTML = '⏳ Loading file...';
+    
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            if (!Array.isArray(data)) throw new Error('JSON must be an array');
+            
+            const beforeCount = spendingData.length;
+            
+            if (replaceMode) {
+                if (confirm(`Replace ALL current data with ${data.length} items from file?`)) {
+                    spendingData = data;
+                    statusDiv.innerHTML = `✅ Replaced with ${spendingData.length} items`;
+                } else {
+                    statusDiv.innerHTML = '⏸️ Replace cancelled';
+                    replaceMode = false;
+                    event.target.value = '';
+                    return;
+                }
+            } else {
+                // Merge mode
+                const existingKeys = new Set(spendingData.map(item => `${item.date}|${item.price}|${item.desc}`));
+                let added = 0;
+                
+                for (const item of data) {
+                    const key = `${item.date}|${item.price}|${item.desc}`;
+                    if (!existingKeys.has(key)) {
+                        spendingData.push(item);
+                        existingKeys.add(key);
+                        added++;
+                    }
+                }
+                statusDiv.innerHTML = `✅ Merged: ${added} new items (${beforeCount} → ${spendingData.length} total)`;
+            }
+            
+            spendingData.sort((a, b) => b.date.localeCompare(a.date));
+            saveToStorage();
+            renderData();
+            replaceMode = false;
+        } catch (err) {
+            statusDiv.innerHTML = `❌ Invalid JSON: ${err.message}`;
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+}
+
+// Hook into existing file upload to not conflict
+const originalUploadJson = uploadJSON;
+uploadJSON = function(event) {
+    // Keep original behavior for the existing upload button
+    originalUploadJson(event);
+};
+</script>
+
+<div class="section">
+<h3>📋 Bulk Import — PASTE ANY HTML, IT STAYS EXACTLY AS IS</h3>
+<div contenteditable="true" id="bulkInput" style="background:#0c1020;border:2px solid #ffd966;border-radius:20px;padding:14px;min-height:180px;white-space:pre-wrap;color:#f0f4ff;font-family:inherit;overflow:auto;"></div>
+<div style="display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap;">
+<label>Default Year: <input id="bulkYear" value="2026" size="4"></label>
+<button onclick="parseBulk()">💾 STORE AS-IS (preserve all HTML)</button>
+<button onclick="clearBulk()">Clear editor</button>
+</div>
+<div id="parsePreview" class="preview-area"></div>
+</div>
+
+<div class="section">
+<h3>💾 Data — JSON stores your EXACT original HTML</h3>
+<div class="btn-group">
+<button onclick="renderData()">Reload view</button>
+<button onclick="exportData()">Copy JSON</button>
+<button onclick="downloadJSON()">Download JSON</button>
+<input type="file" id="jsonUpload" accept=".json" onchange="uploadJSON(event)">
+<button onclick="clearAllData()">Clear all</button>
+</div>
+<div id="dataView"></div>
+</div>
+</div>
+
+<script>
+let spendingData = [];
+
+function setToday() {
+    const t = new Date();
+    document.getElementById('itemDate').value = `${t.getFullYear()}.${String(t.getMonth()+1).padStart(2,'0')}.${String(t.getDate()).padStart(2,'0')}`;
+}
+
+function loadFromStorage() {
+    const s = localStorage.getItem('spendingData_raw');
+    spendingData = s ? JSON.parse(s) : [];
+}
+
+function saveToStorage() {
+    localStorage.setItem('spendingData_raw', JSON.stringify(spendingData));
+}
+
+function addItem() {
+    const date = document.getElementById('itemDate').value;
+    const price = parseFloat(document.getElementById('itemPrice').value.replace(',', '.'));
+    const desc = document.getElementById('itemDesc').value;
+    if (!date || isNaN(price) || !desc) return alert('Fill all fields');
+    
+    spendingData.push({
+        date: date,
+        price: price,
+        desc: desc,
+        rawHtml: `<span>${escapeHtml(desc)}</span>`
+    });
+    spendingData.sort((a,b) => b.date.localeCompare(a.date));
+    saveToStorage();
+    renderData();
+    document.getElementById('itemPrice').value = '';
+    document.getElementById('itemDesc').value = '';
+    setToday();
+}
+
+function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// SIMPLE: take the HTML exactly as it is in the editor
+// No parsing, no regex extraction, no reconstruction.
+// Each block = what the user pasted, stored verbatim.
+function parseBulk() {
+    const bulkDiv = document.getElementById('bulkInput');
+    const rawHtml = bulkDiv.innerHTML;
+    
+    if (!rawHtml.trim()) {
+        document.getElementById('parsePreview').innerHTML = '⚠️ Nothing to store. Paste your HTML first.';
+        return;
+    }
+    
+    const defYear = document.getElementById('bulkYear').value;
+    
+    // Get plain text to help with date detection (but we keep HTML untouched)
+    const plainText = bulkDiv.innerText;
+    
+    // Split by lines or block elements? We'll store the ENTIRE pasted content as ONE item's rawHtml?
+    // Better: split by natural line breaks or <br> tags to create separate entries.
+    // But to keep it simple and preserve EVERYTHING: we store each "line" as a separate entry,
+    // but keep the exact HTML for that line.
+    
+    // Better approach: Use a temporary div and extract by <br> or by text lines while preserving original markup.
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = rawHtml;
+    
+    // Get all top-level nodes and split by line breaks
+    let entries = [];
+    
+    // Method: iterate over child nodes and collect HTML snippets
+    // Also handle <br> as separator
+    const htmlContent = rawHtml;
+    
+    // Replace <br> with a marker, then split
+    let withMarkers = htmlContent.replace(/<br\s*\/?>/gi, '###SPLIT###');
+    let parts = withMarkers.split('###SPLIT###');
+    
+    for (let part of parts) {
+        if (!part.trim()) continue;
+        
+        // Create a mini DOM to extract plain text for date/price detection
+        const mini = document.createElement('div');
+        mini.innerHTML = part;
+        const lineText = mini.innerText.trim();
+        if (!lineText) continue;
+        
+        // Extract price (simple)
+        let price = null;
+        let priceMatch = lineText.match(/(\d+(?:[.,]\d+)?)\s*[€$]/i) || lineText.match(/[€$]\s*(\d+(?:[.,]\d+)?)/i);
+        if (priceMatch) {
+            price = parseFloat(priceMatch[1].replace(',', '.'));
+        }
+        if (price === null || isNaN(price)) continue;
+        
+        // Extract date (simple)
+        let date = '';
+        let dateMatch = lineText.match(/\((\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\)/);
+        if (dateMatch) {
+            let day = dateMatch[1].padStart(2,'0');
+            let month = dateMatch[2].padStart(2,'0');
+            let year = dateMatch[3] || defYear;
+            date = `${year}.${month}.${day}`;
+        }
+        if (!date) {
+            date = prompt(`Date for: €${price} - ${lineText.substring(0, 50)}?\nFormat YYYY.MM.DD or Cancel to skip`);
+            if (!date) continue;
+        }
+        
+        // Description: clean text without price/date
+        let desc = lineText
+            .replace(/\d+(?:[.,]\d+)?\s*[€$]/i, '')
+            .replace(/[€$]\s*\d+(?:[.,]\d+)?/i, '')
+            .replace(/\([^)]*\)/g, '')
+            .replace(/^[-_*•❗☑✅]+\s*/, '')
+            .trim();
+        if (!desc) desc = lineText.substring(0, 60);
+        
+        // IMPORTANT: keep the ORIGINAL HTML for this part - EXACTLY as pasted
+        entries.push({
+            rawHtml: part,  // THE EXACT HTML FROM THE PASTE
+            price: price,
+            date: date,
+            desc: desc
+        });
+    }
+    
+    if (entries.length === 0) {
+        document.getElementById('parsePreview').innerHTML = '❌ No valid entries found. Each line needs a price (like 21,99€) and optional date like (11.4)';
+        return;
+    }
+    
+    for (let entry of entries) {
+        spendingData.push({
+            date: entry.date,
+            price: entry.price,
+            desc: entry.desc,
+            rawHtml: entry.rawHtml
+        });
+    }
+    
+    spendingData.sort((a,b) => b.date.localeCompare(a.date));
+    saveToStorage();
+    renderData();
+    
+    document.getElementById('parsePreview').innerHTML = `<span style="color:#b9f6ca;">✅ Stored ${entries.length} items with EXACT original HTML (links, colors, everything preserved)</span>`;
+}
+
+function clearBulk() {
+    document.getElementById('bulkInput').innerHTML = '';
+    document.getElementById('parsePreview').innerHTML = '';
+}
+
+function renderData() {
+    let html = '';
+    let grandTotal = 0;
+    const byYear = {};
+    
+    spendingData.forEach(item => {
+        const year = item.date.substring(0,4);
+        if (!byYear[year]) byYear[year] = [];
+        byYear[year].push(item);
+        grandTotal += item.price;
+    });
+    
+    const years = Object.keys(byYear).sort().reverse();
+    const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    
+    for (const year of years) {
+        let yearSum = 0;
+        html += `<h2 style="border-bottom: 2px solid #ffd966;">📆 ${year}</h2>`;
+        
+        const byMonth = {};
+        byYear[year].forEach(item => {
+            const month = item.date.substring(5,7);
+            if (!byMonth[month]) byMonth[month] = [];
+            byMonth[month].push(item);
+            yearSum += item.price;
+        });
+        
+        const months = Object.keys(byMonth).sort().reverse();
+        for (const month of months) {
+            const items = byMonth[month];
+            const monthTotal = items.reduce((s,i) => s + i.price, 0);
+            
+            html += `<details><summary><strong>${monthNames[parseInt(month)]}</strong> <span class="price">€${monthTotal.toFixed(2)}</span> (${items.length})</summary>`;
+            
+            items.sort((a,b) => b.date.localeCompare(a.date)).forEach((item) => {
+                const globalIdx = spendingData.findIndex(i => i === item);
+                
+                html += `
+                <div class="item-card">
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; margin-bottom: 10px;">
+                        <span class="price">€${item.price.toFixed(2)}</span>
+                        <span class="date">${item.date}</span>
+                        <span style="flex:1;">${escapeHtml(item.desc)}</span>
+                        <button onclick="deleteItem(${globalIdx})" style="background:#4a2a2f;">✖️ Delete</button>
+                        <button onclick="showRawHtml(${globalIdx})" style="background:#2a3a4a;">🔍 View Original HTML</button>
+                    </div>
+                    <div class="raw-display">
+                        <strong>📎 EXACT HTML as pasted:</strong><br>
+                        <div style="font-family: monospace; font-size: 11px; word-break: break-all; margin-top: 6px; padding: 8px; background: #0a0e18; border-radius: 12px;">
+                            ${escapeHtml(item.rawHtml)}
+                        </div>
+                        <div style="margin-top: 10px; padding: 8px; background: #0f1422; border-radius: 12px;">
+                            <strong>✨ Rendered (clickable links work):</strong><br>
+                            <div style="margin-top: 6px;">${item.rawHtml}</div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            html += `</details>`;
+        }
+        html += `<div style="text-align:right; margin: 12px 0;"><strong>Year total: €${yearSum.toFixed(2)}</strong></div>`;
+    }
+    
+    document.getElementById('dataView').innerHTML = `<div style="background:#0f1420; border-radius: 24px; padding: 20px;"><h2>💰 TOTAL: €${grandTotal.toFixed(2)}</h2>${html}</div>`;
+}
+
+function deleteItem(idx) {
+    if (idx >= 0 && idx < spendingData.length) {
+        spendingData.splice(idx, 1);
+        saveToStorage();
+        renderData();
+    }
+}
+
+function showRawHtml(idx) {
+    const item = spendingData[idx];
+    if (!item) return;
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#10141f;border-radius:28px;max-width:90%;width:750px;max-height:85%;overflow:auto;padding:24px;border:2px solid #ffd966;';
+    box.innerHTML = `
+        <h3 style="color:#ffd966; margin-top:0;">📋 EXACT HTML AS STORED</h3>
+        <div style="background:#0a0e18;border-radius:16px;padding:16px;margin:16px 0;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto;">
+            <strong>Raw HTML snippet:</strong><br><code style="color:#a5f7b0;">${escapeHtml(item.rawHtml)}</code>
+        </div>
+        <div style="background:#1a1f2e;border-radius:16px;padding:16px;margin:16px 0;">
+            <strong>✨ Rendered preview (links, colors preserved):</strong><br><br>
+            <div style="background:#0d1222;padding:16px;border-radius:16px;">${item.rawHtml}</div>
+        </div>
+        <div style="color:#aaa; font-size:12px; margin:12px 0;">💰 Price: €${item.price.toFixed(2)} | 📅 Date: ${item.date}</div>
+        <button onclick="this.closest('div[style*=\\'fixed\\']').remove()" style="background:#ffd966;color:#000;padding:10px 24px;border-radius:40px;cursor:pointer;">Close</button>
+    `;
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
+}
+
+function exportData() {
+    const exportData = spendingData.map(item => ({
+        date: item.date,
+        price: item.price,
+        desc: item.desc,
+        rawHtml: item.rawHtml
+    }));
+    navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+    alert(`Copied ${spendingData.length} items with EXACT original HTML`);
+}
+
+function downloadJSON() {
+    const exportData = spendingData.map(item => ({
+        date: item.date,
+        price: item.price,
+        desc: item.desc,
+        rawHtml: item.rawHtml
+    }));
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `spending_exact_html_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function uploadJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const parsed = JSON.parse(ev.target.result);
+            if (Array.isArray(parsed)) {
+                spendingData = parsed;
+                saveToStorage();
+                renderData();
+                alert(`✅ Loaded ${spendingData.length} items. HTML is EXACTLY as saved.`);
+            } else throw new Error();
+        } catch(e) { alert('Invalid JSON file'); }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function clearAllData() {
+    if (confirm('Delete ALL data? This cannot be undone.')) {
+        spendingData = [];
+        saveToStorage();
+        renderData();
+        document.getElementById('parsePreview').innerHTML = '';
+    }
+}
+
+// Paste handler: keep everything
+function initPaste() {
+    const bulkDiv = document.getElementById('bulkInput');
+    bulkDiv.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const html = e.clipboardData.getData('text/html');
+        const text = e.clipboardData.getData('text/plain');
+        if (html && html.trim().length > 0) {
+            document.execCommand('insertHTML', false, html);
+        } else {
+            document.execCommand('insertText', false, text);
+        }
+    });
+}
+
+window.onload = () => {
+    loadFromStorage();
+    setToday();
+    renderData();
+    initPaste();
+};
+</script>
+</body>
+</html>

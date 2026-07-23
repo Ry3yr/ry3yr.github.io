@@ -1,0 +1,592 @@
+<iframe src="/other/extra/scripts/fakesocialmedia/lastshorthands.html" id="iframe" width="100%" height="150"></iframe> <br><hr>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Akkoma Poster - Enhanced</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+    label { display: block; margin: 10px 0 5px; }
+    input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+    textarea { height: 60px; resize: vertical; }
+    button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+    #postDisplay { margin-top: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
+    #actions { margin: 15px 0; }
+    .emoji-reaction { background: #f0f0f0; border-radius: 20px; padding: 5px 10px; margin: 3px; display: inline-block; }
+    #statusMessage { padding: 10px; margin: 10px 0; border-radius: 4px; display: none; }
+    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .loading { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    .link-section { margin: 15px 0; padding: 12px; background: #f5f5f5; border-radius: 4px; border-left: 5px solid #4CAF50; }
+  </style>
+</head>
+<body>
+  <h2>Akkoma Poster - Enhanced</h2>
+
+  <div id="statusMessage"></div>
+
+  <label>Instance URL:</label>
+  <input type="text" id="instance" placeholder="https://your.instance.tld" />
+
+  <label>API Key:</label>
+  <details><summary>uWu Wats diz ?</summary>
+  <input type="text" id="apikey" /></details>
+  
+  <button id="readBtn" onclick="readFromStorage()">Read from Storage</button>
+
+  <br><br>
+  
+  <label>Post URL:</label>
+  <input type="text" id="postUrl" placeholder="https://instance.tld/users/username/statuses/123456 or https://instance.tld/notes/noteid" 
+         oninput="loadPostFromUrl()" />
+  
+  <div id="postDisplay" style="display: none;">
+    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+      <img id="avatar" src="" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px;" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23ccc%22/></svg>';" />
+      <div>
+        <strong id="username">Username</strong><br>
+        <span id="timestamp">Timestamp</span>
+      </div>
+    </div>
+    <div id="postContent" style="margin: 15px 0;"></div>
+    <div id="postStats" style="color: #666; font-size: 0.9em; margin: 10px 0;"></div>
+    
+    <!-- ADDED: Link section for remote and home URLs -->
+    <div id="linkSection" class="link-section" style="display: none;">
+        <div style="margin-bottom: 5px;">
+            <strong>REMOTE POST:</strong> 
+            <a id="remoteLink" href="#" target="_blank" style="color: #0066cc;"></a>
+        </div>
+        <div>
+            <strong>HOME INSTANCE:</strong> 
+            <a id="homeLink" href="#" target="_blank" style="color: #4CAF50; font-weight: bold;">Resolving...</a>
+        </div>
+    </div>
+    
+    <div id="actions" style="margin-top: 20px;">
+      <button id="boostBtn" onclick="resolveAndExecute('boost')">🔁 Boost</button>
+      <button id="favoriteBtn" onclick="resolveAndExecute('fav')">❤️ Favorite</button>
+      <div style="margin: 15px 0;">
+        <label for="textbox">Emoji Reaction:</label>
+        <textarea id="textbox" name="textbox" placeholder="Enter emojis or shortcodes like:
+:smile:
+:fire:
+🎉
+❤️
+:custom_emoji:"></textarea>
+        <button onclick="resolveAndExecute('emoji')">React with Emojis</button>
+      </div>
+      <div id="currentReactions" style="margin-top: 10px;">
+        <strong>Current Reactions:</strong>
+        <div id="reactionsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+// Add this function to handle emoji selection
+function handleEmojiSelection(emoji) {
+  const textarea = document.getElementById('textbox');
+  const currentValue = textarea.value.trim();
+  
+  if (currentValue) {
+    textarea.value = currentValue + '\n' + emoji;
+  } else {
+    textarea.value = emoji;
+  }
+  textarea.focus();
+}
+
+// Add this event listener to listen for messages from the iframe
+window.addEventListener('message', function(event) {
+  if (event.data.type === 'shorthandSelected' || event.data.type === 'emojiSelected') {
+    handleEmojiSelection(event.data.shorthand);
+  }
+});
+    let currentPostData = null;
+    let currentPlatform = null;
+    let currentLocalId = null; // For resolved local post ID
+    let homePostUrl = null; // For storing the home instance post URL
+
+    function showStatus(message, type = 'info') {
+      const statusDiv = document.getElementById('statusMessage');
+      statusDiv.textContent = message;
+      statusDiv.className = type;
+      statusDiv.style.display = 'block';
+      
+      if (type !== 'loading') {
+        setTimeout(() => {
+          statusDiv.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    async function loadPostFromUrl() {
+      const url = document.getElementById('postUrl').value.trim();
+      if (!url) {
+        document.getElementById('postDisplay').style.display = 'none';
+        document.getElementById('linkSection').style.display = 'none';
+        return;
+      }
+      
+      showStatus('Loading post...', 'loading');
+      
+      try {
+        const urlObj = new URL(url);
+        const instance = urlObj.hostname;
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        
+        // Check if it's a Misskey URL
+        if (pathParts.includes('notes')) {
+          currentPlatform = 'misskey';
+          const noteIndex = pathParts.indexOf('notes');
+          const noteId = pathParts[noteIndex + 1];
+          currentPostData = await fetchMisskeyPost(instance, noteId);
+        } 
+        // Check if it's a Mastodon/Akkoma URL
+        else {
+          currentPlatform = 'mastodon';
+          const statusId = pathParts[pathParts.length - 1];
+          currentPostData = await fetchMastodonPost(instance, statusId);
+        }
+        
+        if (currentPostData) {
+          displayPost(currentPostData);
+          await loadReactions();
+        }
+        
+        showStatus('Post loaded successfully', 'success');
+        
+        // RESOLVE TO HOME INSTANCE (AUTO-RESOLVE)
+        await resolveToHome(url);
+        
+      } catch (error) {
+        console.error('Error loading post:', error);
+        showStatus(`Error: ${error.message}`, 'error');
+      }
+    }
+    
+    // AUTO-RESOLVE: Resolve remote post to home instance (from base64 code)
+    // AUTO-RESOLVE: Resolve remote post to home instance (from base64 code)
+    
+    async function resolveToHome(remoteUrl) {
+    const homeBase = document.getElementById('instance').value.trim().replace(/\/$/, "");
+    const key = document.getElementById('apikey').value.trim();
+    const homeLinkEl = document.getElementById('homeLink');
+    
+    if (!homeBase || !key) {
+        homeLinkEl.textContent = "Missing home instance config";
+        homeLinkEl.style.color = '#ff9800';
+        return;
+    }
+    
+    try {
+        const headers = { 'Authorization': `Bearer ${key}` };
+        const res = await fetch(`${homeBase}/api/v2/search?q=${encodeURIComponent(remoteUrl)}&resolve=true&type=statuses`, { headers });
+        const data = await res.json();
+        
+        if (data.statuses?.length) {
+            const localPost = data.statuses[0];
+            const homeUrlObj = new URL(homeBase);
+            let validHomeUrl = null;
+
+            // 1. Check for Pleroma/Akkoma explicit local view
+            if (localPost.pleroma?.local_view) {
+                validHomeUrl = localPost.pleroma.local_view;
+            } 
+            // 2. Check if the 'url' returned is already on our domain
+            // Mastodon often returns the local URL here after a successful resolution
+            else if (localPost.url) {
+                try {
+                    const postUrlObj = new URL(localPost.url);
+                    if (postUrlObj.hostname === homeUrlObj.hostname) {
+                        validHomeUrl = localPost.url;
+                    }
+                } catch (e) {
+                    console.error("Invalid URL in post data");
+                }
+            }
+
+            // 3. Fallback: Use the Mastodon Web UI redirect pattern
+            // Almost all Mastodon-API compatible servers (Akkoma, Pleroma, Friendica) 
+            // will catch /web/statuses/[id] and redirect to their specific UI (e.g., /notice/[id])
+            if (!validHomeUrl) {
+                validHomeUrl = `${homeBase}/web/statuses/${localPost.id}`;
+            }
+            
+            currentLocalId = localPost.id;
+            homePostUrl = validHomeUrl;
+            
+            homeLinkEl.href = validHomeUrl;
+            homeLinkEl.textContent = validHomeUrl;
+            homeLinkEl.style.color = '#4CAF50';
+            
+            console.log(`RESOLVED: Local ID ${currentLocalId}`);
+            console.log(`HOME URL: ${validHomeUrl}`);
+        } else {
+            currentLocalId = null;
+            homePostUrl = null;
+            homeLinkEl.textContent = "Not found on home instance.";
+            homeLinkEl.style.color = '#ff9800';
+        }
+    } catch (e) {
+        homeLinkEl.textContent = `Resolve error: ${e.message}`;
+        homeLinkEl.style.color = '#ff9800';
+        console.log(`Resolve Error: ${e.message}`);
+    }
+    
+    const linkSection = document.getElementById('linkSection');
+    const remoteLink = document.getElementById('remoteLink');
+    linkSection.style.display = 'block';
+    remoteLink.href = remoteUrl;
+    remoteLink.textContent = remoteUrl;
+}
+    
+    
+    // Unified action handler
+    async function resolveAndExecute(type) {
+      const homeBase = document.getElementById('instance').value.trim().replace(/\/$/, "");
+      const key = document.getElementById('apikey').value.trim();
+      
+      if (!homeBase || !key) {
+        showStatus('Please enter instance URL and API key', 'error');
+        return;
+      }
+      
+      if (!currentLocalId) {
+        // Try to resolve if we haven't yet (AUTO-RESOLVE RETRY)
+        const remoteUrl = document.getElementById('postUrl').value.trim();
+        if (remoteUrl) {
+          await resolveToHome(remoteUrl);
+        }
+        if (!currentLocalId) {
+          showStatus("Not resolved to home instance", "error");
+          return;
+        }
+      }
+      
+      showStatus(`Applying ${type}...`, 'loading');
+      
+      try {
+        const headers = { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' };
+        
+        if (type === 'emoji') {
+            const emojis = document.getElementById('textbox').value.split(/[\n\s,]+/).filter(e => e.trim());
+            let successCount = 0;
+            
+            for (const emoji of emojis) {
+                const clean = emoji.replace(/:/g, "");
+                const res = await fetch(`${homeBase}/api/v1/pleroma/statuses/${currentLocalId}/reactions/${encodeURIComponent(clean)}`, { 
+                  method: "PUT", 
+                  headers 
+                });
+                
+                if (res.ok) {
+                  successCount++;
+                  // Update local reaction count
+                  if (!currentPostData.reactions) {
+                    currentPostData.reactions = {};
+                  }
+                  currentPostData.reactions[clean] = (currentPostData.reactions[clean] || 0) + 1;
+                }
+            }
+            
+            // Clear textarea after successful reactions
+            if (successCount > 0) {
+              document.getElementById('textbox').value = '';
+            }
+            
+            // Update display
+            displayReactions(currentPostData.reactions || {});
+            
+            if (successCount > 0) {
+              showStatus(`Added ${successCount} reaction(s)`, 'success');
+            } else {
+              showStatus('Failed to add reactions', 'error');
+            }
+            
+        } else if (type === 'fav') {
+            const res = await fetch(`${homeBase}/api/v1/statuses/${currentLocalId}/favourite`, { 
+              method: "POST", 
+              headers 
+            });
+            
+            if (res.ok) {
+              currentPostData.favourited = true;
+              currentPostData.favourites_count = (currentPostData.favourites_count || 0) + 1;
+              displayPost(currentPostData);
+              showStatus('Favorited!', 'success');
+            }
+            
+        } else if (type === 'boost') {
+            const res = await fetch(`${homeBase}/api/v1/statuses/${currentLocalId}/reblog`, { 
+              method: "POST", 
+              headers 
+            });
+            
+            if (res.ok) {
+              currentPostData.reblogged = true;
+              currentPostData.reblogs_count = (currentPostData.reblogs_count || 0) + 1;
+              displayPost(currentPostData);
+              showStatus('Boosted!', 'success');
+            }
+        }
+        
+        // Show the home URL after successful action
+        if (homePostUrl) {
+            const homeLinkEl = document.getElementById('homeLink');
+            homeLinkEl.textContent = homePostUrl + " ✓";
+            homeLinkEl.style.color = '#4CAF50';
+        }
+        
+      } catch (e) { 
+        console.error(e);
+        showStatus(`Error: ${e.message}`, 'error');
+      }
+    }
+    
+    async function fetchMisskeyPost(instance, noteId) {
+      const url = `https://${instance}/api/notes/show`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ noteId: noteId })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Misskey API error: ${response.status}`);
+      }
+      
+      const misskeyData = await response.json();
+      return convertMisskeyNote(misskeyData, instance);
+    }
+    
+    async function fetchMastodonPost(instance, statusId) {
+      const url = `https://${instance}/api/v1/statuses/${statusId}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    }
+    
+    function convertMisskeyNote(note, instance) {
+      const user = note.user || {};
+      const files = note.files || [];
+      
+      return {
+        id: note.id,
+        content: note.text || '',
+        created_at: note.createdAt,
+        url: `https://${instance}/notes/${note.id}`,
+        replies_count: note.repliesCount || 0,
+        reblogs_count: note.renoteCount || 0,
+        favourites_count: note.reactionsCount || 0,
+        reblogged: note.myRenoteId !== undefined,
+        favourited: note.myReaction !== undefined,
+        reblogged_by_account: note.myRenoteId ? true : false,
+        favourited_by_account: note.myReaction ? true : false,
+        reactions: note.reactions || {},
+        media_attachments: files.map(file => ({
+          url: file.url || file.thumbnailUrl || file.originalUrl,
+          type: file.type?.startsWith('image/') ? 'image' : 'video',
+          description: file.comment || ''
+        })),
+        account: {
+          username: user.username || 'unknown',
+          acct: user.username || 'unknown',
+          display_name: user.name || user.username || 'Unknown',
+          avatar_static: user.avatarUrl || '',
+          avatar: user.avatarUrl || ''
+        }
+      };
+    }
+    
+    function displayPost(data) {
+      const display = document.getElementById('postDisplay');
+      
+      // Set avatar with fallback
+      const avatar = document.getElementById('avatar');
+      avatar.src = data.account.avatar || data.account.avatar_static || '';
+      
+      document.getElementById('username').textContent = data.account.display_name || `@${data.account.username}`;
+      document.getElementById('timestamp').textContent = new Date(data.created_at).toLocaleString();
+      document.getElementById('postContent').innerHTML = data.content;
+      
+      // Update button states
+      const boostBtn = document.getElementById('boostBtn');
+      const favoriteBtn = document.getElementById('favoriteBtn');
+      
+      if (data.reblogged || data.reblogged_by_account) {
+        boostBtn.textContent = '🔁 Boosted';
+        boostBtn.disabled = true;
+      } else {
+        boostBtn.textContent = '🔁 Boost';
+        boostBtn.disabled = false;
+      }
+      
+      if (data.favourited || data.favourited_by_account) {
+        favoriteBtn.textContent = '❤️ Favorited';
+        favoriteBtn.disabled = true;
+      } else {
+        favoriteBtn.textContent = '❤️ Favorite';
+        favoriteBtn.disabled = false;
+      }
+      
+      // Add stats
+      const statsHtml = `
+        ❤️ ${data.favourites_count || 0} 
+        🔁 ${data.reblogs_count || 0} 
+        💬 ${data.replies_count || 0}
+      `;
+      document.getElementById('postStats').innerHTML = statsHtml;
+      
+      // Display reactions if available
+      if (data.reactions) {
+        displayReactions(data.reactions);
+      }
+      
+      display.style.display = 'block';
+    }
+    
+    async function loadReactions() {
+      if (!currentPostData || !currentPlatform) return;
+      
+      try {
+        const urlObj = new URL(currentPostData.url);
+        const instance = urlObj.hostname;
+        
+        if (currentPlatform === 'misskey') {
+          const reactions = await fetchMisskeyReactions(instance, currentPostData.id);
+          displayReactions(reactions);
+        } else {
+          // For Mastodon/Akkoma, reactions are included in the status data
+          if (currentPostData.reactions) {
+            displayReactions(currentPostData.reactions);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading reactions:', error);
+      }
+    }
+    
+    async function fetchMisskeyReactions(instance, noteId) {
+      const url = `https://${instance}/api/notes/reactions`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ noteId: noteId })
+      });
+      
+      if (!response.ok) return {};
+      return await response.json();
+    }
+    
+    function displayReactions(reactions) {
+      const reactionsList = document.getElementById('reactionsList');
+      reactionsList.innerHTML = '';
+      
+      if (!reactions || Object.keys(reactions).length === 0) {
+        reactionsList.innerHTML = '<em>No reactions yet</em>';
+        return;
+      }
+      
+      for (const [emoji, count] of Object.entries(reactions)) {
+        if (count > 0) {
+          const reactionDiv = document.createElement('div');
+          reactionDiv.className = 'emoji-reaction';
+          reactionDiv.textContent = `${emoji} × ${count}`;
+          reactionsList.appendChild(reactionDiv);
+        }
+      }
+    }
+    
+    // Backend communication function
+    async function postToBackend(action, postUrl, apiKey, instance, emoji = null) {
+      try {
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('post_url', postUrl);
+        formData.append('api_key', apiKey);
+        formData.append('instance', instance);
+        if (emoji) {
+          formData.append('emoji', emoji);
+        }
+        
+        const response = await fetch('0ld/fediaction.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          console.warn(`Backend POST failed: ${response.status}`);
+        } else {
+          console.log('Backend notified successfully');
+        }
+      } catch (error) {
+        console.error('Error posting to backend:', error);
+      }
+    }
+    
+    function readFromStorage() {
+      const apiKey = localStorage.getItem("apikey");
+      const instance = localStorage.getItem("instance");
+      if (apiKey && instance) {
+        document.getElementById("apikey").value = apiKey;
+        document.getElementById("instance").value = instance;
+        showStatus('Loaded from local storage', 'success');
+      } else {
+        showStatus('No data found in local storage', 'error');
+      }
+    }
+    
+    window.onload = function() {
+  const params = new URLSearchParams(window.location.search);
+  const apiKey = params.get("apikey");
+  const instance = params.get("instance");
+  const postUrl = params.get("post");
+
+  if (apiKey) {
+    document.getElementById("apikey").value = apiKey;
+    localStorage.setItem("apikey", apiKey);
+  }
+  if (instance) {
+    document.getElementById("instance").value = instance;
+    localStorage.setItem("instance", instance);
+    
+    // Reload iframe with instance-specific emoji filter
+    if (!instance.includes("https://alceawis.com") && 
+        !instance.includes("https://daffdasf.com")) {
+      
+      // Extract the domain/host from the instance URL
+      try {
+        const instanceUrl = new URL(instance);
+        const instanceHost = instanceUrl.hostname;
+        
+        // Construct the new iframe URL with emoji filter
+        const iframeUrl = `https://alceawis.de/other/extra/scripts/fakesocialmedia/lastshorthands.html?emojiinstancefilter=https://alceawis.de/other/extra/fetchdata/2024-03-07-FediTools/2025-08-17-EmojiDownloader/${instanceHost}.txt`;
+        
+        // Reload the iframe
+        const iframe = document.getElementById('iframe');
+        if (iframe) {
+          iframe.src = iframeUrl;
+        }
+      } catch (e) {
+        console.error("Invalid instance URL format:", e);
+      }
+    }
+  }
+  if (postUrl) {
+    document.getElementById("postUrl").value = postUrl;
+    setTimeout(() => loadPostFromUrl(), 500);
+  }
+  
+  if (localStorage.getItem("apikey") && localStorage.getItem("instance")) {
+    document.getElementById("readBtn").style.display = "inline-block";
+      }
+    };
+  </script>
+</body>
+</html>

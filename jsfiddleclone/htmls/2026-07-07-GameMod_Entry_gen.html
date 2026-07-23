@@ -1,0 +1,244 @@
+<style>
+  .row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .field { flex:1 1 200px; display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size:12px; font-weight:600; color:#888; text-transform:uppercase; }
+  .field input, .field select {
+    padding:8px 10px; border:1px solid #333; border-radius:6px;
+    background:#1a1a1a; color:#eee; font-size:14px;
+  }
+  .style-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+  .style-row label { font-size:11px; color:#666; min-width:50px; }
+  .style-row select, .style-row input {
+    padding:4px 6px; border:1px solid #333; border-radius:4px;
+    background:#1a1a1a; color:#eee; font-size:12px; min-width:80px;
+  }
+  .section-title {
+    font-size:12px; color:#666; margin-top:12px; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .preview-box {
+    border:2px solid #444; border-radius:8px; min-height:320px;
+    position:relative; overflow:hidden; background:#111; margin:16px 0;
+  }
+  .preview-bg { position:absolute; inset:0; background-size:cover; background-position:center; opacity:0.35; z-index:0; }
+  .preview-inner { position:relative; z-index:1; display:flex; flex-wrap:wrap; width:100%; min-height:320px; }
+  .preview-left { flex:1 1 55%; padding:12px; display:flex; align-items:center; justify-content:center; min-width:280px; }
+  .preview-left iframe { width:100%; aspect-ratio:16/9; border:none; border-radius:6px; }
+  .preview-right { flex:1 1 40%; padding:16px; display:flex; flex-direction:column; gap:10px; justify-content:center; min-width:200px; }
+  .code-block {
+    background:#0d0d0d; border:1px solid #222; border-radius:8px; padding:12px;
+    font-family:ui-monospace,monospace; font-size:12px; color:#b4b4b4;
+    white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto; line-height:1.5;
+  }
+  .copy-btn { padding:6px 14px; background:#2a2a2a; border:1px solid #444; border-radius:6px; color:#ccc; cursor:pointer; font-size:12px; }
+  .copy-btn:hover { background:#333; color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="section-title">Content</div>
+<div class="row">
+  <div class="field"><label>YouTube URL</label><input id="ytUrl" placeholder="https://youtube.com/watch?v=..."></div>
+  <div class="field"><label>Name</label><input id="name" placeholder="Enter name"></div>
+  <div class="field"><label>Type</label>
+    <select id="type">
+      <option value="">— select —</option>
+      <option value="spritemod">spritemod</option>
+      <option value="3dmodel">3dmodel</option>
+      <option value="logicmod">logicmod</option>
+    </select>
+  </div>
+</div>
+<div class="row">
+  <div class="field" style="flex:2 1 300px;"><label>Description</label><input id="desc" placeholder="Enter description"></div>
+  <div class="field"><label>Download Link</label><input id="dld" placeholder="https://..."></div>
+  <div class="field"><label>Background Image URL</label><input id="bg" placeholder="https://..."></div>
+</div>
+<div class="row">
+  <div class="field"><label>Platform</label>
+    <select id="platform">
+      <option value="">— select —</option>
+      <option value="android">android</option>
+      <option value="gba">gba</option>
+      <option value="nds">nds</option>
+      <option value="psx">psx</option>
+      <option value="ps2">ps2</option>
+      <option value="pc">pc</option>
+      <option value="nswitch">nswitch</option>
+      <option value="3ds">3ds</option>
+    </select>
+  </div>
+</div>
+
+<div class="section-title">Styling — Name</div>
+<div class="style-row">
+  <label>Size</label><input id="nameSize" type="number" value="14" min="8" max="72">
+  <label>Color</label>
+  <select id="nameColor">
+    <option value="pink">pink</option><option value="lightpink">lightpink</option>
+    <option value="white" selected>white</option><option value="black">black</option>
+    <option value="blue">blue</option><option value="lightblue">lightblue</option>
+    <option value="green">green</option><option value="lightgreen">lightgreen</option>
+    <option value="red">red</option><option value="lightred">lightred</option>
+    <option value="gray">gray</option><option value="lightgray">lightgray</option>
+  </select>
+</div>
+
+<div class="section-title">Styling — Type</div>
+<div class="style-row">
+  <label>Size</label><input id="typeSize" type="number" value="14" min="8" max="72">
+  <label>Color</label>
+  <select id="typeColor">
+    <option value="pink">pink</option><option value="lightpink">lightpink</option>
+    <option value="white" selected>white</option><option value="black">black</option>
+    <option value="blue">blue</option><option value="lightblue">lightblue</option>
+    <option value="green">green</option><option value="lightgreen">lightgreen</option>
+    <option value="red">red</option><option value="lightred">lightred</option>
+    <option value="gray">gray</option><option value="lightgray">lightgray</option>
+  </select>
+</div>
+
+<div class="section-title">Styling — Platform</div>
+<div class="style-row">
+  <label>Size</label><input id="platSize" type="number" value="14" min="8" max="72">
+  <label>Color</label>
+  <select id="platColor">
+    <option value="pink">pink</option><option value="lightpink">lightpink</option>
+    <option value="white" selected>white</option><option value="black">black</option>
+    <option value="blue">blue</option><option value="lightblue">lightblue</option>
+    <option value="green">green</option><option value="lightgreen">lightgreen</option>
+    <option value="red">red</option><option value="lightred">lightred</option>
+    <option value="gray">gray</option><option value="lightgray">lightgray</option>
+  </select>
+</div>
+
+<div class="section-title">Styling — Description</div>
+<div class="style-row">
+  <label>Size</label><input id="descSize" type="number" value="14" min="8" max="72">
+  <label>Color</label>
+  <select id="descColor">
+    <option value="pink">pink</option><option value="lightpink">lightpink</option>
+    <option value="white" selected>white</option><option value="black">black</option>
+    <option value="blue">blue</option><option value="lightblue">lightblue</option>
+    <option value="green">green</option><option value="lightgreen">lightgreen</option>
+    <option value="red">red</option><option value="lightred">lightred</option>
+    <option value="gray">gray</option><option value="lightgray">lightgray</option>
+  </select>
+</div>
+
+<div class="section-title">Styling — Download</div>
+<div class="style-row">
+  <label>Size</label><input id="dlSize" type="number" value="14" min="8" max="72">
+  <label>Color</label>
+  <select id="dlColor">
+    <option value="pink">pink</option><option value="lightpink">lightpink</option>
+    <option value="white" selected>white</option><option value="black">black</option>
+    <option value="blue">blue</option><option value="lightblue">lightblue</option>
+    <option value="green">green</option><option value="lightgreen">lightgreen</option>
+    <option value="red">red</option><option value="lightred">lightred</option>
+    <option value="gray">gray</option><option value="lightgray">lightgray</option>
+  </select>
+</div>
+
+<div class="section-title">Live Preview</div>
+<div class="preview-box" id="previewBox">
+  <div class="preview-bg" id="previewBg"></div>
+  <div class="preview-inner">
+    <div class="preview-left" id="previewLeft"></div>
+    <div class="preview-right" id="previewRight"></div>
+  </div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;">
+  <span style="font-size:12px;color:#666;">Generated HTML</span>
+  <button class="copy-btn" id="copyBtn">Copy</button>
+</div>
+<div class="code-block" id="codeOut">// Fill all content fields to generate HTML</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const contentFields = ['ytUrl','name','type','desc','dld','bg','platform'];
+const styleFields = ['nameSize','nameColor','typeSize','typeColor','platSize','platColor','descSize','descColor','dlSize','dlColor'];
+const allFields = [...contentFields, ...styleFields];
+const colorMap = {
+  pink:'#ff69b4', lightpink:'#ffb6c1', white:'#ffffff', black:'#000000',
+  blue:'#0000ff', lightblue:'#add8e6', green:'#008000', lightgreen:'#90ee90',
+  red:'#ff0000', lightred:'#ff6666', gray:'#808080', lightgray:'#d3d3d3'
+};
+function getYtId(url) {
+  if (!url) return '';
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : '';
+}
+function fmtDate() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+}
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escapeAttr(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+function update() {
+  const v = {};
+  contentFields.forEach(f => v[f] = $(f).value.trim());
+  const ytId = getYtId(v.ytUrl);
+  const s = {};
+  styleFields.forEach(f => s[f] = $(f).value.trim());
+  const nc = colorMap[s.nameColor] || '#ffffff';
+  const tc = colorMap[s.typeColor] || '#ffffff';
+  const pc = colorMap[s.platColor] || '#ffffff';
+  const dc = colorMap[s.descColor] || '#ffffff';
+  const dlc = colorMap[s.dlColor] || '#ffffff';
+  $('previewBg').style.backgroundImage = v.bg ? `url(${v.bg})` : 'none';
+  $('previewLeft').innerHTML = ytId
+    ? `<iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe>`
+    : '<span style="color:#555;font-size:13px;">YouTube embed will appear here</span>';
+  $('previewRight').innerHTML = `
+    <div style="font-size:${s.nameSize}px;color:${nc};"><strong style="color:#fff;">Name:</strong> ${escapeHtml(v.name) || '<span style="color:#555">—</span>'}</div>
+    <div style="font-size:${s.typeSize}px;color:${tc};"><strong style="color:#fff;">Type:</strong> ${escapeHtml(v.type) || '<span style="color:#555">—</span>'}</div>
+    <div style="font-size:${s.platSize}px;color:${pc};"><strong style="color:#fff;">Platform:</strong> ${escapeHtml(v.platform) || '<span style="color:#555">—</span>'}</div>
+    <div style="font-size:${s.descSize}px;color:${dc};"><strong style="color:#fff;">Desc:</strong> ${escapeHtml(v.desc) || '<span style="color:#555">—</span>'}</div>
+    <div style="font-size:${s.dlSize}px;color:${dlc};"><strong style="color:#fff;">Download:</strong> ${v.dld ? `<a href="${escapeHtml(v.dld)}" style="color:${dlc};" target="_blank">Download</a>` : '<span style="color:#555">—</span>'}</div>
+  `;
+  const allFilled = contentFields.every(f => $(f).value.trim() !== '');
+  if (!allFilled) {
+    $('codeOut').textContent = '// Fill all content fields to generate HTML';
+    return;
+  }
+  const dateStamp = fmtDate();
+  const html = `<div style="border:2px solid #000;position:relative;overflow:hidden;min-height:320px;display:flex;">
+  <div style="position:absolute;inset:0;background-image:url('${escapeAttr(v.bg)}');background-size:cover;background-position:center;z-index:0;"></div>
+  <div style="position:relative;z-index:1;display:flex;width:100%;flex-wrap:wrap;">
+    <div style="flex:1 1 55%;padding:12px;display:flex;align-items:center;justify-content:center;min-width:280px;">
+      <iframe width="100%" style="aspect-ratio:16/9;border:none;" src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe>
+    </div>
+    <div style="flex:1 1 40%;padding:16px;display:flex;flex-direction:column;gap:10px;justify-content:center;min-width:200px;">
+      <div style="font-size:${s.nameSize}px;color:${nc};"><strong>Name:</strong> ${escapeHtml(v.name)}</div>
+      <div style="font-size:${s.typeSize}px;color:${tc};"><strong>Type:</strong> ${escapeHtml(v.type)}</div>
+      <div style="font-size:${s.platSize}px;color:${pc};"><strong>Platform:</strong> ${escapeHtml(v.platform)}</div>
+      <div style="font-size:${s.descSize}px;color:${dc};"><strong>Desc:</strong> ${escapeHtml(v.desc)}</div>
+      <div style="font-size:${s.dlSize}px;color:${dlc};"><strong>Download:</strong> <a href="${escapeAttr(v.dld)}" target="_blank" style="color:${dlc};">Download</a></div>
+    </div>
+  </div>
+</div>
+<!--latestadd-${dateStamp}-->`;
+  $('codeOut').textContent = html;
+}F
+allFields.forEach(f => {
+  $(f).addEventListener('input', update);
+  $(f).addEventListener('change', update);
+});
+$('copyBtn').addEventListener('click', () => {
+  const txt = $('codeOut').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = $('copyBtn');
+    const old = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+});
+update();
+</script>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelf Background Tool</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}body{background-color:#1e293b;color:#f1f5f9;padding:20px;min-height:100vh}.container{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:25px}header{text-align:center;padding:20px 0;border-bottom:2px solid #334155}h1{font-size:2.5rem;color:#60a5fa;margin-bottom:10px}.description{color:#cbd5e1;max-width:800px;margin:0 auto;line-height:1.6}.main-content{display:flex;flex-wrap:wrap;gap:30px}.upload-section,.preview-section{background-color:#334155;border-radius:12px;padding:25px;box-shadow:0 10px 25px rgba(0,0,0,0.2)}.upload-section{flex:1;min-width:300px}.preview-section{flex:2;min-width:500px;display:flex;flex-direction:column}.section-title{font-size:1.5rem;color:#93c5fd;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #475569}.upload-area{border:2px dashed #60a5fa;border-radius:10px;padding:30px;text-align:center;margin-bottom:20px;background-color:rgba(96,165,250,0.05);cursor:pointer;transition:all 0.3s ease}.upload-area:hover{background-color:rgba(96,165,250,0.1);border-color:#3b82f6}.upload-icon{font-size:3rem;color:#60a5fa;margin-bottom:15px}.upload-text{color:#cbd5e1;margin-bottom:10px}.upload-input{display:none}.url-input{width:100%;padding:12px 15px;border-radius:8px;border:1px solid #475569;background-color:#1e293b;color:#f1f5f9;margin-top:5px}.url-input:focus{outline:none;border-color:#60a5fa}.control-group{margin-top:25px}.control-label{display:block;margin-bottom:8px;color:#cbd5e1}.preview-container{position:relative;width:100%;height:400px;background-color:#1e293b;border-radius:8px;overflow:hidden;margin-bottom:25px;border:1px solid #475569}.preview-image{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain}.layers-info{background-color:#1e293b;padding:15px;border-radius:8px;margin-top:auto}.layer-item{display:flex;align-items:center;margin-bottom:10px;padding:8px;border-radius:6px;background-color:rgba(255,255,255,0.05)}.layer-color{width:20px;height:20px;border-radius:50%;margin-right:10px}.layer-name{flex-grow:1}.button-group{display:flex;gap:15px;margin-top:25px}button{padding:14px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.2s ease;flex:1}.flatten-btn{background-color:#10b981;color:#fff}.flatten-btn:hover{background-color:#059669}.flatten-btn:disabled{background-color:#6b7280;cursor:not-allowed}.reset-btn{background-color:#ef4444;color:#fff}.reset-btn:hover{background-color:#dc2626}.download-link{text-decoration:none;display:inline-block;text-align:center}.status-message{padding:12px;border-radius:8px;margin-top:20px;text-align:center;display:none}.success{background-color:rgba(16,185,129,0.2);color:#10b981;display:block}.error{background-color:rgba(239,68,68,0.2);color:#ef4444;display:block}.image-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#94a3b8}.placeholder-icon{font-size:4rem;margin-bottom:15px;opacity:0.7}.help-note{color:#94a3b8;font-size:0.9rem;margin-top:5px}.color-controls{background-color:#1e293b;padding:15px;border-radius:8px;margin-top:20px}.color-picker-row{display:flex;align-items:center;gap:15px;margin-bottom:15px}.color-swatch{width:40px;height:40px;border-radius:6px;border:2px solid #475569;cursor:pointer}.color-input{flex:1;padding:8px;border-radius:6px;border:1px solid #475569;background-color:#334155;color:#f1f5f9}.color-input:focus{outline:none;border-color:#60a5fa}.range-input{width:100%}.range-label{display:flex;justify-content:space-between;margin-top:5px}.apply-color-btn{background-color:#8b5cf6;color:#fff;width:100%;margin-top:10px}.apply-color-btn:hover{background-color:#7c3aed}.tab-container{margin-top:20px}.tab-buttons{display:flex;gap:5px;margin-bottom:15px}.tab-button{padding:10px 20px;background-color:#1e293b;border:1px solid #475569;color:#cbd5e1;cursor:pointer;border-radius:6px 6px 0 0}.tab-button.active{background-color:#334155;border-bottom-color:#334155;color:#93c5fd}.tab-content{display:none;padding:15px;background-color:#1e293b;border-radius:0 6px 6px 6px;border:1px solid #475569}.tab-content.active{display:block}.color-info{font-size:0.8rem;color:#94a3b8;margin-top:5px}.shelf-info{background-color:rgba(96,165,250,0.1);border:2px solid #60a5fa;border-radius:10px;padding:20px;text-align:center;margin-bottom:20px}.shelf-icon{font-size:2.5rem;color:#60a5fa;margin-bottom:10px}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Shelf Background Tool</h1>
+            <p class="description">Upload your image to place behind the preloaded shelf. Flatten to download as [yourimage]_shelf.png</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" data-tab="upload">Upload Background</button>
+                        <button class="tab-button" data-tab="color">Color Replacement</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="upload-tab">
+                        <div class="shelf-info">
+                            <div class="shelf-icon">📚</div>
+                            <h3>Shelf Image Preloaded</h3>
+                            <p>The shelf image is automatically loaded as the foreground layer</p>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label class="control-label">Background Image</label>
+                            <div class="upload-area" id="bgUploadArea">
+                                <div class="upload-icon">📁</div>
+                                <p class="upload-text">Click to upload background</p>
+                                <p class="help-note">Will appear behind the shelf</p>
+                                <input type="file" id="bgImageInput" class="upload-input" accept="image/*">
+                            </div>
+                            <p class="control-label">Or enter image URL:</p>
+                            <input type="text" id="bgImageUrl" class="url-input" placeholder="https://example.com/background.jpg">
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="color-tab">
+                        <h2 class="section-title">Color Replacement</h2>
+                        
+                        <div class="control-group">
+                            <label class="control-label">Select Image to Modify:</label>
+                            <select id="imageSelector" class="url-input">
+                                <option value="shelf">Shelf Image (Foreground)</option>
+                                <option value="background">Background Image</option>
+                            </select>
+                        </div>
+                        
+                        <div class="color-controls">
+                            <div class="color-picker-row">
+                                <div class="color-swatch" id="originalColorSwatch" style="background-color:#000000"></div>
+                                <input type="text" id="originalColor" class="color-input" value="#000000" placeholder="Original color in hex">
+                            </div>
+                            <p class="control-label">Target Color (click image to pick or enter hex)</p>
+                            
+                            <div class="color-picker-row">
+                                <div class="color-swatch" id="replacementColorSwatch" style="background-color:#ffffff"></div>
+                                <input type="text" id="replacementColor" class="color-input" value="#ffffff" placeholder="Replacement color in hex">
+                            </div>
+                            <p class="control-label">Replacement Color</p>
+                            
+                            <div class="control-group">
+                                <label class="control-label">Fuzziness: <span id="fuzzValue">50</span>%</label>
+                                <input type="range" id="fuzzRange" class="range-input" min="0" max="100" value="50">
+                                <div class="range-label">
+                                    <span>Exact</span>
+                                    <span>Tolerant</span>
+                                </div>
+                                <p class="color-info">Higher values replace more similar colors</p>
+                            </div>
+                            
+                            <button class="apply-color-btn" id="applyColorBtn">Apply Color Replacement</button>
+                            <p class="color-info">Click on the preview image to pick a target color</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <h2 class="section-title">Preview</h2>
+                <div class="preview-container" id="previewContainer">
+                    <div class="image-placeholder" id="imagePlaceholder">
+                        <div class="placeholder-icon">🖼️</div>
+                        <p>Upload a background image to see preview</p>
+                    </div>
+                    <img id="previewBg" class="preview-image" style="z-index:1">
+                    <img id="previewShelf" class="preview-image" style="z-index:2">
+                </div>
+                
+                <div class="layers-info">
+                    <div class="layer-item">
+                        <div class="layer-color" style="background-color:#3b82f6"></div>
+                        <div class="layer-name">Shelf Image (Foreground - Preloaded)</div>
+                        <span id="shelfStatus">✅ Loaded</span>
+                    </div>
+                    <div class="layer-item">
+                        <div class="layer-color" style="background-color:#8b5cf6"></div>
+                        <div class="layer-name">Background Image</div>
+                        <span id="bgStatus">❌ Not loaded</span>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="flatten-btn" id="flattenBtn">Flatten & Download</button>
+                    <button class="reset-btn" id="resetBtn">Reset Background</button>
+                </div>
+                
+                <div class="status-message" id="statusMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Preloaded shelf image URL
+        const SHELF_IMAGE_URL = 'https://alcea-wisteria.de/z_files/shelf/shelf_b4c_rem_BG_compl_wo_table_semitransp.png';
+        
+        // DOM elements
+        const bgUploadArea = document.getElementById('bgUploadArea');
+        const bgImageInput = document.getElementById('bgImageInput');
+        const bgImageUrl = document.getElementById('bgImageUrl');
+        const previewBg = document.getElementById('previewBg');
+        const previewShelf = document.getElementById('previewShelf');
+        const imagePlaceholder = document.getElementById('imagePlaceholder');
+        const flattenBtn = document.getElementById('flattenBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const bgStatus = document.getElementById('bgStatus');
+        const shelfStatus = document.getElementById('shelfStatus');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const imageSelector = document.getElementById('imageSelector');
+        const originalColorSwatch = document.getElementById('originalColorSwatch');
+        const originalColor = document.getElementById('originalColor');
+        const replacementColorSwatch = document.getElementById('replacementColorSwatch');
+        const replacementColor = document.getElementById('replacementColor');
+        const fuzzRange = document.getElementById('fuzzRange');
+        const fuzzValue = document.getElementById('fuzzValue');
+        const applyColorBtn = document.getElementById('applyColorBtn');
+        
+        // State
+        let shelfImage = null;
+        let bgImage = null;
+        let shelfImageOriginal = null;
+        let bgImageOriginal = null;
+        
+        // Initialize
+        window.onload = function() {
+            loadShelfImage();
+            updateUI();
+        };
+        
+        function loadShelfImage() {
+            shelfImage = new Image();
+            shelfImage.crossOrigin = 'anonymous';
+            shelfImage.onload = function() {
+                shelfImageOriginal = createImageCopy(shelfImage);
+                previewShelf.src = SHELF_IMAGE_URL;
+                shelfStatus.textContent = '✅ Preloaded';
+                shelfStatus.style.color = '#10b981';
+                showSuccess('Shelf image preloaded successfully!');
+            };
+            shelfImage.onerror = function() {
+                showError('Failed to load shelf image. Please refresh the page.');
+            };
+            shelfImage.src = SHELF_IMAGE_URL;
+        }
+        
+        // Tab switching
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+        
+        bgUploadArea.addEventListener('click', () => bgImageInput.click());
+        bgImageInput.addEventListener('change', (e) => handleImageUpload(e, 'bg'));
+        bgImageUrl.addEventListener('change', (e) => handleImageUrl(e.target.value, 'bg'));
+        flattenBtn.addEventListener('click', flattenAndDownload);
+        resetBtn.addEventListener('click', resetBackground);
+        previewShelf.addEventListener('click', (e) => pickColorFromImage(e, 'shelf'));
+        previewBg.addEventListener('click', (e) => pickColorFromImage(e, 'bg'));
+        
+        originalColor.addEventListener('input', (e) => {
+            const color = validateColor(e.target.value);
+            if (color) originalColorSwatch.style.backgroundColor = color;
+        });
+        
+        replacementColor.addEventListener('input', (e) => {
+            const color = validateColor(e.target.value);
+            if (color) replacementColorSwatch.style.backgroundColor = color;
+        });
+        
+        fuzzRange.addEventListener('input', () => {
+            fuzzValue.textContent = fuzzRange.value;
+        });
+        
+        applyColorBtn.addEventListener('click', applyColorReplacement);
+        
+        function handleImageUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) { loadImageFromData(e.target.result, type); };
+            reader.readAsDataURL(file);
+        }
+        
+        function handleImageUrl(url, type) {
+            if (!url) return;
+            loadImageFromData(url, type);
+        }
+        
+        function loadImageFromData(data, type) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                bgImage = img;
+                bgImageOriginal = createImageCopy(img);
+                previewBg.src = data;
+                bgStatus.textContent = '✅ Loaded';
+                bgStatus.style.color = '#10b981';
+                updateUI();
+                showSuccess('Background image loaded successfully!');
+            };
+            img.src = data;
+        }
+        
+        function createImageCopy(img) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            return canvas;
+        }
+        
+        function pickColorFromImage(event, imageType) {
+            const img = imageType === 'shelf' ? shelfImage : bgImage;
+            if (!img) return;
+            
+            const rect = event.target.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            const realWidth = img.naturalWidth || img.width;
+            const realHeight = img.naturalHeight || img.height;
+            const relX = (x / rect.width) * realWidth;
+            const relY = (y / rect.height) * realHeight;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = realWidth;
+            canvas.height = realHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            const pixel = ctx.getImageData(relX, relY, 1, 1).data;
+            const color = rgbToHex(pixel[0], pixel[1], pixel[2]);
+            
+            originalColor.value = color;
+            originalColorSwatch.style.backgroundColor = color;
+            imageSelector.value = imageType;
+            
+            // Switch tabs
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.querySelector('[data-tab="color"]').classList.add('active');
+            document.getElementById('color-tab').classList.add('active');
+        }
+        
+        function applyColorReplacement() {
+            try {
+                const imageType = imageSelector.value;
+                const originalHex = originalColor.value;
+                const replacementHex = replacementColor.value;
+                const fuzziness = parseInt(fuzzRange.value) / 100;
+                
+                const originalRGB = hexToRgb(originalHex);
+                const replacementRGB = hexToRgb(replacementHex);
+                
+                let img = imageType === 'shelf' ? shelfImage : bgImage;
+                let imgOriginal = imageType === 'shelf' ? shelfImageOriginal : bgImageOriginal;
+                
+                if (!img || !imgOriginal) {
+                    showError("No image loaded to modify.");
+                    return;
+                }
+                
+                const canvas = document.createElement('canvas');
+                const w = imgOriginal.width || img.naturalWidth || img.width;
+                const h = imgOriginal.height || img.naturalHeight || img.height;
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(imgOriginal, 0, 0, w, h);
+                
+                const imageData = ctx.getImageData(0, 0, w, h);
+                const data = imageData.data;
+                
+                let pixelsChanged = 0;
+                
+                // Color Replacement Logic
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    // alpha is data[i+3] - we generally preserve it unless user wants otherwise
+                    
+                    // Simple Euclidean distance in RGB space
+                    // Normalize to 0-1 range for fuzziness comparison
+                    const distR = Math.abs(r - originalRGB.r) / 255;
+                    const distG = Math.abs(g - originalRGB.g) / 255;
+                    const distB = Math.abs(b - originalRGB.b) / 255;
+                    
+                    // Average distance
+                    const distance = (distR + distG + distB) / 3;
+                    
+                    if (distance <= fuzziness) {
+                        pixelsChanged++;
+                        
+                        // Direct replacement (allowing black to white)
+                        // Use linear interpolation for smoother edges if desired, 
+                        // but for strong replacements, direct swap is often better.
+                        // We will blend slightly based on distance to avoid aliasing.
+                        
+                        let blend = 1.0;
+                        if (fuzziness > 0) {
+                            blend = 1.0 - (distance / fuzziness);
+                            // Sharpen the blend curve
+                            blend = Math.pow(blend, 0.5);
+                        }
+
+                        data[i] = r * (1 - blend) + replacementRGB.r * blend;
+                        data[i + 1] = g * (1 - blend) + replacementRGB.g * blend;
+                        data[i + 2] = b * (1 - blend) + replacementRGB.b * blend;
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                
+                const newImg = new Image();
+                newImg.onload = function() {
+                    if (imageType === 'shelf') {
+                        shelfImage = newImg;
+                        previewShelf.src = canvas.toDataURL();
+                    } else {
+                        bgImage = newImg;
+                        previewBg.src = canvas.toDataURL();
+                    }
+                    showSuccess(`Color replaced! Modified ${pixelsChanged} pixels.`);
+                };
+                newImg.src = canvas.toDataURL();
+                
+            } catch (err) {
+                console.error(err);
+                showError("Error processing image.");
+            }
+        }
+        
+        function updateUI() {
+            if (bgImage) {
+                imagePlaceholder.style.display = 'none';
+            } else {
+                imagePlaceholder.style.display = 'flex';
+            }
+        }
+        
+        function flattenAndDownload() {
+            if (!shelfImage) return;
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const shelfWidth = shelfImage.naturalWidth || shelfImage.width;
+            const shelfHeight = shelfImage.naturalHeight || shelfImage.height;
+            
+            canvas.width = shelfWidth;
+            canvas.height = shelfHeight;
+            
+            if (bgImage) {
+                ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            ctx.drawImage(shelfImage, 0, 0, canvas.width, canvas.height);
+            
+            const link = document.createElement('a');
+            let filename = 'shelf_composite.png';
+            if (bgImageInput.files.length > 0) {
+                filename = bgImageInput.files[0].name.replace(/\.[^/.]+$/, "") + "_shelf.png";
+            }
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        function resetBackground() {
+            bgImage = null;
+            bgImageOriginal = null;
+            previewBg.src = '';
+            bgImageInput.value = '';
+            bgImageUrl.value = '';
+            bgStatus.textContent = '❌ Not loaded';
+            bgStatus.style.color = '#ef4444';
+            updateUI();
+        }
+        
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        function validateColor(color) {
+            const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+            return hexRegex.test(color) ? color : null;
+        }
+        
+        function showSuccess(message) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message success';
+            statusMessage.style.display = 'block';
+            setTimeout(() => { statusMessage.style.display = 'none'; }, 3000);
+        }
+        
+        function showError(message) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message error';
+            statusMessage.style.display = 'block';
+            setTimeout(() => { statusMessage.style.display = 'none'; }, 4000);
+        }
+    </script>
+</body>
+</html>

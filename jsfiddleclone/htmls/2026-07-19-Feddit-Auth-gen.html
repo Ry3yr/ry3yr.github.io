@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Feddit Auth Token Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            color: #1e293b;
+        }
+        .card {
+            max-width: 620px;
+            width: 100%;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.2);
+            padding: 2.5rem;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .subhead {
+            color: #64748b;
+            font-size: 0.95rem;
+            border-left: 3px solid #e2e8f0;
+            padding-left: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+        input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 1.5px solid #dbe0e8;
+            border-radius: 0.8rem;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: 0.15s;
+            background: #fafcff;
+            color: #0b1b33;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+            background: white;
+        }
+        input::placeholder {
+            color: #94a3b8;
+        }
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            background: #1e293b;
+            color: white;
+        }
+        .btn:hover {
+            background: #0f172a;
+            transform: scale(0.98);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #334155;
+            margin-top: 0.5rem;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        .result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 0.8rem;
+            background: #f8fafc;
+            border: 1px solid #e9edf2;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result-label {
+            font-weight: 500;
+            color: #334155;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+        .result-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            color: #0f172a;
+            background: white;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.5rem;
+            border: 1px solid #dbe0e8;
+            max-height: 200px;
+            overflow-y: auto;
+            user-select: all;
+            cursor: text;
+        }
+        .status {
+            margin-top: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.6rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .status.show {
+            display: block;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.7s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+        .flex-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .flex-row .btn {
+            flex: 1;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .copy-btn {
+            background: transparent;
+            border: 1px solid #dbe0e8;
+            padding: 0.2rem 0.8rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #64748b;
+            transition: 0.15s;
+            margin-top: 0.3rem;
+        }
+        .copy-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        .footer {
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-align: center;
+            border-top: 1px solid #e9edf2;
+            padding-top: 1rem;
+        }
+        .token-info {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .token-info strong {
+            color: #334155;
+        }
+        .debug-section {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            background: #f1f5f9;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+        .debug-section.show {
+            display: block;
+        }
+        .debug-section pre {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            color: #0f172a;
+            margin: 0;
+        }
+        .debug-toggle {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            text-decoration: underline;
+            margin-top: 0.5rem;
+        }
+        .debug-toggle:hover {
+            color: #0f172a;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>🔑 Auth Token Generator</h1>
+    <div class="subhead">Generate a Lemmy/Feddit JWT token for API authentication</div>
+
+    <div class="form-group">
+        <label for="instanceInput">Home Instance URL</label>
+        <input type="url" id="instanceInput" placeholder="https://feddit.org" value="https://feddit.org" />
+    </div>
+
+    <div class="form-group">
+        <label for="usernameInput">Username</label>
+        <input type="text" id="usernameInput" placeholder="your_username" value="" />
+    </div>
+
+    <div class="form-group">
+        <label for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" placeholder="your_password" value="" />
+    </div>
+
+    <button class="btn" id="generateBtn">Generate Token</button>
+
+    <div class="status" id="statusMessage"></div>
+
+    <div class="result" id="resultContainer">
+        <div class="result-label">JWT Token</div>
+        <div class="result-value" id="tokenDisplay"></div>
+        <button class="copy-btn" id="copyBtn">📋 Copy Token</button>
+        
+        <div class="token-info">
+            <div><strong>Instance:</strong> <span id="tokenInstance">-</span></div>
+            <div><strong>User:</strong> <span id="tokenUser">-</span></div>
+            <div><strong>Expires:</strong> <span id="tokenExpires">-</span></div>
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem;">
+        <button class="btn btn-secondary" id="clearBtn">Clear All</button>
+    </div>
+
+    <div>
+        <button class="debug-toggle" id="debugToggle">Show Debug Info</button>
+    </div>
+
+    <div class="debug-section" id="debugSection">
+        <div class="result-label">Raw Response</div>
+        <pre id="debugContent">No debug data yet</pre>
+    </div>
+
+    <div class="footer">
+        Token is stored in localStorage for use with the Feddit Reply Tool
+    </div>
+</div>
+
+<script>
+(function() {
+    "use strict";
+
+    const instanceInput = document.getElementById('instanceInput');
+    const usernameInput = document.getElementById('usernameInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const statusEl = document.getElementById('statusMessage');
+    const resultContainer = document.getElementById('resultContainer');
+    const tokenDisplay = document.getElementById('tokenDisplay');
+    const tokenInstance = document.getElementById('tokenInstance');
+    const tokenUser = document.getElementById('tokenUser');
+    const tokenExpires = document.getElementById('tokenExpires');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const debugToggle = document.getElementById('debugToggle');
+    const debugSection = document.getElementById('debugSection');
+    const debugContent = document.getElementById('debugContent');
+
+    let debugMode = false;
+
+    debugToggle.addEventListener('click', function() {
+        debugMode = !debugMode;
+        debugSection.classList.toggle('show');
+        debugToggle.textContent = debugMode ? 'Hide Debug Info' : 'Show Debug Info';
+    });
+
+    function setStatus(message, type = 'info') {
+        statusEl.textContent = message;
+        statusEl.className = 'status show ' + type;
+    }
+
+    function clearStatus() {
+        statusEl.className = 'status';
+        statusEl.textContent = '';
+    }
+
+    function displayToken(token, instance, username) {
+        tokenDisplay.textContent = token;
+        tokenInstance.textContent = instance || '-';
+        tokenUser.textContent = username || '-';
+        
+        try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(atob(parts[1]));
+                if (payload.exp) {
+                    const expDate = new Date(payload.exp * 1000);
+                    tokenExpires.textContent = expDate.toLocaleString();
+                } else {
+                    tokenExpires.textContent = 'No expiry info';
+                }
+            }
+        } catch (e) {
+            tokenExpires.textContent = 'Unable to decode';
+        }
+        
+        resultContainer.classList.add('show');
+    }
+
+    async function generateToken() {
+        const instance = instanceInput.value.trim();
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!instance) {
+            setStatus('Please enter your home instance URL', 'error');
+            instanceInput.focus();
+            return;
+        }
+
+        if (!username) {
+            setStatus('Please enter your username', 'error');
+            usernameInput.focus();
+            return;
+        }
+
+        if (!password) {
+            setStatus('Please enter your password', 'error');
+            passwordInput.focus();
+            return;
+        }
+
+        let cleanInstance = instance;
+        if (!cleanInstance.startsWith('http://') && !cleanInstance.startsWith('https://')) {
+            cleanInstance = 'https://' + cleanInstance;
+        }
+
+        try {
+            new URL(cleanInstance);
+        } catch (_) {
+            setStatus('Invalid instance URL. Please enter a valid URL.', 'error');
+            instanceInput.focus();
+            return;
+        }
+
+        cleanInstance = cleanInstance.replace(/\/$/, '');
+
+        setStatus('Generating token...', 'info');
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<span class="spinner"></span> Generating...';
+
+        // Clear previous debug
+        debugContent.textContent = 'Waiting for response...';
+
+        try {
+            const url = `${cleanInstance}/api/v3/user/login`;
+            const body = JSON.stringify({
+                username_or_email: username,
+                password: password
+            });
+
+            debugContent.textContent = `Request URL: ${url}\n\nRequest Body:\n${body}`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: body
+            });
+
+            // Get response as text first for debugging
+            const responseText = await response.text();
+            let responseData;
+            let responseJson = null;
+            
+            try {
+                responseJson = JSON.parse(responseText);
+                responseData = responseJson;
+            } catch (e) {
+                responseData = responseText;
+            }
+
+            // Show debug info
+            debugContent.textContent = `Status: ${response.status} ${response.statusText}\n\nHeaders:\n`;
+            for (let [key, value] of response.headers.entries()) {
+                debugContent.textContent += `${key}: ${value}\n`;
+            }
+            debugContent.textContent += `\nResponse Body:\n${responseText}`;
+
+            if (!response.ok) {
+                let errorMsg = `HTTP ${response.status}`;
+                if (responseJson && responseJson.error) {
+                    errorMsg = responseJson.error;
+                } else if (responseJson && responseJson.message) {
+                    errorMsg = responseJson.message;
+                } else if (responseText) {
+                    errorMsg = responseText;
+                }
+                throw new Error(errorMsg);
+            }
+
+            if (responseJson && responseJson.jwt) {
+                localStorage.setItem('feddit_username', username);
+                localStorage.setItem('feddit_login_url', cleanInstance);
+                localStorage.setItem('feddit_jwt', responseJson.jwt);
+                
+                displayToken(responseJson.jwt, cleanInstance, username);
+                setStatus('✅ Token generated successfully!', 'success');
+                resultContainer.classList.add('show');
+            } else {
+                throw new Error('No JWT token received from server');
+            }
+
+        } catch (error) {
+            console.error('Token generation error:', error);
+            console.error('Full error object:', JSON.stringify(error, null, 2));
+            
+            let errorMessage = error.message;
+            
+            // Try to parse if it's a JSON error
+            try {
+                if (error.message.includes('{')) {
+                    const jsonError = JSON.parse(error.message);
+                    errorMessage = jsonError.error || jsonError.message || error.message;
+                }
+            } catch (_) {}
+            
+            setStatus(`❌ Failed: ${errorMessage}`, 'error');
+            
+            // Show the full error in debug
+            debugContent.textContent += `\n\nError: ${error.stack || error.message}`;
+            
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = 'Generate Token';
+        }
+    }
+
+    copyBtn.addEventListener('click', function() {
+        const token = tokenDisplay.textContent;
+        if (!token || token === '-') return;
+        
+        navigator.clipboard.writeText(token).then(() => {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✅ Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+            }, 2000);
+        }).catch(() => {
+            const textarea = document.createElement('textarea');
+            textarea.value = token;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✅ Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+            }, 2000);
+        });
+    });
+
+    clearBtn.addEventListener('click', function() {
+        instanceInput.value = '';
+        usernameInput.value = '';
+        passwordInput.value = '';
+        tokenDisplay.textContent = '-';
+        tokenInstance.textContent = '-';
+        tokenUser.textContent = '-';
+        tokenExpires.textContent = '-';
+        resultContainer.classList.remove('show');
+        clearStatus();
+        debugContent.textContent = 'No debug data yet';
+        debugSection.classList.remove('show');
+        debugMode = false;
+        debugToggle.textContent = 'Show Debug Info';
+        
+        if (confirm('Clear saved tokens from localStorage as well?')) {
+            localStorage.removeItem('feddit_username');
+            localStorage.removeItem('feddit_login_url');
+            localStorage.removeItem('feddit_jwt');
+            setStatus('All data cleared from localStorage', 'info');
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const active = document.activeElement;
+            if (active === instanceInput || active === usernameInput || active === passwordInput) {
+                e.preventDefault();
+                generateToken();
+            }
+        }
+    });
+
+    generateBtn.addEventListener('click', generateToken);
+
+    // Load saved data
+    const savedInstance = localStorage.getItem('feddit_login_url');
+    const savedUsername = localStorage.getItem('feddit_username');
+    const savedToken = localStorage.getItem('feddit_jwt');
+    
+    if (savedInstance) instanceInput.value = savedInstance;
+    if (savedUsername) usernameInput.value = savedUsername;
+    
+    if (savedToken) {
+        displayToken(savedToken, savedInstance, savedUsername);
+        setStatus('✅ Token loaded from localStorage', 'success');
+    } else if (savedInstance && savedUsername) {
+        setStatus('Credentials loaded. Click Generate Token to get a JWT.', 'info');
+    }
+
+})();
+</script>
+</body>
+</html>

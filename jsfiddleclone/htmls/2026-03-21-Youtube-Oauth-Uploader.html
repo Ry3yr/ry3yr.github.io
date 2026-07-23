@@ -1,0 +1,908 @@
+Youtube video Uploader (Oauth)
+-------------------
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>YouTube Uploader - Direct Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.98);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            padding: 28px 32px;
+            color: white;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .content {
+            padding: 32px;
+        }
+        
+        /* Token Section */
+        .token-section {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 28px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .token-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .token-input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .token-input-group input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            transition: all 0.2s;
+            background: white;
+        }
+        
+        .token-input-group input:focus {
+            outline: none;
+            border-color: #ff0000;
+            box-shadow: 0 0 0 3px rgba(255,0,0,0.1);
+        }
+        
+        /* User Profile */
+        .user-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 28px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .user-details h3 {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        .user-details p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .status-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafcff;
+            margin-bottom: 24px;
+        }
+        
+        .upload-area:hover {
+            border-color: #ff0000;
+            background: #fff5f5;
+        }
+        
+        .upload-area.drag-over {
+            border-color: #ff0000;
+            background: #ffe5e5;
+            transform: scale(0.99);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        
+        .file-info {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #ff0000;
+            box-shadow: 0 0 0 3px rgba(255,0,0,0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        /* Preview */
+        .video-preview {
+            margin-top: 20px;
+            display: none;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .video-preview.active {
+            display: block;
+        }
+        
+        .video-preview video {
+            width: 100%;
+            max-height: 300px;
+            display: block;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 24px;
+            display: none;
+        }
+        
+        .progress-container.active {
+            display: block;
+        }
+        
+        .progress-bar-wrapper {
+            background: #e2e8f0;
+            border-radius: 40px;
+            overflow: hidden;
+            height: 40px;
+            position: relative;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #ff0000, #cc0000);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .progress-status {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #475569;
+        }
+        
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: #ff0000;
+            color: white;
+            flex: 1;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #cc0000;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255,0,0,0.3);
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .alert.success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #22c55e;
+            display: block;
+        }
+        
+        .alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+            display: block;
+        }
+        
+        .alert.info {
+            background: #e0f2fe;
+            color: #0c4a6e;
+            border-left: 4px solid #3b82f6;
+            display: block;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .user-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .token-input-group {
+                flex-direction: column;
+            }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>
+                    <span>🎬</span>
+                    YouTube Uploader
+                </h1>
+                <p>Upload videos directly to your channel</p>
+            </div>
+            
+            <div class="content">
+                <!-- Alert messages -->
+                <div id="alert" class="alert"></div>
+                
+                <!-- Token input section -->
+                <div class="token-section">
+                    <div class="token-label">
+                        🔑 <span>OAuth Access Token</span>
+                    </div>
+                    <div class="token-input-group">
+                        <input type="text" id="tokenInput" placeholder="Enter your YouTube OAuth token (ya29.xxx...)" autocomplete="off">
+                        <button class="btn btn-primary" id="setTokenBtn" style="padding: 12px 20px;">✓ Set Token</button>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">
+                        💡 Tip: You can also pass token via URL: ?oauth=YOUR_TOKEN
+                    </div>
+                </div>
+                
+                <!-- User Info Card -->
+                <div id="userCard" class="user-card" style="display: none;">
+                    <div class="user-info">
+                        <div class="avatar" id="userAvatar">👤</div>
+                        <div class="user-details">
+                            <h3 id="userName">Loading...</h3>
+                            <p id="userEmail">YouTube Channel</p>
+                        </div>
+                    </div>
+                    <div class="status-badge" id="statusBadge">✅ Connected</div>
+                </div>
+                
+                <!-- Upload Form (hidden until token set) -->
+                <div id="uploadSection" style="display: none;">
+                    <!-- Upload Area -->
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📹</div>
+                        <div>Click or drag & drop video file</div>
+                        <div class="file-info" id="fileInfo">MP4, MOV, AVI up to 128MB (or larger with chunked)</div>
+                        <input type="file" id="videoFile" accept="video/*" style="display: none;">
+                    </div>
+                    
+                    <!-- Video Preview -->
+                    <div class="video-preview" id="videoPreview">
+                        <video controls id="previewVideo">
+                            <source id="videoSource" src="">
+                        </video>
+                    </div>
+                    
+                    <!-- Upload Details -->
+                    <div class="form-group">
+                        <label>🎬 Title *</label>
+                        <input type="text" id="title" placeholder="Enter video title" maxlength="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📝 Description</label>
+                        <textarea id="description" placeholder="Enter video description (optional)"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔒 Privacy</label>
+                        <select id="privacy">
+                            <option value="private">Private</option>
+                            <option value="unlisted">Unlisted</option>
+                            <option value="public">Public</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🏷️ Category</label>
+                        <select id="category">
+                            <option value="22">People & Blogs</option>
+                            <option value="24">Entertainment</option>
+                            <option value="28">Science & Technology</option>
+                            <option value="20">Gaming</option>
+                            <option value="23">Comedy</option>
+                            <option value="27">Education</option>
+                            <option value="10">Music</option>
+                            <option value="1">Film & Animation</option>
+                            <option value="2">Autos & Vehicles</option>
+                            <option value="15">Pets & Animals</option>
+                            <option value="17">Sports</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>#️⃣ Tags (comma separated)</label>
+                        <input type="text" id="tags" placeholder="youtube, upload, tutorial">
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-fill" id="progressFill">0%</div>
+                        </div>
+                        <div class="progress-status" id="progressStatus">Ready to upload</div>
+                    </div>
+                    
+                    <!-- Buttons -->
+                    <div class="button-group">
+                        <button class="btn btn-primary" id="uploadBtn" disabled>🚀 Upload to YouTube</button>
+                        <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // State
+        let currentToken = null;
+        let selectedFile = null;
+        let channelInfo = null;
+        
+        // DOM Elements
+        const tokenInput = document.getElementById('tokenInput');
+        const setTokenBtn = document.getElementById('setTokenBtn');
+        const userCard = document.getElementById('userCard');
+        const uploadSection = document.getElementById('uploadSection');
+        const uploadArea = document.getElementById('uploadArea');
+        const videoFileInput = document.getElementById('videoFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const alertDiv = document.getElementById('alert');
+        const titleInput = document.getElementById('title');
+        const descriptionInput = document.getElementById('description');
+        const privacySelect = document.getElementById('privacy');
+        const categorySelect = document.getElementById('category');
+        const tagsInput = document.getElementById('tags');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressStatus = document.getElementById('progressStatus');
+        const videoPreview = document.getElementById('videoPreview');
+        const previewVideo = document.getElementById('previewVideo');
+        const videoSource = document.getElementById('videoSource');
+        
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            alertDiv.className = `alert ${type}`;
+            alertDiv.innerHTML = message;
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Hide alert
+        function hideAlert() {
+            alertDiv.style.display = 'none';
+        }
+        
+        // Set token
+        function setToken(token) {
+            if (!token || token.trim() === '') {
+                showAlert('Please enter a valid OAuth token', 'error');
+                return false;
+            }
+            
+            currentToken = token.trim();
+            tokenInput.value = currentToken;
+            
+            // Store in localStorage
+            localStorage.setItem('youtube_token', currentToken);
+            
+            // Fetch user info
+            fetchChannelInfo();
+            return true;
+        }
+        
+        // Fetch channel info using token
+        async function fetchChannelInfo() {
+            if (!currentToken) return;
+            
+            showAlert('Verifying token and fetching channel info...', 'info');
+            uploadBtn.disabled = true;
+            
+            try {
+                const response = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    if (data.error.code === 401) {
+                        showAlert('Invalid or expired token. Please get a new token.', 'error');
+                        clearToken();
+                        return;
+                    }
+                    throw new Error(data.error.message || 'Failed to fetch channel info');
+                }
+                
+                if (data.items && data.items[0]) {
+                    channelInfo = data.items[0].snippet;
+                    updateUserUI();
+                    uploadSection.style.display = 'block';
+                    uploadBtn.disabled = false;
+                    showAlert('✓ Connected to YouTube successfully!', 'success');
+                } else {
+                    throw new Error('No channel found for this token');
+                }
+                
+            } catch (error) {
+                console.error('Error fetching channel:', error);
+                showAlert(`Error: ${error.message}`, 'error');
+                clearToken();
+            }
+        }
+        
+        // Update user interface with channel info
+        function updateUserUI() {
+            if (!channelInfo) return;
+            
+            userCard.style.display = 'flex';
+            document.getElementById('userName').textContent = channelInfo.title || 'YouTube Channel';
+            document.getElementById('userEmail').textContent = channelInfo.description ? 
+                channelInfo.description.substring(0, 60) : 'YouTube Creator';
+            
+            // Try to get avatar
+            if (channelInfo.thumbnails && channelInfo.thumbnails.default) {
+                const avatarImg = document.createElement('img');
+                avatarImg.src = channelInfo.thumbnails.default.url;
+                avatarImg.style.width = '60px';
+                avatarImg.style.height = '60px';
+                avatarImg.style.borderRadius = '50%';
+                const avatarDiv = document.getElementById('userAvatar');
+                avatarDiv.innerHTML = '';
+                avatarDiv.appendChild(avatarImg);
+            }
+        }
+        
+        // Clear token
+        function clearToken() {
+            currentToken = null;
+            channelInfo = null;
+            tokenInput.value = '';
+            localStorage.removeItem('youtube_token');
+            userCard.style.display = 'none';
+            uploadSection.style.display = 'none';
+            selectedFile = null;
+            uploadBtn.disabled = true;
+        }
+        
+        // Handle file selection
+        function handleFileSelect(file) {
+            if (!file) return;
+            
+            // Check file size (YouTube limit is 128GB but we'll warn for large files)
+            const fileSizeMB = file.size / 1024 / 1024;
+            if (fileSizeMB > 10240) { // 10GB warning
+                if (!confirm(`File size is ${fileSizeMB.toFixed(2)} MB. Large files may take time to upload. Continue?`)) {
+                    return;
+                }
+            }
+            
+            selectedFile = file;
+            
+            // Update UI
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.innerHTML = `📁 ${file.name} (${fileSizeMB.toFixed(2)} MB)`;
+            
+            // Video preview
+            const url = URL.createObjectURL(file);
+            videoSource.src = url;
+            previewVideo.load();
+            videoPreview.classList.add('active');
+            
+            // Auto-fill title from filename
+            if (!titleInput.value) {
+                const fileName = file.name.replace(/\.[^/.]+$/, "");
+                titleInput.value = fileName;
+            }
+            
+            uploadBtn.disabled = false;
+        }
+        
+        // Upload video to YouTube
+        async function uploadVideo() {
+            if (!currentToken) {
+                showAlert('Please set a valid OAuth token first', 'error');
+                return;
+            }
+            
+            if (!selectedFile) {
+                showAlert('Please select a video file first', 'error');
+                return;
+            }
+            
+            const title = titleInput.value.trim();
+            if (!title) {
+                showAlert('Please enter a video title', 'error');
+                return;
+            }
+            
+            // Disable upload button during upload
+            uploadBtn.disabled = true;
+            progressContainer.classList.add('active');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0%';
+            progressStatus.textContent = 'Initiating upload...';
+            
+            try {
+                // Prepare metadata
+                const metadata = {
+                    snippet: {
+                        title: title,
+                        description: descriptionInput.value,
+                        tags: tagsInput.value.split(',').map(t => t.trim()).filter(t => t),
+                        categoryId: categorySelect.value
+                    },
+                    status: {
+                        privacyStatus: privacySelect.value,
+                        selfDeclaredMadeForKids: false
+                    }
+                };
+                
+                // Step 1: Initiate resumable upload
+                const initiateResponse = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?part=snippet,status&uploadType=resumable', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'X-Upload-Content-Type': selectedFile.type,
+                        'X-Upload-Content-Length': selectedFile.size
+                    },
+                    body: JSON.stringify(metadata)
+                });
+                
+                if (!initiateResponse.ok) {
+                    const error = await initiateResponse.json();
+                    throw new Error(error.error?.message || 'Failed to initiate upload');
+                }
+                
+                const uploadUrl = initiateResponse.headers.get('Location');
+                if (!uploadUrl) {
+                    throw new Error('No upload URL received');
+                }
+                
+                progressStatus.textContent = 'Uploading video...';
+                
+                // Step 2: Upload file with progress tracking
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressFill.style.width = percent + '%';
+                        progressFill.textContent = percent + '%';
+                        progressStatus.textContent = `Uploading: ${percent}% (${(e.loaded / 1024 / 1024).toFixed(1)} MB / ${(e.total / 1024 / 1024).toFixed(1)} MB)`;
+                    }
+                });
+                
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        progressFill.style.width = '100%';
+                        progressFill.textContent = 'Complete!';
+                        progressStatus.textContent = `✅ Upload successful! Video ID: ${response.id}`;
+                        showAlert(`🎉 Video uploaded successfully! Video ID: ${response.id}`, 'success');
+                        
+                        // Reset form after success
+                        setTimeout(() => {
+                            resetForm();
+                        }, 3000);
+                    } else {
+                        let errorMsg = `Upload failed with status ${xhr.status}`;
+                        try {
+                            const error = JSON.parse(xhr.responseText);
+                            errorMsg = error.error?.message || errorMsg;
+                        } catch (e) {}
+                        throw new Error(errorMsg);
+                    }
+                    uploadBtn.disabled = false;
+                });
+                
+                xhr.addEventListener('error', () => {
+                    throw new Error('Network error during upload');
+                });
+                
+                xhr.open('PUT', uploadUrl);
+                xhr.setRequestHeader('Authorization', `Bearer ${currentToken}`);
+                xhr.send(selectedFile);
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAlert(`Upload failed: ${error.message}`, 'error');
+                progressStatus.textContent = 'Upload failed. Please try again.';
+                uploadBtn.disabled = false;
+            }
+        }
+        
+        // Reset form
+        function resetForm() {
+            selectedFile = null;
+            videoFileInput.value = '';
+            titleInput.value = '';
+            descriptionInput.value = '';
+            tagsInput.value = '';
+            privacySelect.value = 'private';
+            categorySelect.value = '22';
+            document.getElementById('fileInfo').innerHTML = 'MP4, MOV, AVI up to 128MB (or larger with chunked)';
+            videoPreview.classList.remove('active');
+            progressContainer.classList.remove('active');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0%';
+            uploadBtn.disabled = true;
+            hideAlert();
+        }
+        
+        // Setup drag and drop
+        function setupDragAndDrop() {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('video/')) {
+                    handleFileSelect(file);
+                } else {
+                    showAlert('Please drop a valid video file', 'error');
+                }
+            });
+            
+            uploadArea.addEventListener('click', () => {
+                videoFileInput.click();
+            });
+            
+            videoFileInput.addEventListener('change', (e) => {
+                if (e.target.files[0]) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+        }
+        
+        // Initialize
+        function init() {
+            // Check URL for token parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const oauthToken = urlParams.get('oauth');
+            
+            if (oauthToken) {
+                setToken(oauthToken);
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                // Check localStorage for saved token
+                const savedToken = localStorage.getItem('youtube_token');
+                if (savedToken) {
+                    tokenInput.value = savedToken;
+                    setToken(savedToken);
+                }
+            }
+            
+            // Setup event listeners
+            setTokenBtn.addEventListener('click', () => {
+                setToken(tokenInput.value);
+            });
+            
+            uploadBtn.addEventListener('click', uploadVideo);
+            resetBtn.addEventListener('click', resetForm);
+            
+            // Setup drag and drop
+            setupDragAndDrop();
+            
+            // Allow Enter key in token input
+            tokenInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    setToken(tokenInput.value);
+                }
+            });
+        }
+        
+        // Start app
+        init();
+    </script>
+</body>
+</html>

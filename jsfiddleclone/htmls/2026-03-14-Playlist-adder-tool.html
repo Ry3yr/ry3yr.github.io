@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Picker & Table Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #555;
+            margin: 20px 0 10px;
+            font-size: 18px;
+        }
+
+        .url-picker-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .url-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .url-btn {
+            padding: 8px 16px;
+            background: #e9ecef;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            text-align: left;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .url-btn:hover {
+            background: #dee2e6;
+        }
+
+        .url-btn.selected {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+
+        .custom-url-input {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .custom-url-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #218838;
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        .table-selector {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .table-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .table-option:hover {
+            background: #f8f9fa;
+        }
+
+        .table-option.selected {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+
+        .table-option pre {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: pre-wrap;
+        }
+
+        .table-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+
+        .add-entry-form {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .total-row {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .total-row td {
+            border-bottom: none;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            padding: 10px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            color: #155724;
+            margin: 10px 0;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .now-btn {
+            background: #17a2b8;
+            margin-left: 10px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .now-btn:hover {
+            background: #138496;
+        }
+
+        .inline-buttons {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 URL Picker & Table Editor</h1>
+        
+        <!-- URL Picker Section -->
+        <div class="url-picker-section">
+            <h2>Select Source URL</h2>
+            <div class="url-list" id="urlList"></div>
+            
+            <div class="custom-url-input">
+                <input type="url" id="customUrl" placeholder="Or enter custom URL...">
+                <button onclick="loadCustomUrl()">Load URL</button>
+            </div>
+        </div>
+
+        <!-- Table Selector -->
+        <div id="tableSelector" class="table-selector hidden">
+            <h2>Select Table to Edit</h2>
+            <p>Multiple tables found. Choose which one you want to work with:</p>
+            <div id="tableOptions"></div>
+        </div>
+
+        <!-- Current Table Display -->
+        <h2>Current Table</h2>
+        <div id="tableInfo" class="table-info hidden"></div>
+        <div id="currentTableContainer" class="table-container"></div>
+
+        <!-- Add Entry Form -->
+        <div class="add-entry-form">
+            <h2>Add New Entry</h2>
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label>Video URL</label>
+                    <input type="text" id="videoUrl" placeholder="YouTube URL">
+                </div>
+                <div class="form-group">
+                    <label>Video Title</label>
+                    <input type="text" id="videoTitle" placeholder="Video title">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Playtime</label>
+                    <input type="text" id="playtime" placeholder="e.g., 0h 2m 51s">
+                </div>
+                <div class="form-group">
+                    <label>Date <button class="now-btn" onclick="fillCurrentDate()">Now</button></label>
+                    <input type="text" id="date" placeholder="e.g., Fri Jan 24 2025">
+                </div>
+                <div class="form-group">
+                    <label>Exact Time <button class="now-btn" onclick="fillCurrentExactTime()">Now</button></label>
+                    <input type="text" id="exactTime" placeholder="e.g., 202501241120">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="addNewEntry()">Add Entry to Table</button>
+                <button class="secondary" onclick="fillAllCurrentTime()">Fill All with Current Time</button>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button onclick="downloadHTML()">📥 Download HTML</button>
+            <button class="danger" onclick="clearTable()">🗑️ Clear Table</button>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage" class="hidden"></div>
+    </div>
+
+    <script>
+        // Default URLs from your list - ONLY the URLs, no hardcoded data
+        const defaultUrls = [
+            'https://alceawis.de/amvs.html',
+            'https://alceawis.de/other/extra/lps/lpsnswitch.txt',
+            'https://alceawis.de/other/extra/lps/lpspc.txt'
+        ];
+
+        // Current state
+        let allTables = [];
+        let currentTableIndex = -1;
+        let currentTableHTML = '';
+        let currentUrl = '';
+        let tableHeaders = [];
+        let rawHTML = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUrlList();
+            // Prefill with current time on load
+            setTimeout(() => {
+                fillAllCurrentTime();
+            }, 100);
+        });
+
+        function renderUrlList() {
+            const urlList = document.getElementById('urlList');
+            urlList.innerHTML = '';
+            
+            defaultUrls.forEach(url => {
+                const btn = document.createElement('button');
+                btn.className = 'url-btn';
+                btn.textContent = url;
+                btn.onclick = () => selectUrl(url);
+                if (url === currentUrl) {
+                    btn.classList.add('selected');
+                }
+                urlList.appendChild(btn);
+            });
+        }
+
+        function getCurrentFormattedDate() {
+            const now = new Date();
+            
+            // Days of the week
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            // Months
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const day = now.getDate();
+            const year = now.getFullYear();
+            
+            return `${dayName} ${monthName} ${day} ${year}`;
+        }
+
+        function getCurrentExactTime() {
+            const now = new Date();
+            
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            return `${year}${month}${day}${hours}${minutes}`;
+        }
+
+        function fillCurrentDate() {
+            document.getElementById('date').value = getCurrentFormattedDate();
+        }
+
+        function fillCurrentExactTime() {
+            document.getElementById('exactTime').value = getCurrentExactTime();
+        }
+
+        function fillAllCurrentTime() {
+            fillCurrentDate();
+            fillCurrentExactTime();
+            showStatus('Date and time updated to current moment');
+        }
+
+        async function selectUrl(url) {
+            currentUrl = url;
+            renderUrlList();
+            showStatus('Loading URL...');
+            
+            try {
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                rawHTML = await response.text();
+                parseMultipleTables(rawHTML);
+            } catch (error) {
+                showStatus(`Error loading URL: ${error.message}. Note: This might be due to CORS policy.`, true);
+            }
+        }
+
+        async function loadCustomUrl() {
+            const url = document.getElementById('customUrl').value.trim();
+            if (!url) {
+                showStatus('Please enter a URL', true);
+                return;
+            }
+            await selectUrl(url);
+        }
+
+        function parseMultipleTables(html) {
+            // Find all tables
+            const tableRegex = /<table[\s\S]*?<\/table>/gi;
+            const tables = html.match(tableRegex);
+            
+            if (!tables || tables.length === 0) {
+                showStatus('No tables found in the HTML', true);
+                return;
+            }
+
+            // For each table, try to find its header (text before it)
+            allTables = [];
+            tableHeaders = [];
+            
+            let lastIndex = 0;
+            tables.forEach((table, index) => {
+                const tableIndex = html.indexOf(table, lastIndex);
+                
+                // Get the text between last table and this table
+                let header = '';
+                if (tableIndex > lastIndex) {
+                    header = html.substring(lastIndex, tableIndex).trim();
+                }
+                
+                tableHeaders.push(header);
+                allTables.push(table);
+                
+                lastIndex = tableIndex + table.length;
+            });
+
+            // Show table selector
+            showTableSelector();
+        }
+
+        function showTableSelector() {
+            const selector = document.getElementById('tableSelector');
+            const options = document.getElementById('tableOptions');
+            
+            options.innerHTML = '';
+            
+            allTables.forEach((table, index) => {
+                // Count rows
+                const rowMatch = table.match(/<tr/g) || [];
+                const rowCount = rowMatch.length;
+                
+                // Get first few rows as preview
+                const preview = table.substring(0, 300).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() + '...';
+                
+                const div = document.createElement('div');
+                div.className = 'table-option';
+                
+                let headerHtml = '';
+                if (tableHeaders[index]) {
+                    // Try to extract a meaningful title from the header
+                    const lines = tableHeaders[index].split('\n');
+                    const title = lines[0] || 'Table ' + (index + 1);
+                    headerHtml = `<div class="table-header">📁 ${title}</div>`;
+                }
+                
+                div.innerHTML = `
+                    ${headerHtml}
+                    <strong>Table ${index + 1}</strong> (${rowCount - 1} rows)
+                    <pre>${preview}</pre>
+                `;
+                div.onclick = () => selectTable(index);
+                options.appendChild(div);
+            });
+            
+            selector.classList.remove('hidden');
+        }
+
+        function selectTable(index) {
+            if (allTables[index]) {
+                currentTableIndex = index;
+                setCurrentTable(allTables[index]);
+                document.getElementById('tableSelector').classList.add('hidden');
+            }
+        }
+
+        function setCurrentTable(tableHTML) {
+            currentTableHTML = tableHTML;
+            
+            // Show table info
+            const tableInfo = document.getElementById('tableInfo');
+            if (tableHeaders[currentTableIndex]) {
+                const lines = tableHeaders[currentTableIndex].split('\n');
+                const title = lines[0] || 'Selected Table';
+                tableInfo.textContent = `Current: ${title}`;
+                tableInfo.classList.remove('hidden');
+            } else {
+                tableInfo.classList.add('hidden');
+            }
+            
+            renderCurrentTable();
+            showStatus('Table loaded successfully!');
+        }
+
+        function renderCurrentTable() {
+            const container = document.getElementById('currentTableContainer');
+            if (currentTableHTML) {
+                container.innerHTML = currentTableHTML;
+            } else {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">No table selected. Choose a table from the selector above.</p>';
+            }
+        }
+
+        function addNewEntry() {
+            if (!currentTableHTML) {
+                showStatus('Please select a table first', true);
+                return;
+            }
+
+            const videoUrl = document.getElementById('videoUrl').value.trim();
+            const videoTitle = document.getElementById('videoTitle').value.trim();
+            const playtime = document.getElementById('playtime').value.trim();
+            const date = document.getElementById('date').value.trim();
+            const exactTime = document.getElementById('exactTime').value.trim();
+
+            if (!videoUrl || !videoTitle || !playtime || !date || !exactTime) {
+                showStatus('Please fill in all fields', true);
+                return;
+            }
+
+            // Parse the current table
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(currentTableHTML, 'text/html');
+            const table = doc.querySelector('table');
+            const tbody = table.querySelector('tbody') || table;
+            
+            if (!tbody) {
+                showStatus('Invalid table structure', true);
+                return;
+            }
+
+            // Create new row
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td><a href="${videoUrl}" target="_blank">${videoTitle}</a></td>
+                <td>${playtime}</td>
+                <td>${date}</td>
+                <td>${exactTime}</td>
+            `;
+            
+            // Check if there's a total row at the end
+            const rows = tbody.querySelectorAll('tr');
+            const lastRow = rows[rows.length - 1];
+            const isTotalRow = lastRow && lastRow.querySelector('td[colspan="4"]');
+            
+            if (isTotalRow) {
+                tbody.insertBefore(newRow, lastRow);
+                updateTotalPlaytime(tbody, lastRow);
+            } else {
+                tbody.appendChild(newRow);
+            }
+
+            // Save and render
+            currentTableHTML = table.outerHTML;
+            allTables[currentTableIndex] = currentTableHTML;
+            renderCurrentTable();
+            
+            // Clear form but keep date/time or refresh to current
+            document.getElementById('videoUrl').value = '';
+            document.getElementById('videoTitle').value = '';
+            document.getElementById('playtime').value = '';
+            fillAllCurrentTime(); // Refresh to current time
+            
+            showStatus('Entry added successfully!');
+        }
+
+        function updateTotalPlaytime(tbody, totalRow) {
+            // Calculate total playtime from all rows except the total row
+            const rows = tbody.querySelectorAll('tr');
+            let totalSeconds = 0;
+            
+            for (let i = 0; i < rows.length - 1; i++) {
+                const timeCell = rows[i].querySelector('td:nth-child(2)');
+                if (timeCell) {
+                    const timeStr = timeCell.textContent;
+                    const match = timeStr.match(/(\d+)h\s*(\d+)m\s*(\d+)s/);
+                    if (match) {
+                        totalSeconds += parseInt(match[1]) * 3600;
+                        totalSeconds += parseInt(match[2]) * 60;
+                        totalSeconds += parseInt(match[3]);
+                    }
+                }
+            }
+
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            // Format with leading zeros
+            const formattedHours = hours.toString().padStart(2, '0');
+            const formattedMinutes = minutes.toString().padStart(2, '0');
+            const formattedSeconds = seconds.toString().padStart(2, '0');
+            
+            // Update the total row text while preserving the playlist link
+            const playlistLink = totalRow.querySelector('a');
+            if (playlistLink) {
+                totalRow.innerHTML = `<td colspan="4">Total Playtime: ${formattedHours}h ${formattedMinutes}m ${formattedSeconds}s ${playlistLink.outerHTML}</td>`;
+            } else {
+                totalRow.innerHTML = `<td colspan="4">Total Playtime: ${formattedHours}h ${formattedMinutes}m ${formattedSeconds}s</td>`;
+            }
+        }
+
+        function downloadHTML() {
+            if (allTables.length === 0) {
+                showStatus('No tables to download', true);
+                return;
+            }
+
+            // Reconstruct the HTML with all tables and their original headers
+            let reconstructedHTML = '';
+            allTables.forEach((table, index) => {
+                if (tableHeaders[index]) {
+                    reconstructedHTML += tableHeaders[index] + '\n\n';
+                }
+                reconstructedHTML += table + '\n\n';
+            });
+            
+            const blob = new Blob([reconstructedHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'video_tables.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('HTML downloaded successfully!');
+        }
+
+        function clearTable() {
+            if (confirm('Are you sure you want to clear the current table?')) {
+                currentTableHTML = '';
+                renderCurrentTable();
+                showStatus('Table cleared');
+            }
+        }
+
+        function showStatus(message, isError = false) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = 'status' + (isError ? ' error' : '');
+            statusEl.classList.remove('hidden');
+            
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

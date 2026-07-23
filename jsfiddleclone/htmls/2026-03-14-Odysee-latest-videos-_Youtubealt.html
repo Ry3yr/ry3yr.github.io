@@ -1,0 +1,129 @@
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<style>
+  .odysee-video {
+    margin:0px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
+  }
+  .odysee-video:last-child {
+    border-bottom: none;
+  }
+  .odysee-video img {
+    margin-right: 10px;
+    max-width: 150px;
+    height: auto;
+  }
+  .odysee-video h2 {
+    margin-top: 0;
+    font-size: 18px;
+  }
+  .odysee-video h2 a {
+    text-decoration: none;
+    color: #333;
+  }
+  .odysee-video h2 a:hover {
+    text-decoration: underline;
+  }
+  .video-meta {
+    font-size: 14px;
+    color: #666;
+    margin: 5px 0;
+  }
+</style>
+<div id="odysee-feed"></div>
+<script>
+  $(function() {
+    var $content = $('#odysee-feed');
+    var feedUrl = 'https://odysee.com/$/rss/@alceasgamingbouquet:7';
+    var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(feedUrl);
+    
+    $.get(proxyUrl, function(xmlData) {
+      var $xml = $(xmlData);
+      var output = '';
+      
+      var channelTitle = $xml.find('channel > title').text();
+      var channelLink = $xml.find('channel > link').text();
+      var channelImage = $xml.find('channel > image > url').text();
+      
+      $xml.find('item').each(function(index) {
+        var $item = $(this);
+        
+        var title = $item.find('title').text() || $item.find('itunes\\:title').text();
+        var titleShortened = (title.length > 60) ? title.substring(0, 60) + "..." : title;
+        
+        var link = $item.find('link').text();
+        var guid = $item.find('guid').text() || link;
+        
+        var description = $item.find('description').text();
+        var thumbnail = '';
+        var imgMatch = description.match(/<img[^>]+src="([^">]+)"/);
+        if (imgMatch && imgMatch[1]) {
+          thumbnail = imgMatch[1];
+        } else {
+          thumbnail = $item.find('itunes\\:image').attr('href') || '';
+        }
+        
+        var pubDate = $item.find('pubDate').text();
+        var date = pubDate ? new Date(pubDate).toLocaleDateString() : 'Unknown date';
+        
+        var duration = $item.find('itunes\\:duration').text();
+        var durationFormatted = '';
+        if (duration) {
+          var seconds = parseInt(duration);
+          if (!isNaN(seconds)) {
+            var hours = Math.floor(seconds / 3600);
+            var minutes = Math.floor((seconds % 3600) / 60);
+            var secs = seconds % 60;
+            
+            if (hours > 0) {
+              durationFormatted = hours + ':' + minutes.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+            } else {
+              durationFormatted = minutes + ':' + secs.toString().padStart(2, '0');
+            }
+          }
+        }
+        
+        output += '<div class="odysee-video">';
+        
+        if (thumbnail) {
+          output += `<a href="${link}" target="_blank"><img src="${thumbnail}" alt="${title}" /></a>`;
+        }
+        
+        output += '<div style="flex: 1;">';
+        output += `<h2><a href="${link}" target="_blank">${titleShortened}</a></h2>`;
+        output += '<div class="video-meta">';
+        output += `<span>📅 ${date}</span>`;
+        if (durationFormatted) {
+          output += ` <span>⏱️ ${durationFormatted}</span>`;
+        }
+        output += '</div>';
+        output += '</div>';
+        output += '</div>';
+        
+        return index < 4;
+      });
+      
+      if (channelTitle) {
+        var channelHtml = '<div class="channel-info" style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #ccc;">';
+        if (channelImage) {
+          channelHtml += `<img src="${channelImage}" alt="${channelTitle}" style="max-width: 50px; max-height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">`;
+        }
+        channelHtml += `<a href="${channelLink}" target="_blank" style="font-size: 20px; font-weight: bold; text-decoration: none; color: #333;">${channelTitle}</a>`;
+        channelHtml += '</div>';
+        output = channelHtml + output;
+      }
+      
+      if (output === '') {
+        output = '<p>No videos found.</p>';
+      }
+      
+      $content.html(output).hide().fadeIn('slow');
+      
+    }).fail(function() {
+      $content.html('<p>Error loading Odysee feed. Please try again later.</p>').fadeIn('slow');
+    });
+  });
+</script>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bluesky Poster - Enhanced Client Side JS</title>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Bluesky Poster - Enhanced Client Side JS</h1>
+        <p>Pure JavaScript implementation with hashtags, links, and media support</p>
+      </div>
+
+      <div class="content">
+        <div id="authStatus" class="auth-status"></div>
+
+        <div id="loginSection" class="form-group">
+          <h3>Step 1: Create Session</h3>
+
+          <div class="curl-example">
+            curl -X POST https://bsky.social/xrpc/com.atproto.server.createSession \<br />
+            -H "Content-Type: application/json" \<br />
+            -d '{"identifier": "HANDLE", "password": "PASSWORD"}'
+          </div>
+
+          <div class="info-box">
+            <strong>Security Note:</strong> This runs entirely in your browser. Credentials are only sent to Bluesky's official API. Never share URLs with passwords in them!
+          </div>
+
+          <form id="loginForm">
+            <label for="handle">Bluesky Handle</label>
+            <input type="text" id="handle" name="handle" placeholder="username.bsky.social" required />
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your Bluesky password" required />
+
+            <div class="note">Using your actual Bluesky password (as shown in official docs)</div>
+
+            <div class="button-group">
+              <button type="submit" id="loginBtn" class="login-btn">
+                <span id="loginText">Login to Bluesky</span>
+                <span id="loginLoading" class="loading hidden"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div id="postSection" class="form-group hidden">
+          <div id="handleDisplay" class="handle-display">
+            Logged in as: <span id="currentHandle"></span>
+          </div>
+
+          <h3>Step 2: Create Post with Enhanced Features</h3>
+
+          <div class="curl-example" id="curlExample"></div>
+
+          <form id="postForm">
+            <label for="postText">Post Content (max 300 characters)</label>
+            <textarea id="postText" name="post_text" rows="4" placeholder="Hello world! Check out this #example with a https://example.com link"></textarea>
+            <div class="char-counter" id="charCounter">0/300</div>
+
+            <div class="media-section">
+              <h4>Media Upload</h4>
+              <div class="media-info">
+                <p><strong>Supported formats:</strong> JPEG, PNG, GIF, WebP (images) • MP4 (videos, max 15s)</p>
+                <p><strong>Max size:</strong> 1MB per file • Max 4 files</p>
+              </div>
+              
+              <div class="media-controls">
+                <input type="file" id="mediaInput" accept="image/*,video/mp4,video/quicktime" multiple />
+                <button type="button" id="addMediaBtn">Add Media</button>
+                <button type="button" id="clearMediaBtn">Clear All Media</button>
+              </div>
+
+              <div id="mediaPreview" class="media-preview"></div>
+              <div id="mediaList" class="media-list"></div>
+            </div>
+
+            <div class="features-section">
+              <h4>Post Features:</h4>
+
+              <div class="feature-item">
+                <label>
+                  <input type="checkbox" id="autoDetectHashtags" checked />
+                  Auto-detect #hashtags
+                </label>
+              </div>
+
+              <div class="feature-item">
+                <label>
+                  <input type="checkbox" id="autoDetectLinks" checked />
+                  Auto-detect links
+                </label>
+              </div>
+
+              <div class="feature-item">
+                <label>Facets Preview:</label>
+                <div id="facetsPreview" class="facets-preview"></div>
+              </div>
+            </div>
+
+            <div class="post-preview" id="postPreview">Preview will appear here...</div>
+
+            <div class="button-group">
+              <button type="button" id="logoutBtn" class="login-btn">Logout</button>
+              <button type="submit" id="postBtn" class="post-btn" disabled>
+                <span id="postTextBtn">Post to Bluesky</span>
+                <span id="postLoading" class="loading hidden"></span>
+              </button>
+            </div>
+          </form>
+
+          <div class="info-box" id="sessionInfo" style="display: none">
+            <strong>Session Info:</strong><br />
+            Access JWT: <span id="accessJwtPreview"></span><br />
+            DID: <span id="didPreview"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const PDS_HOST = "https://bsky.social";
+      const MAX_POST_LENGTH = 300;
+      const MAX_MEDIA_SIZE = 1048576; // 1MB (Bluesky limit)
+      const MAX_MEDIA_COUNT = 4;
+      const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      const SUPPORTED_VIDEO_TYPES = ["video/mp4", "video/quicktime"];
+      const SUPPORTED_MEDIA_TYPES = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_VIDEO_TYPES];
+
+      let state = {
+        accessJwt: null,
+        refreshJwt: null,
+        did: null,
+        handle: null,
+        repo: null,
+      };
+
+      let mediaFiles = [];
+
+      const authStatus = document.getElementById("authStatus");
+      const loginSection = document.getElementById("loginSection");
+      const postSection = document.getElementById("postSection");
+      const handleDisplay = document.getElementById("handleDisplay");
+      const currentHandleSpan = document.getElementById("currentHandle");
+      const curlExample = document.getElementById("curlExample");
+      const sessionInfo = document.getElementById("sessionInfo");
+      const accessJwtPreview = document.getElementById("accessJwtPreview");
+      const didPreview = document.getElementById("didPreview");
+      const facetsPreview = document.getElementById("facetsPreview");
+      const mediaPreview = document.getElementById("mediaPreview");
+      const mediaList = document.getElementById("mediaList");
+      const mediaInput = document.getElementById("mediaInput");
+      const addMediaBtn = document.getElementById("addMediaBtn");
+      const clearMediaBtn = document.getElementById("clearMediaBtn");
+
+      function checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const handle = urlParams.get("user");
+        const password = urlParams.get("pass");
+        
+        if (handle) {
+          document.getElementById("handle").value = handle;
+          showMessage(`Username prefilled from URL. Click "Login to Bluesky" to continue.`, "info");
+        }
+        
+        if (password) {
+          document.getElementById("password").value = password;
+          showMessage(`Password prefilled from URL. Click "Login to Bluesky" to continue.`, "info");
+        }
+        
+        // Also check for prefill post text
+        const postText = urlParams.get("text");
+        if (postText) {
+          document.getElementById("postText").value = decodeURIComponent(postText);
+          updateCharCounter();
+        }
+      }
+
+      function showMessage(message, type = "info") {
+        authStatus.textContent = message;
+        authStatus.className = `auth-status show ${type}`;
+
+        if (type === "success") {
+          setTimeout(() => {
+            authStatus.classList.remove("show");
+          }, 5000);
+        }
+      }
+
+      function showLoading(elementId, show) {
+        const textElement = document.getElementById(elementId + "Text");
+        const loadingElement = document.getElementById(elementId + "Loading");
+        const buttonElement = document.getElementById(elementId + "Btn");
+
+        if (textElement) textElement.classList.toggle("hidden", show);
+        if (loadingElement) loadingElement.classList.toggle("hidden", !show);
+        if (buttonElement) buttonElement.disabled = show;
+      }
+
+      function detectFacets(text) {
+        const facets = [];
+
+        const autoDetectHashtags = document.getElementById("autoDetectHashtags").checked;
+        const autoDetectLinks = document.getElementById("autoDetectLinks").checked;
+
+        if (autoDetectHashtags) {
+          const hashtagRegex = /#(\w+)/g;
+          let match;
+          while ((match = hashtagRegex.exec(text)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+            facets.push({
+              index: {
+                byteStart: start,
+                byteEnd: end,
+              },
+              features: [
+                {
+                  $type: "app.bsky.richtext.facet#tag",
+                  tag: match[1],
+                },
+              ],
+            });
+          }
+        }
+
+        if (autoDetectLinks) {
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          let match;
+          while ((match = urlRegex.exec(text)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+
+            try {
+              new URL(match[0]);
+              facets.push({
+                index: {
+                  byteStart: start,
+                  byteEnd: end,
+                },
+                features: [
+                  {
+                    $type: "app.bsky.richtext.facet#link",
+                    uri: match[0],
+                  },
+                ],
+              });
+            } catch (e) {
+              // Invalid URL, skip
+            }
+          }
+        }
+
+        facets.sort((a, b) => a.index.byteStart - b.index.byteStart);
+        return facets;
+      }
+
+      function updateCharCounter() {
+        const textarea = document.getElementById("postText");
+        const counter = document.getElementById("charCounter");
+        const postBtn = document.getElementById("postBtn");
+        const length = textarea.value.length;
+
+        counter.textContent = `${length}/${MAX_POST_LENGTH}`;
+
+        if (length > MAX_POST_LENGTH) {
+          counter.classList.add("error");
+          if (postBtn) postBtn.disabled = true;
+        } else {
+          counter.classList.remove("error");
+          if (postBtn) postBtn.disabled = length === 0;
+        }
+
+        updatePreview(textarea.value);
+        updateFacetsPreview(textarea.value);
+      }
+
+      function updatePreview(text) {
+        const preview = document.getElementById("postPreview");
+
+        if (!text && mediaFiles.length === 0) {
+          preview.innerHTML = "Preview will appear here...";
+          return;
+        }
+
+        let html = text || "";
+
+        if (text) {
+          if (document.getElementById("autoDetectHashtags").checked) {
+            html = html.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+          }
+
+          if (document.getElementById("autoDetectLinks").checked) {
+            html = html.replace(/(https?:\/\/[^\s]+)/g, '<span class="link">$1</span>');
+          }
+
+          html = html.replace(/\n/g, "<br>");
+        }
+
+        if (mediaFiles.length > 0) {
+          html += `<br><br><strong>Media:</strong> ${mediaFiles.length} file(s) attached`;
+          mediaFiles.forEach((file, index) => {
+            const mediaType = file.type.startsWith("image/") ? "Image" : "Video";
+            html += `<br>• ${file.name} (${mediaType}, ${(file.size / 1024).toFixed(1)}KB)`;
+            if (file.altText) {
+              html += ` - Alt: ${file.altText}`;
+            }
+          });
+        }
+
+        preview.innerHTML = html;
+      }
+
+      function updateFacetsPreview(text) {
+        const facets = detectFacets(text);
+
+        if (facets.length === 0) {
+          facetsPreview.innerHTML = "<em>No facets detected</em>";
+          return;
+        }
+
+        let html = '<div class="facets-list">';
+        facets.forEach((facet) => {
+          const textSlice = text.substring(facet.index.byteStart, facet.index.byteEnd);
+          const facetType = facet.features[0].$type;
+          const typeName = facetType.includes("tag") ? "Hashtag" : "Link";
+          const value = facetType.includes("tag") ? facet.features[0].tag : facet.features[0].uri;
+
+          html += `
+            <div class="facet-item">
+              <strong>${typeName}:</strong> "${textSlice}"
+              <br><small>Position: ${facet.index.byteStart}-${facet.index.byteEnd}</small>
+              <br><small>Value: ${value}</small>
+            </div>
+          `;
+        });
+        html += "</div>";
+
+        facetsPreview.innerHTML = html;
+      }
+
+      function updateMediaPreview() {
+        mediaList.innerHTML = "";
+        mediaPreview.innerHTML = "";
+
+        if (mediaFiles.length === 0) {
+          mediaPreview.innerHTML = "<em>No media files added</em>";
+          return;
+        }
+
+        let html = "";
+        mediaFiles.forEach((file, index) => {
+          const altText = file.altText || file.name;
+          const sizeKB = (file.size / 1024).toFixed(1);
+          const mediaType = file.type.startsWith("image/") ? "Image" : "Video";
+
+          html += `
+            <div class="media-item">
+              <strong>${index + 1}. ${file.name}</strong> (${mediaType}, ${sizeKB}KB)
+              <div>
+                <label>Alt Text:</label>
+                <input type="text" class="media-alt-text" data-index="${index}" value="${altText}" placeholder="Describe this media for accessibility" />
+                <button type="button" class="remove-media-btn" data-index="${index}">Remove</button>
+              </div>
+            </div>
+          `;
+
+          if (file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const img = document.createElement("img");
+              img.src = e.target.result;
+              img.style.maxWidth = "100px";
+              img.style.maxHeight = "100px";
+              img.style.margin = "5px";
+              img.style.objectFit = "cover";
+              mediaPreview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+          } else if (file.type.startsWith("video/")) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const video = document.createElement("video");
+              video.src = e.target.result;
+              video.style.maxWidth = "100px";
+              video.style.maxHeight = "100px";
+              video.style.margin = "5px";
+              video.controls = true;
+              video.muted = true;
+              video.preload = "metadata";
+              mediaPreview.appendChild(video);
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+
+        mediaList.innerHTML = html;
+
+        document.querySelectorAll(".media-alt-text").forEach((input) => {
+          input.addEventListener("input", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            mediaFiles[index].altText = e.target.value.trim();
+            updatePreview(document.getElementById("postText").value);
+          });
+        });
+
+        document.querySelectorAll(".remove-media-btn").forEach((button) => {
+          button.addEventListener("click", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            mediaFiles.splice(index, 1);
+            updateMediaPreview();
+            updatePreview(document.getElementById("postText").value);
+          });
+        });
+      }
+
+      function handleMediaUpload() {
+        const files = mediaInput.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          if (!SUPPORTED_MEDIA_TYPES.includes(file.type)) {
+            showMessage(`Unsupported file type: ${file.type}. Supported: JPEG, PNG, GIF, WebP, MP4`, "error");
+            continue;
+          }
+
+          if (file.size > MAX_MEDIA_SIZE) {
+            showMessage(
+              `File ${file.name} is too large (${(file.size / 1024).toFixed(1)}KB). Max: ${(MAX_MEDIA_SIZE / 1024).toFixed(0)}KB`,
+              "error"
+            );
+            continue;
+          }
+
+          if (mediaFiles.length >= MAX_MEDIA_COUNT) {
+            showMessage(`Maximum ${MAX_MEDIA_COUNT} media files allowed per post`, "error");
+            break;
+          }
+
+          // Add alt text property
+          file.altText = file.name;
+          mediaFiles.push(file);
+        }
+
+        mediaInput.value = "";
+        updateMediaPreview();
+        updatePreview(document.getElementById("postText").value);
+      }
+
+      async function uploadBlob(accessJwt, file) {
+        try {
+          const response = await fetch(`${PDS_HOST}/xrpc/com.atproto.repo.uploadBlob`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessJwt}`,
+              "Content-Type": file.type,
+            },
+            body: file,
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            return {
+              success: true,
+              blob: data.blob,
+            };
+          } else {
+            return {
+              success: false,
+              error: data.message || `Upload failed (HTTP ${response.status})`,
+            };
+          }
+        } catch (error) {
+          return {
+            success: false,
+            error: "Network error: " + error.message,
+          };
+        }
+      }
+
+      async function blueskyCreateSession(identifier, password) {
+        try {
+          const response = await fetch(`${PDS_HOST}/xrpc/com.atproto.server.createSession`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              identifier: identifier,
+              password: password,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            return {
+              success: true,
+              accessJwt: data.accessJwt,
+              refreshJwt: data.refreshJwt,
+              did: data.did,
+              handle: data.handle,
+            };
+          } else {
+            return {
+              success: false,
+              error: data.message || `Login failed (HTTP ${response.status})`,
+            };
+          }
+        } catch (error) {
+          return {
+            success: false,
+            error: "Network error: " + error.message,
+          };
+        }
+      }
+
+      async function blueskyCreatePost(accessJwt, repo, text, facets = [], mediaFiles = []) {
+        try {
+          const postData = {
+            repo: repo,
+            collection: "app.bsky.feed.post",
+            record: {
+              text: text,
+              createdAt: new Date().toISOString(),
+              $type: "app.bsky.feed.post",
+            },
+          };
+
+          if (facets.length > 0) {
+            postData.record.facets = facets;
+          }
+
+          // Handle media embeddings
+          if (mediaFiles.length > 0) {
+            const embed = {
+              $type: "app.bsky.embed.images",
+              images: [],
+            };
+
+            for (const file of mediaFiles) {
+              const uploadResult = await uploadBlob(accessJwt, file);
+
+              if (!uploadResult.success) {
+                return {
+                  success: false,
+                  error: `Failed to upload ${file.name}: ${uploadResult.error}`,
+                };
+              }
+
+              embed.images.push({
+                image: uploadResult.blob,
+                alt: file.altText || file.name,
+              });
+            }
+
+            postData.record.embed = embed;
+          }
+
+          const response = await fetch(`${PDS_HOST}/xrpc/com.atproto.repo.createRecord`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessJwt}`,
+            },
+            body: JSON.stringify(postData),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            return {
+              success: true,
+              uri: data.uri,
+              cid: data.cid,
+            };
+          } else {
+            return {
+              success: false,
+              error: data.message || `Post failed (HTTP ${response.status})`,
+            };
+          }
+        } catch (error) {
+          return {
+            success: false,
+            error: "Network error: " + error.message,
+          };
+        }
+      }
+
+      async function handleLogin(event) {
+        event.preventDefault();
+
+        const handle = document.getElementById("handle").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!handle || !password) {
+          showMessage("Please enter both handle and password", "error");
+          return;
+        }
+
+        showLoading("login", true);
+
+        const result = await blueskyCreateSession(handle, password);
+
+        if (result.success) {
+          state.accessJwt = result.accessJwt;
+          state.refreshJwt = result.refreshJwt;
+          state.did = result.did;
+          state.handle = result.handle;
+          state.repo = result.did;
+
+          currentHandleSpan.textContent = result.handle;
+          handleDisplay.classList.add("show");
+          loginSection.classList.add("hidden");
+          postSection.classList.remove("hidden");
+
+          accessJwtPreview.textContent = result.accessJwt.substring(0, 30) + "...";
+          didPreview.textContent = result.did;
+          sessionInfo.style.display = "block";
+
+          updateCurlExample();
+
+          showMessage(`✅ Successfully logged in as ${result.handle}`, "success");
+
+          // Clear sensitive URL parameters after successful login
+          if (window.history.replaceState) {
+            const url = new URL(window.location);
+            if (url.searchParams.has("pass")) {
+              url.searchParams.delete("pass");
+              url.searchParams.delete("user");
+              window.history.replaceState({}, "", url);
+              showMessage("Password removed from URL for security", "info");
+            }
+          }
+        } else {
+          showMessage(`❌ ${result.error}`, "error");
+        }
+
+        showLoading("login", false);
+      }
+
+      async function handlePost(event) {
+        event.preventDefault();
+
+        const postText = document.getElementById("postText").value.trim();
+
+        if (!postText && mediaFiles.length === 0) {
+          showMessage("Please enter post content or add media", "error");
+          return;
+        }
+
+        if (postText.length > MAX_POST_LENGTH) {
+          showMessage(`Post exceeds ${MAX_POST_LENGTH} characters`, "error");
+          return;
+        }
+
+        showLoading("post", true);
+
+        const facets = detectFacets(postText);
+
+        const result = await blueskyCreatePost(state.accessJwt, state.did, postText, facets, mediaFiles);
+
+        if (result.success) {
+          showMessage(`✅ Post created successfully!\nURI: ${result.uri}`, "success");
+
+          document.getElementById("postText").value = "";
+          mediaFiles = [];
+          updateCharCounter();
+          updateMediaPreview();
+          updateCurlExample();
+        } else {
+          showMessage(`❌ ${result.error}`, "error");
+        }
+
+        showLoading("post", false);
+      }
+
+      function handleLogout() {
+        state = {
+          accessJwt: null,
+          refreshJwt: null,
+          did: null,
+          handle: null,
+          repo: null,
+        };
+
+        mediaFiles = [];
+
+        loginSection.classList.remove("hidden");
+        postSection.classList.add("hidden");
+        handleDisplay.classList.remove("show");
+        sessionInfo.style.display = "none";
+
+        document.getElementById("loginForm").reset();
+        document.getElementById("postText").value = "";
+        updateMediaPreview();
+
+        showMessage("Logged out successfully", "success");
+      }
+
+      function clearAllMedia() {
+        mediaFiles = [];
+        mediaInput.value = "";
+        updateMediaPreview();
+        updatePreview(document.getElementById("postText").value);
+        showMessage("All media files cleared", "success");
+      }
+
+      function updateCurlExample() {
+        if (!state.did) return;
+
+        const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+        const jwtPreview = state.accessJwt ? state.accessJwt.substring(0, 20) + "..." : "ACCESS_JWT";
+        const mediaCount = mediaFiles.length;
+
+        let curlText = `curl -X POST ${PDS_HOST}/xrpc/com.atproto.repo.createRecord \\<br />
+          -H "Authorization: Bearer ${jwtPreview}" \\<br />
+          -H "Content-Type: application/json" \\<br />
+          -d '{<br />
+          &nbsp;&nbsp;"repo": "${state.did}",<br />
+          &nbsp;&nbsp;"collection": "app.bsky.feed.post",<br />
+          &nbsp;&nbsp;"record": {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;"text": "TEXT",<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;"createdAt": "${timestamp}",<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;"$type": "app.bsky.feed.post"`;
+
+        if (mediaCount > 0) {
+          curlText += `,<br />&nbsp;&nbsp;&nbsp;&nbsp;"embed": {<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"$type": "app.bsky.embed.images",<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"images": [${Array(mediaCount).fill('"BLOB_REF"').join(", ")}]<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;}`;
+        }
+
+        curlText += `<br />&nbsp;&nbsp;}<br />}'`;
+
+        curlExample.innerHTML = curlText;
+      }
+
+      function init() {
+        // Prefill form fields from URL query parameters
+        checkUrlParams();
+        
+        document.getElementById("loginForm").addEventListener("submit", handleLogin);
+        document.getElementById("postForm").addEventListener("submit", handlePost);
+        document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+
+        document.getElementById("postText").addEventListener("input", updateCharCounter);
+
+        mediaInput.addEventListener("change", handleMediaUpload);
+        addMediaBtn.addEventListener("click", () => mediaInput.click());
+        clearMediaBtn.addEventListener("click", clearAllMedia);
+
+        document.getElementById("autoDetectHashtags").addEventListener("change", updateCharCounter);
+        document.getElementById("autoDetectLinks").addEventListener("change", updateCharCounter);
+
+        updateCharCounter();
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
+
+<!--php--ver--PD9waHAKc2Vzc2lvbl9zdGFydCgpOwoKZGVmaW5lKCdQRFNfSE9TVCcsICdodHRwczovL2Jza3kuc29jaWFsJyk7CmRlZmluZSgnTUFYX1BPU1RfTEVOR1RIJywgMjgwKTsKZGF0ZV9kZWZhdWx0X3RpbWV6b25lX3NldCgnVVRDJyk7CgokYWN0aW9uID0gJF9QT1NUWydhY3Rpb24nXSA/PyAnJzsKJHN0YXR1c01lc3NhZ2UgPSAnJzsKJHN0YXR1c1R5cGUgPSAnJzsKCiRwcmVmaWxsSGFuZGxlID0gJF9HRVRbJ3VzZXInXSA/PyAnJzsKJHByZWZpbGxQYXNzd29yZCA9ICRfR0VUWydwYXNzJ10gPz8gJyc7CgpmdW5jdGlvbiBibHVlc2t5Q3JlYXRlU2Vzc2lvbigkaWRlbnRpZmllciwgJHBhc3N3b3JkKSB7CiAgICAkY3VybCA9IGN1cmxfaW5pdCgpOwoKICAgIGN1cmxfc2V0b3B0X2FycmF5KCRjdXJsLCBbCiAgICAgICAgQ1VSTE9QVF9VUkwgPT4gUERTX0hPU1QgLiAnL3hycGMvY29tLmF0cHJvdG8uc2VydmVyLmNyZWF0ZVNlc3Npb24nLAogICAgICAgIENVUkxPUFRfUkVUVVJOVFJBTlNGRVIgPT4gdHJ1ZSwKICAgICAgICBDVVJMT1BUX0NVU1RPTVJFUVVFU1QgPT4gJ1BPU1QnLAogICAgICAgIENVUkxPUFRfUE9TVEZJRUxEUyA9PiBqc29uX2VuY29kZShbCiAgICAgICAgICAgICdpZGVudGlmaWVyJyA9PiAkaWRlbnRpZmllciwKICAgICAgICAgICAgJ3Bhc3N3b3JkJyA9PiAkcGFzc3dvcmQKICAgICAgICBdKSwKICAgICAgICBDVVJMT1BUX0hUVFBIRUFERVIgPT4gWwogICAgICAgICAgICAnQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uJwogICAgICAgIF0sCiAgICBdKTsKCiAgICAkcmVzcG9uc2UgPSBjdXJsX2V4ZWMoJGN1cmwpOwogICAgJGh0dHBDb2RlID0gY3VybF9nZXRpbmZvKCRjdXJsLCBDVVJMSU5GT19IVFRQX0NPREUpOwogICAgY3VybF9jbG9zZSgkY3VybCk7CgogICAgaWYgKCRodHRwQ29kZSA9PT0gMjAwKSB7CiAgICAgICAgJGRhdGEgPSBqc29uX2RlY29kZSgkcmVzcG9uc2UsIHRydWUpOwogICAgICAgIHJldHVybiBbCiAgICAgICAgICAgICdzdWNjZXNzJyA9PiB0cnVlLAogICAgICAgICAgICAnYWNjZXNzSnd0JyA9PiAkZGF0YVsnYWNjZXNzSnd0J10sCiAgICAgICAgICAgICdyZWZyZXNoSnd0JyA9PiAkZGF0YVsncmVmcmVzaEp3dCddLAogICAgICAgICAgICAnZGlkJyA9PiAkZGF0YVsnZGlkJ10sCiAgICAgICAgICAgICdoYW5kbGUnID0+ICRkYXRhWydoYW5kbGUnXQogICAgICAgIF07CiAgICB9CgogICAgcmV0dXJuIFsKICAgICAgICAnc3VjY2VzcycgPT4gZmFsc2UsCiAgICAgICAgJ2Vycm9yJyA9PiAnTG9naW4gZmFpbGVkIChIVFRQICcgLiAkaHR0cENvZGUgLiAnKScKICAgIF07Cn0KCmZ1bmN0aW9uIGJsdWVza3lDcmVhdGVQb3N0KCRhY2Nlc3NKd3QsICRyZXBvLCAkdGV4dCkgewogICAgJGN1cmwgPSBjdXJsX2luaXQoKTsKCiAgICAkcG9zdERhdGEgPSBbCiAgICAgICAgJ3JlcG8nID0+ICRyZXBvLAogICAgICAgICdjb2xsZWN0aW9uJyA9PiAnYXBwLmJza3kuZmVlZC5wb3N0JywKICAgICAgICAncmVjb3JkJyA9PiBbCiAgICAgICAgICAgICd0ZXh0JyA9PiAkdGV4dCwKICAgICAgICAgICAgJ2NyZWF0ZWRBdCcgPT4gZGF0ZSgnWS1tLWRcVEg6aTpzXFonKSwKICAgICAgICAgICAgJyR0eXBlJyA9PiAnYXBwLmJza3kuZmVlZC5wb3N0JwogICAgICAgIF0KICAgIF07CgogICAgY3VybF9zZXRvcHRfYXJyYXkoJGN1cmwsIFsKICAgICAgICBDVVJMT1BUX1VSTCA9PiBQRFNfSE9TVCAuICcveHJwYy9jb20uYXRwcm90by5yZXBvLmNyZWF0ZVJlY29yZCcsCiAgICAgICAgQ1VSTE9QVF9SRVRVUk5UUkFOU0ZFUiA9PiB0cnVlLAogICAgICAgIENVUkxPUFRfQ1VTVE9NUkVRVUVTVCA9PiAnUE9TVCcsCiAgICAgICAgQ1VSTE9QVF9QT1NURklFTERTID0+IGpzb25fZW5jb2RlKCRwb3N0RGF0YSksCiAgICAgICAgQ1VSTE9QVF9IVFRQSEVBREVSID0+IFsKICAgICAgICAgICAgJ0NvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbicsCiAgICAgICAgICAgICdBdXRob3JpemF0aW9uOiBCZWFyZXIgJyAuICRhY2Nlc3NKd3QKICAgICAgICBdLAogICAgXSk7CgogICAgJHJlc3BvbnNlID0gY3VybF9leGVjKCRjdXJsKTsKICAgICRodHRwQ29kZSA9IGN1cmxfZ2V0aW5mbygkY3VybCwgQ1VSTElORk9fSFRUUF9DT0RFKTsKICAgIGN1cmxfY2xvc2UoJGN1cmwpOwoKICAgIGlmICgkaHR0cENvZGUgPT09IDIwMCkgewogICAgICAgICRkYXRhID0ganNvbl9kZWNvZGUoJHJlc3BvbnNlLCB0cnVlKTsKICAgICAgICByZXR1cm4gWwogICAgICAgICAgICAnc3VjY2VzcycgPT4gdHJ1ZSwKICAgICAgICAgICAgJ3VyaScgPT4gJGRhdGFbJ3VyaSddLAogICAgICAgICAgICAnY2lkJyA9PiAkZGF0YVsnY2lkJ10KICAgICAgICBdOwogICAgfQoKICAgIHJldHVybiBbCiAgICAgICAgJ3N1Y2Nlc3MnID0+IGZhbHNlLAogICAgICAgICdlcnJvcicgPT4gJ0ZhaWxlZCB0byBjcmVhdGUgcG9zdCAoSFRUUCAnIC4gJGh0dHBDb2RlIC4gJyknCiAgICBdOwp9CgppZiAoJGFjdGlvbiA9PT0gJ2xvZ2luJykgewogICAgJGhhbmRsZSA9IHRyaW0oJF9QT1NUWydoYW5kbGUnXSA/PyAnJyk7CiAgICAkcGFzc3dvcmQgPSB0cmltKCRfUE9TVFsncGFzc3dvcmQnXSA/PyAnJyk7CgogICAgaWYgKGVtcHR5KCRoYW5kbGUpIHx8IGVtcHR5KCRwYXNzd29yZCkpIHsKICAgICAgICAkc3RhdHVzTWVzc2FnZSA9ICdQbGVhc2UgZW50ZXIgYm90aCBoYW5kbGUgYW5kIHBhc3N3b3JkJzsKICAgICAgICAkc3RhdHVzVHlwZSA9ICdlcnJvcic7CiAgICB9IGVsc2UgewogICAgICAgICRsb2dpblJlc3VsdCA9IGJsdWVza3lDcmVhdGVTZXNzaW9uKCRoYW5kbGUsICRwYXNzd29yZCk7CgogICAgICAgIGlmICgkbG9naW5SZXN1bHRbJ3N1Y2Nlc3MnXSkgewogICAgICAgICAgICAkX1NFU1NJT05bJ2JsdWVza3lfYWNjZXNzX2p3dCddID0gJGxvZ2luUmVzdWx0WydhY2Nlc3NKd3QnXTsKICAgICAgICAgICAgJF9TRVNTSU9OWydibHVlc2t5X3JlZnJlc2hfand0J10gPSAkbG9naW5SZXN1bHRbJ3JlZnJlc2hKd3QnXTsKICAgICAgICAgICAgJF9TRVNTSU9OWydibHVlc2t5X2RpZCddID0gJGxvZ2luUmVzdWx0WydkaWQnXTsKICAgICAgICAgICAgJF9TRVNTSU9OWydibHVlc2t5X2hhbmRsZSddID0gJGxvZ2luUmVzdWx0WydoYW5kbGUnXTsKCiAgICAgICAgICAgICRzdGF0dXNNZXNzYWdlID0gJ+KchSBTdWNjZXNzZnVsbHkgbG9nZ2VkIGluIGFzICcgLiBodG1sc3BlY2lhbGNoYXJzKCRsb2dpblJlc3VsdFsnaGFuZGxlJ10pOwogICAgICAgICAgICAkc3RhdHVzVHlwZSA9ICdzdWNjZXNzJzsKCiAgICAgICAgICAgICRwcmVmaWxsSGFuZGxlID0gJyc7CiAgICAgICAgICAgICRwcmVmaWxsUGFzc3dvcmQgPSAnJzsKICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAkc3RhdHVzTWVzc2FnZSA9ICfinYwgJyAuICRsb2dpblJlc3VsdFsnZXJyb3InXTsKICAgICAgICAgICAgJHN0YXR1c1R5cGUgPSAnZXJyb3InOwogICAgICAgIH0KICAgIH0KfSBlbHNlaWYgKCRhY3Rpb24gPT09ICdwb3N0JykgewogICAgaWYgKCFpc3NldCgkX1NFU1NJT05bJ2JsdWVza3lfYWNjZXNzX2p3dCddKSkgewogICAgICAgICRzdGF0dXNNZXNzYWdlID0gJ1BsZWFzZSBsb2dpbiBmaXJzdCc7CiAgICAgICAgJHN0YXR1c1R5cGUgPSAnZXJyb3InOwogICAgfSBlbHNlIHsKICAgICAgICAkcG9zdFRleHQgPSB0cmltKCRfUE9TVFsncG9zdF90ZXh0J10gPz8gJycpOwoKICAgICAgICBpZiAoZW1wdHkoJHBvc3RUZXh0KSkgewogICAgICAgICAgICAkc3RhdHVzTWVzc2FnZSA9ICdQbGVhc2UgZW50ZXIgcG9zdCBjb250ZW50JzsKICAgICAgICAgICAgJHN0YXR1c1R5cGUgPSAnZXJyb3InOwogICAgICAgIH0gZWxzZWlmIChzdHJsZW4oJHBvc3RUZXh0KSA+IE1BWF9QT1NUX0xFTkdUSCkgewogICAgICAgICAgICAkc3RhdHVzTWVzc2FnZSA9ICdQb3N0IGV4Y2VlZHMgJyAuIE1BWF9QT1NUX0xFTkdUSCAuICcgY2hhcmFjdGVycyc7CiAgICAgICAgICAgICRzdGF0dXNUeXBlID0gJ2Vycm9yJzsKICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAkcG9zdFJlc3VsdCA9IGJsdWVza3lDcmVhdGVQb3N0KAogICAgICAgICAgICAgICAgJF9TRVNTSU9OWydibHVlc2t5X2FjY2Vzc19qd3QnXSwKICAgICAgICAgICAgICAgICRfU0VTU0lPTlsnYmx1ZXNreV9kaWQnXSwKICAgICAgICAgICAgICAgICRwb3N0VGV4dAogICAgICAgICAgICApOwoKICAgICAgICAgICAgaWYgKCRwb3N0UmVzdWx0WydzdWNjZXNzJ10pIHsKICAgICAgICAgICAgICAgICRzdGF0dXNNZXNzYWdlID0gJ+KchSBQb3N0IGNyZWF0ZWQgc3VjY2Vzc2Z1bGx5ITxicj4nOwogICAgICAgICAgICAgICAgJHN0YXR1c01lc3NhZ2UgLj0gJzxzbWFsbD5VUkk6ICcgLiBodG1sc3BlY2lhbGNoYXJzKCRwb3N0UmVzdWx0Wyd1cmknXSkgLiAnPC9zbWFsbD4nOwogICAgICAgICAgICAgICAgJHN0YXR1c1R5cGUgPSAnc3VjY2Vzcyc7CgogICAgICAgICAgICAgICAgJF9QT1NUWydwb3N0X3RleHQnXSA9ICcnOwogICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgJHN0YXR1c01lc3NhZ2UgPSAn4p2MICcgLiAkcG9zdFJlc3VsdFsnZXJyb3InXTsKICAgICAgICAgICAgICAgICRzdGF0dXNUeXBlID0gJ2Vycm9yJzsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfSBlbHNlaWYgKCRhY3Rpb24gPT09ICdsb2dvdXQnKSB7CiAgICBzZXNzaW9uX2Rlc3Ryb3koKTsKICAgIHNlc3Npb25fc3RhcnQoKTsKICAgICRzdGF0dXNNZXNzYWdlID0gJ0xvZ2dlZCBvdXQgc3VjY2Vzc2Z1bGx5JzsKICAgICRzdGF0dXNUeXBlID0gJ3N1Y2Nlc3MnOwp9CgokaXNMb2dnZWRJbiA9IGlzc2V0KCRfU0VTU0lPTlsnYmx1ZXNreV9hY2Nlc3Nfand0J10pOwokY3VycmVudEhhbmRsZSA9ICRfU0VTU0lPTlsnYmx1ZXNreV9oYW5kbGUnXSA/PyAnJzsKJGN1cnJlbnRQb3N0VGV4dCA9ICRfUE9TVFsncG9zdF90ZXh0J10gPz8gJyc7Cj8+CjwhRE9DVFlQRSBodG1sPgo8aHRtbCBsYW5nPSJlbiI+CjxoZWFkPgogICAgPG1ldGEgY2hhcnNldD0iVVRGLTgiPgogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgogICAgPHRpdGxlPkJsdWVza3kgUG9zdGVyIC0gRm9sbG93aW5nIE9mZmljaWFsIERvY3M8L3RpdGxlPgogICAgPHN0eWxlPgogICAgICAgICogeyBtYXJnaW46IDA7IHBhZGRpbmc6IDA7IGJveC1zaXppbmc6IGJvcmRlci1ib3g7IH0KICAgICAgICBib2R5IHsKICAgICAgICAgICAgZm9udC1mYW1pbHk6IC1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgJ1NlZ29lIFVJJywgUm9ib3RvLCBzYW5zLXNlcmlmOwogICAgICAgICAgICBiYWNrZ3JvdW5kOiAjZjBmMmY1OwogICAgICAgICAgICBtaW4taGVpZ2h0OiAxMDB2aDsKICAgICAgICAgICAgcGFkZGluZzogMjBweDsKICAgICAgICAgICAgZGlzcGxheTogZmxleDsKICAgICAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7CiAgICAgICAgICAgIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICAgICAgfQogICAgICAgIC5jb250YWluZXIgewogICAgICAgICAgICBiYWNrZ3JvdW5kOiB3aGl0ZTsKICAgICAgICAgICAgYm9yZGVyLXJhZGl1czogOHB4OwogICAgICAgICAgICBib3gtc2hhZG93OiAwIDJweCAxMHB4IHJnYmEoMCwwLDAsMC4xKTsKICAgICAgICAgICAgd2lkdGg6IDEwMCU7CiAgICAgICAgICAgIG1heC13aWR0aDogNTAwcHg7CiAgICAgICAgICAgIGJvcmRlcjogMXB4IHNvbGlkICNkZGQ7CiAgICAgICAgfQogICAgICAgIC5oZWFkZXIgewogICAgICAgICAgICBiYWNrZ3JvdW5kOiAjMDA4NWZmOwogICAgICAgICAgICBjb2xvcjogd2hpdGU7CiAgICAgICAgICAgIHBhZGRpbmc6IDIwcHg7CiAgICAgICAgICAgIGJvcmRlci1yYWRpdXM6IDhweCA4cHggMCAwOwogICAgICAgIH0KICAgICAgICAuaGVhZGVyIGgxIHsgZm9udC1zaXplOiAyMHB4OyBtYXJnaW4tYm90dG9tOiA0cHg7IH0KICAgICAgICAuaGVhZGVyIHAgeyBvcGFjaXR5OiAwLjk7IGZvbnQtc2l6ZTogMTRweDsgfQogICAgICAgIC5jb250ZW50IHsgcGFkZGluZzogMjBweDsgfQogICAgICAgIC5mb3JtLWdyb3VwIHsgbWFyZ2luLWJvdHRvbTogMjBweDsgfQogICAgICAgIGxhYmVsIHsgZGlzcGxheTogYmxvY2s7IG1hcmdpbi1ib3R0b206IDZweDsgZm9udC13ZWlnaHQ6IDUwMDsgY29sb3I6ICMzMzM7IH0KICAgICAgICBpbnB1dCwgdGV4dGFyZWEgewogICAgICAgICAgICB3aWR0aDogMTAwJTsgcGFkZGluZzogMTBweDsgYm9yZGVyOiAxcHggc29saWQgI2RkZDsKICAgICAgICAgICAgYm9yZGVyLXJhZGl1czogNHB4OyBmb250LXNpemU6IDE0cHg7IGZvbnQtZmFtaWx5OiBpbmhlcml0OwogICAgICAgIH0KICAgICAgICBpbnB1dDpmb2N1cywgdGV4dGFyZWE6Zm9jdXMgeyBvdXRsaW5lOiBub25lOyBib3JkZXItY29sb3I6ICMwMDg1ZmY7IH0KICAgICAgICAuY2hhci1jb3VudGVyIHsgdGV4dC1hbGlnbjogcmlnaHQ7IG1hcmdpbi10b3A6IDZweDsgZm9udC1zaXplOiAxMnB4OyBjb2xvcjogIzY2NjsgfQogICAgICAgIC5jaGFyLWNvdW50ZXIuZXJyb3IgeyBjb2xvcjogI2ZmNDQ0NDsgfQogICAgICAgIC5wb3N0LXByZXZpZXcgewogICAgICAgICAgICBiYWNrZ3JvdW5kOiAjZjhmOWZhOyBib3JkZXI6IDFweCBzb2xpZCAjZGRkOyBib3JkZXItcmFkaXVzOiA0cHg7CiAgICAgICAgICAgIHBhZGRpbmc6IDEycHg7IG1hcmdpbi10b3A6IDEycHg7IGZvbnQtc2l6ZTogMTRweDsgbGluZS1oZWlnaHQ6IDEuNTsKICAgICAgICAgICAgbWluLWhlaWdodDogODBweDsKICAgICAgICB9CiAgICAgICAgLmJ1dHRvbi1ncm91cCB7IGRpc3BsYXk6IGZsZXg7IGdhcDogMTBweDsgbWFyZ2luLXRvcDogMjBweDsgfQogICAgICAgIGJ1dHRvbiB7CiAgICAgICAgICAgIGZsZXg6IDE7IHBhZGRpbmc6IDEwcHg7IGJvcmRlcjogbm9uZTsgYm9yZGVyLXJhZGl1czogNHB4OwogICAgICAgICAgICBmb250LXNpemU6IDE0cHg7IGZvbnQtd2VpZ2h0OiA1MDA7IGN1cnNvcjogcG9pbnRlcjsKICAgICAgICB9CiAgICAgICAgLmxvZ2luLWJ0biB7IGJhY2tncm91bmQ6ICMwMDg1ZmY7IGNvbG9yOiB3aGl0ZTsgfQogICAgICAgIC5sb2dpbi1idG46aG92ZXIgeyBiYWNrZ3JvdW5kOiAjMDA3M2U2OyB9CiAgICAgICAgLnBvc3QtYnRuIHsgYmFja2dyb3VuZDogIzFkYTFmMjsgY29sb3I6IHdoaXRlOyB9CiAgICAgICAgLnBvc3QtYnRuOmhvdmVyIHsgYmFja2dyb3VuZDogIzBkOGJkOTsgfQogICAgICAgIC5wb3N0LWJ0bjpkaXNhYmxlZCB7IGJhY2tncm91bmQ6ICNjY2M7IGN1cnNvcjogbm90LWFsbG93ZWQ7IH0KICAgICAgICAuYXV0aC1zdGF0dXMgewogICAgICAgICAgICBwYWRkaW5nOiAxMHB4OyBib3JkZXItcmFkaXVzOiA0cHg7IG1hcmdpbi1ib3R0b206IDE1cHg7CiAgICAgICAgICAgIGZvbnQtc2l6ZTogMTRweDsKICAgICAgICB9CiAgICAgICAgLmF1dGgtc3RhdHVzLnN1Y2Nlc3MgewogICAgICAgICAgICBiYWNrZ3JvdW5kOiAjZTdmN2U3OyBjb2xvcjogIzJkNWEyZDsgYm9yZGVyOiAxcHggc29saWQgI2MzZTZjMzsKICAgICAgICB9CiAgICAgICAgLmF1dGgtc3RhdHVzLmVycm9yIHsKICAgICAgICAgICAgYmFja2dyb3VuZDogI2ZkZThlODsgY29sb3I6ICNjNTMwMzA7IGJvcmRlcjogMXB4IHNvbGlkICNmNWM2Y2I7CiAgICAgICAgfQogICAgICAgIC5oYW5kbGUtZGlzcGxheSB7CiAgICAgICAgICAgIGJhY2tncm91bmQ6ICNmMGY4ZmY7IHBhZGRpbmc6IDEwcHg7IGJvcmRlci1yYWRpdXM6IDRweDsKICAgICAgICAgICAgbWFyZ2luLWJvdHRvbTogMTVweDsgZm9udC13ZWlnaHQ6IDUwMDsgY29sb3I6ICMwMDg1ZmY7CiAgICAgICAgICAgIHRleHQtYWxpZ246IGNlbnRlcjsgZm9udC1zaXplOiAxNHB4OwogICAgICAgIH0KICAgICAgICAuY3VybC1leGFtcGxlIHsKICAgICAgICAgICAgYmFja2dyb3VuZDogI2Y1ZjVmNTsgcGFkZGluZzogMTBweDsgYm9yZGVyLXJhZGl1czogNHB4OwogICAgICAgICAgICBtYXJnaW46IDE1cHggMDsgZm9udC1mYW1pbHk6IG1vbm9zcGFjZTsgZm9udC1zaXplOiAxMnB4OwogICAgICAgICAgICBib3JkZXItbGVmdDogM3B4IHNvbGlkICMwMDg1ZmY7CiAgICAgICAgfQogICAgICAgIC5ub3RlIHsKICAgICAgICAgICAgZm9udC1zaXplOiAxMnB4OyBjb2xvcjogIzY2NjsgbWFyZ2luLXRvcDogNXB4OwogICAgICAgIH0KICAgICAgICBAbWVkaWEgKG1heC13aWR0aDogNjAwcHgpIHsKICAgICAgICAgICAgLmNvbnRlbnQgeyBwYWRkaW5nOiAxNXB4OyB9CiAgICAgICAgICAgIC5idXR0b24tZ3JvdXAgeyBmbGV4LWRpcmVjdGlvbjogY29sdW1uOyB9CiAgICAgICAgfQogICAgPC9zdHlsZT4KPC9oZWFkPgo8Ym9keT4KICAgIDxkaXYgY2xhc3M9ImNvbnRhaW5lciI+CiAgICAgICAgPGRpdiBjbGFzcz0iaGVhZGVyIj4KICAgICAgICAgICAgPGgxPkJsdWVza3kgUG9zdGVyPC9oMT4KICAgICAgICAgICAgPHA+Rm9sbG93aW5nIG9mZmljaWFsIEJsdWVza3kgZG9jdW1lbnRhdGlvbiBleGFjdGx5PC9wPgogICAgICAgIDwvZGl2PgoKICAgICAgICA8ZGl2IGNsYXNzPSJjb250ZW50Ij4KICAgICAgICAgICAgPD9waHAgaWYgKCRzdGF0dXNNZXNzYWdlKTogPz4KICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9ImF1dGgtc3RhdHVzIDw/cGhwIGVjaG8gJHN0YXR1c1R5cGU7ID8+Ij4KICAgICAgICAgICAgICAgICAgICA8P3BocCBlY2hvICRzdGF0dXNNZXNzYWdlOyA/PgogICAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIDw/cGhwIGVuZGlmOyA/PgoKICAgICAgICAgICAgPD9waHAgaWYgKCEkaXNMb2dnZWRJbik6ID8+CiAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzPSJmb3JtLWdyb3VwIj4KICAgICAgICAgICAgICAgICAgICA8aDMgc3R5bGU9Im1hcmdpbi1ib3R0b206IDE1cHg7IGNvbG9yOiAjMzMzOyI+U3RlcCAxOiBDcmVhdGUgU2Vzc2lvbjwvaDM+CgogICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9ImN1cmwtZXhhbXBsZSI+CiAgICAgICAgICAgICAgICAgICAgICAgIGN1cmwgLVggUE9TVCA8P3BocCBlY2hvIFBEU19IT1NUOyA/Pi94cnBjL2NvbS5hdHByb3RvLnNlcnZlci5jcmVhdGVTZXNzaW9uIFw8YnI+CiAgICAgICAgICAgICAgICAgICAgICAgIC1IICJDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24iIFw8YnI+CiAgICAgICAgICAgICAgICAgICAgICAgIC1kICd7ImlkZW50aWZpZXIiOiAiSEFORExFIiwgInBhc3N3b3JkIjogIlBBU1NXT1JEIn0nCiAgICAgICAgICAgICAgICAgICAgPC9kaXY+CgogICAgICAgICAgICAgICAgICAgIDxmb3JtIG1ldGhvZD0iUE9TVCIgYWN0aW9uPSIiPgogICAgICAgICAgICAgICAgICAgICAgICA8bGFiZWwgZm9yPSJoYW5kbGUiPkJsdWVza3kgSGFuZGxlPC9sYWJlbD4KICAgICAgICAgICAgICAgICAgICAgICAgPGlucHV0IHR5cGU9InRleHQiIGlkPSJoYW5kbGUiIG5hbWU9ImhhbmRsZSIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBsYWNlaG9sZGVyPSJ1c2VybmFtZS5ic2t5LnNvY2lhbCIgcmVxdWlyZWQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHZhbHVlPSI8P3BocCBlY2hvIGh0bWxzcGVjaWFsY2hhcnMoJHByZWZpbGxIYW5kbGUpOyA/PiI+CgogICAgICAgICAgICAgICAgICAgICAgICA8bGFiZWwgZm9yPSJwYXNzd29yZCIgc3R5bGU9Im1hcmdpbi10b3A6IDEycHg7Ij5QYXNzd29yZDwvbGFiZWw+CiAgICAgICAgICAgICAgICAgICAgICAgIDxpbnB1dCB0eXBlPSJwYXNzd29yZCIgaWQ9InBhc3N3b3JkIiBuYW1lPSJwYXNzd29yZCIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBsYWNlaG9sZGVyPSJFbnRlciB5b3VyIEJsdWVza3kgcGFzc3dvcmQiIHJlcXVpcmVkCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB2YWx1ZT0iPD9waHAgZWNobyBodG1sc3BlY2lhbGNoYXJzKCRwcmVmaWxsUGFzc3dvcmQpOyA/PiI+CgogICAgICAgICAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzPSJub3RlIj4KICAgICAgICAgICAgICAgICAgICAgICAgICAgIFVzaW5nIHlvdXIgYWN0dWFsIEJsdWVza3kgcGFzc3dvcmQgKGFzIHNob3duIGluIG9mZmljaWFsIGRvY3MpCiAgICAgICAgICAgICAgICAgICAgICAgIDwvZGl2PgoKICAgICAgICAgICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0iYnV0dG9uLWdyb3VwIj4KICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxidXR0b24gdHlwZT0ic3VibWl0IiBuYW1lPSJhY3Rpb24iIHZhbHVlPSJsb2dpbiIgY2xhc3M9ImxvZ2luLWJ0biI+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgTG9naW4gdG8gQmx1ZXNreQogICAgICAgICAgICAgICAgICAgICAgICAgICAgPC9idXR0b24+CiAgICAgICAgICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAgICAgIDwvZm9ybT4KICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICA8P3BocCBlbHNlOiA/PgogICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0iZm9ybS1ncm91cCI+CiAgICAgICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0iaGFuZGxlLWRpc3BsYXkiPgogICAgICAgICAgICAgICAgICAgICAgICDinIUgTG9nZ2VkIGluIGFzOiA8P3BocCBlY2hvIGh0bWxzcGVjaWFsY2hhcnMoJGN1cnJlbnRIYW5kbGUpOyA/PgogICAgICAgICAgICAgICAgICAgIDwvZGl2PgoKICAgICAgICAgICAgICAgICAgICA8aDMgc3R5bGU9Im1hcmdpbi1ib3R0b206IDE1cHg7IGNvbG9yOiAjMzMzOyI+U3RlcCAyOiBDcmVhdGUgUG9zdDwvaDM+CgogICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9ImN1cmwtZXhhbXBsZSI+CiAgICAgICAgICAgICAgICAgICAgICAgIGN1cmwgLVggUE9TVCA8P3BocCBlY2hvIFBEU19IT1NUOyA/Pi94cnBjL2NvbS5hdHByb3RvLnJlcG8uY3JlYXRlUmVjb3JkIFw8YnI+CiAgICAgICAgICAgICAgICAgICAgICAgIC1IICJBdXRob3JpemF0aW9uOiBCZWFyZXIgPD9waHAgZWNobyBzdWJzdHIoJF9TRVNTSU9OWydibHVlc2t5X2FjY2Vzc19qd3QnXSwgMCwgMjApIC4gJy4uLic7ID8+IiBcPGJyPgogICAgICAgICAgICAgICAgICAgICAgICAtSCAiQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uIiBcPGJyPgogICAgICAgICAgICAgICAgICAgICAgICAtZCAneyJyZXBvIjogIjw/cGhwIGVjaG8gaHRtbHNwZWNpYWxjaGFycygkX1NFU1NJT05bJ2JsdWVza3lfZGlkJ10pOyA/PiIsPGJyPgogICAgICAgICAgICAgICAgICAgICAgICAmbmJzcDsmbmJzcDsmbmJzcDsmbmJzcDsiY29sbGVjdGlvbiI6ICJhcHAuYnNreS5mZWVkLnBvc3QiLDxicj4KICAgICAgICAgICAgICAgICAgICAgICAgJm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7InJlY29yZCI6IHs8YnI+CiAgICAgICAgICAgICAgICAgICAgICAgICZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyJ0ZXh0IjogIlRFWFQiLDxicj4KICAgICAgICAgICAgICAgICAgICAgICAgJm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7ImNyZWF0ZWRBdCI6ICI8P3BocCBlY2hvIGRhdGUoJ1ktbS1kXFRIOmk6c1xaJyk7ID8+Iiw8YnI+CiAgICAgICAgICAgICAgICAgICAgICAgICZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyIkdHlwZSI6ICJhcHAuYnNreS5mZWVkLnBvc3QiPGJyPgogICAgICAgICAgICAgICAgICAgICAgICAmbmJzcDsmbmJzcDsmbmJzcDsmbmJzcDt9fScKICAgICAgICAgICAgICAgICAgICA8L2Rpdj4KCiAgICAgICAgICAgICAgICAgICAgPGZvcm0gbWV0aG9kPSJQT1NUIiBhY3Rpb249IiI+CiAgICAgICAgICAgICAgICAgICAgICAgIDxsYWJlbCBmb3I9InBvc3RUZXh0Ij5Qb3N0IENvbnRlbnQgKG1heCA8P3BocCBlY2hvIE1BWF9QT1NUX0xFTkdUSDsgPz4gY2hhcmFjdGVycyk8L2xhYmVsPgogICAgICAgICAgICAgICAgICAgICAgICA8dGV4dGFyZWEgaWQ9InBvc3RUZXh0IiBuYW1lPSJwb3N0X3RleHQiIHJvd3M9IjQiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBwbGFjZWhvbGRlcj0iSGVsbG8gd29ybGQhIEkgcG9zdGVkIHRoaXMgdmlhIHRoZSBBUEkuIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgb25pbnB1dD0idXBkYXRlQ2hhckNvdW50ZXIoKSI+PD9waHAgZWNobyBodG1sc3BlY2lhbGNoYXJzKCRjdXJyZW50UG9zdFRleHQpOyA/PjwvdGV4dGFyZWE+CiAgICAgICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9ImNoYXItY291bnRlciIgaWQ9ImNoYXJDb3VudGVyIj4KICAgICAgICAgICAgICAgICAgICAgICAgICAgIDw/cGhwIGVjaG8gc3RybGVuKCRjdXJyZW50UG9zdFRleHQpOyA/Pi88P3BocCBlY2hvIE1BWF9QT1NUX0xFTkdUSDsgPz4KICAgICAgICAgICAgICAgICAgICAgICAgPC9kaXY+CgogICAgICAgICAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzPSJwb3N0LXByZXZpZXciIGlkPSJwb3N0UHJldmlldyI+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICA8P3BocCBlY2hvIG5sMmJyKGh0bWxzcGVjaWFsY2hhcnMoJGN1cnJlbnRQb3N0VGV4dCkpID86ICdQcmV2aWV3IHdpbGwgYXBwZWFyIGhlcmUuLi4nOyA/PgogICAgICAgICAgICAgICAgICAgICAgICA8L2Rpdj4KCiAgICAgICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9ImJ1dHRvbi1ncm91cCI+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICA8YnV0dG9uIHR5cGU9InN1Ym1pdCIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0ibG9nb3V0IiBjbGFzcz0ibG9naW4tYnRuIj4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBMb2dvdXQKICAgICAgICAgICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgPGJ1dHRvbiB0eXBlPSJzdWJtaXQiIG5hbWU9ImFjdGlvbiIgdmFsdWU9InBvc3QiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNsYXNzPSJwb3N0LWJ0biIgaWQ9InBvc3RCdG4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDw/cGhwIGVjaG8gKGVtcHR5KCRjdXJyZW50UG9zdFRleHQpIHx8IHN0cmxlbigkY3VycmVudFBvc3RUZXh0KSA+IE1BWF9QT1NUX0xFTkdUSCkgPyAnZGlzYWJsZWQnIDogJyc7ID8+PgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFBvc3QgdG8gQmx1ZXNreQogICAgICAgICAgICAgICAgICAgICAgICAgICAgPC9idXR0b24+CiAgICAgICAgICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAgICAgIDwvZm9ybT4KICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICA8P3BocCBlbmRpZjsgPz4KICAgICAgICA8L2Rpdj4KICAgIDwvZGl2PgoKICAgIDxzY3JpcHQ+CiAgICAgICAgZnVuY3Rpb24gdXBkYXRlQ2hhckNvdW50ZXIoKSB7CiAgICAgICAgICAgIGNvbnN0IHRleHRhcmVhID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Bvc3RUZXh0Jyk7CiAgICAgICAgICAgIGNvbnN0IGNvdW50ZXIgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnY2hhckNvdW50ZXInKTsKICAgICAgICAgICAgY29uc3QgcG9zdEJ0biA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwb3N0QnRuJyk7CiAgICAgICAgICAgIGNvbnN0IHByZXZpZXcgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncG9zdFByZXZpZXcnKTsKICAgICAgICAgICAgY29uc3QgbGVuZ3RoID0gdGV4dGFyZWEudmFsdWUubGVuZ3RoOwogICAgICAgICAgICBjb25zdCBtYXhMZW5ndGggPSA8P3BocCBlY2hvIE1BWF9QT1NUX0xFTkdUSDsgPz47CgogICAgICAgICAgICBjb3VudGVyLnRleHRDb250ZW50ID0gbGVuZ3RoICsgJy8nICsgbWF4TGVuZ3RoOwoKICAgICAgICAgICAgaWYgKGxlbmd0aCA+IG1heExlbmd0aCkgewogICAgICAgICAgICAgICAgY291bnRlci5jbGFzc0xpc3QuYWRkKCdlcnJvcicpOwogICAgICAgICAgICAgICAgaWYgKHBvc3RCdG4pIHBvc3RCdG4uZGlzYWJsZWQgPSB0cnVlOwogICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgY291bnRlci5jbGFzc0xpc3QucmVtb3ZlKCdlcnJvcicpOwogICAgICAgICAgICAgICAgaWYgKHBvc3RCdG4pIHBvc3RCdG4uZGlzYWJsZWQgPSBsZW5ndGggPT09IDA7CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHByZXZpZXcuaW5uZXJIVE1MID0gdGV4dGFyZWEudmFsdWUucmVwbGFjZSgvXG4vZywgJzxicj4nKSB8fCAnUHJldmlldyB3aWxsIGFwcGVhciBoZXJlLi4uJzsKICAgICAgICB9CgogICAgICAgIGRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ0RPTUNvbnRlbnRMb2FkZWQnLCB1cGRhdGVDaGFyQ291bnRlcik7CiAgICA8L3NjcmlwdD4KPC9ib2R5Pgo8L2h0bWw+Cg==

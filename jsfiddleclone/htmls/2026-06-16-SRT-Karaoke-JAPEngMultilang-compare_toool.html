@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subtitle Sync Tester</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #0d0d0d;
+            color: #eee;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+        h1 {
+            text-align: center;
+            font-weight: 300;
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+        h1 span {
+            color: #ffcc44;
+            font-weight: 600;
+        }
+        .video-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            border: 2px dashed #333;
+            transition: border-color 0.3s;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .video-wrapper.dragover {
+            border-color: #ffcc44;
+            background: #1a1a1a;
+        }
+        .video-wrapper .drop-hint {
+            position: absolute;
+            color: #555;
+            font-size: 0.9rem;
+            pointer-events: none;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .video-wrapper .drop-hint strong {
+            color: #888;
+            display: block;
+            font-size: 1.2rem;
+        }
+        video {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            background: #000;
+        }
+        .subtitle-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .subtitle-box {
+            background: #121212;
+            border-radius: 10px;
+            padding: 14px 18px;
+            min-height: 80px;
+            border: 1px solid #2a2a2a;
+            transition: border-color 0.2s;
+        }
+        .subtitle-box.active {
+            border-color: #ffcc44;
+            box-shadow: 0 0 20px rgba(255, 204, 68, 0.08);
+        }
+        .subtitle-box .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .subtitle-box .label .badge {
+            display: inline-block;
+            padding: 0 10px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            color: #888;
+        }
+        .subtitle-box .label .badge.jp {
+            background: #2a1a1a;
+            color: #ff8870;
+        }
+        .subtitle-box .label .badge.en {
+            background: #1a1a2a;
+            color: #70c8ff;
+        }
+        .subtitle-box .text {
+            font-size: 1.15rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .subtitle-box .text.jp {
+            color: #ffb8a0;
+        }
+        .subtitle-box .text.en {
+            color: #a0d8ff;
+        }
+        .subtitle-box .timecode {
+            font-size: 0.65rem;
+            color: #555;
+            margin-top: 6px;
+            font-family: monospace;
+        }
+        .subtitle-box .status-msg {
+            font-size: 0.8rem;
+            color: #444;
+            font-style: italic;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+            padding: 10px 0;
+        }
+        .controls button {
+            background: #2a2a2a;
+            border: none;
+            color: #eee;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.15s;
+        }
+        .controls button:hover {
+            background: #3a3a3a;
+        }
+        .controls button.primary {
+            background: #ffcc44;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+        .controls button.primary:hover {
+            background: #ffdd66;
+        }
+        .controls input[type="range"] {
+            flex: 1;
+            min-width: 100px;
+            accent-color: #ffcc44;
+            background: #2a2a2a;
+            height: 4px;
+            border-radius: 4px;
+            -webkit-appearance: none;
+        }
+        .controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ffcc44;
+            cursor: pointer;
+        }
+        .controls .time-display {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #888;
+            min-width: 70px;
+            text-align: center;
+        }
+        .file-upload-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+            padding: 16px;
+            background: #0f0f0f;
+            border-radius: 10px;
+            border: 1px solid #222;
+        }
+        .file-upload-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .file-upload-item label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .file-upload-item label .icon {
+            font-size: 1rem;
+        }
+        .file-upload-item label input[type="file"] {
+            display: none;
+        }
+        .file-upload-item .file-name {
+            font-size: 0.7rem;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        .file-upload-item .file-name.loaded {
+            color: #66dd88;
+        }
+        .file-upload-item .file-status {
+            font-size: 0.65rem;
+            color: #444;
+        }
+        .file-upload-item .file-status.ok {
+            color: #66dd88;
+        }
+        .file-upload-item .file-status.missing {
+            color: #dd6655;
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #555;
+            margin-top: 8px;
+            padding: 0 4px;
+        }
+        .status-bar .sub-count {
+            color: #666;
+        }
+        @media (max-width: 700px) {
+            .subtitle-area {
+                grid-template-columns: 1fr;
+            }
+            .file-upload-area {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎵 <span>Subtitle Sync</span> · Real-time Tester</h1>
+
+    <div class="video-wrapper" id="videoWrapper">
+        <video id="videoPlayer" controls preload="metadata" style="display:none;">
+            <source src="" type="video/mp4" />
+            Your browser does not support the video tag.
+        </video>
+        <div class="drop-hint" id="dropHint">
+            <strong>🎬 Drop video here</strong>
+            or use the upload button below
+        </div>
+    </div>
+
+    <div class="subtitle-area">
+        <div class="subtitle-box" id="jpBox">
+            <div class="label">
+                <span class="badge jp">🇯🇵</span> Japanese (original)
+            </div>
+            <div class="text jp" id="jpText"><span class="status-msg">waiting for subtitle file...</span></div>
+            <div class="timecode" id="jpTime">--:--.--- → --:--.---</div>
+        </div>
+        <div class="subtitle-box" id="enBox">
+            <div class="label">
+                <span class="badge en">🇬🇧</span> English (singable)
+            </div>
+            <div class="text en" id="enText"><span class="status-msg">waiting for subtitle file...</span></div>
+            <div class="timecode" id="enTime">--:--.--- → --:--.---</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="playBtn" class="primary" disabled>▶ Play</button>
+        <button id="resetBtn" disabled>⟲ Reset</button>
+        <input type="range" id="seekSlider" min="0" max="1000" value="0" disabled />
+        <span class="time-display" id="currentTimeDisplay">00:00</span>
+    </div>
+
+    <div class="file-upload-area">
+        <div class="file-upload-item">
+            <label>
+                <span class="icon">🎬</span> Video (MP4/WebM)
+                <input type="file" id="videoFileInput" accept="video/mp4,video/webm" />
+            </label>
+            <div class="file-name" id="videoFileName">no file selected</div>
+            <div class="file-status missing" id="videoStatus">⬜ not loaded</div>
+        </div>
+        <div class="file-upload-item">
+            <label>
+                <span class="icon">📄</span> Japanese .srt
+                <input type="file" id="jpSrtInput" accept=".srt,.txt" />
+            </label>
+            <div class="file-name" id="jpFileName">no file selected</div>
+            <div class="file-status missing" id="jpStatus">⬜ not loaded</div>
+        </div>
+        <div class="file-upload-item">
+            <label>
+                <span class="icon">📄</span> English .srt
+                <input type="file" id="enSrtInput" accept=".srt,.txt" />
+            </label>
+            <div class="file-name" id="enFileName">no file selected</div>
+            <div class="file-status missing" id="enStatus">⬜ not loaded</div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span class="sub-count" id="subtitleInfo">JP: 0 entries · EN: 0 entries</span>
+        <span id="fpsInfo">ready</span>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // State
+    // --------------------------------------------------------------
+    let jpSubtitles = [];
+    let enSubtitles = [];
+    let videoLoaded = false;
+    let jpLoaded = false;
+    let enLoaded = false;
+    let animationFrame = null;
+
+    const video = document.getElementById('videoPlayer');
+    const videoWrapper = document.getElementById('videoWrapper');
+    const dropHint = document.getElementById('dropHint');
+    const playBtn = document.getElementById('playBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const seekSlider = document.getElementById('seekSlider');
+    const timeDisplay = document.getElementById('currentTimeDisplay');
+    const jpText = document.getElementById('jpText');
+    const enText = document.getElementById('enText');
+    const jpTime = document.getElementById('jpTime');
+    const enTime = document.getElementById('enTime');
+    const jpBox = document.getElementById('jpBox');
+    const enBox = document.getElementById('enBox');
+    const subtitleInfo = document.getElementById('subtitleInfo');
+    const fpsInfo = document.getElementById('fpsInfo');
+
+    // File inputs
+    const videoFileInput = document.getElementById('videoFileInput');
+    const jpSrtInput = document.getElementById('jpSrtInput');
+    const enSrtInput = document.getElementById('enSrtInput');
+    const videoFileName = document.getElementById('videoFileName');
+    const jpFileName = document.getElementById('jpFileName');
+    const enFileName = document.getElementById('enFileName');
+    const videoStatus = document.getElementById('videoStatus');
+    const jpStatus = document.getElementById('jpStatus');
+    const enStatus = document.getElementById('enStatus');
+
+    // --------------------------------------------------------------
+    // SRT Parser
+    // --------------------------------------------------------------
+    function parseSRT(text) {
+        const entries = [];
+        const blocks = text.trim().split(/\n\s*\n/);
+        for (const block of blocks) {
+            const lines = block.split('\n').map(s => s.trim()).filter(Boolean);
+            if (lines.length < 3) continue;
+            const timeLine = lines.find(l => l.includes('-->'));
+            if (!timeLine) continue;
+            const [startStr, endStr] = timeLine.split('-->').map(s => s.trim());
+            const start = srtTimeToSeconds(startStr);
+            const end = srtTimeToSeconds(endStr);
+            const textLines = lines.filter(l => !l.includes('-->') && !/^\d+$/.test(l));
+            const text = textLines.join(' ');
+            if (!isNaN(start) && !isNaN(end) && text) {
+                entries.push({ start, end, text });
+            }
+        }
+        return entries;
+    }
+
+    function srtTimeToSeconds(str) {
+        const parts = str.replace(',', '.').split(':');
+        if (parts.length === 3) {
+            const h = parseFloat(parts[0]);
+            const m = parseFloat(parts[1]);
+            const s = parseFloat(parts[2]);
+            return h * 3600 + m * 60 + s;
+        }
+        return NaN;
+    }
+
+    function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return '--:--.---';
+        const m = Math.floor(seconds / 60);
+        const s = (seconds % 60).toFixed(3);
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(6, '0')}`;
+    }
+
+    function formatTimeShort(seconds) {
+        if (!seconds || isNaN(seconds)) return '00:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // --------------------------------------------------------------
+    // Subtitle lookup
+    // --------------------------------------------------------------
+    function getSubtitleAtTime(time, subs) {
+        for (const sub of subs) {
+            if (time >= sub.start && time < sub.end) {
+                return sub;
+            }
+        }
+        return null;
+    }
+
+    function getSubtitleIndexAtTime(time, subs) {
+        for (let i = 0; i < subs.length; i++) {
+            const sub = subs[i];
+            if (time >= sub.start && time < sub.end) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // --------------------------------------------------------------
+    // Update display
+    // --------------------------------------------------------------
+    function updateSubtitles(time) {
+        const jp = getSubtitleAtTime(time, jpSubtitles);
+        const en = getSubtitleAtTime(time, enSubtitles);
+
+        if (jp) {
+            jpText.textContent = jp.text;
+            jpTime.textContent = formatTime(jp.start) + ' → ' + formatTime(jp.end);
+            jpBox.classList.add('active');
+        } else {
+            jpText.innerHTML = jpSubtitles.length ? '<span style="color:#444;">—</span>' : '<span class="status-msg">waiting for subtitle file...</span>';
+            jpTime.textContent = '--:--.--- → --:--.---';
+            jpBox.classList.remove('active');
+        }
+
+        if (en) {
+            enText.textContent = en.text;
+            enTime.textContent = formatTime(en.start) + ' → ' + formatTime(en.end);
+            enBox.classList.add('active');
+        } else {
+            enText.innerHTML = enSubtitles.length ? '<span style="color:#444;">—</span>' : '<span class="status-msg">waiting for subtitle file...</span>';
+            enTime.textContent = '--:--.--- → --:--.---';
+            enBox.classList.remove('active');
+        }
+
+        const jpIdx = getSubtitleIndexAtTime(time, jpSubtitles);
+        const enIdx = getSubtitleIndexAtTime(time, enSubtitles);
+        subtitleInfo.textContent = `JP: ${jpSubtitles.length} entries · EN: ${enSubtitles.length} entries`;
+    }
+
+    // --------------------------------------------------------------
+    // Render loop
+    // --------------------------------------------------------------
+    function render() {
+        if (video.duration && !isNaN(video.duration) && video.duration > 0) {
+            const time = video.currentTime;
+            updateSubtitles(time);
+            const pct = video.duration > 0 ? (time / video.duration) * 1000 : 0;
+            seekSlider.value = Math.min(Math.max(pct, 0), 1000);
+            timeDisplay.textContent = formatTimeShort(time) + ' / ' + formatTimeShort(video.duration);
+        }
+        animationFrame = requestAnimationFrame(render);
+    }
+
+    // --------------------------------------------------------------
+    // Check if everything is ready
+    // --------------------------------------------------------------
+    function checkReady() {
+        const ready = videoLoaded && jpLoaded && enLoaded;
+        playBtn.disabled = !ready;
+        resetBtn.disabled = !ready;
+        seekSlider.disabled = !ready;
+        if (ready) {
+            playBtn.textContent = '▶ Play';
+            fpsInfo.textContent = `✅ ready · ${jpSubtitles.length} JP / ${enSubtitles.length} EN`;
+        } else {
+            const missing = [];
+            if (!videoLoaded) missing.push('video');
+            if (!jpLoaded) missing.push('JP subs');
+            if (!enLoaded) missing.push('EN subs');
+            fpsInfo.textContent = `⏳ waiting: ${missing.join(', ')}`;
+        }
+        return ready;
+    }
+
+    // --------------------------------------------------------------
+    // Video controls
+    // --------------------------------------------------------------
+    playBtn.addEventListener('click', () => {
+        if (video.paused) {
+            video.play();
+            playBtn.textContent = '⏸ Pause';
+        } else {
+            video.pause();
+            playBtn.textContent = '▶ Play';
+        }
+    });
+
+    resetBtn.addEventListener('click', () => {
+        video.currentTime = 0;
+        video.pause();
+        playBtn.textContent = '▶ Play';
+        updateSubtitles(0);
+        seekSlider.value = 0;
+        timeDisplay.textContent = '00:00 / ' + formatTimeShort(video.duration || 0);
+    });
+
+    video.addEventListener('play', () => { playBtn.textContent = '⏸ Pause'; });
+    video.addEventListener('pause', () => { playBtn.textContent = '▶ Play'; });
+    video.addEventListener('ended', () => { playBtn.textContent = '▶ Play'; });
+
+    seekSlider.addEventListener('input', (e) => {
+        if (video.duration && !isNaN(video.duration) && video.duration > 0) {
+            const pct = parseFloat(e.target.value) / 1000;
+            video.currentTime = pct * video.duration;
+        }
+    });
+
+    // --------------------------------------------------------------
+    // File uploads
+    // --------------------------------------------------------------
+    function updateFileStatus() {
+        if (videoLoaded) {
+            videoStatus.className = 'file-status ok';
+            videoStatus.textContent = '✅ loaded';
+        } else {
+            videoStatus.className = 'file-status missing';
+            videoStatus.textContent = '⬜ not loaded';
+        }
+        if (jpLoaded) {
+            jpStatus.className = 'file-status ok';
+            jpStatus.textContent = '✅ loaded (' + jpSubtitles.length + ' entries)';
+        } else {
+            jpStatus.className = 'file-status missing';
+            jpStatus.textContent = '⬜ not loaded';
+        }
+        if (enLoaded) {
+            enStatus.className = 'file-status ok';
+            enStatus.textContent = '✅ loaded (' + enSubtitles.length + ' entries)';
+        } else {
+            enStatus.className = 'file-status missing';
+            enStatus.textContent = '⬜ not loaded';
+        }
+        checkReady();
+        updateSubtitles(video.currentTime || 0);
+    }
+
+    videoFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            video.load();
+            videoLoaded = true;
+            video.style.display = 'block';
+            dropHint.style.display = 'none';
+            videoFileName.textContent = file.name;
+            videoFileName.className = 'file-name loaded';
+            updateFileStatus();
+        }
+    });
+
+    jpSrtInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const text = ev.target.result;
+                jpSubtitles = parseSRT(text);
+                jpLoaded = true;
+                jpFileName.textContent = file.name;
+                jpFileName.className = 'file-name loaded';
+                updateFileStatus();
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    enSrtInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const text = ev.target.result;
+                enSubtitles = parseSRT(text);
+                enLoaded = true;
+                enFileName.textContent = file.name;
+                enFileName.className = 'file-name loaded';
+                updateFileStatus();
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    // --------------------------------------------------------------
+    // Drag and drop for video
+    // --------------------------------------------------------------
+    videoWrapper.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        videoWrapper.classList.add('dragover');
+    });
+    videoWrapper.addEventListener('dragleave', () => {
+        videoWrapper.classList.remove('dragover');
+    });
+    videoWrapper.addEventListener('drop', (e) => {
+        e.preventDefault();
+        videoWrapper.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        for (const file of files) {
+            if (file.type.startsWith('video/')) {
+                const url = URL.createObjectURL(file);
+                video.src = url;
+                video.load();
+                videoLoaded = true;
+                video.style.display = 'block';
+                dropHint.style.display = 'none';
+                videoFileName.textContent = file.name;
+                videoFileName.className = 'file-name loaded';
+                updateFileStatus();
+                break;
+            }
+        }
+    });
+
+    // --------------------------------------------------------------
+    // Init
+    // --------------------------------------------------------------
+    video.addEventListener('loadedmetadata', () => {
+        if (!video.duration || isNaN(video.duration)) return;
+        updateSubtitles(0);
+        timeDisplay.textContent = '00:00 / ' + formatTimeShort(video.duration);
+        fpsInfo.textContent = `duration: ${formatTimeShort(video.duration)}`;
+        checkReady();
+    });
+
+    // Start render loop
+    render();
+    updateSubtitles(0);
+    checkReady();
+
+    console.log('🎵 Subtitle Sync Tool loaded — upload your files to start!');
+</script>
+</body>
+</html>

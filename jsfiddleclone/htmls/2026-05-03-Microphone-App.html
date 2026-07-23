@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder - MP3 with Timestamp & Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 24px;
+            color: #333;
+            font-size: 28px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            background: #f0f0f0;
+            color: #555;
+        }
+
+        .status.recording {
+            background: #ff4757;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            font-family: monospace;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            margin: 8px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-record {
+            background: #ff4757;
+        }
+
+        .btn-stop {
+            background: #ffa502;
+        }
+
+        .btn-download {
+            background: #2ed573;
+        }
+
+        .recordings-list {
+            margin-top: 24px;
+            text-align: left;
+            max-height: 400px;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        .recordings-list h3 {
+            margin-bottom: 12px;
+            color: #555;
+            font-size: 18px;
+        }
+
+        .recording-item {
+            background: #f9f9f9;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .recording-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .recording-filename {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .recording-duration {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .recording-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .recording-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .btn-preview {
+            background: #17a2b8;
+        }
+
+        .audio-preview {
+            width: 100%;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .audio-preview.active {
+            display: block;
+        }
+
+        audio {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+
+        .wave {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Audio Recorder</h1>
+        
+        <div class="status" id="status">⚡ Ready to record</div>
+        
+        <div class="timer" id="timer">00:00.00</div>
+        
+        <button class="btn-record" id="recordBtn" onclick="startRecording()">🔴 Start Recording</button>
+        <button class="btn-stop" id="stopBtn" onclick="stopRecording()" disabled>⏹️ Stop</button>
+        <button class="btn-download" id="downloadBtn" onclick="downloadLastRecording()" disabled>💾 Download Last Recording</button>
+        
+        <hr>
+        
+        <div class="recordings-list">
+            <h3>📀 Recordings (Click Preview to listen)</h3>
+            <div id="recordingsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingStartTime = null;
+        let timerInterval = null;
+        let recordings = [];
+        let activePreviewId = null;
+        
+        // Get DOM elements
+        const statusDiv = document.getElementById('status');
+        const timerDiv = document.getElementById('timer');
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const recordingsListDiv = document.getElementById('recordingsList');
+        
+        // Format time as MM:SS.ms
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const milliseconds = Math.floor((ms % 1000) / 10);
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Update timer display
+        function updateTimer() {
+            if (recordingStartTime) {
+                const elapsed = Date.now() - recordingStartTime;
+                timerDiv.textContent = formatTime(elapsed);
+            }
+        }
+        
+        // Start timer interval
+        function startTimer() {
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 10);
+        }
+        
+        // Stop timer
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerDiv.textContent = '00:00.00';
+        }
+        
+        // Generate timestamp filename
+        function getTimestampFilename() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `recording_${year}-${month}-${day}_${hours}-${minutes}-${seconds}.mp3`;
+        }
+        
+        // Add recording to the list
+        function addRecordingToList(blob, filename, durationMs) {
+            const durationFormatted = formatTime(durationMs);
+            const audioUrl = URL.createObjectURL(blob);
+            const recording = {
+                id: Date.now(),
+                blob: blob,
+                filename: filename,
+                duration: durationFormatted,
+                timestamp: new Date(),
+                audioUrl: audioUrl
+            };
+            recordings.unshift(recording); // Add to beginning
+            
+            // Keep only last 10 recordings in memory to avoid memory issues
+            if (recordings.length > 10) {
+                const oldest = recordings.pop();
+                URL.revokeObjectURL(oldest.audioUrl); // Clean up URL
+            }
+            
+            updateRecordingsList();
+        }
+        
+        // Toggle preview for a recording
+        window.togglePreview = function(id) {
+            // Hide all previews first
+            document.querySelectorAll('.audio-preview').forEach(preview => {
+                preview.classList.remove('active');
+                const audio = preview.querySelector('audio');
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+            });
+            
+            // If clicking the same preview that's already open, just close it
+            if (activePreviewId === id) {
+                activePreviewId = null;
+                return;
+            }
+            
+            // Show preview for selected recording
+            const previewDiv = document.getElementById(`preview-${id}`);
+            if (previewDiv) {
+                previewDiv.classList.add('active');
+                activePreviewId = id;
+                
+                // Auto-play the preview
+                const audio = previewDiv.querySelector('audio');
+                if (audio) {
+                    audio.play().catch(e => console.log('Auto-play prevented:', e));
+                }
+            }
+        };
+        
+        // Update the recordings list UI
+        function updateRecordingsList() {
+            if (recordings.length === 0) {
+                recordingsListDiv.innerHTML = '<p style="color: #999; text-align: center;">No recordings yet</p>';
+                return;
+            }
+            
+            recordingsListDiv.innerHTML = recordings.map(rec => `
+                <div class="recording-item">
+                    <div class="recording-info">
+                        <span class="recording-filename">🎵 ${rec.filename}</span>
+                        <span class="recording-duration">⏱️ ${rec.duration}</span>
+                    </div>
+                    <div class="recording-actions">
+                        <button class="btn-preview" onclick="togglePreview(${rec.id})">🎧 Preview</button>
+                        <button onclick="downloadSpecificRecording(${rec.id})">💾 Download</button>
+                    </div>
+                    <div id="preview-${rec.id}" class="audio-preview">
+                        <audio controls src="${rec.audioUrl}">
+                            Your browser does not support audio playback.
+                        </audio>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Download a specific recording
+        window.downloadSpecificRecording = function(id) {
+            const recording = recordings.find(r => r.id === id);
+            if (recording) {
+                const url = URL.createObjectURL(recording.blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = recording.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Show confirmation
+                statusDiv.textContent = `✅ Downloaded: ${recording.filename}`;
+                setTimeout(() => {
+                    if (statusDiv.textContent.includes('Downloaded')) {
+                        statusDiv.textContent = '⚡ Ready to record';
+                    }
+                }, 2000);
+            }
+        };
+        
+        // Download the last recording
+        window.downloadLastRecording = function() {
+            if (recordings.length > 0) {
+                downloadSpecificRecording(recordings[0].id);
+            } else {
+                statusDiv.textContent = '⚠️ No recordings to download';
+                setTimeout(() => {
+                    statusDiv.textContent = '⚡ Ready to record';
+                }, 2000);
+            }
+        };
+        
+        // Start recording
+        window.startRecording = async function() {
+            try {
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Try to use MP3 format, fallback to what's supported
+                let mimeType = '';
+                const mimeTypes = ['audio/mpeg', 'audio/mp3', 'audio/webm', 'audio/wav'];
+                for (const type of mimeTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        mimeType = type;
+                        break;
+                    }
+                }
+                
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    // Create blob from chunks
+                    const mime = mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunks, { type: mime });
+                    const duration = Date.now() - recordingStartTime;
+                    const filename = getTimestampFilename();
+                    
+                    // Add to recordings list
+                    addRecordingToList(audioBlob, filename, duration);
+                    
+                    // Enable download button
+                    downloadBtn.disabled = false;
+                    
+                    // Update status
+                    statusDiv.textContent = `✅ Recording saved (${formatTime(duration)})`;
+                    setTimeout(() => {
+                        statusDiv.textContent = '⚡ Ready to record';
+                    }, 2000);
+                    
+                    // Stop all tracks
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                
+                // Start recording
+                mediaRecorder.start(100); // Collect data every 100ms
+                recordingStartTime = Date.now();
+                startTimer();
+                
+                // Update UI
+                statusDiv.textContent = '🔴 RECORDING...';
+                statusDiv.classList.add('recording');
+                recordBtn.disabled = true;
+                stopBtn.disabled = false;
+                downloadBtn.disabled = true;
+                
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                statusDiv.textContent = '❌ Cannot access microphone. Please check permissions.';
+                if (error.name === 'NotAllowedError') {
+                    statusDiv.textContent = '❌ Microphone permission denied. Please allow access and try again.';
+                } else if (error.name === 'NotFoundError') {
+                    statusDiv.textContent = '❌ No microphone found. Please connect a microphone.';
+                }
+            }
+        };
+        
+        // Stop recording
+        window.stopRecording = function() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                stopTimer();
+                
+                // Update UI
+                statusDiv.textContent = '⏹️ Stopping...';
+                statusDiv.classList.remove('recording');
+                recordBtn.disabled = false;
+                stopBtn.disabled = true;
+                recordingStartTime = null;
+            }
+        };
+        
+        // Check if browser supports required APIs
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            statusDiv.textContent = '❌ Your browser does not support audio recording';
+            recordBtn.disabled = true;
+        }
+        
+        // Clean up URLs when page unloads
+        window.addEventListener('beforeunload', () => {
+            recordings.forEach(rec => {
+                if (rec.audioUrl) {
+                    URL.revokeObjectURL(rec.audioUrl);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

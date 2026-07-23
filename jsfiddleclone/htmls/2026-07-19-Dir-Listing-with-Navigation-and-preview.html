@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📁 File Browser with Download & Modal</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+            color: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.2);
+            padding: 2rem 1.8rem;
+        }
+        h1 {
+            font-weight: 600;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e9edf2;
+            padding-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        h1 span {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: #64748b;
+        }
+        .dir-path {
+            background: #f1f5f9;
+            padding: 0.4rem 1.2rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            color: #334155;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            border: 1px solid #dce2ec;
+            word-break: break-all;
+        }
+        .dir-path .crumb {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .dir-path .crumb:hover {
+            text-decoration: underline;
+        }
+        .status {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+        .spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .file-grid {
+            display: grid;
+            gap: 0.4rem;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafcff;
+            padding: 0.6rem 1rem;
+            border-radius: 0.8rem;
+            border: 1px solid #e2e8f0;
+            transition: 0.15s;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .file-item:hover {
+            background: #f1f6fe;
+            border-color: #bdd3f0;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            flex: 2 1 160px;
+            min-width: 120px;
+        }
+        .file-icon {
+            width: 2rem;
+            text-align: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .file-name {
+            font-weight: 500;
+            word-break: break-word;
+            font-size: 0.95rem;
+        }
+        .file-name a {
+            color: #0f172a;
+            text-decoration: none;
+        }
+        .file-name a:hover {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+        .file-size {
+            font-size: 0.75rem;
+            color: #64748b;
+            background: #eef2f6;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            white-space: nowrap;
+        }
+        .file-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem;
+            margin-left: auto;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 60px;
+            border: 1px solid #d1d9e6;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            text-decoration: none;
+            background: #f8fafc;
+            color: #1e293b;
+            font-family: inherit;
+            line-height: 1.2;
+        }
+        .btn:hover {
+            background: #eef2f6;
+            transform: translateY(-1px);
+        }
+        .btn-download {
+            background: #eef2ff;
+            border-color: #c7d2fe;
+            color: #1e3a8a;
+        }
+        .btn-download:hover {
+            background: #dbe7fe;
+        }
+        .btn-modal {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .btn-modal:hover {
+            background: #e2e8f0;
+        }
+        .btn-modal.mp3 {
+            background: #ede9fe;
+            border-color: #c4b5fd;
+            color: #5b21b6;
+        }
+        .btn-modal.mp3:hover {
+            background: #ddd6fe;
+        }
+        .btn-modal.mp4 {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+        .btn-modal.mp4:hover {
+            background: #fecaca;
+        }
+        .btn-modal.image {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+        .btn-modal.image:hover {
+            background: #bbf7d0;
+        }
+        .btn-modal.text {
+            background: #fef9c3;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+        .btn-modal.text:hover {
+            background: #fef08a;
+        }
+        .btn-disabled {
+            opacity: 0.4;
+            cursor: default;
+            pointer-events: none;
+        }
+        .btn-disabled:hover {
+            transform: none;
+        }
+        .folder-badge {
+            background: #e9edf2;
+            border-radius: 30px;
+            padding: 0.05rem 0.7rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+        }
+        .empty-msg {
+            text-align: center;
+            padding: 2.5rem;
+            color: #94a3b8;
+        }
+        .empty-msg .big-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .toolbar {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn-refresh {
+            background: #f1f5f9;
+            border: 1px solid #d1d9e6;
+            padding: 0.4rem 1.2rem;
+            border-radius: 60px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-refresh:hover {
+            background: #e2e8f0;
+        }
+        .file-count {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-left: 0.5rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-box {
+            background: white;
+            max-width: 720px;
+            width: 92%;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            transform: scale(0.96);
+            transition: 0.2s;
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .modal-header h3 {
+            font-weight: 600;
+            font-size: 1.1rem;
+            word-break: break-all;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .modal-close {
+            background: #f1f5f9;
+            border: none;
+            width: 2.2rem;
+            height: 2.2rem;
+            border-radius: 60px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            color: #334155;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover {
+            background: #e2e8f0;
+        }
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+        }
+        .modal-body video,
+        .modal-body audio {
+            width: 100%;
+            border-radius: 0.8rem;
+            background: #0b1120;
+            max-height: 70vh;
+        }
+        .modal-body audio {
+            margin: 0.5rem 0;
+        }
+        .modal-body .file-label {
+            font-weight: 500;
+            margin-bottom: 0.8rem;
+            color: #1e293b;
+        }
+        .modal-body pre.text-preview {
+            width: 100%;
+            max-height: 65vh;
+            overflow: auto;
+            background: #0b1120;
+            color: #e2e8f0;
+            padding: 1rem 1.2rem;
+            border-radius: 0.8rem;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+            text-align: left;
+        }
+
+        @media (max-width: 640px) {
+            .container { padding: 1.2rem; }
+            .file-item { flex-direction: column; align-items: stretch; }
+            .file-actions { margin-left: 0; justify-content: flex-start; }
+            .btn { padding: 0.3rem 0.8rem; font-size: 0.7rem; }
+            h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>
+        📁 File Browser
+        <span>with Download &amp; Media Playback</span>
+    </h1>
+    <div class="dir-path" id="dirPath">📂 Loading directory...</div>
+
+    <div class="toolbar">
+        <button class="btn-refresh" onclick="fetchDirectory()">🔄 Refresh</button>
+        <span class="file-count" id="fileCount"></span>
+    </div>
+
+    <div id="fileList">
+        <div class="status">
+            <div class="spinner"></div>
+            <div>Loading directory listing...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="mediaModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">🎵 file.mp3</h3>
+            <button class="modal-close" id="closeModalBtn">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <div class="file-label" id="modalLabel"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const fileListEl = document.getElementById('fileList');
+        const dirPathEl = document.getElementById('dirPath');
+        const fileCountEl = document.getElementById('fileCount');
+        const modalOverlay = document.getElementById('mediaModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalLabel = document.getElementById('modalLabel');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        let currentFiles = [];
+
+        // The folder this script physically lives in — used as the
+        // fallback/home directory when there's no ?path= override.
+        const HOME_DIR = window.location.pathname.replace(/[^/]*$/, '');
+
+        // The directory currently being browsed. Updated on navigation.
+        let currentDir = getInitialDir();
+
+        function getInitialDir() {
+            const params = new URLSearchParams(window.location.search);
+            const p = params.get('path');
+            return p ? decodeURIComponent(p) : HOME_DIR;
+        }
+
+        // URL to fetch the RAW autoindex listing for a given directory.
+        // Appending ?raw is harmless for folders that don't have this app's
+        // .htaccess rewrite rule — they have no index.html to override, so
+        // the query string is simply ignored and the native listing is
+        // returned anyway.
+        function getDirUrl(dir) {
+            return dir + '?raw';
+        }
+
+        // Push a new URL (same browse.html, different ?path=) so the address
+        // bar reflects the folder being viewed, without ever navigating away
+        // from this app.
+        function navigateTo(dir, { push = true } = {}) {
+            currentDir = dir;
+            if (push) {
+                const url = window.location.pathname + '?path=' + encodeURIComponent(dir);
+                history.pushState({ dir }, '', url);
+            }
+            fetchDirectory();
+        }
+
+        window.addEventListener('popstate', function(e) {
+            currentDir = (e.state && e.state.dir) || getInitialDir();
+            fetchDirectory();
+        });
+
+        // Fetch and parse the current directory listing
+        function fetchDirectory() {
+            fileListEl.innerHTML = `
+                <div class="status">
+                    <div class="spinner"></div>
+                    <div>Loading directory listing...</div>
+                </div>
+            `;
+
+            fetch(getDirUrl(currentDir))
+                .then(response => response.text())
+                .then(html => {
+                    const files = parseDirectoryListing(html);
+                    currentFiles = files;
+                    renderFileList(files);
+                    updatePath();
+                    updateFileCount(files);
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                    fileListEl.innerHTML = `
+                        <div class="empty-msg" style="color:#991b1b;">
+                            <div class="big-icon">⚠️</div>
+                            <div>Error loading directory: ${err.message}</div>
+                            <div style="font-size:0.85rem; margin-top:0.5rem; color:#64748b;">
+                                Make sure directory listing is enabled on your server.
+                            </div>
+                        </div>
+                    `;
+                });
+        }
+
+        // Parse the auto-index HTML - matching your exact structure
+        function parseDirectoryListing(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const files = [];
+
+            // Get the table
+            const table = doc.getElementById('table-content');
+            if (!table) {
+                console.error('Table not found');
+                return files;
+            }
+
+            // Get all rows - they are direct children of table, not in tbody
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length < 3) return;
+
+                const link = cells[0]?.querySelector('a');
+                if (!link) return;
+
+                const href = link.getAttribute('href');
+                const name = link.textContent.trim();
+                
+                // Skip parent directory
+                if (name === 'Parent Directory' || href === '../') return;
+
+                // Skip this script's own file, so it never appears
+                // as a "file" entry inside its own listing.
+                if (/\/browse\.html$/i.test(href || '')) return;
+
+                // Check if it's a directory (href ends with /)
+                const isDir = href?.endsWith('/') || false;
+                
+                // Get size from third column
+                const sizeText = cells[2]?.textContent.trim() || '—';
+                
+                // Get date from second column
+                const dateText = cells[1]?.textContent.trim() || '';
+
+                files.push({
+                    name: name,
+                    href: href,
+                    isDir: isDir,
+                    size: sizeText,
+                    date: dateText
+                });
+            });
+
+            console.log('Parsed files:', files);
+            return files;
+        }
+
+        function updatePath() {
+            const decodedPath = decodeURIComponent(currentDir);
+            const segments = decodedPath.split('/').filter(Boolean);
+
+            let html = '📂 <a href="#" class="crumb" data-dir="/">/</a>';
+            let acc = '/';
+            segments.forEach(seg => {
+                acc += seg + '/';
+                html += `<a href="#" class="crumb" data-dir="${acc}">${seg}</a>/`;
+            });
+            dirPathEl.innerHTML = html;
+
+            dirPathEl.querySelectorAll('.crumb').forEach(a => {
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    navigateTo(this.getAttribute('data-dir'));
+                });
+            });
+        }
+
+        function updateFileCount(files) {
+            const count = files ? files.length : 0;
+            const dirs = files ? files.filter(f => f.isDir).length : 0;
+            const fileCount = count - dirs;
+            fileCountEl.textContent = `${fileCount} files, ${dirs} folders`;
+        }
+
+        function getFileType(name, isDir) {
+            if (isDir) return 'folder';
+            const ext = name.split('.').pop().toLowerCase();
+            const mediaTypes = {
+                'mp3': 'mp3',
+                'mp4': 'mp4',
+                'mov': 'mp4',
+                'wav': 'mp3',
+                'ogg': 'mp3',
+                'm4a': 'mp3',
+                'aac': 'mp3',
+                'flac': 'mp3',
+                'webm': 'mp4',
+                'avi': 'mp4',
+                'mkv': 'mp4',
+                'jpg': 'image',
+                'jpeg': 'image',
+                'png': 'image',
+                'gif': 'image',
+                'svg': 'image',
+                'webp': 'image',
+                'bmp': 'image',
+                'ico': 'image'
+            };
+            return mediaTypes[ext] || 'file';
+        }
+
+        function getFileIcon(name, isDir) {
+            if (isDir) return '📁';
+            const ext = name.split('.').pop().toLowerCase();
+            const icons = {
+                'mp3': '🎵',
+                'mp4': '🎬',
+                'mov': '🎬',
+                'wav': '🎵',
+                'ogg': '🎵',
+                'm4a': '🎵',
+                'aac': '🎵',
+                'flac': '🎵',
+                'webm': '🎬',
+                'avi': '🎬',
+                'mkv': '🎬',
+                'pdf': '📄',
+                'doc': '📄',
+                'docx': '📄',
+                'txt': '📝',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️',
+                'svg': '🖼️',
+                'zip': '📦',
+                'rar': '📦',
+                '7z': '📦',
+                'js': '⚡',
+                'css': '🎨',
+                'html': '🌐',
+                'htm': '🌐',
+                'json': '📋',
+                'xml': '📋',
+                'php': '🐘',
+                'py': '🐍',
+                'sh': '💻'
+            };
+            return icons[ext] || '📄';
+        }
+
+        function isMediaFile(name, isDir) {
+            if (isDir) return false;
+            const ext = name.split('.').pop().toLowerCase();
+            return ['mp3', 'mp4', 'mov', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'webm', 'avi', 'mkv'].includes(ext);
+        }
+
+        function isImageFile(name, isDir) {
+            if (isDir) return false;
+            const ext = name.split('.').pop().toLowerCase();
+            return ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico'].includes(ext);
+        }
+
+        // Extensions that NEVER get an in-app preview button, per explicit
+        // instruction: pdf, zip, exe, dll, plus all media and image types
+        // (media/images already have their own dedicated buttons above).
+        const PREVIEW_EXCLUDED_EXT = [
+            'pdf', 'zip', 'rar', '7z', 'exe', 'dll',
+            'mp3', 'mp4', 'mov', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'webm', 'avi', 'mkv',
+            'jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico'
+        ];
+
+        function isTextPreviewable(name, isDir) {
+            if (isDir) return false;
+            const ext = name.split('.').pop().toLowerCase();
+            return !PREVIEW_EXCLUDED_EXT.includes(ext);
+        }
+
+        // Render file list with buttons
+        function renderFileList(files) {
+            if (!files || files.length === 0) {
+                fileListEl.innerHTML = `
+                    <div class="empty-msg">
+                        <div class="big-icon">📂</div>
+                        <div>No files found in this directory</div>
+                        <div style="font-size:0.85rem; margin-top:0.5rem; color:#94a3b8;">
+                            Check console for parsing errors
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort: folders first, then files
+            files.sort((a, b) => {
+                if (a.isDir && !b.isDir) return -1;
+                if (!a.isDir && b.isDir) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            let html = '<div class="file-grid">';
+
+            // "Up" row, unless we're already at the app's home directory root
+            if (currentDir !== '/' ) {
+                const parent = currentDir.replace(/[^/]*\/$/, '');
+                html += `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <span class="file-icon">⬆️</span>
+                            <span class="file-name"><a href="#" class="folder-nav" data-dir="${parent}">.. (up)</a></span>
+                        </div>
+                        <div class="file-actions"></div>
+                    </div>
+                `;
+            }
+
+            files.forEach(file => {
+                const isDir = file.isDir;
+                const fileType = getFileType(file.name, isDir);
+                const icon = getFileIcon(file.name, isDir);
+                const isMedia = isMediaFile(file.name, isDir);
+                const isImage = isImageFile(file.name, isDir);
+                const sizeStr = file.size || '—';
+                const href = file.href || file.name;
+
+                let actionsHtml = '';
+
+                // Download button (only for files, not folders)
+                if (!isDir) {
+                    actionsHtml += `
+                        <a href="${href}" download class="btn btn-download">
+                            ⬇ Download
+                        </a>
+                    `;
+                }
+
+                // Modal view button (audio/video)
+                if (isMedia) {
+                    const cls = fileType === 'mp3' ? 'mp3' : 'mp4';
+                    actionsHtml += `
+                        <button class="btn btn-modal ${cls} modal-trigger" data-href="${href}" data-name="${file.name}" data-type="${fileType}">
+                            👁 View
+                        </button>
+                    `;
+                }
+
+                // Magnifying-glass preview button (images)
+                if (isImage) {
+                    actionsHtml += `
+                        <button class="btn btn-modal image modal-trigger" data-href="${href}" data-name="${file.name}" data-type="image">
+                            🔍 Preview
+                        </button>
+                    `;
+                }
+
+                // Magnifying-glass preview button (everything else EXCEPT
+                // pdf/zip/exe/dll/media/images — those have their own
+                // buttons above or no preview at all)
+                if (!isDir && !isMedia && !isImage && isTextPreviewable(file.name, isDir)) {
+                    actionsHtml += `
+                        <button class="btn btn-modal text modal-trigger" data-href="${href}" data-name="${file.name}" data-type="text">
+                            🔍 Preview
+                        </button>
+                    `;
+                }
+
+                const folderBadge = isDir ? `<span class="folder-badge">📁 folder</span>` : '';
+
+                html += `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <span class="file-icon">${icon}</span>
+                            <span class="file-name">
+                                ${isDir
+                                    ? `<a href="#" class="folder-nav" data-dir="${href}">${file.name}</a>`
+                                    : `<a href="${href}" target="_blank">${file.name}</a>`}
+                            </span>
+                            <span class="file-size">${sizeStr}</span>
+                            ${folderBadge}
+                        </div>
+                        <div class="file-actions">
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            fileListEl.innerHTML = html;
+
+            // Folder links & "Up" row navigate in-app (URL bar updates via
+            // pushState, but we never actually leave browse.html)
+            document.querySelectorAll('.folder-nav').forEach(a => {
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    navigateTo(this.getAttribute('data-dir'));
+                });
+            });
+
+            // Add event listeners for modal buttons
+            document.querySelectorAll('.modal-trigger').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const fileHref = this.getAttribute('data-href');
+                    const fileName = this.getAttribute('data-name');
+                    const fileType = this.getAttribute('data-type');
+                    openModal(fileName, fileHref, fileType);
+                });
+            });
+        }
+
+        // Open modal for media/image/text preview
+        function openModal(fileName, fileHref, fileType) {
+            const icon = fileType === 'mp3' ? '🎵' : fileType === 'mp4' ? '🎬' : fileType === 'image' ? '🔍' : '🔍';
+            modalTitle.innerHTML = `${icon} ${fileName}`;
+            modalLabel.textContent = fileType === 'image' ? 'Previewing: ' + fileName
+                : fileType === 'text' ? 'Previewing: ' + fileName
+                : 'Playing: ' + fileName;
+
+            if (fileType === 'mp3') {
+                modalBody.innerHTML = `
+                    <audio controls autoplay style="width:100%;">
+                        <source src="${fileHref}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                `;
+            } else if (fileType === 'mp4') {
+                modalBody.innerHTML = `
+                    <video controls autoplay style="width:100%; max-height:60vh;">
+                        <source src="${fileHref}" type="video/mp4">
+                        Your browser does not support the video element.
+                    </video>
+                `;
+            } else if (fileType === 'image') {
+                modalBody.innerHTML = `
+                    <img src="${fileHref}" alt="${fileName}" style="max-width:100%; max-height:70vh; border-radius:0.8rem; object-fit:contain;">
+                `;
+            } else if (fileType === 'text') {
+                modalBody.innerHTML = `
+                    <div class="status" style="padding:1.5rem;">
+                        <div class="spinner"></div>
+                        <div>Loading preview…</div>
+                    </div>
+                `;
+                fetch(fileHref)
+                    .then(res => {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        return res.text();
+                    })
+                    .then(content => {
+                        const escaped = content
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;');
+                        modalBody.innerHTML = `<pre class="text-preview">${escaped}</pre>`;
+                    })
+                    .catch(err => {
+                        modalBody.innerHTML = `
+                            <div class="empty-msg" style="color:#991b1b; padding:1.5rem;">
+                                <div class="big-icon">⚠️</div>
+                                <div>Couldn't load preview: ${err.message}</div>
+                            </div>
+                        `;
+                    });
+            }
+
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close modal
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+
+            // Stop media
+            const media = modalBody.querySelector('video, audio');
+            if (media) {
+                media.pause();
+                media.currentTime = 0;
+            }
+
+            modalBody.innerHTML = '<div class="file-label" id="modalLabel"></div>';
+        }
+
+        // Event listeners
+        closeModalBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Initial load — replace (not push) so the very first page load
+        // doesn't create a duplicate back-button entry
+        history.replaceState({ dir: currentDir }, '', window.location.pathname + '?path=' + encodeURIComponent(currentDir));
+        fetchDirectory();
+
+        // Expose refresh function globally
+        window.fetchDirectory = fetchDirectory;
+
+    })();
+</script>
+
+</body>
+</html>
+
+
+<details><summary>.htaccess</summary>
+<blockquote>
+# .htaccess inside pc-proton/ (or any folder you want this in)
+RewriteEngine On
+RewriteCond %{QUERY_STRING} !^raw$
+RewriteRule ^$ browse.html [L]
+</blockquote>
+</details><br>
+
+

@@ -1,4 +1,1168 @@
 
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fediverse Brute Force Search</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #0d1117;
+            --border: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-success: #7ee787;
+            --text-error: #ff7b72;
+            --text-info: #58a6ff;
+            --text-accent: #d2a8ff;
+            --button-primary: #238636;
+            --button-hover: #2ea043;
+            --success-bg: #0c2d1a;
+            --error-bg: #490202;
+            --info-bg: #0d2136;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h1, h2, h3, h4 {
+            color: var(--text-info);
+            margin-bottom: 15px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .box {
+            background: var(--bg-secondary);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--text-info);
+        }
+        
+        button {
+            background: var(--button-primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: var(--button-hover);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        button.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        button.secondary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .error {
+            background: var(--error-bg);
+            border-left: 4px solid var(--text-error);
+            padding: 20px;
+            color: var(--text-error);
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .success {
+            background: var(--success-bg);
+            border-left: 4px solid var(--text-success);
+            padding: 20px;
+            color: var(--text-success);
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .info {
+            background: var(--info-bg);
+            border-left: 4px solid var(--text-info);
+            padding: 20px;
+            color: var(--text-info);
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .log {
+            background: var(--bg-secondary);
+            border-left: 4px solid var(--text-info);
+            padding: 20px;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .log-line {
+            margin-bottom: 5px;
+        }
+        
+        .log-line.success {
+            color: var(--text-success);
+        }
+        
+        .log-line.error {
+            color: var(--text-error);
+        }
+        
+        .log-line.info {
+            color: var(--text-info);
+        }
+        
+        .post-info {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+        
+        .response-box {
+            margin: 20px 0;
+        }
+        
+        .endpoint-try {
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        
+        .endpoint-try h4 {
+            margin-top: 0;
+        }
+        
+        .success-tick {
+            color: var(--text-success);
+            font-weight: bold;
+        }
+        
+        .error-cross {
+            color: var(--text-error);
+            font-weight: bold;
+        }
+        
+        pre {
+            background: var(--bg-tertiary);
+            color: var(--text-success);
+            padding: 15px;
+            border-radius: 6px;
+            overflow: auto;
+            max-height: 400px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            margin: 10px 0;
+        }
+        
+        .post-content {
+            color: var(--text-accent);
+        }
+        
+        details {
+            margin: 10px 0;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        summary {
+            padding: 12px 15px;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        summary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        details pre {
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            max-height: 200px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--text-info);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-info);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .box {
+                padding: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span>🔍</span> Fediverse Brute Force Search</h1>
+            <p>Trying ALL endpoints until we find the post - Client-side JavaScript version</p>
+            <p><strong>IMPROVED:</strong> Now searches for the FULL URL, not just extracted IDs</p>
+        </header>
+        
+        <div class="box">
+            <h2>Enter Details</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="apiKey">API Key:</label>
+                    <input type="password" id="apiKey" name="apiKey" placeholder="Enter your Fediverse API key">
+                </div>
+                
+                <div class="form-group">
+                    <label for="instance">Instance (without https://):</label>
+                    <input type="text" id="instance" name="instance" placeholder="mastodon.social">
+                </div>
+                
+                <div class="form-group">
+                    <label for="url">Post URL:</label>
+                    <input type="text" id="url" name="url" placeholder="https://mk.absturztau.be/notes/ah4ir0s0m2pj01ca">
+                </div>
+                
+                <div class="controls">
+                    <button type="submit" id="submitBtn">
+                        <span>🚀</span> BRUTE FORCE SEARCH
+                    </button>
+                    <button type="button" id="stopBtn" class="secondary hidden">
+                        <span>⏹️</span> STOP SEARCH
+                    </button>
+                    <button type="button" id="clearBtn" class="secondary">
+                        <span>🗑️</span> CLEAR RESULTS
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="statsContainer" class="hidden">
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="triedCount">0</div>
+                    <div class="stat-label">Endpoints Tried</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="successCount">0</div>
+                    <div class="stat-label">Successful Calls</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="foundCount">0</div>
+                    <div class="stat-label">Posts Found</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="timeElapsed">0s</div>
+                    <div class="stat-label">Time Elapsed</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="resultContainer" class="hidden">
+            <!-- Results will be populated here -->
+        </div>
+        
+        <div id="logContainer" class="box hidden">
+            <h2>📋 Execution Log</h2>
+            <div class="log" id="executionLog">
+                <!-- Log entries will be added here -->
+            </div>
+            <div class="controls" style="margin-top: 15px;">
+                <button type="button" id="copyLogBtn" class="secondary">
+                    <span>📋</span> COPY LOG
+                </button>
+                <button type="button" id="clearLogBtn" class="secondary">
+                    <span>🗑️</span> CLEAR LOG
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Fediverse Brute Force Search v1.1 - Pure HTML/JavaScript Client</p>
+            <p>This tool makes API calls directly from your browser. Your API key is not sent to any server.</p>
+            <p><strong>New:</strong> Searches for the complete URL, not just extracted IDs</p>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        const state = {
+            isSearching: false,
+            abortController: null,
+            startTime: null,
+            endpointsTried: 0,
+            successfulCalls: 0,
+            postsFound: 0,
+            logEntries: []
+        };
+        
+        // DOM Elements
+        const searchForm = document.getElementById('searchForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statsContainer = document.getElementById('statsContainer');
+        const resultContainer = document.getElementById('resultContainer');
+        const logContainer = document.getElementById('logContainer');
+        const executionLog = document.getElementById('executionLog');
+        const copyLogBtn = document.getElementById('copyLogBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        
+        // Stats elements
+        const triedCountEl = document.getElementById('triedCount');
+        const successCountEl = document.getElementById('successCount');
+        const foundCountEl = document.getElementById('foundCount');
+        const timeElapsedEl = document.getElementById('timeElapsed');
+        
+        // Define all possible endpoints to try - FIXED TO USE FULL URL
+        const endpoints = [
+            // PRIMARY: Search with the EXACT full URL first
+            {
+                name: 'Mastodon v1 Search (EXACT URL)',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}&resolve=true&type=statuses`
+            },
+            {
+                name: 'Mastodon v1 Search (URL, no type)',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}&resolve=true`
+            },
+            {
+                name: 'Mastodon v1 Search (URL only)',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}`
+            },
+            
+            // Mastodon v2 with full URL
+            {
+                name: 'Mastodon v2 Search (EXACT URL)',
+                url: (instance, url) => `https://${instance}/api/v2/search?q=${encodeURIComponent(url)}&resolve=true&type=statuses`
+            },
+            {
+                name: 'Mastodon v2 Search (URL, no type)',
+                url: (instance, url) => `https://${instance}/api/v2/search?q=${encodeURIComponent(url)}&resolve=true`
+            },
+            
+            // Also try the URL with different encoding
+            {
+                name: 'Mastodon v1 Search (double encoded)',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(encodeURIComponent(url))}&resolve=true&type=statuses`
+            },
+            
+            // ActivityPub lookup with full URL
+            {
+                name: 'ActivityPub lookup (EXACT URL)',
+                url: (instance, url) => `https://${instance}/api/v1/search?q=${encodeURIComponent(url)}&resolve=true&type=accounts,statuses`
+            }
+        ];
+        
+        // Initialize
+        function init() {
+            // Load saved values from localStorage
+            const savedApiKey = localStorage.getItem('fediverse_api_key');
+            const savedInstance = localStorage.getItem('fediverse_instance');
+            const savedUrl = localStorage.getItem('fediverse_url');
+            
+            if (savedApiKey) document.getElementById('apiKey').value = savedApiKey;
+            if (savedInstance) document.getElementById('instance').value = savedInstance;
+            if (savedUrl) document.getElementById('url').value = savedUrl;
+            
+            // Set up event listeners
+            searchForm.addEventListener('submit', handleFormSubmit);
+            stopBtn.addEventListener('click', stopSearch);
+            clearBtn.addEventListener('click', clearResults);
+            copyLogBtn.addEventListener('click', copyLogToClipboard);
+            clearLogBtn.addEventListener('click', clearLog);
+        }
+        
+        // Handle form submission
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const instance = document.getElementById('instance').value.trim();
+            let url = document.getElementById('url').value.trim();
+            
+            // Clean inputs
+            url = url.replace(/https:\/\/https:\/\//g, 'https://').replace(/http:\/\/http:\/\//g, 'http://');
+            const cleanInstance = instance.replace(/https?:\/\//, '');
+            
+            // Validation
+            if (!apiKey || !cleanInstance || !url) {
+                showError("All fields are required!");
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('fediverse_api_key', apiKey);
+            localStorage.setItem('fediverse_instance', cleanInstance);
+            localStorage.setItem('fediverse_url', url);
+            
+            // Start search
+            startSearch(apiKey, cleanInstance, url);
+        }
+        
+        // Start the brute force search
+        async function startSearch(apiKey, instance, url) {
+            // Reset state
+            state.isSearching = true;
+            state.abortController = new AbortController();
+            state.startTime = Date.now();
+            state.endpointsTried = 0;
+            state.successfulCalls = 0;
+            state.postsFound = 0;
+            state.logEntries = [];
+            
+            // Update UI
+            submitBtn.disabled = true;
+            stopBtn.classList.remove('hidden');
+            statsContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            logContainer.classList.remove('hidden');
+            
+            // Clear previous logs
+            executionLog.innerHTML = '';
+            resultContainer.innerHTML = '';
+            
+            // Add initial log entries
+            addLogEntry("=== STARTING BRUTE FORCE SEARCH ===", 'info');
+            addLogEntry(`Time: ${new Date().toLocaleString()}`, 'info');
+            addLogEntry(`Instance: ${instance}`, 'info');
+            addLogEntry(`API Key (first 10 chars): ${apiKey.substring(0, 10)}...`, 'info');
+            addLogEntry(`URL to search: ${url}`, 'info');
+            addLogEntry("", 'info');
+            
+            // Update stats
+            updateStats();
+            
+            // Start timer for elapsed time
+            const timerInterval = setInterval(() => {
+                if (!state.isSearching) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+                timeElapsedEl.textContent = `${elapsed}s`;
+            }, 1000);
+            
+            try {
+                // PHASE 1: Try standard endpoints with FULL URL
+                addLogEntry("=== PHASE 1: Searching with FULL URL ===", 'info');
+                
+                for (const endpoint of endpoints) {
+                    if (!state.isSearching) break;
+                    
+                    addLogEntry("", 'info');
+                    addLogEntry(`--- ${endpoint.name} ---`, 'info');
+                    
+                    const apiUrl = endpoint.url(instance, url);
+                    const result = await makeApiCall(apiUrl, apiKey);
+                    
+                    state.endpointsTried++;
+                    updateStats();
+                    
+                    if (result.success) {
+                        state.successfulCalls++;
+                        
+                        // Check if we found a post
+                        const foundPost = checkForPost(result.data, url);
+                        if (foundPost) {
+                            state.postsFound++;
+                            updateStats();
+                            addLogEntry(`🎉 FOUND POST in ${endpoint.name}!`, 'success');
+                            addLogEntry(`✓ Found exact URL match: ${url}`, 'success');
+                            
+                            // Show the found post
+                            showFoundPost(foundPost, result, endpoint.name);
+                            
+                            // Stop further searches
+                            clearInterval(timerInterval);
+                            stopSearch();
+                            return;
+                        } else {
+                            addLogEntry(`✓ Got response but no post found for URL: ${url}`, 'info');
+                        }
+                    }
+                    
+                    // Small delay to not hammer the server
+                    await delay(200);
+                }
+                
+                // PHASE 2: Try direct API calls (Misskey/Mastodon specific)
+                if (state.isSearching) {
+                    addLogEntry("", 'info');
+                    addLogEntry("=== PHASE 2: Trying direct API calls ===", 'info');
+                    
+                    // Try Misskey direct fetch if it looks like a Misskey URL
+                    if (url.includes('/notes/') || url.includes('/notice/')) {
+                        const misskeyResult = await tryMisskeyDirect(url, instance, apiKey);
+                        if (misskeyResult.success && misskeyResult.data) {
+                            const foundPost = checkForPost(misskeyResult.data, url);
+                            if (foundPost) {
+                                state.postsFound++;
+                                updateStats();
+                                addLogEntry(`🎉 FOUND POST via Misskey Direct API!`, 'success');
+                                showFoundPost(foundPost, misskeyResult, 'Misskey Direct API');
+                                clearInterval(timerInterval);
+                                stopSearch();
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // Try Mastodon direct status lookup
+                    const mastodonDirectResult = await tryMastodonDirect(url, instance, apiKey);
+                    if (mastodonDirectResult.success && mastodonDirectResult.data) {
+                        const foundPost = checkForPost(mastodonDirectResult.data, url);
+                        if (foundPost) {
+                            state.postsFound++;
+                            updateStats();
+                            addLogEntry(`🎉 FOUND POST via Mastodon Direct API!`, 'success');
+                            showFoundPost(foundPost, mastodonDirectResult, 'Mastodon Direct API');
+                            clearInterval(timerInterval);
+                            stopSearch();
+                            return;
+                        }
+                    }
+                }
+                
+                // PHASE 3: Try alternative URL formats (as fallback)
+                if (state.isSearching) {
+                    addLogEntry("", 'info');
+                    addLogEntry("=== PHASE 3: Trying alternative URL formats ===", 'info');
+                    
+                    const alternativeResults = await tryAlternativeUrlFormats(url, instance, apiKey);
+                    for (const altResult of alternativeResults) {
+                        if (altResult.success && altResult.data) {
+                            const foundPost = checkForPost(altResult.data, url);
+                            if (foundPost) {
+                                state.postsFound++;
+                                updateStats();
+                                addLogEntry(`🎉 FOUND POST via ${altResult.method}!`, 'success');
+                                showFoundPost(foundPost, altResult, altResult.method);
+                                clearInterval(timerInterval);
+                                stopSearch();
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                addLogEntry("", 'info');
+                addLogEntry("=== SEARCH COMPLETE ===", 'info');
+                addLogEntry(`Total endpoints tried: ${state.endpointsTried}`, 'info');
+                addLogEntry(`Success: NO POST FOUND for "${url}" 😞`, 'error');
+                
+                showError(`Could not find the post with URL: ${url}. Check the log for details.`);
+                
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    addLogEntry(`❌ Error during search: ${error.message}`, 'error');
+                    showError(`Search failed: ${error.message}`);
+                }
+            } finally {
+                if (state.isSearching) {
+                    clearInterval(timerInterval);
+                    stopSearch();
+                }
+            }
+        }
+        
+        // Make API call
+        async function makeApiCall(apiUrl, apiKey) {
+            addLogEntry(`Trying: ${apiUrl}`, 'info');
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Accept': 'application/json',
+                        'User-Agent': 'FediverseBruteForce/1.1 (Browser)'
+                    },
+                    signal: state.abortController?.signal
+                });
+                
+                const totalTime = Date.now() - startTime;
+                const responseTime = Math.round(totalTime);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const bodySize = JSON.stringify(data).length;
+                    
+                    addLogEntry(`✓ HTTP ${response.status} in ${responseTime}ms (Body: ${bodySize} bytes)`, 'success');
+                    
+                    return {
+                        success: true,
+                        httpCode: response.status,
+                        responseTime,
+                        bodySize,
+                        data,
+                        url: apiUrl,
+                        headers: Object.fromEntries(response.headers.entries())
+                    };
+                } else {
+                    addLogEntry(`✗ HTTP ${response.status} in ${responseTime}ms`, 'error');
+                    return {
+                        success: false,
+                        httpCode: response.status,
+                        responseTime,
+                        error: `HTTP ${response.status}`,
+                        url: apiUrl
+                    };
+                }
+            } catch (error) {
+                const totalTime = Date.now() - startTime;
+                addLogEntry(`✗ Error: ${error.message} in ${totalTime}ms`, 'error');
+                return {
+                    success: false,
+                    responseTime: totalTime,
+                    error: error.message,
+                    url: apiUrl
+                };
+            }
+        }
+        
+        // Try Misskey direct fetch
+        async function tryMisskeyDirect(url, instance, apiKey) {
+            // Extract note ID from URL
+            const noteIdMatch = url.match(/\/(notes|notice)\/([a-zA-Z0-9]+)/i);
+            if (!noteIdMatch) {
+                addLogEntry(`Not a Misskey-style URL: ${url}`, 'info');
+                return { success: false };
+            }
+            
+            const noteId = noteIdMatch[2];
+            addLogEntry(`Extracted Misskey note ID: ${noteId}`, 'info');
+            
+            // Try Misskey API endpoint
+            const misskeyUrl = `https://${instance}/api/notes/show`;
+            addLogEntry(`Trying Misskey Direct API: ${misskeyUrl}`, 'info');
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(misskeyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ noteId }),
+                    signal: state.abortController?.signal
+                });
+                
+                const responseTime = Date.now() - startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addLogEntry(`✓ Misskey API returned HTTP ${response.status} in ${responseTime}ms`, 'success');
+                    return {
+                        success: true,
+                        httpCode: response.status,
+                        responseTime,
+                        data,
+                        url: misskeyUrl,
+                        noteId,
+                        source: 'misskey_direct',
+                        method: 'Misskey Direct API'
+                    };
+                } else {
+                    addLogEntry(`✗ Misskey API returned HTTP ${response.status} in ${responseTime}ms`, 'error');
+                    return { success: false };
+                }
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                addLogEntry(`✗ Misskey API error: ${error.message} in ${responseTime}ms`, 'error');
+                return { success: false };
+            }
+        }
+        
+        // Try Mastodon direct status lookup
+        async function tryMastodonDirect(url, instance, apiKey) {
+            // Extract status ID from URL
+            const statusIdMatch = url.match(/\/(statuses|status|notice)\/([a-zA-Z0-9]+)/i);
+            if (!statusIdMatch) {
+                return { success: false };
+            }
+            
+            const statusId = statusIdMatch[2];
+            addLogEntry(`Extracted Mastodon status ID: ${statusId}`, 'info');
+            
+            // Try Mastodon API endpoint
+            const mastodonUrl = `https://${instance}/api/v1/statuses/${statusId}`;
+            addLogEntry(`Trying Mastodon Direct API: ${mastodonUrl}`, 'info');
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(mastodonUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Accept': 'application/json'
+                    },
+                    signal: state.abortController?.signal
+                });
+                
+                const responseTime = Date.now() - startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addLogEntry(`✓ Mastodon Direct API returned HTTP ${response.status} in ${responseTime}ms`, 'success');
+                    return {
+                        success: true,
+                        httpCode: response.status,
+                        responseTime,
+                        data,
+                        url: mastodonUrl,
+                        statusId,
+                        source: 'mastodon_direct',
+                        method: 'Mastodon Direct API'
+                    };
+                } else {
+                    addLogEntry(`✗ Mastodon Direct API returned HTTP ${response.status} in ${responseTime}ms`, 'error');
+                    return { success: false };
+                }
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                addLogEntry(`✗ Mastodon Direct API error: ${error.message} in ${responseTime}ms`, 'error');
+                return { success: false };
+            }
+        }
+        
+        // Try alternative URL formats
+        async function tryAlternativeUrlFormats(originalUrl, instance, apiKey) {
+            const results = [];
+            
+            // Remove protocol
+            const noProtocol = originalUrl.replace(/^https?:\/\//, '');
+            
+            // Alternative formats to try
+            const alternatives = [
+                {
+                    name: 'URL without protocol',
+                    url: noProtocol,
+                    method: 'URL without protocol search'
+                },
+                {
+                    name: 'Just the path',
+                    url: new URL(originalUrl).pathname,
+                    method: 'Path-only search'
+                },
+                {
+                    name: 'Domain + path',
+                    url: new URL(originalUrl).hostname + new URL(originalUrl).pathname,
+                    method: 'Domain + path search'
+                }
+            ];
+            
+            for (const alt of alternatives) {
+                if (!state.isSearching) break;
+                
+                addLogEntry(`Trying alternative format: ${alt.name} => "${alt.url}"`, 'info');
+                
+                const apiUrl = `https://${instance}/api/v1/search?q=${encodeURIComponent(alt.url)}&resolve=true`;
+                const result = await makeApiCall(apiUrl, apiKey);
+                
+                if (result.success) {
+                    results.push({
+                        ...result,
+                        method: alt.method,
+                        alternativeFormat: alt.name
+                    });
+                }
+                
+                await delay(150);
+            }
+            
+            return results;
+        }
+        
+        // Check if response contains a post matching our URL
+        function checkForPost(data, searchUrl) {
+            // Check Mastodon response format
+            if (data.statuses && Array.isArray(data.statuses) && data.statuses.length > 0) {
+                // Check if any status matches our URL
+                for (const status of data.statuses) {
+                    if (statusMatchesUrl(status, searchUrl)) {
+                        return { ...status, source: 'mastodon' };
+                    }
+                }
+            }
+            
+            // Check direct status response
+            if (data.id && data.content && data.uri) {
+                if (statusMatchesUrl(data, searchUrl)) {
+                    return { ...data, source: 'mastodon_direct' };
+                }
+            }
+            
+            // Check Misskey response format
+            if (data.id && data.text) {
+                // Misskey URLs are usually constructed from ID
+                return { ...data, source: 'misskey' };
+            }
+            
+            // Check if it's a single status
+            if (data.uri && data.content) {
+                if (statusMatchesUrl(data, searchUrl)) {
+                    return { ...data, source: 'activitypub' };
+                }
+            }
+            
+            return null;
+        }
+        
+        // Check if a status matches our search URL
+        function statusMatchesUrl(status, searchUrl) {
+            // Normalize URLs for comparison
+            const normalize = (url) => url.toLowerCase().replace(/\/$/, '');
+            const normalizedSearchUrl = normalize(searchUrl);
+            
+            // Check various URL fields
+            if (status.url && normalize(status.url) === normalizedSearchUrl) {
+                return true;
+            }
+            
+            if (status.uri && normalize(status.uri) === normalizedSearchUrl) {
+                return true;
+            }
+            
+            // For Misskey, construct URL from ID
+            if (status.source === 'misskey' && status.id) {
+                const instance = new URL(searchUrl).hostname;
+                const misskeyUrl = `https://${instance}/notes/${status.id}`;
+                if (normalize(misskeyUrl) === normalizedSearchUrl) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // Show found post
+        function showFoundPost(post, apiResponse, endpointName) {
+            resultContainer.classList.remove('hidden');
+            
+            let postHtml = '';
+            
+            if (post.source === 'mastodon' || post.source === 'mastodon_direct' || post.source === 'activitypub') {
+                postHtml = `
+                    <div class="box success">
+                        <h2>✅ POST FOUND!</h2>
+                        <p>Found via: ${endpointName}</p>
+                        <p><strong>Searched URL:</strong> ${document.getElementById('url').value}</p>
+                        
+                        <div class="post-info">
+                            <h3>📝 Post Information</h3>
+                            <p><strong>ID:</strong> ${post.id}</p>
+                            ${post.url ? `<p><strong>URL:</strong> ${post.url}</p>` : ''}
+                            ${post.uri ? `<p><strong>URI:</strong> ${post.uri}</p>` : ''}
+                            ${post.account ? `<p><strong>Author:</strong> @${post.account.acct || 'unknown'}</p>` : ''}
+                            ${post.created_at ? `<p><strong>Date:</strong> ${post.created_at}</p>` : ''}
+                            <p><strong>Content:</strong></p>
+                            <pre class="post-content">${stripHtmlTags(post.content || 'No content')}</pre>
+                        </div>
+                    </div>
+                `;
+            } else if (post.source === 'misskey') {
+                postHtml = `
+                    <div class="box success">
+                        <h2>✅ POST FOUND!</h2>
+                        <p>Found via: ${endpointName}</p>
+                        <p><strong>Searched URL:</strong> ${document.getElementById('url').value}</p>
+                        
+                        <div class="post-info">
+                            <h3>📝 Post Information</h3>
+                            <p><strong>ID:</strong> ${post.id}</p>
+                            ${post.user ? `<p><strong>Author:</strong> @${post.user.username || 'unknown'}</p>` : ''}
+                            ${post.createdAt ? `<p><strong>Date:</strong> ${post.createdAt}</p>` : ''}
+                            <p><strong>Text:</strong></p>
+                            <pre class="post-content">${post.text || 'No text'}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add raw response data
+            if (apiResponse) {
+                postHtml += `
+                    <div class="box">
+                        <h3>📄 API Response Details</h3>
+                        <p><strong>API URL:</strong> ${apiResponse.url}</p>
+                        <p><strong>HTTP Status:</strong> ${apiResponse.httpCode}</p>
+                        <p><strong>Response Time:</strong> ${apiResponse.responseTime}ms</p>
+                        
+                        <details>
+                            <summary>View Raw JSON Response</summary>
+                            <pre>${JSON.stringify(apiResponse.data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+            
+            resultContainer.innerHTML = postHtml;
+        }
+        
+        // Stop the search
+        function stopSearch() {
+            state.isSearching = false;
+            if (state.abortController) {
+                state.abortController.abort();
+            }
+            
+            submitBtn.disabled = false;
+            stopBtn.classList.add('hidden');
+            
+            addLogEntry("=== SEARCH STOPPED ===", 'info');
+        }
+        
+        // Clear results
+        function clearResults() {
+            resultContainer.classList.add('hidden');
+            resultContainer.innerHTML = '';
+            executionLog.innerHTML = '';
+            logContainer.classList.add('hidden');
+            statsContainer.classList.add('hidden');
+            
+            // Reset stats
+            state.endpointsTried = 0;
+            state.successfulCalls = 0;
+            state.postsFound = 0;
+            updateStats();
+        }
+        
+        // Clear log
+        function clearLog() {
+            executionLog.innerHTML = '';
+            state.logEntries = [];
+        }
+        
+        // Copy log to clipboard
+        function copyLogToClipboard() {
+            const logText = state.logEntries.map(entry => entry.text).join('\n');
+            navigator.clipboard.writeText(logText).then(() => {
+                alert('Log copied to clipboard!');
+            });
+        }
+        
+        // Show error message
+        function showError(message) {
+            resultContainer.classList.remove('hidden');
+            resultContainer.innerHTML = `
+                <div class="box error">
+                    <h2>❌ Search Result</h2>
+                    <p>${message}</p>
+                    <p><strong>Searched URL:</strong> ${document.getElementById('url').value}</p>
+                </div>
+            `;
+        }
+        
+        // Add log entry
+        function addLogEntry(text, type = 'info') {
+            const logEntry = {
+                text,
+                type,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            state.logEntries.push(logEntry);
+            
+            const logLine = document.createElement('div');
+            logLine.className = `log-line ${type}`;
+            logLine.textContent = `[${logEntry.timestamp}] ${text}`;
+            
+            executionLog.appendChild(logLine);
+            
+            // Auto-scroll to bottom
+            executionLog.scrollTop = executionLog.scrollHeight;
+        }
+        
+        // Update stats display
+        function updateStats() {
+            triedCountEl.textContent = state.endpointsTried;
+            successCountEl.textContent = state.successfulCalls;
+            foundCountEl.textContent = state.postsFound;
+        }
+        
+        // Utility function to strip HTML tags
+        function stripHtmlTags(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            return div.textContent || div.innerText || '';
+        }
+        
+        // Utility function for delay
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+<details><plaintext>
+#################OLD###WEIRDO#####HTML######VER######
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -357,7 +1521,7 @@
             <form id="searchForm">
                 <div class="form-group">
                     <label for="apiKey">API Key:</label>
-                    <input type="text" id="apiKey" name="apiKey" placeholder="Enter your Fediverse API key">
+                    <input type="password" id="apiKey" name="apiKey" placeholder="Enter your Fediverse API key">
                 </div>
                 
                 <div class="form-group">
@@ -1004,7 +2168,8 @@
 
 
 
-<details><plaintext>
+############################PHP##VER############################
+
 <?php
 // fediverse_bruteforce.php
 // Try EVERY search endpoint
