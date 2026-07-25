@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WindBot Executor Builder</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #0b0e14; color: #e4e9f2; padding: 1.5rem; }
+        .app { max-width: 1600px; margin: 0 auto; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h1 small { font-size: 1rem; font-weight: 400; color: #8892a8; }
+        .subtitle { color: #8892a8; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 3px solid #3b82f6; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+        @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+        .panel { background: #141a24; border: 1px solid #2a3343; border-radius: 10px; padding: 1.25rem; }
+        .panel h2 { font-size: 1.1rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .panel h2 .badge { font-size: 0.7rem; background: #1e293b; padding: 0.15rem 0.6rem; border-radius: 12px; color: #94a3b8; }
+        textarea, select, input[type="text"], input[type="number"] {
+            background: #0f151e; border: 1px solid #2a3343; color: #e4e9f2; border-radius: 6px;
+            padding: 0.5rem 0.7rem; font-size: 0.85rem; width: 100%;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+        }
+        textarea:focus, select:focus, input:focus { outline: none; border-color: #3b82f6; }
+        textarea { resize: vertical; min-height: 120px; font-size: 0.75rem; line-height: 1.5; }
+        label { display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 0.2rem; color: #b0bacf; }
+        .row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; align-items: center; }
+        .btn {
+            background: #1e293b; border: none; color: #e4e9f2; padding: 0.4rem 1.2rem; border-radius: 6px;
+            font-size: 0.85rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center;
+            gap: 0.4rem; border: 1px solid transparent;
+        }
+        .btn:hover { background: #2a3343; }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #3b82f6; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-success:hover { background: #22c55e; }
+        .btn-sm { padding: 0.15rem 0.6rem; font-size: 0.7rem; }
+        .btn-outline { background: transparent; border-color: #2a3343; }
+        .btn-outline:hover { background: #1e293b; }
+        .btn-warning { background: #d97706; color: #fff; }
+        .btn-warning:hover { background: #f59e0b; }
+        .btn-info { background: #2563eb; color: #fff; }
+        .btn-info:hover { background: #3b82f6; }
+        .btn-purple { background: #7c3aed; color: #fff; }
+        .btn-purple:hover { background: #8b5cf6; }
+        .btn-xs { padding: 0.1rem 0.4rem; font-size: 0.6rem; }
+        .card-list { max-height: 400px; overflow-y: auto; border-radius: 6px; border: 1px solid #1e293b; margin-top: 0.5rem; }
+        .card-list::-webkit-scrollbar { width: 5px; }
+        .card-list::-webkit-scrollbar-thumb { background: #2a3343; border-radius: 6px; }
+        .card-item {
+            display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.6rem;
+            border-bottom: 1px solid #1a2330; background: #111821; flex-wrap: wrap;
+        }
+        .card-item:hover { background: #171f2b; }
+        .card-item .cname { flex: 1 1 130px; font-weight: 500; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-item .cid { color: #64748b; font-size: 0.65rem; font-family: monospace; flex: 0 0 80px; }
+        .card-item .ctype { font-size: 0.65rem; flex: 0 0 55px; padding: 0.1rem 0.4rem; border-radius: 3px; text-align: center; }
+        .ctype-monster { color: #fbbf24; background: #1a1a0a; }
+        .ctype-spell { color: #34d399; background: #0a1a12; }
+        .ctype-trap { color: #f472b6; background: #1a0a12; }
+        .ctype-unknown { color: #94a3b8; background: #1a1a1a; }
+        .card-item select, .card-item input { width: auto; padding: 0.15rem 0.4rem; font-size: 0.75rem; flex: 1 1 90px; min-width: 70px; }
+        .card-item input[type="number"] { flex: 0 0 55px; min-width: 45px; }
+        .card-item .exec-type { flex: 1 1 100px; }
+        .card-item .priority { flex: 0 0 60px; }
+        .card-item .condition-wrap { flex: 1 1 150px; display: flex; gap: 0.2rem; align-items: center; }
+        .card-item .condition-wrap input { flex: 1; min-width: 80px; }
+        .btn-condition { background: #2a3343; border: 1px solid #3b4a62; color: #94a3b8; padding: 0.1rem 0.4rem; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: bold; }
+        .btn-condition:hover { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+        .code-output { background: #0a0f17; border-radius: 6px; padding: 0.75rem; margin-top: 0.75rem; border: 1px solid #1e293b; position: relative; max-height: 400px; overflow: auto; }
+        .code-output pre { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.7rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; color: #c9d1d9; margin: 0; }
+        .code-output .copy-btn { position: absolute; top: 0.3rem; right: 0.3rem; background: #1e293b; border: none; color: #94a3b8; padding: 0.15rem 0.6rem; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .code-output .copy-btn:hover { background: #2a3343; color: #fff; }
+        .status { font-size: 0.85rem; padding: 0.3rem 0.7rem; border-radius: 4px; display: inline-block; margin-top: 0.3rem; }
+        .status-ok { color: #4ade80; }
+        .status-err { color: #f87171; }
+        .status-info { color: #60a5fa; }
+        .flex { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        .mt-1 { margin-top: 0.75rem; }
+        .mb-1 { margin-bottom: 0.75rem; }
+        .text-muted { color: #8892a8; font-size: 0.8rem; }
+        .file-input-wrapper { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding: 0.5rem; background: #0f151e; border-radius: 6px; border: 1px dashed #2a3343; }
+        .file-input-wrapper input[type="file"] { flex: 1; min-width: 150px; color: #94a3b8; font-size: 0.85rem; }
+        .file-input-wrapper input[type="file"]::file-selector-button { background: #1e293b; border: none; color: #e4e9f2; padding: 0.3rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .file-input-wrapper input[type="file"]::file-selector-button:hover { background: #2a3343; }
+        .db-status { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; white-space: nowrap; }
+        .db-loaded { color: #4ade80; background: #1a3a2a; }
+        .db-missing { color: #f87171; background: #3a1a1a; }
+        .db-loading { color: #fbbf24; background: #3a2a1a; }
+        .template-preview { max-height: 200px; overflow: auto; font-size: 0.7rem; line-height: 1.4; background: #0a0f17; padding: 0.5rem; border-radius: 4px; border: 1px solid #1a2330; }
+        .template-preview code { color: #c9d1d9; white-space: pre-wrap; word-break: break-word; }
+        .found-in { font-size: 0.55rem; color: #60a5fa; margin-left: 0.3rem; }
+        .patch-status { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 3px; }
+        .patch-loaded { color: #4ade80; background: #1a2a1a; }
+        .patch-missing { color: #fbbf24; background: #2a1a0a; }
+        .patch-upload { border: 1px dashed #2a3343; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #141a24;
+            border: 1px solid #2a3343;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1000px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid #2a3343;
+            flex-shrink: 0;
+        }
+        .modal-header h3 { font-weight: 500; }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
+        }
+        .modal-close:hover { color: #f87171; }
+        .modal-body {
+            flex: 1;
+            overflow: hidden;
+        }
+        .modal-body iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #0b0e14;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <h1>⚙️ WindBot Executor Builder <small>v3.0</small>
+            <span id="dbStatusBadge" class="db-status db-loading">⏳ Loading DB...</span>
+        </h1>
+        <div class="subtitle">Upload .ydk → Configure cards → Translate → Export .cs</div>
+
+        <div class="grid">
+            <!-- LEFT -->
+            <div class="panel">
+                <h2>📄 Step 1: Upload .ydk Deck</h2>
+                <div class="file-input-wrapper">
+                    <input type="file" id="ydkFile" accept=".ydk" />
+                    <button class="btn btn-primary" id="loadYdkBtn">📤 Load Deck</button>
+                    <button class="btn btn-outline btn-sm" id="clearDeckBtn">Clear</button>
+                </div>
+                <div id="ydkStatus" class="status"></div>
+
+                <div class="mt-1">
+                    <label>Deck Name:</label>
+                    <input type="text" id="deckNameInput" placeholder="e.g., BlueEyes" value="MyDeck" />
+                </div>
+
+                <div class="patch-upload mt-1">
+                    <label>📝 Patch File (auto-loads from same directory):</label>
+                    <div class="file-input-wrapper" style="border-style:solid; padding:0.3rem;">
+                        <input type="file" id="patchFile" accept=".txt" />
+                        <button class="btn btn-sm btn-info" id="loadPatchBtn">📤 Load Patch</button>
+                        <span id="patchStatus" class="patch-status patch-missing">⏳ Checking...</span>
+                    </div>
+                    <div class="text-muted" style="font-size:0.6rem; margin-top:0.2rem;">
+                        Format: EnglishName ;=; JapaneseName ;=; CardID (patch overrides translations)
+                    </div>
+                </div>
+
+                <hr style="border-color:#1e293b; margin:1rem 0;" />
+                <h2>📋 Template Preview</h2>
+                <div class="template-preview" id="templatePreview">
+                    <code>// Upload a .ydk file</code>
+                </div>
+                <button class="btn btn-sm btn-outline mt-1" id="copyTemplateBtn">📋 Copy Template</button>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="panel">
+                <h2>🎯 Step 2: Configure Cards <span class="badge" id="cardCount">0 cards</span></h2>
+                <div class="flex mb-1">
+                    <button class="btn btn-sm btn-warning" id="autoTypeBtn">🔮 Auto-set by type</button>
+                    <button class="btn btn-sm btn-purple" id="translateBtn">🌐 Translate (CDB + Patch)</button>
+                    <button class="btn btn-sm btn-info" id="checkAllBtn">🔍 Check Unknown</button>
+                    <button class="btn btn-sm btn-outline" id="resetConfigBtn">Reset All</button>
+                </div>
+                <div id="cardListContainer">
+                    <div class="text-muted" style="padding:1rem 0;">Load a .ydk file</div>
+                </div>
+
+                <hr style="border-color:#1e293b; margin:1rem 0;" />
+                <div class="flex">
+                    <button class="btn btn-success" id="generateBtn">⚡ Generate Executor</button>
+                    <button class="btn btn-outline" id="downloadBtn" style="display:none;">⬇️ Download .cs</button>
+                </div>
+                <div id="genStatus" class="status"></div>
+
+                <div class="code-output" id="outputContainer" style="display:none;">
+                    <button class="copy-btn" id="copyBtn">📋 Copy</button>
+                    <pre id="outputCode">// Generated code</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="conditionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Condition Builder</h3>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <iframe id="conditionIframe" src="about:blank"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://sql.js.org/dist/sql-wasm.js"></script>
+    <script>
+        // ============================================================
+        //   CONFIGURATION
+        // ============================================================
+        const EXTRA_CDB_FILES = [
+            'cards-rush.cdb',
+            'cards-skills.cdb',
+            'cards-skills-unofficial.cdb',
+            'cards-unofficial.cdb',
+            'cards-unofficial-new.cdb'
+        ];
+
+        const STORAGE_KEY = 'windbot_card_cache';
+        const PATCH_STORAGE_KEY = 'windbot_patch_data';
+
+        // ============================================================
+        //   STATE
+        // ============================================================
+        let db = null;
+        let dbLoaded = false;
+        let extraDbs = {};
+        let cardCache = {};
+        let parsedData = null;
+        let cardConfigs = {};
+        let rawYdkContent = '';
+        let patchData = {};
+        let patchAutoLoaded = false;
+        let translationCache = {};
+
+        const dbStatusBadge = document.getElementById('dbStatusBadge');
+
+        // ============================================================
+        //   LOCAL STORAGE CACHE
+        // ============================================================
+        function loadCache() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    if (parsed.timestamp && (Date.now() - parsed.timestamp < 30 * 24 * 60 * 60 * 1000)) {
+                        cardCache = parsed.cache || {};
+                        console.log(`📦 Loaded ${Object.keys(cardCache).length} cards from cache`);
+                        return true;
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function saveCache() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    cache: cardCache,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {}
+        }
+
+        // ============================================================
+        //   PATCH SYSTEM
+        // ============================================================
+        function loadPatchFromStorage() {
+            try {
+                const data = localStorage.getItem(PATCH_STORAGE_KEY);
+                if (data) {
+                    patchData = JSON.parse(data);
+                    console.log(`📝 Loaded ${Object.keys(patchData).length} patches from storage`);
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function savePatchToStorage() {
+            try {
+                localStorage.setItem(PATCH_STORAGE_KEY, JSON.stringify(patchData));
+            } catch (e) {}
+        }
+
+        function parsePatchFile(content) {
+            const lines = content.split('\n');
+            const newPatchData = {};
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('#')) continue;
+
+                let parts = trimmed.split(';=;').map(s => s.trim());
+
+                if (parts.length !== 3) {
+                    const firstEq = trimmed.indexOf('=');
+                    if (firstEq !== -1) {
+                        const firstPart = trimmed.substring(0, firstEq).trim();
+                        const rest = trimmed.substring(firstEq + 1).trim();
+                        const restParts = rest.split(';=;').map(s => s.trim());
+                        if (restParts.length === 2) {
+                            parts = [firstPart, restParts[0], restParts[1]];
+                        }
+                    }
+                }
+
+                if (parts.length === 3) {
+                    const id1 = parseInt(parts[0], 10);
+                    const id2 = parseInt(parts[1], 10);
+                    const id3 = parseInt(parts[2], 10);
+
+                    let cardId = null;
+                    let english = '';
+                    let japanese = '';
+
+                    if (!isNaN(id1)) {
+                        cardId = id1;
+                        english = parts[1];
+                        japanese = parts[2];
+                    } else if (!isNaN(id2)) {
+                        cardId = id2;
+                        english = parts[0];
+                        japanese = parts[2];
+                    } else if (!isNaN(id3)) {
+                        cardId = id3;
+                        english = parts[0];
+                        japanese = parts[1];
+                    }
+
+                    if (cardId && english && japanese) {
+                        newPatchData[cardId] = { english: english.trim(), japanese: japanese.trim() };
+                    }
+                }
+            }
+            return newPatchData;
+        }
+
+        function applyPatchToCard(cardId, cardName) {
+            if (patchData[cardId]) {
+                const patch = patchData[cardId];
+                if (patch.english && /[\u3000-\u9FFF]/.test(cardName)) {
+                    return patch.english;
+                }
+                if (patch.japanese && cardName.includes(patch.japanese)) {
+                    return patch.english;
+                }
+            }
+            return null;
+        }
+
+        // ============================================================
+        //   AUTO-LOAD PATCH.TXT
+        // ============================================================
+        async function autoLoadPatch() {
+            const patchStatus = document.getElementById('patchStatus');
+            try {
+                const response = await fetch('patch.txt', { cache: 'no-store' });
+                if (response.ok) {
+                    const content = await response.text();
+                    const newPatchData = parsePatchFile(content);
+                    patchData = { ...patchData, ...newPatchData };
+                    savePatchToStorage();
+                    patchAutoLoaded = true;
+
+                    patchStatus.textContent = `✅ Auto-loaded ${Object.keys(newPatchData).length} patches from patch.txt`;
+                    patchStatus.className = 'patch-status patch-loaded';
+                    return true;
+                } else {
+                    patchStatus.textContent = 'ℹ️ patch.txt not found (optional)';
+                    patchStatus.className = 'patch-status patch-missing';
+                    return false;
+                }
+            } catch (e) {
+                patchStatus.textContent = 'ℹ️ patch.txt not found (optional)';
+                patchStatus.className = 'patch-status patch-missing';
+                return false;
+            }
+        }
+
+        // ============================================================
+        //   LOAD MAIN CARDS.CDB
+        // ============================================================
+        async function loadCardsDB() {
+            dbStatusBadge.textContent = '⏳ Loading cards.cdb...';
+            dbStatusBadge.className = 'db-status db-loading';
+
+            try {
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://sql.js.org/dist/${file}`
+                });
+
+                const response = await fetch('cards.cdb', { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error('cards.cdb not found');
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+
+                const header = String.fromCharCode(...uint8Array.slice(0, 16));
+                if (!header.startsWith('SQLite format 3')) {
+                    throw new Error('Not a valid SQLite database');
+                }
+
+                db = new SQL.Database(uint8Array);
+
+                const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+                const tableNames = tables[0]?.values.map(row => row[0]) || [];
+
+                let cardTable = null;
+                if (tableNames.includes('datas')) cardTable = 'datas';
+                else if (tableNames.includes('cards')) cardTable = 'cards';
+
+                if (!cardTable) {
+                    throw new Error('No cards table found');
+                }
+
+                const countResult = db.exec(`SELECT COUNT(*) FROM ${cardTable}`);
+                const cardCount = countResult[0]?.values[0][0] || 0;
+
+                dbLoaded = true;
+                dbStatusBadge.textContent = `✅ Loaded ${cardCount} cards from cards.cdb`;
+                dbStatusBadge.className = 'db-status db-loaded';
+                console.log(`✅ cards.cdb loaded: ${cardCount} cards`);
+
+                loadCache();
+                loadPatchFromStorage();
+
+                return true;
+
+            } catch (error) {
+                console.warn('Failed to load cards.cdb:', error.message);
+                dbLoaded = false;
+                dbStatusBadge.textContent = '❌ cards.cdb not found. Using fallback.';
+                dbStatusBadge.className = 'db-status db-missing';
+                return false;
+            }
+        }
+
+        // ============================================================
+        //   ON-DEMAND EXTRA DB LOADER
+        // ============================================================
+        async function loadExtraDb(filename) {
+            if (extraDbs[filename]) return extraDbs[filename];
+
+            try {
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://sql.js.org/dist/${file}`
+                });
+
+                const response = await fetch(filename, { cache: 'no-store' });
+                if (!response.ok) return null;
+
+                const arrayBuffer = await response.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+
+                const header = String.fromCharCode(...uint8Array.slice(0, 16));
+                if (!header.startsWith('SQLite format 3')) return null;
+
+                const extraDb = new SQL.Database(uint8Array);
+
+                const tables = extraDb.exec("SELECT name FROM sqlite_master WHERE type='table'");
+                const tableNames = tables[0]?.values.map(row => row[0]) || [];
+                const cardTable = tableNames.includes('datas') ? 'datas' :
+                    tableNames.includes('cards') ? 'cards' : null;
+
+                if (!cardTable) return null;
+
+                extraDbs[filename] = extraDb;
+                console.log(`✅ Loaded extra DB: ${filename}`);
+                return extraDb;
+
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // ============================================================
+        //   CARD LOOKUP
+        // ============================================================
+        function sanitizeCardName(name, cardId) {
+            if (!name) return '';
+
+            const patchedName = applyPatchToCard(cardId, name);
+            if (patchedName) return patchedName;
+
+            if (translationCache[cardId] && !/[\u3000-\u9FFF]/.test(translationCache[cardId])) {
+                return translationCache[cardId];
+            }
+
+            const hasNonLatin = /[^\x00-\x7F]/.test(name);
+            if (hasNonLatin) {
+                let cleaned = name.replace(/[\s\-']/g, '');
+                cleaned = cleaned.replace(/[^a-zA-Z0-9_\u0080-\uFFFF]/g, '');
+                if (cleaned.length > 0) return cleaned;
+            }
+
+            const pipeMatch = name.match(/\|\s*([A-Za-z][A-Za-z0-9\s\-']+)$/);
+            if (pipeMatch) {
+                const englishName = pipeMatch[1].trim();
+                if (englishName.length > 0) return toPascalCase(englishName);
+            }
+
+            const englishMatch = name.match(/[A-Za-z][A-Za-z0-9\s\-']+/);
+            if (englishMatch) return toPascalCase(englishMatch[0].trim());
+
+            let cleaned = name.replace(/[\s\-']/g, '');
+            cleaned = cleaned.replace(/[^a-zA-Z0-9_\u0080-\uFFFF]/g, '');
+            if (cleaned.length > 0) return cleaned;
+
+            return 'Card';
+        }
+
+        function toPascalCase(text) {
+            const parts = text.split(/[\s\-']+/);
+            let result = '';
+            for (const part of parts) {
+                if (part.length > 0) {
+                    result += part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+                }
+            }
+            return result || 'Card';
+        }
+
+        function getCardInfo(cardId) {
+            if (cardCache[cardId]) return cardCache[cardId];
+
+            let result = { name: `Card_${cardId}`, type: 'Unknown', source: 'fallback' };
+
+            if (db) {
+                const found = lookupInDb(db, cardId);
+                if (found) {
+                    const sanitizedName = sanitizeCardName(found.name, cardId);
+                    result = {
+                        name: sanitizedName || found.name,
+                        type: found.type,
+                        source: 'cards.cdb',
+                        rawName: found.name
+                    };
+                    cardCache[cardId] = result;
+                    saveCache();
+                    return result;
+                }
+            }
+
+            cardCache[cardId] = result;
+            return result;
+        }
+
+        function lookupInDb(dbInstance, cardId) {
+            try {
+                const tables = dbInstance.exec("SELECT name FROM sqlite_master WHERE type='table'");
+                const tableNames = tables[0]?.values.map(row => row[0]) || [];
+
+                let cardTable = null;
+                if (tableNames.includes('datas')) cardTable = 'datas';
+                else if (tableNames.includes('cards')) cardTable = 'cards';
+
+                if (!cardTable) return null;
+
+                const query = `
+                    SELECT ${cardTable}.type, texts.name 
+                    FROM ${cardTable} 
+                    LEFT JOIN texts ON ${cardTable}.id = texts.id 
+                    WHERE ${cardTable}.id = ${cardId}
+                `;
+                const result = dbInstance.exec(query);
+
+                if (result.length > 0 && result[0].values.length > 0) {
+                    const row = result[0].values[0];
+                    const cardType = row[0] || 0;
+                    const cardName = row[1] || `Card_${cardId}`;
+
+                    let typeStr = 'Unknown';
+                    if (cardType & 0x1) typeStr = 'Monster';
+                    else if (cardType & 0x2) typeStr = 'Spell';
+                    else if (cardType & 0x4) typeStr = 'Trap';
+
+                    return { name: cardName, type: typeStr };
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        // ============================================================
+        //   TRANSLATE
+        // ============================================================
+        async function translateCard(cardId, japaneseName) {
+            if (translationCache[cardId] && !/[\u3000-\u9FFF]/.test(translationCache[cardId])) {
+                return translationCache[cardId];
+            }
+
+            if (!/[\u3000-\u9FFF]/.test(japaneseName)) {
+                translationCache[cardId] = japaneseName;
+                return japaneseName;
+            }
+
+            for (const filename of EXTRA_CDB_FILES) {
+                let extraDb = extraDbs[filename];
+                if (!extraDb) {
+                    extraDb = await loadExtraDb(filename);
+                }
+                if (extraDb) {
+                    const englishName = lookupEnglishName(extraDb, cardId);
+                    if (englishName && !/[\u3000-\u9FFF]/.test(englishName)) {
+                        translationCache[cardId] = englishName;
+                        return englishName;
+                    }
+                }
+            }
+
+            translationCache[cardId] = japaneseName;
+            return japaneseName;
+        }
+
+        function lookupEnglishName(dbInstance, cardId) {
+            try {
+                const tables = dbInstance.exec("SELECT name FROM sqlite_master WHERE type='table'");
+                const tableNames = tables[0]?.values.map(row => row[0]) || [];
+
+                let cardTable = null;
+                if (tableNames.includes('datas')) cardTable = 'datas';
+                else if (tableNames.includes('cards')) cardTable = 'cards';
+
+                if (!cardTable) return null;
+
+                const query = `
+                    SELECT texts.name 
+                    FROM ${cardTable} 
+                    LEFT JOIN texts ON ${cardTable}.id = texts.id 
+                    WHERE ${cardTable}.id = ${cardId}
+                `;
+                const result = dbInstance.exec(query);
+
+                if (result.length > 0 && result[0].values.length > 0) {
+                    return result[0].values[0][0] || null;
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        // ============================================================
+        //   RE-APPLY PATCHES
+        // ============================================================
+        function reapplyPatches() {
+            if (!parsedData) return 0;
+
+            let patched = 0;
+            for (const card of parsedData.cards) {
+                const rawName = cardCache[card.id]?.rawName || card.name;
+                const patchedName = applyPatchToCard(card.id, rawName);
+                if (patchedName && patchedName !== card.name) {
+                    card.name = patchedName;
+                    if (cardCache[card.id]) {
+                        cardCache[card.id].name = patchedName;
+                    }
+                    patched++;
+                }
+            }
+
+            if (patched > 0) {
+                saveCache();
+                renderCardList();
+            }
+            return patched;
+        }
+
+        // ============================================================
+        //   TRANSLATE ALL CARDS
+        // ============================================================
+        async function translateAllCards() {
+            if (!parsedData || parsedData.cards.length === 0) {
+                genStatus.textContent = '❌ Load a .ydk file first';
+                genStatus.className = 'status status-err';
+                return;
+            }
+
+            genStatus.textContent = '🌐 Translating cards (CDB + Patch)...';
+            genStatus.className = 'status status-info';
+
+            let translated = 0;
+            let patched = 0;
+            let skipped = 0;
+
+            for (const card of parsedData.cards) {
+                const rawName = cardCache[card.id]?.rawName || card.name;
+                if (/[\u3000-\u9FFF]/.test(rawName)) {
+                    const englishName = await translateCard(card.id, rawName);
+                    if (englishName !== rawName && !/[\u3000-\u9FFF]/.test(englishName)) {
+                        card.name = englishName;
+                        if (cardCache[card.id]) {
+                            cardCache[card.id].name = englishName;
+                        }
+                        translated++;
+                    } else {
+                        skipped++;
+                    }
+                } else {
+                    skipped++;
+                }
+            }
+
+            patched = reapplyPatches();
+
+            saveCache();
+            renderCardList();
+
+            genStatus.textContent = `✅ Translated ${translated} cards, applied ${patched} patches, ${skipped} already English`;
+            genStatus.className = 'status status-ok';
+        }
+
+        // ============================================================
+        //   HELPERS
+        // ============================================================
+        function getCardType(cardId) { return getCardInfo(cardId).type; }
+
+        function getCardName(cardId) { return getCardInfo(cardId).name; }
+
+        function getDefaultExecutorType(cardId) {
+            const type = getCardType(cardId);
+            if (type === 'Monster') return 'Summon';
+            if (type === 'Spell') return 'Activate';
+            if (type === 'Trap') return 'SpellSet';
+            return 'Activate';
+        }
+
+        // ============================================================
+        //   MODAL CONTROLS
+        // ============================================================
+        const modal = document.getElementById('conditionModal');
+        const modalIframe = document.getElementById('conditionIframe');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalClose = document.getElementById('modalClose');
+
+        function openConditionBuilder(cardId, cardName, currentCondition) {
+            const params = new URLSearchParams({
+                cardId: cardId,
+                cardName: cardName,
+                condition: currentCondition || ''
+            });
+            modalTitle.textContent = `Condition Builder: ${cardName}`;
+            modalIframe.src = `condition-builder.html?${params.toString()}`;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            modalIframe.src = 'about:blank';
+        }
+
+        modalClose.addEventListener('click', closeModal);
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // Listen for condition updates from iframe
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'SET_CONDITION') {
+                const { cardId, condition } = event.data;
+                if (cardConfigs[cardId]) {
+                    cardConfigs[cardId].condition = condition;
+                    renderCardList();
+                    genStatus.textContent = `✅ Updated condition for card ${cardId}`;
+                    genStatus.className = 'status status-ok';
+                    closeModal();
+                }
+            }
+        });
+
+        // ============================================================
+        //   DOM REFS
+        // ============================================================
+        const ydkFile = document.getElementById('ydkFile');
+        const loadYdkBtn = document.getElementById('loadYdkBtn');
+        const clearDeckBtn = document.getElementById('clearDeckBtn');
+        const ydkStatus = document.getElementById('ydkStatus');
+        const deckNameInput = document.getElementById('deckNameInput');
+        const templatePreview = document.getElementById('templatePreview');
+        const copyTemplateBtn = document.getElementById('copyTemplateBtn');
+        const cardListContainer = document.getElementById('cardListContainer');
+        const cardCount = document.getElementById('cardCount');
+        const generateBtn = document.getElementById('generateBtn');
+        const resetConfigBtn = document.getElementById('resetConfigBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const outputContainer = document.getElementById('outputContainer');
+        const outputCode = document.getElementById('outputCode');
+        const copyBtn = document.getElementById('copyBtn');
+        const genStatus = document.getElementById('genStatus');
+        const autoTypeBtn = document.getElementById('autoTypeBtn');
+        const checkAllBtn = document.getElementById('checkAllBtn');
+        const translateBtn = document.getElementById('translateBtn');
+        const patchFile = document.getElementById('patchFile');
+        const loadPatchBtn = document.getElementById('loadPatchBtn');
+        const patchStatus = document.getElementById('patchStatus');
+
+        // ============================================================
+        //   YDK PARSER
+        // ============================================================
+        function parseYdk(content) {
+            const lines = content.split('\n');
+            const main = [], extra = [], side = [];
+            let section = 'main';
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed === '#main') { section = 'main'; continue; }
+                if (trimmed === '#extra') { section = 'extra'; continue; }
+                if (trimmed === '#side') { section = 'side'; continue; }
+                if (trimmed === '' || trimmed.startsWith('!')) continue;
+
+                const id = parseInt(trimmed, 10);
+                if (!isNaN(id) && id > 0) {
+                    if (section === 'main') main.push(id);
+                    else if (section === 'extra') extra.push(id);
+                    else side.push(id);
+                }
+            }
+            return { main, extra, side };
+        }
+
+        // ============================================================
+        //   GENERATE TEMPLATE
+        // ============================================================
+        function generateTemplate(deckName, cardIds) {
+            const seen = new Set();
+            const uniqueCards = [];
+            for (const id of cardIds) {
+                const info = getCardInfo(id);
+                const name = info.name || `Card_${id}`;
+                const key = `${id}_${name}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueCards.push({ id, name: name });
+                }
+            }
+
+            const className = deckName + 'Executor';
+            const cardIdLines = uniqueCards.map(c => {
+                const safeName = c.name.replace(/[^a-zA-Z0-9_\u0080-\uFFFF]/g, '');
+                return `            public const int ${safeName} = ${c.id}; // ${c.name}`;
+            }).join('\n');
+
+            return `using System;
+using System.Collections.Generic;
+using System.Linq;
+using YGOSharp.OCGWrapper.Enums;
+using WindBot;
+using WindBot.Game;
+using WindBot.Game.AI;
+
+namespace WindBot.Game.AI.Decks
+{
+    [Deck("${deckName}", "${deckName}")]
+    public class ${className} : DefaultExecutor
+    {
+        public class CardId
+        {
+${cardIdLines}
+        }
+
+        public ${className}(GameAI ai, Duel duel)
+            : base(ai, duel)
+        {
+            // Add executors here
+        }
+
+        public override bool OnSelectHand() => true;
+    }
+}`;
+        }
+
+        // ============================================================
+        //   LOAD YDK
+        // ============================================================
+        function loadYdk(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    rawYdkContent = content;
+
+                    const deck = parseYdk(content);
+                    const allCards = [...deck.main, ...deck.extra, ...deck.side];
+
+                    if (allCards.length === 0) {
+                        ydkStatus.textContent = '❌ No cards found in .ydk file';
+                        ydkStatus.className = 'status status-err';
+                        return;
+                    }
+
+                    const deckName = deckNameInput.value.trim() || 'MyDeck';
+                    const template = generateTemplate(deckName, allCards);
+                    templatePreview.innerHTML = `<code>${template}</code>`;
+
+                    parsedData = {
+                        deckName: deckName,
+                        className: deckName + 'Executor',
+                        cards: [],
+                        main: deck.main,
+                        extra: deck.extra,
+                        side: deck.side
+                    };
+
+                    const seen = new Set();
+                    for (const id of allCards) {
+                        const info = getCardInfo(id);
+                        const key = `${id}_${info.name}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            parsedData.cards.push({ id, name: info.name, type: info.type, source: info.source });
+                        }
+                    }
+
+                    cardConfigs = {};
+                    parsedData.cards.forEach(c => {
+                        cardConfigs[c.id] = {
+                            type: getDefaultExecutorType(c.id),
+                            priority: 5,
+                            condition: ''
+                        };
+                    });
+
+                    ydkStatus.textContent = `✅ Loaded ${allCards.length} cards (${parsedData.cards.length} unique)`;
+                    ydkStatus.className = 'status status-ok';
+
+                    renderCardList();
+                    outputContainer.style.display = 'none';
+                    downloadBtn.style.display = 'none';
+                    genStatus.textContent = '';
+
+                } catch (error) {
+                    ydkStatus.textContent = '❌ Error: ' + error.message;
+                    ydkStatus.className = 'status status-err';
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ============================================================
+        //   LOAD PATCH (Manual)
+        // ============================================================
+        function loadPatch(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const newPatchData = parsePatchFile(content);
+
+                    patchData = { ...patchData, ...newPatchData };
+                    savePatchToStorage();
+
+                    cardCache = {};
+                    saveCache();
+
+                    patchStatus.textContent = `✅ Loaded ${Object.keys(newPatchData).length} patches from ${file.name}`;
+                    patchStatus.className = 'patch-status patch-loaded';
+
+                    if (parsedData) {
+                        for (const card of parsedData.cards) {
+                            const info = getCardInfo(card.id);
+                            card.name = info.name;
+                            card.type = info.type;
+                            card.source = info.source;
+                        }
+                        const patched = reapplyPatches();
+                        renderCardList();
+                        genStatus.textContent = `✅ Loaded ${Object.keys(newPatchData).length} patches, applied ${patched}`;
+                        genStatus.className = 'status status-ok';
+                    }
+                } catch (error) {
+                    patchStatus.textContent = '❌ Error: ' + error.message;
+                    patchStatus.className = 'patch-status patch-missing';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ============================================================
+        //   RENDER CARD LIST
+        // ============================================================
+        function renderCardList() {
+            if (!parsedData || parsedData.cards.length === 0) {
+                cardListContainer.innerHTML = '<div class="text-muted" style="padding:1rem 0;">Load a .ydk file</div>';
+                cardCount.textContent = '0 cards';
+                return;
+            }
+
+            let html = '<div class="card-list">';
+            const execTypes = ['Activate', 'Summon', 'SpSummon', 'Repos', 'MonsterSet', 'SpellSet', 'SummonOrSet'];
+
+            for (const card of parsedData.cards) {
+                const cfg = cardConfigs[card.id] || { type: getDefaultExecutorType(card.id), priority: 5, condition: '' };
+                const cardType = getCardType(card.id);
+                const typeClass = cardType === 'Monster' ? 'ctype-monster' :
+                    cardType === 'Spell' ? 'ctype-spell' :
+                    cardType === 'Trap' ? 'ctype-trap' : 'ctype-unknown';
+
+                const source = cardCache[card.id]?.source || '';
+                const sourceLabel = source && source !== 'fallback' ? `📁 ${source}` : '';
+
+                const isUnknown = cardType === 'Unknown';
+                const checkBtn = isUnknown ?
+                    `<button class="btn btn-xs btn-info check-card" data-id="${card.id}" title="Check in other CDBs">🔍</button>` :
+                    '';
+
+                const hasPatch = patchData[card.id] ? '📝' : '';
+                const isJapanese = /[\u3000-\u9FFF]/.test(card.name);
+                const isTranslated = translationCache[card.id] && !/[\u3000-\u9FFF]/.test(translationCache[card.id]);
+
+                const conditionField = `
+                    <div class="condition-wrap">
+                        <input type="text" class="condition" data-id="${card.id}" placeholder="condition" value="${cfg.condition || ''}" />
+                        <button class="btn-condition" data-id="${card.id}" data-name="${card.name}" title="Open Condition Builder">[&gt;]</button>
+                    </div>
+                `;
+
+                html += `<div class="card-item" data-id="${card.id}">
+                    <span class="cname" title="${card.name}">${card.name}</span>
+                    <span class="cid">${card.id}</span>
+                    <span class="ctype ${typeClass}">${cardType}</span>
+                    ${checkBtn}
+                    <span style="font-size:0.6rem;width:20px;">${hasPatch}</span>
+                    ${isTranslated ? '<span style="font-size:0.55rem;color:#60a5fa;">🌐</span>' : ''}
+                    ${isJapanese ? '<span style="font-size:0.55rem;color:#fbbf24;">🇯🇵</span>' : ''}
+                    <select class="exec-type" data-id="${card.id}">
+                        ${execTypes.map(t => `<option value="${t}" ${cfg.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    </select>
+                    <input type="number" class="priority" data-id="${card.id}" value="${cfg.priority}" min="1" max="20" style="flex:0 0 50px;min-width:40px;" />
+                    ${conditionField}
+                    <span class="found-in">${sourceLabel}</span>
+                    <button class="btn btn-sm btn-outline reset-card" data-id="${card.id}">↺</button>
+                </div>`;
+            }
+            html += '</div>';
+            cardListContainer.innerHTML = html;
+            cardCount.textContent = `${parsedData.cards.length} cards`;
+
+            // Events
+            document.querySelectorAll('.card-item select').forEach(el => {
+                el.addEventListener('change', function() {
+                    const id = parseInt(this.dataset.id, 10);
+                    if (cardConfigs[id]) cardConfigs[id].type = this.value;
+                });
+            });
+            document.querySelectorAll('.card-item .priority').forEach(el => {
+                el.addEventListener('change', function() {
+                    const id = parseInt(this.dataset.id, 10);
+                    if (cardConfigs[id]) cardConfigs[id].priority = parseInt(this.value, 10) || 5;
+                });
+            });
+            document.querySelectorAll('.card-item .condition').forEach(el => {
+                el.addEventListener('input', function() {
+                    const id = parseInt(this.dataset.id, 10);
+                    if (cardConfigs[id]) cardConfigs[id].condition = this.value;
+                });
+            });
+            document.querySelectorAll('.reset-card').forEach(el => {
+                el.addEventListener('click', function() {
+                    const id = parseInt(this.dataset.id, 10);
+                    if (cardConfigs[id]) {
+                        cardConfigs[id] = { type: getDefaultExecutorType(id), priority: 5, condition: '' };
+                    }
+                    renderCardList();
+                });
+            });
+
+            // Condition Builder button [>]
+            document.querySelectorAll('.btn-condition').forEach(el => {
+                el.addEventListener('click', function() {
+                    const cardId = parseInt(this.dataset.id, 10);
+                    const cardName = this.dataset.name;
+                    const currentCondition = cardConfigs[cardId]?.condition || '';
+                    openConditionBuilder(cardId, cardName, currentCondition);
+                });
+            });
+
+            // Individual card check
+            document.querySelectorAll('.check-card').forEach(el => {
+                el.addEventListener('click', async function() {
+                    const id = parseInt(this.dataset.id, 10);
+                    const btn = this;
+                    btn.textContent = '⏳';
+                    btn.disabled = true;
+
+                    const result = await forceRefreshCard(id);
+
+                    const cardData = parsedData.cards.find(c => c.id === id);
+                    if (cardData) {
+                        cardData.type = result.type;
+                        cardData.name = result.name;
+                        cardData.source = result.source;
+                    }
+
+                    if (cardConfigs[id] && cardConfigs[id].type === 'Activate') {
+                        cardConfigs[id].type = getDefaultExecutorType(id);
+                    }
+
+                    renderCardList();
+
+                    if (result.type !== 'Unknown') {
+                        genStatus.textContent = `✅ Found "${result.name}" (${result.type}) in ${result.source || 'main DB'}`;
+                        genStatus.className = 'status status-ok';
+                    } else {
+                        genStatus.textContent = `❌ Card ${id} not found in any database`;
+                        genStatus.className = 'status status-err';
+                    }
+                });
+            });
+        }
+
+        // ============================================================
+        //   FORCE REFRESH
+        // ============================================================
+        async function forceRefreshCard(cardId) {
+            delete cardCache[cardId];
+
+            if (db) {
+                const found = lookupInDb(db, cardId);
+                if (found) {
+                    const sanitizedName = sanitizeCardName(found.name, cardId);
+                    const result = {
+                        name: sanitizedName || found.name,
+                        type: found.type,
+                        source: 'cards.cdb',
+                        rawName: found.name
+                    };
+                    cardCache[cardId] = result;
+                    saveCache();
+                    return result;
+                }
+            }
+
+            for (const filename of EXTRA_CDB_FILES) {
+                let extraDb = extraDbs[filename];
+                if (!extraDb) {
+                    extraDb = await loadExtraDb(filename);
+                }
+                if (extraDb) {
+                    const found = lookupInDb(extraDb, cardId);
+                    if (found) {
+                        const sanitizedName = sanitizeCardName(found.name, cardId);
+                        const result = {
+                            name: sanitizedName || found.name,
+                            type: found.type,
+                            source: filename,
+                            rawName: found.name
+                        };
+                        cardCache[cardId] = result;
+                        saveCache();
+                        return result;
+                    }
+                }
+            }
+
+            const result = { name: `Card_${cardId}`, type: 'Unknown', source: 'fallback' };
+            cardCache[cardId] = result;
+            return result;
+        }
+
+        // ============================================================
+        //   CHECK ALL UNKNOWN
+        // ============================================================
+        async function checkAllUnknown() {
+            if (!parsedData) return;
+
+            const unknownCards = parsedData.cards.filter(c => getCardType(c.id) === 'Unknown');
+            if (unknownCards.length === 0) {
+                genStatus.textContent = '✅ No unknown cards to check!';
+                genStatus.className = 'status status-ok';
+                return;
+            }
+
+            genStatus.textContent = `🔍 Checking ${unknownCards.length} unknown cards...`;
+            genStatus.className = 'status status-info';
+
+            let found = 0;
+            for (const card of unknownCards) {
+                const result = await forceRefreshCard(card.id);
+                if (result.type !== 'Unknown') {
+                    found++;
+                    const cardData = parsedData.cards.find(c => c.id === card.id);
+                    if (cardData) {
+                        cardData.type = result.type;
+                        cardData.name = result.name;
+                        cardData.source = result.source;
+                    }
+                    if (cardConfigs[card.id]) {
+                        cardConfigs[card.id].type = getDefaultExecutorType(card.id);
+                    }
+                }
+            }
+
+            renderCardList();
+            genStatus.textContent = `✅ Checked ${unknownCards.length} cards, found ${found} in extra databases`;
+            genStatus.className = 'status status-ok';
+        }
+
+        // ============================================================
+        //   GENERATE EXECUTOR
+        // ============================================================
+        function generateExecutor() {
+            if (!parsedData || parsedData.cards.length === 0) {
+                genStatus.textContent = '❌ Load a .ydk file first';
+                genStatus.className = 'status status-err';
+                return;
+            }
+
+            const cards = parsedData.cards;
+            const deckName = parsedData.deckName || 'MyDeck';
+            const className = deckName + 'Executor';
+
+            const cardIdLines = cards.map(c => {
+                const safeName = c.name.replace(/[^a-zA-Z0-9_\u0080-\uFFFF]/g, '');
+                return `            public const int ${safeName} = ${c.id}; // ${c.name}`;
+            }).join('\n');
+
+            const execLines = cards.map(card => {
+                const cfg = cardConfigs[card.id] || { type: 'Activate', priority: 5 };
+                const safeName = card.name.replace(/[^a-zA-Z0-9_\u0080-\uFFFF]/g, '');
+                return `            AddExecutor(ExecutorType.${cfg.type}, CardId.${safeName}, Handler_${safeName}); // priority: ${cfg.priority}`;
+            }).join('\n');
+
+            const handlerFuncs = cards.map(card => {
+                const safeName = card.name.replace(/[^a-zA-Z0-9_\u0080-\uFFFF]/g, '');
+                const cfg = cardConfigs[card.id] || { type: 'Activate', priority: 5 };
+                const condCode = cfg.condition && cfg.condition.trim() ?
+                    `            // User condition: ${cfg.condition}\n            // TODO: implement your condition logic here\n` : '';
+                return `
+        private bool Handler_${safeName}()
+        {
+${condCode}            return true;
+        }`;
+            }).join('\n');
+
+            return `using System;
+using System.Collections.Generic;
+using System.Linq;
+using YGOSharp.OCGWrapper.Enums;
+using WindBot;
+using WindBot.Game;
+using WindBot.Game.AI;
+
+namespace WindBot.Game.AI.Decks
+{
+    [Deck("${deckName}", "${deckName}")]
+    public class ${className} : DefaultExecutor
+    {
+        public class CardId
+        {
+${cardIdLines}
+        }
+
+        public ${className}(GameAI ai, Duel duel)
+            : base(ai, duel)
+        {
+${execLines}
+        }
+
+        public override bool OnSelectHand() => true;
+
+        public override void OnNewTurn() => base.OnNewTurn();
+${handlerFuncs}
+    }
+}`;
+        }
+
+        // ============================================================
+        //   UI EVENTS
+        // ============================================================
+
+        loadYdkBtn.addEventListener('click', function() {
+            const file = ydkFile.files[0];
+            if (!file) {
+                ydkStatus.textContent = '❌ Select a .ydk file first';
+                ydkStatus.className = 'status status-err';
+                return;
+            }
+            loadYdk(file);
+        });
+
+        ydkFile.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) loadYdk(file);
+        });
+
+        clearDeckBtn.addEventListener('click', function() {
+            ydkFile.value = '';
+            rawYdkContent = '';
+            templatePreview.innerHTML = '<code>// Upload a .ydk file</code>';
+            ydkStatus.textContent = '';
+            cardListContainer.innerHTML = '<div class="text-muted" style="padding:1rem 0;">Load a .ydk file</div>';
+            cardCount.textContent = '0 cards';
+            outputContainer.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            genStatus.textContent = '';
+            parsedData = null;
+            cardConfigs = {};
+            translationCache = {};
+        });
+
+        copyTemplateBtn.addEventListener('click', function() {
+            const text = templatePreview.textContent;
+            navigator.clipboard.writeText(text).catch(() => {});
+            copyTemplateBtn.textContent = '✅ Copied!';
+            setTimeout(() => { copyTemplateBtn.textContent = '📋 Copy Template'; }, 2000);
+        });
+
+        autoTypeBtn.addEventListener('click', function() {
+            if (!parsedData) return;
+            parsedData.cards.forEach(c => {
+                cardConfigs[c.id] = { type: getDefaultExecutorType(c.id), priority: 5, condition: cardConfigs[c.id]?.condition || '' };
+            });
+            renderCardList();
+            genStatus.textContent = '🔮 Auto-set by type';
+            genStatus.className = 'status status-info';
+        });
+
+        translateBtn.addEventListener('click', translateAllCards);
+
+        resetConfigBtn.addEventListener('click', function() {
+            if (!parsedData) return;
+            parsedData.cards.forEach(c => {
+                cardConfigs[c.id] = { type: getDefaultExecutorType(c.id), priority: 5, condition: '' };
+            });
+            renderCardList();
+            genStatus.textContent = '↺ Reset all';
+            genStatus.className = 'status status-ok';
+        });
+
+        generateBtn.addEventListener('click', function() {
+            if (!parsedData) {
+                genStatus.textContent = '❌ Load a .ydk file first';
+                genStatus.className = 'status status-err';
+                return;
+            }
+            const code = generateExecutor();
+            outputCode.textContent = code;
+            outputContainer.style.display = 'block';
+            downloadBtn.style.display = 'inline-flex';
+            genStatus.textContent = '✅ Generated!';
+            genStatus.className = 'status status-ok';
+        });
+
+        copyBtn.addEventListener('click', function() {
+            const text = outputCode.textContent;
+            navigator.clipboard.writeText(text).catch(() => {});
+            copyBtn.textContent = '✅ Copied!';
+            setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 2000);
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            const code = outputCode.textContent;
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${parsedData?.deckName || 'Executor'}.cs`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        deckNameInput.addEventListener('input', function() {
+            if (rawYdkContent) {
+                const deck = parseYdk(rawYdkContent);
+                const allCards = [...deck.main, ...deck.extra, ...deck.side];
+                if (allCards.length > 0) {
+                    const template = generateTemplate(this.value.trim() || 'MyDeck', allCards);
+                    templatePreview.innerHTML = `<code>${template}</code>`;
+                    if (parsedData) {
+                        parsedData.deckName = this.value.trim() || 'MyDeck';
+                        parsedData.className = parsedData.deckName + 'Executor';
+                    }
+                }
+            }
+        });
+
+        // Manual patch loading
+        loadPatchBtn.addEventListener('click', function() {
+            const file = patchFile.files[0];
+            if (!file) {
+                patchStatus.textContent = '❌ Select a patch file first';
+                patchStatus.className = 'patch-status patch-missing';
+                return;
+            }
+            loadPatch(file);
+        });
+
+        patchFile.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                patchStatus.textContent = `📄 ${file.name} selected - click "Load Patch"`;
+                patchStatus.className = 'patch-status patch-missing';
+            }
+        });
+
+        checkAllBtn.addEventListener('click', checkAllUnknown);
+
+        // ============================================================
+        //   INIT
+        // ============================================================
+        async function init() {
+            await loadCardsDB();
+            await autoLoadPatch();
+            console.log('Ready! DB loaded:', dbLoaded);
+            console.log(`📦 Cache has ${Object.keys(cardCache).length} cards`);
+            console.log(`📝 Patch has ${Object.keys(patchData).length} entries`);
+            if (parsedData) renderCardList();
+        }
+
+        init();
+    </script>
+</body>
+</html>

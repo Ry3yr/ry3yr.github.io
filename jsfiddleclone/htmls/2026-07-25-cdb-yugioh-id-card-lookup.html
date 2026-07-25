@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Card Lookup Test</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #0b0e14; color: #e4e9f2; padding: 2rem; }
+        .section { background: #141a24; border: 1px solid #2a3343; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        pre { white-space: pre-wrap; word-break: break-all; margin: 0.5rem 0; font-size: 0.85rem; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+        .warning { color: #fbbf24; }
+        button { background: #1e293b; border: none; color: #e4e9f2; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; margin: 0.25rem; }
+        button:hover { background: #2a3343; }
+        input { background: #0f151e; border: 1px solid #2a3343; color: #e4e9f2; padding: 0.5rem; border-radius: 6px; width: 150px; font-size: 1rem; }
+        .lookup-result { background: #0a0f17; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #3b82f6; margin: 0.5rem 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Card Lookup Test</h1>
+    <div class="section">
+        <p><strong>Testing ID:</strong> 17052477</p>
+        <button onclick="testLookup(17052477)">▶️ Lookup Card</button>
+        <button onclick="document.getElementById('output').textContent = ''">Clear</button>
+        <br><br>
+        <label>Custom ID: <input type="number" id="customId" value="17052477" /></label>
+        <button onclick="testLookup(parseInt(document.getElementById('customId').value))">Lookup Custom</button>
+    </div>
+    <div class="section">
+        <h3>📊 Results</h3>
+        <pre id="output">Click "Lookup Card" to start...</pre>
+    </div>
+
+    <script src="https://sql.js.org/dist/sql-wasm.js"></script>
+    <script>
+        let db = null;
+        let dbLoaded = false;
+
+        // ============================================================
+        //   LOAD DATABASE
+        // ============================================================
+        async function loadDatabase() {
+            const out = document.getElementById('output');
+            out.textContent = 'Loading cards.cdb...\n';
+
+            try {
+                const response = await fetch('cards.cdb', { cache: 'no-store' });
+                if (!response.ok) {
+                    out.textContent += `❌ Failed to fetch: ${response.status}\n`;
+                    return false;
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const bytes = new Uint8Array(arrayBuffer);
+                out.textContent += `✅ Loaded ${bytes.length} bytes\n`;
+
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://sql.js.org/dist/${file}`
+                });
+
+                db = new SQL.Database(bytes);
+                dbLoaded = true;
+
+                const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+                out.textContent += `✅ Found ${tables[0]?.values.length || 0} tables\n`;
+
+                const hasDatas = tables[0]?.values.some(row => row[0] === 'datas');
+                if (hasDatas) {
+                    const count = db.exec('SELECT COUNT(*) FROM datas');
+                    out.textContent += `✅ datas table has ${count[0].values[0][0]} cards\n`;
+                    return true;
+                } else {
+                    out.textContent += `❌ No 'datas' table found\n`;
+                    return false;
+                }
+
+            } catch (error) {
+                out.textContent += `❌ Error: ${error.message}\n`;
+                console.error(error);
+                return false;
+            }
+        }
+
+        // ============================================================
+        //   LOOKUP CARD - FIXED QUERY
+        // ============================================================
+        async function testLookup(cardId) {
+            const out = document.getElementById('output');
+
+            if (!dbLoaded) {
+                out.textContent = 'Loading database first...\n';
+                const loaded = await loadDatabase();
+                if (!loaded) {
+                    out.textContent += '❌ Database failed to load\n';
+                    return;
+                }
+            }
+
+            // Validate input
+            if (!cardId || isNaN(cardId) || cardId <= 0) {
+                out.textContent = '❌ Invalid card ID. Please enter a positive number.\n';
+                return;
+            }
+
+            out.textContent = `🔍 Looking up card ID: ${cardId}\n\n`;
+
+            try {
+                // FIXED: Use datas.id explicitly to avoid ambiguity
+                const query = `
+                    SELECT 
+                        datas.id as card_id,
+                        datas.ot,
+                        datas.alias,
+                        datas.setcode,
+                        datas.type,
+                        datas.atk,
+                        datas.def,
+                        datas.level,
+                        datas.race,
+                        datas.attribute,
+                        datas.category,
+                        texts.name as card_name,
+                        texts.desc as card_desc,
+                        texts.str1,
+                        texts.str2,
+                        texts.str3,
+                        texts.str4,
+                        texts.str5,
+                        texts.str6,
+                        texts.str7,
+                        texts.str8,
+                        texts.str9,
+                        texts.str10,
+                        texts.str11,
+                        texts.str12,
+                        texts.str13,
+                        texts.str14,
+                        texts.str15,
+                        texts.str16
+                    FROM datas 
+                    LEFT JOIN texts ON datas.id = texts.id 
+                    WHERE datas.id = ${cardId}
+                `;
+
+                const result = db.exec(query);
+
+                if (result.length === 0 || result[0].values.length === 0) {
+                    out.textContent += `❌ Card ID ${cardId} not found in database\n`;
+                    return;
+                }
+
+                const row = result[0].values[0];
+                const columns = result[0].columns;
+
+                out.textContent += '✅ Card found!\n';
+                out.textContent += '='.repeat(55) + '\n';
+
+                // Display all columns
+                for (let i = 0; i < columns.length; i++) {
+                    const colName = columns[i];
+                    let value = row[i];
+
+                    // Skip null values
+                    if (value === null || value === undefined) continue;
+
+                    // Decode type if it's the type column
+                    if (colName === 'type') {
+                        const typeStr = decodeCardType(value);
+                        out.textContent += `${colName.padEnd(14)}: ${value} (${typeStr})\n`;
+                    } else if (colName === 'card_name' && value) {
+                        out.textContent += `${colName.padEnd(14)}: "${value}"\n`;
+                    } else if (colName === 'card_desc' && value) {
+                        const desc = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                        out.textContent += `${colName.padEnd(14)}: ${desc}\n`;
+                    } else {
+                        out.textContent += `${colName.padEnd(14)}: ${value}\n`;
+                    }
+                }
+
+                out.textContent += '='.repeat(55) + '\n';
+
+                // Show card type breakdown
+                const typeIndex = columns.indexOf('type');
+                if (typeIndex !== -1 && row[typeIndex] !== null) {
+                    const typeVal = row[typeIndex];
+                    out.textContent += '\n📖 Card Type Breakdown:\n';
+                    out.textContent += getTypeBreakdown(typeVal);
+                }
+
+                // Show if it's a monster, spell, or trap
+                const typeVal = row[columns.indexOf('type')];
+                if (typeVal !== null && typeVal !== undefined) {
+                    out.textContent += '\n📂 Category: ';
+                    if (typeVal & 0x1) out.textContent += 'Monster ';
+                    if (typeVal & 0x2) out.textContent += 'Spell ';
+                    if (typeVal & 0x4) out.textContent += 'Trap ';
+                    out.textContent += '\n';
+                }
+
+            } catch (error) {
+                out.textContent += `❌ Query error: ${error.message}\n`;
+                console.error(error);
+            }
+        }
+
+        // ============================================================
+        //   CARD TYPE DECODING
+        // ============================================================
+        function decodeCardType(type) {
+            const types = [];
+            if (type & 0x1) types.push('Monster');
+            if (type & 0x2) types.push('Spell');
+            if (type & 0x4) types.push('Trap');
+            if (type & 0x10) types.push('Normal');
+            if (type & 0x20) types.push('Effect');
+            if (type & 0x40) types.push('Fusion');
+            if (type & 0x80) types.push('Ritual');
+            if (type & 0x100) types.push('TrapMonster');
+            if (type & 0x200) types.push('Spirit');
+            if (type & 0x400) types.push('Union');
+            if (type & 0x800) types.push('Gemini');
+            if (type & 0x1000) types.push('Tuner');
+            if (type & 0x2000) types.push('Synchro');
+            if (type & 0x4000) types.push('Token');
+            if (type & 0x8000) types.push('QuickPlay');
+            if (type & 0x10000) types.push('Continuous');
+            if (type & 0x20000) types.push('Equip');
+            if (type & 0x40000) types.push('Field');
+            if (type & 0x80000) types.push('Counter');
+            if (type & 0x100000) types.push('Flip');
+            if (type & 0x200000) types.push('Toon');
+            if (type & 0x400000) types.push('XYZ');
+            if (type & 0x800000) types.push('Pendulum');
+            if (type & 0x1000000) types.push('SpecialSummon');
+            if (type & 0x2000000) types.push('Link');
+
+            return types.length > 0 ? types.join(' | ') : 'Unknown';
+        }
+
+        function getTypeBreakdown(type) {
+            const allTypes = [
+                { bit: 0x1, name: 'Monster' },
+                { bit: 0x2, name: 'Spell' },
+                { bit: 0x4, name: 'Trap' },
+                { bit: 0x10, name: 'Normal' },
+                { bit: 0x20, name: 'Effect' },
+                { bit: 0x40, name: 'Fusion' },
+                { bit: 0x80, name: 'Ritual' },
+                { bit: 0x100, name: 'TrapMonster' },
+                { bit: 0x200, name: 'Spirit' },
+                { bit: 0x400, name: 'Union' },
+                { bit: 0x800, name: 'Gemini' },
+                { bit: 0x1000, name: 'Tuner' },
+                { bit: 0x2000, name: 'Synchro' },
+                { bit: 0x4000, name: 'Token' },
+                { bit: 0x8000, name: 'QuickPlay' },
+                { bit: 0x10000, name: 'Continuous' },
+                { bit: 0x20000, name: 'Equip' },
+                { bit: 0x40000, name: 'Field' },
+                { bit: 0x80000, name: 'Counter' },
+                { bit: 0x100000, name: 'Flip' },
+                { bit: 0x200000, name: 'Toon' },
+                { bit: 0x400000, name: 'XYZ' },
+                { bit: 0x800000, name: 'Pendulum' },
+                { bit: 0x1000000, name: 'SpecialSummon' },
+                { bit: 0x2000000, name: 'Link' }
+            ];
+
+            let result = '';
+            let found = false;
+            for (const t of allTypes) {
+                if (type & t.bit) {
+                    result += `  ✅ ${t.name}\n`;
+                    found = true;
+                }
+            }
+            if (!found) {
+                result += '  No type flags set\n';
+            }
+            return result;
+        }
+
+        // ============================================================
+        //   INIT
+        // ============================================================
+        window.addEventListener('load', async function() {
+            if (typeof initSqlJs !== 'undefined') {
+                await loadDatabase();
+                document.getElementById('output').textContent += '\n✅ Ready! Click "Lookup Card" to test ID 17052477';
+            } else {
+                document.getElementById('output').textContent = '⏳ Waiting for SQL.js to load...';
+                setTimeout(async () => {
+                    await loadDatabase();
+                    document.getElementById('output').textContent += '\n✅ Ready! Click "Lookup Card" to test ID 17052477';
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

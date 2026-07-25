@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Condition Builder</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #0b0e14;
+            color: #e4e9f2;
+            padding: 1.5rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #2a3343;
+            flex-shrink: 0;
+        }
+        .header h2 { font-weight: 400; font-size: 1.1rem; }
+        .header .card-id { color: #64748b; font-size: 0.8rem; font-family: monospace; }
+        .body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .body::-webkit-scrollbar { width: 5px; }
+        .body::-webkit-scrollbar-thumb { background: #2a3343; border-radius: 6px; }
+
+        .section {
+            background: #111821;
+            border: 1px solid #1a2330;
+            border-radius: 6px;
+            padding: 0.75rem;
+        }
+        .section h3 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+        select, input[type="text"], input[type="number"] {
+            background: #0f151e;
+            border: 1px solid #2a3343;
+            color: #e4e9f2;
+            border-radius: 4px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            width: 100%;
+        }
+        select:focus, input:focus { outline: none; border-color: #3b82f6; }
+
+        .row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .row .field { flex: 1 1 120px; }
+        .row .field.wide { flex: 2 1 200px; }
+
+        .btn {
+            background: #1e293b;
+            border: none;
+            color: #e4e9f2;
+            padding: 0.3rem 1rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .btn:hover { background: #2a3343; }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #3b82f6; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-success:hover { background: #22c55e; }
+        .btn-sm { padding: 0.15rem 0.6rem; font-size: 0.7rem; }
+        .btn-outline { background: transparent; border-color: #2a3343; }
+
+        .footer {
+            border-top: 1px solid #2a3343;
+            padding-top: 0.75rem;
+            flex-shrink: 0;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .code-preview {
+            background: #0a0f17;
+            border-radius: 4px;
+            padding: 0.5rem;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.7rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #c9d1d9;
+            border: 1px solid #1a2330;
+            max-height: 120px;
+            overflow: auto;
+            margin-top: 0.5rem;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #1e293b;
+            padding: 0.1rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            font-family: monospace;
+            cursor: pointer;
+        }
+        .tag:hover { background: #3b82f6; color: #fff; }
+
+        .preset-list { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+        .condition-line {
+            display: flex;
+            gap: 0.3rem;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 0.2rem 0;
+        }
+        .condition-line .label { font-size: 0.75rem; color: #94a3b8; }
+        .condition-line select, .condition-line input { flex: 1 1 80px; min-width: 60px; }
+        .condition-line .btn-remove {
+            background: none;
+            border: none;
+            color: #f87171;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .condition-line .btn-remove:hover { color: #ef4444; }
+
+        .status-msg { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 3px; }
+        .status-ok { color: #4ade80; }
+        .status-err { color: #f87171; }
+        .status-info { color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h2 id="cardTitle">Condition Builder</h2>
+            <span class="card-id" id="cardIdDisplay">ID: —</span>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-outline" id="clearBtn">Clear</button>
+        </div>
+    </div>
+
+    <div class="body" id="body">
+        <!-- Presets -->
+        <div class="section">
+            <h3>📋 Presets (click to add)</h3>
+            <div class="preset-list" id="presetList">
+                <span class="tag" data-condition="if (Bot.GetMonsters().Count < 2) return false;">Need 2+ monsters</span>
+                <span class="tag" data-condition="if (Enemy.GetMonsters().Count < 1) return false;">Opponent has monster</span>
+                <span class="tag" data-condition="if (Bot.LifePoints < 2000) return false;">LP below 2000</span>
+                <span class="tag" data-condition="if (Duel.Phase != DuelPhase.Main2) return false;">Main Phase 2 only</span>
+                <span class="tag" data-condition="if (Duel.Turn == 1) return false;">Turn 1 only</span>
+                <span class="tag" data-condition="if (!Bot.HasInHand(CardId.ExampleCard)) return false;">Has ExampleCard</span>
+                <span class="tag" data-condition="if (!Bot.HasInGraveyard(CardId.ExampleCard)) return false;">ExampleCard in GY</span>
+            </div>
+        </div>
+
+        <!-- Custom Condition -->
+        <div class="section">
+            <h3>✏️ Custom Condition (C# code)</h3>
+            <textarea id="customCondition" style="width:100%;min-height:100px;background:#0a0f17;border:1px solid #1a2330;color:#c9d1d9;border-radius:4px;padding:0.5rem;font-family:'Cascadia Code',monospace;font-size:0.75rem;resize:vertical;" placeholder="Write your condition here..."></textarea>
+            <div class="code-preview" id="codePreview">// Your condition will appear here</div>
+        </div>
+
+        <!-- Building Blocks -->
+        <div class="section">
+            <h3>🧩 Building Blocks</h3>
+            <div class="row">
+                <div class="field wide">
+                    <select id="conditionType">
+                        <option value="hand">Has in Hand</option>
+                        <option value="grave">Has in Graveyard</option>
+                        <option value="monster">Has Monster</option>
+                        <option value="spell">Has Spell/Trap</option>
+                        <option value="lp">Life Points</option>
+                        <option value="phase">Phase</option>
+                        <option value="turn">Turn</option>
+                        <option value="count">Card Count</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <input type="text" id="conditionCardId" placeholder="Card ID (optional)" />
+                </div>
+                <div class="field">
+                    <input type="number" id="conditionValue" placeholder="Value" value="1" />
+                </div>
+                <div class="field" style="flex:0 0 auto;">
+                    <button class="btn btn-sm btn-primary" id="addBlockBtn">+ Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span id="statusMsg" class="status-msg"></span>
+        <button class="btn btn-outline btn-sm" id="cancelBtn">Cancel</button>
+        <button class="btn btn-success" id="setBtn">✅ Set Condition</button>
+    </div>
+
+    <script>
+        // ============================================================
+        //   GET PARAMETERS FROM URL
+        // ============================================================
+        const params = new URLSearchParams(window.location.search);
+        const cardId = parseInt(params.get('cardId'), 10);
+        const cardName = params.get('cardName') || 'Unknown';
+        const initialCondition = params.get('condition') || '';
+
+        document.getElementById('cardTitle').textContent = `Condition Builder: ${cardName}`;
+        document.getElementById('cardIdDisplay').textContent = `ID: ${cardId}`;
+        document.getElementById('customCondition').value = initialCondition;
+        updatePreview();
+
+        // ============================================================
+        //   PRESETS
+        // ============================================================
+        document.querySelectorAll('.tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                const condition = this.dataset.condition;
+                const textarea = document.getElementById('customCondition');
+                if (textarea.value) {
+                    textarea.value += '\n' + condition;
+                } else {
+                    textarea.value = condition;
+                }
+                updatePreview();
+            });
+        });
+
+        // ============================================================
+        //   PREVIEW
+        // ============================================================
+        function updatePreview() {
+            const code = document.getElementById('customCondition').value;
+            const preview = document.getElementById('codePreview');
+            if (code.trim()) {
+                preview.textContent = code;
+            } else {
+                preview.textContent = '// No condition set - card will always be used';
+            }
+        }
+
+        document.getElementById('customCondition').addEventListener('input', updatePreview);
+
+        // ============================================================
+        //   BUILDING BLOCKS
+        // ============================================================
+        document.getElementById('addBlockBtn').addEventListener('click', function() {
+            const type = document.getElementById('conditionType').value;
+            const cardIdVal = document.getElementById('conditionCardId').value.trim();
+            const value = document.getElementById('conditionValue').value || '1';
+
+            let condition = '';
+            switch(type) {
+                case 'hand':
+                    condition = `if (!Bot.HasInHand(${cardIdVal || 'CardId.ExampleCard'})) return false;`;
+                    break;
+                case 'grave':
+                    condition = `if (!Bot.HasInGraveyard(${cardIdVal || 'CardId.ExampleCard'})) return false;`;
+                    break;
+                case 'monster':
+                    condition = `if (Bot.GetMonsters().Count < ${value}) return false;`;
+                    break;
+                case 'spell':
+                    condition = `if (Bot.GetSpells().Count < ${value}) return false;`;
+                    break;
+                case 'lp':
+                    condition = `if (Bot.LifePoints < ${value}) return false;`;
+                    break;
+                case 'phase':
+                    condition = `if (Duel.Phase != DuelPhase.${value === '2' ? 'Main2' : 'Main1'}) return false;`;
+                    break;
+                case 'turn':
+                    condition = `if (Duel.Turn != ${value}) return false;`;
+                    break;
+                case 'count':
+                    condition = `if (Bot.GetMonsters().Count + Bot.GetSpells().Count < ${value}) return false;`;
+                    break;
+                default:
+                    return;
+            }
+
+            const textarea = document.getElementById('customCondition');
+            if (textarea.value) {
+                textarea.value += '\n' + condition;
+            } else {
+                textarea.value = condition;
+            }
+            updatePreview();
+        });
+
+        // ============================================================
+        //   CLEAR
+        // ============================================================
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            document.getElementById('customCondition').value = '';
+            updatePreview();
+        });
+
+        // ============================================================
+        //   CANCEL
+        // ============================================================
+        document.getElementById('cancelBtn').addEventListener('click', function() {
+            window.parent.postMessage({ type: 'CLOSE_MODAL' }, '*');
+        });
+
+        // ============================================================
+        //   SET CONDITION - Send back to parent
+        // ============================================================
+        document.getElementById('setBtn').addEventListener('click', function() {
+            const condition = document.getElementById('customCondition').value;
+            const statusMsg = document.getElementById('statusMsg');
+
+            if (condition.trim() === '') {
+                statusMsg.textContent = '⚠️ Condition is empty';
+                statusMsg.className = 'status-msg status-err';
+                return;
+            }
+
+            // Send condition back to parent
+            window.parent.postMessage({
+                type: 'SET_CONDITION',
+                cardId: cardId,
+                condition: condition
+            }, '*');
+
+            statusMsg.textContent = '✅ Condition sent!';
+            statusMsg.className = 'status-msg status-ok';
+        });
+
+        // ============================================================
+        //   KEYBOARD SHORTCUTS
+        // ============================================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                document.getElementById('setBtn').click();
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('cancelBtn').click();
+            }
+        });
+
+        // Update preview on load
+        updatePreview();
+    </script>
+</body>
+</html>
