@@ -3,45 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <title>ZIP-FS Demo</title>
+
+  <!-- quick monospace “terminal” look -->
   <style>
-    body { font-family: monospace; white-space: pre-wrap; background: #222; color: #eee; padding: 1rem; }
-    #log { max-height: 30vh; overflow-y: auto; border: 1px solid #555; padding: 1rem; background: #111; }
-    iframe { 
-      width: 100%; 
-      height: 60vh; 
-      border: 2px solid #555; 
-      margin-top: 1rem; 
-      background: white; 
-      color: black;
-    }
-    a.link-root {
-      display: inline-block;
-      margin-top: 1rem;
-      color: #6cf;
-      text-decoration: underline;
-      cursor: pointer;
-    }
+    html, body { margin:0; padding:0; height:100%; overflow:hidden;
+                 font-family: monospace; background:#222; color:#eee; }
+
+    iframe{ position:fixed; inset:0; width:100vw; height:100vh;
+            border:0; background:#fff; color:#000; z-index:1; }
+
+    /* Small collapsible log overlay, out of the way of the iframe */
+    #log-wrap{ position:fixed; top:0; left:0; z-index:2;
+                max-width:40vw; max-height:35vh;
+                font-size:12px; }
+    #log-toggle{ display:block; background:#111; color:#6cf;
+                 border:1px solid #555; padding:.25rem .5rem;
+                 cursor:pointer; user-select:none; }
+    #log{ white-space:pre-wrap; overflow-y:auto; max-height:30vh;
+          margin:0; border:1px solid #555; border-top:none;
+          padding:.5rem; background:#111; }
+    #log-wrap.collapsed #log{ display:none; }
+
+    a.link-root{ position:fixed; top:0; right:0; z-index:2;
+                 background:#111; color:#6cf; text-decoration:underline;
+                 padding:.25rem .5rem; cursor:pointer; }
   </style>
 </head>
 <body>
-  <h1>ZIP-FS Demo Logs</h1>
-  <pre id="log">Loading logs...\n</pre>
-
-  <!-- Friendly URL link -->
+  <!-- Handy link so you can click instead of retyping /root -->
   <a href="/root" target="zipfs-iframe" class="link-root">Open Root (/root)</a>
 
-  <!-- Leave iframe src blank initially -->
+  <div id="log-wrap" class="collapsed">
+    <span id="log-toggle">▶ ZIP-FS Logs</span>
+    <pre id="log">Loading logs…\n</pre>
+  </div>
+
+  <!-- We’ll set the src from JS after the SW is in control -->
   <iframe id="zipfs-iframe" title="ZIPFS root" name="zipfs-iframe"></iframe>
 
+  <!-- Page logic: registers SW, logs messages, sets iframe src -->
   <script>
-    const logEl = document.getElementById('log');
-    const iframe = document.getElementById('zipfs-iframe');
+    const logEl   = document.getElementById('log');
+    const iframe  = document.getElementById('zipfs-iframe');
+    const logWrap = document.getElementById('log-wrap');
+    const logToggle = document.getElementById('log-toggle');
 
-    function log(...args) {
-      const msg = '[ZIPFS] ' + args.join(' ');
+    logToggle.addEventListener('click', () => {
+      logWrap.classList.toggle('collapsed');
+      logToggle.textContent = (logWrap.classList.contains('collapsed') ? '▶' : '▼') + ' ZIP-FS Logs';
+    });
+
+    function log(...a) {
+      const msg = '[ZIPFS] ' + a.join(' ');
       console.log(msg);
       logEl.textContent += msg + '\n';
-      logEl.scrollTop = logEl.scrollHeight;
+      logEl.scrollTop    = logEl.scrollHeight;
     }
 
     function loadIframe() {
@@ -50,31 +66,25 @@
     }
 
     if ('serviceWorker' in navigator) {
-      log('Registering Service Worker...');
+      log('Registering Service Worker…');
       navigator.serviceWorker.register('/zipfs-sw.js').then(reg => {
-        log('Service Worker registration succeeded:', reg);
-        log('Service Worker state:', reg.active?.state || reg.installing?.state || 'unknown');
+        log('Service Worker registered:', reg);
 
         if (!navigator.serviceWorker.controller) {
-          log('Page not yet controlled. Reloading in 500ms...');
+          log('SW not controlling page yet — reloading in 500 ms…');
           setTimeout(() => location.reload(), 500);
         } else {
-          // SW already controlling → safe to load iframe
           loadIframe();
         }
 
         navigator.serviceWorker.oncontrollerchange = () => {
-          log('Controller changed. Reloading page...');
+          log('Controller changed — reloading page…');
           location.reload();
         };
-      }).catch(err => {
-        log('Service Worker registration failed:', err);
-      });
+      }).catch(err => log('SW registration failed:', err));
 
-      navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data?.type === 'SW_LOG') {
-          log(event.data.text);
-        }
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'SW_LOG') log(e.data.text);
       });
     } else {
       log('Service Workers not supported in this browser.');
