@@ -44,7 +44,20 @@
       margin-bottom: 5px;
     }
     input { margin-right: 10px; }
-    form label { margin-right: 15px; }
+    form label { margin-right: 15px; display: inline-block; margin-bottom: 8px; }
+    #warnings {
+      margin-top: 15px;
+    }
+    .warning-box {
+      background: #fff4e5;
+      border: 1px solid #f0b429;
+      color: #7a4a00;
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .warning-box strong { display: block; margin-bottom: 4px; }
   </style>
 </head>
 <body>
@@ -55,9 +68,15 @@
 
   <form id="repoForm" style="margin-top: 10px;">
     <label>URL 1: <input type="text" id="user1" value="https://codeberg.org/alceawisteria" required></label>
-    <label>URL 2:  <input type="text" id="user2" value="https://github.com/Ry3yr" required></label>
+    <label>URL 2: <input type="text" id="user2" value="https://github.com/Ry3yr" required></label>
+    <label>URL 3: <input type="text" id="user3" value="https://gitea.moe/Alcea" required></label>
+    <br>
+    <details><summary>-</summary><label>CORS Proxy (used for Gitea instances only): <input type="text" id="corsProxy" value="https://alceawis.de/cors.php" style="width: 320px;"></label></details>
+    <br>
     <button type="submit">Compare</button>
   </form>
+
+  <div id="warnings"></div>
 
   <h3 id="sharedHeader">Shared Repositories</h3>
   <table id="sharedReposTable" aria-label="Shared repositories table">
@@ -77,6 +96,7 @@
       <tr>
         <th id="user1Header">User 1 Only</th>
         <th id="user2Header">User 2 Only</th>
+        <th id="user3Header">User 3 Only</th>
       </tr>
     </thead>
     <tbody>
@@ -89,6 +109,7 @@
 
   <script>
     const logDiv = document.getElementById("log");
+    const warningsDiv = document.getElementById("warnings");
 
     function log(msg) {
       const entry = document.createElement("div");
@@ -98,10 +119,34 @@
       logDiv.scrollTop = logDiv.scrollHeight;
     }
 
+    // Returns { type: 'github' | 'codeberg' | 'gitea', base: 'https://host' }
+    // github.com and codeberg.org get special-cased (well-known, fixed hosts).
+    // Anything else is treated as a generic Gitea instance, using whatever
+    // host is present in the given URL as the API base.
     function detectPlatform(input) {
-      if (input.includes("codeberg.org")) return "codeberg";
-      if (input.includes("github.com")) return "github";
-      return "github"; // default guess
+      input = input.trim();
+      let host = "";
+      let origin = "";
+      try {
+        const url = input.startsWith("http") ? new URL(input) : new URL(`https://${input}`);
+        host = url.host;
+        origin = url.origin;
+      } catch {
+        // Fall through with empty host/origin; will default to github below
+      }
+
+      if (host.includes("github.com")) {
+        return { type: "github", base: "https://github.com" };
+      }
+      if (host.includes("codeberg.org")) {
+        return { type: "codeberg", base: "https://codeberg.org" };
+      }
+      if (host) {
+        // Generic Gitea instance (e.g. gitea.moe, self-hosted Gitea, etc.)
+        return { type: "gitea", base: origin };
+      }
+      // No host could be parsed (plain username was given) - default to github
+      return { type: "github", base: "https://github.com" };
     }
 
     function extractUsername(input) {
@@ -119,35 +164,78 @@
       }
     }
 
-    // Fetch all pages if fetchAll is true, otherwise just one page
-    async function fetchRepos(platform, username, fetchAll = false) {
+    // Fetch all pages if fetchAll is true, otherwise just one page.
+    // Returns { repos, failed, errorMsg } - `failed` is explicit so that a
+    // legitimate "this user has 0 repos" is never confused with "the
+    // request didn't actually work".
+    async function fetchRepos(platformInfo, username, fetchAll = false, corsProxy = "") {
+      const { type, base } = platformInfo;
       let repos = [];
       let page = 1;
-      const per_page = 100; // max per page for GitHub and probably Codeberg
+      const per_page = 100; // max per page for GitHub, Codeberg, and Gitea
+      let failed = false;
+      let errorMsg = "";
 
       async function fetchPage(page) {
         let url;
-        if (platform === "github") {
+        if (type === "github") {
           url = `https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`;
-        } else if (platform === "codeberg") {
-          url = `https://codeberg.org/api/v1/users/${username}/repos?limit=${per_page}&page=${page}`;
+        } else if (type === "codeberg" || type === "gitea") {
+          // Codeberg is itself a Gitea instance, so both use the same API shape
+          url = `${base}/api/v1/users/${username}/repos?limit=${per_page}&page=${page}`;
         } else {
           log(`Unknown platform for user ${username}`);
+          failed = true;
+          errorMsg = "Unknown platform";
           return [];
         }
 
-        log(`Fetching from ${platform}: ${url}`);
+        // Only Gitea (arbitrary self-hosted instances) needs the proxy;
+        // GitHub and Codeberg already send permissive CORS headers.
+        const useProxy = type === "gitea" && corsProxy;
+        const fetchUrl = useProxy ? `${corsProxy}?query=${encodeURIComponent(url)}` : url;
+
+        if (type === "gitea" && !corsProxy) {
+          log(`No CORS proxy configured - attempting direct request to ${url} (will likely fail CORS)`);
+        }
+
+        log(`Fetching from ${type} (${base})${useProxy ? " via CORS proxy" : ""}: ${url}`);
         try {
-          const res = await fetch(url);
+          const res = await fetch(fetchUrl);
           if (!res.ok) {
-            log(`Failed to fetch from ${platform}: ${res.status} ${res.statusText}`);
+            log(`Failed to fetch from ${type}: ${res.status} ${res.statusText}`);
+            failed = true;
+            errorMsg = `HTTP ${res.status} ${res.statusText}`;
             return [];
           }
           const data = await res.json();
-          log(`Fetched ${data.length} repos from ${platform} for ${username}, page ${page}`);
+
+          // The PHP proxy returns 200 even when the upstream request failed,
+          // reporting failures as { error: "..." } instead.
+          if (data && typeof data === "object" && !Array.isArray(data) && data.error) {
+            log(`Proxy error fetching from ${type} for ${username}: ${data.error}`);
+            failed = true;
+            errorMsg = `Proxy error: ${data.error}`;
+            return [];
+          }
+          if (!Array.isArray(data)) {
+            log(`Unexpected response from ${type} for ${username}: ${JSON.stringify(data).slice(0, 200)}`);
+            failed = true;
+            errorMsg = "Unexpected (non-array) response";
+            return [];
+          }
+
+          log(`Fetched ${data.length} repos from ${type} for ${username}, page ${page}`);
           return data.map(repo => ({ name: repo.name, fork: repo.fork }));
         } catch (err) {
-          log(`Error fetching from ${platform}: ${err.message}`);
+          // This is what a browser-level CORS block looks like: a generic
+          // "Failed to fetch" TypeError, indistinguishable from other
+          // network failures from JS alone.
+          log(`Error fetching from ${type}: ${err.message}`);
+          failed = true;
+          errorMsg = useProxy
+            ? `Network error via proxy: ${err.message}`
+            : `Network/CORS error: ${err.message}`;
           return [];
         }
       }
@@ -159,6 +247,7 @@
         // Fetch all pages until empty result
         while (true) {
           const pageRepos = await fetchPage(page);
+          if (failed) break;
           if (pageRepos.length === 0) break;
           repos = repos.concat(pageRepos);
           if (pageRepos.length < per_page) break; // Last page reached
@@ -166,11 +255,11 @@
         }
       }
 
-      return repos;
+      return { repos, failed, errorMsg };
     }
 
-    function makeRepoLink(platform, username, repo, markForked) {
-      let base = platform === "github" ? "https://github.com" : "https://codeberg.org";
+    function makeRepoLink(platformInfo, username, repo, markForked) {
+      const base = platformInfo.base;
       const cssClass = markForked && repo.fork ? 'forked' : '';
       return `<span class="${cssClass}"><a href="${base}/${username}/${repo.name}" target="_blank" rel="noopener noreferrer">${repo.name}</a></span>`;
     }
@@ -178,78 +267,130 @@
     document.getElementById("repoForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       logDiv.innerHTML = ''; // Clear log
+      warningsDiv.innerHTML = ''; // Clear old warnings
 
       const input1 = document.getElementById("user1").value;
       const input2 = document.getElementById("user2").value;
+      const input3 = document.getElementById("user3").value;
       const markForked = document.getElementById("markForked").checked;
       const fetchAll = document.getElementById("fetchAll").checked;
+      const corsProxy = document.getElementById("corsProxy").value.trim();
 
       const platform1 = detectPlatform(input1);
       const platform2 = detectPlatform(input2);
+      const platform3 = detectPlatform(input3);
 
       const username1 = extractUsername(input1);
       const username2 = extractUsername(input2);
+      const username3 = extractUsername(input3);
 
-      log(`Starting comparison between "${username1}" (${platform1}) and "${username2}" (${platform2})`);
+      const users = [
+        { username: username1, platform: platform1 },
+        { username: username2, platform: platform2 },
+        { username: username3, platform: platform3 },
+      ];
+
+      log(`Starting comparison between "${username1}" (${platform1.type}), "${username2}" (${platform2.type}) and "${username3}" (${platform3.type})`);
       if (fetchAll) log("Fetching ALL repos for each user");
 
       // Update table headers with usernames
-      document.getElementById("sharedHeader").textContent = `Repos shared by ${username1} and ${username2}`;
+      document.getElementById("sharedHeader").textContent = `Shared Repositories (${username1}, ${username2}, ${username3})`;
       document.getElementById("user1Header").textContent = `Repos only on ${username1}`;
       document.getElementById("user2Header").textContent = `Repos only on ${username2}`;
+      document.getElementById("user3Header").textContent = `Repos only on ${username3}`;
 
-      // Update shared repos table header to two columns for both users
+      // Update shared repos table header to three columns for all users
       document.querySelector("#sharedReposTable thead tr").innerHTML = `
-        <th>${username1}</th><th>${username2}</th>
+        <th>${username1}</th><th>${username2}</th><th>${username3}</th>
       `;
 
-      const [repos1, repos2] = await Promise.all([
-        fetchRepos(platform1, username1, fetchAll),
-        fetchRepos(platform2, username2, fetchAll)
+      const [result1, result2, result3] = await Promise.all([
+        fetchRepos(platform1, username1, fetchAll, corsProxy),
+        fetchRepos(platform2, username2, fetchAll, corsProxy),
+        fetchRepos(platform3, username3, fetchAll, corsProxy)
       ]);
+      const results = [result1, result2, result3];
 
-      // Convert to map for easy lookup by name
-      const map1 = new Map(repos1.map(r => [r.name, r]));
-      const map2 = new Map(repos2.map(r => [r.name, r]));
+      // Surface any failures as a visible banner, not just a log line -
+      // otherwise a fetch failure looks identical to "this user has 0 repos".
+      const failedUsers = users
+        .map((u, i) => ({ ...u, errorMsg: results[i].errorMsg, failed: results[i].failed }))
+        .filter(u => u.failed);
 
-      const sameNames = [...map1.keys()].filter(name => map2.has(name));
-      const only1Names = [...map1.keys()].filter(name => !map2.has(name));
-      const only2Names = [...map2.keys()].filter(name => !map1.has(name));
+      if (failedUsers.length > 0) {
+        warningsDiv.innerHTML = failedUsers.map(u => `
+          <div class="warning-box">
+            <strong>Could not fetch repos for ${u.username} (${u.platform.type})</strong>
+            ${u.errorMsg}${u.platform.type === "gitea" && !corsProxy
+              ? ' — this looks like a Gitea instance without CORS enabled. Set a CORS proxy URL above and re-run.'
+              : (u.platform.type === "gitea" ? ' — double check the CORS proxy URL above is correct and reachable, then re-run.' : '')}
+            Results below may be incomplete for this user.
+          </div>
+        `).join('');
+      }
 
-      // Populate shared repos table (two columns)
+      // Convert to maps for easy lookup by name
+      const maps = [
+        new Map(results[0].repos.map(r => [r.name, r])),
+        new Map(results[1].repos.map(r => [r.name, r])),
+        new Map(results[2].repos.map(r => [r.name, r])),
+      ];
+
+      // Union of all repo names across the three users
+      const allNames = new Set();
+      maps.forEach(m => m.forEach((_, name) => allNames.add(name)));
+
+      const sharedNames = [];   // present in 2 or more users
+      const onlyNames = [[], [], []]; // present in exactly 1 user, bucketed per user index
+
+      allNames.forEach(name => {
+        const presentIn = maps.reduce((count, m) => count + (m.has(name) ? 1 : 0), 0);
+        if (presentIn >= 2) {
+          sharedNames.push(name);
+        } else {
+          const idx = maps.findIndex(m => m.has(name));
+          onlyNames[idx].push(name);
+        }
+      });
+      sharedNames.sort();
+      onlyNames.forEach(arr => arr.sort());
+
+      // Populate shared repos table (three columns)
       const sharedTbody = document.querySelector("#sharedReposTable tbody");
-      if (sameNames.length === 0) {
-        sharedTbody.innerHTML = `<tr><td colspan="2"><em>No shared repositories.</em></td></tr>`;
+      if (sharedNames.length === 0) {
+        sharedTbody.innerHTML = `<tr><td colspan="3"><em>No shared repositories.</em></td></tr>`;
       } else {
-        sharedTbody.innerHTML = sameNames
+        sharedTbody.innerHTML = sharedNames
           .map(name => {
-            const repo1 = map1.get(name);
-            const repo2 = map2.get(name);
-            const link1 = repo1 ? makeRepoLink(platform1, username1, repo1, markForked) : '';
-            const link2 = repo2 ? makeRepoLink(platform2, username2, repo2, markForked) : '';
-            return `<tr><td>${link1}</td><td>${link2}</td></tr>`;
+            const cells = users.map((u, i) => {
+              const repo = maps[i].get(name);
+              return repo ? `<td>${makeRepoLink(u.platform, u.username, repo, markForked)}</td>` : `<td></td>`;
+            }).join('');
+            return `<tr>${cells}</tr>`;
           })
           .join('');
       }
 
-      // Populate different repos table with aligned rows
+      // Populate different repos table with aligned rows (three columns)
       const differentTbody = document.querySelector("#differentReposTable tbody");
-      const maxRows = Math.max(only1Names.length, only2Names.length);
+      const maxRows = Math.max(onlyNames[0].length, onlyNames[1].length, onlyNames[2].length);
       let rowsHTML = '';
 
       for (let i = 0; i < maxRows; i++) {
-        const repo1 = only1Names[i] ? makeRepoLink(platform1, username1, map1.get(only1Names[i]), markForked) : '';
-        const repo2 = only2Names[i] ? makeRepoLink(platform2, username2, map2.get(only2Names[i]), markForked) : '';
-        rowsHTML += `<tr><td>${repo1}</td><td>${repo2}</td></tr>`;
+        const cells = users.map((u, idx) => {
+          const name = onlyNames[idx][i];
+          return name ? `<td>${makeRepoLink(u.platform, u.username, maps[idx].get(name), markForked)}</td>` : `<td></td>`;
+        }).join('');
+        rowsHTML += `<tr>${cells}</tr>`;
       }
 
       if (maxRows === 0) {
-        rowsHTML = `<tr><td><em>No unique repositories on either user.</em></td><td></td></tr>`;
+        rowsHTML = `<tr><td><em>No unique repositories on any user.</em></td><td></td><td></td></tr>`;
       }
 
       differentTbody.innerHTML = rowsHTML;
 
-      log(`Comparison complete. Shared: ${sameNames.length}, ${username1} only: ${only1Names.length}, ${username2} only: ${only2Names.length}`);
+      log(`Comparison complete. Shared: ${sharedNames.length}, ${username1} only: ${onlyNames[0].length}, ${username2} only: ${onlyNames[1].length}, ${username3} only: ${onlyNames[2].length}`);
     });
   </script>
 </body>
