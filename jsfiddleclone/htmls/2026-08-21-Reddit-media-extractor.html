@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste to HTML + Media Extractor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #1a1a1b;
+            margin-bottom: 4px;
+        }
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a1a1b;
+            margin-bottom: 12px;
+        }
+        .sub {
+            color: #6c6f73;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            padding: 10px 16px;
+            background: #f7f8fa;
+            border-radius: 12px;
+            border-left: 4px solid #ff4500;
+        }
+        .sub-blue {
+            border-left-color: #1d9bf0;
+            background: #f0f7ff;
+        }
+        textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #d0d7de;
+            border-radius: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            resize: vertical;
+            transition: 0.15s;
+            background: #fafbfc;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #ff4500;
+            box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.1);
+            background: white;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 18px 0 22px;
+        }
+        .btn {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.12s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: #ff4500;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #e03d00;
+            transform: scale(0.97);
+        }
+        .btn-secondary {
+            background: #e7ebf0;
+            color: #1a1a1b;
+        }
+        .btn-secondary:hover {
+            background: #d0d7de;
+        }
+        .btn-success {
+            background: #2e7d32;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1e5f23;
+        }
+        .btn-blue {
+            background: #1d9bf0;
+            color: white;
+        }
+        .btn-blue:hover {
+            background: #0f7ed6;
+        }
+        .btn-purple {
+            background: #7c3aed;
+            color: white;
+        }
+        .btn-purple:hover {
+            background: #6d28d9;
+        }
+        .output-box {
+            margin-top: 10px;
+        }
+        .output-box label {
+            font-weight: 600;
+            color: #1a1a1b;
+            display: block;
+            margin-bottom: 8px;
+        }
+        #output, #extracted, #html-output {
+            background: #f7f8fa;
+            min-height: 120px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            border: 2px solid #e1e8ed;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+        #output:focus, #extracted:focus, #html-output:focus {
+            border-color: #ff4500;
+            background: white;
+        }
+        .toast {
+            background: #2c2c2e;
+            color: #f2f2f2;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            display: inline-block;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .badge {
+            display: inline-block;
+            background: #ff4500;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .step {
+            display: inline-block;
+            background: #1d9bf0;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 28px;
+            margin: 18px 0 16px;
+            padding: 16px 18px;
+            background: #f2f6fa;
+            border-radius: 20px;
+            align-items: flex-start;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 160px;
+            flex: 1 1 auto;
+        }
+        .control-group .label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #4b5a6a;
+        }
+        .checkbox-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 16px;
+        }
+        .checkbox-grid label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #1f2a36;
+            cursor: pointer;
+        }
+        .divider {
+            border: none;
+            border-top: 2px solid #e1e8ed;
+            margin: 30px 0;
+        }
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            background: #eef2f6;
+            padding: 4px;
+            border-radius: 40px;
+            margin-bottom: 16px;
+            width: fit-content;
+        }
+        .tab-bar button {
+            border: none;
+            background: transparent;
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #3b4a5a;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .tab-bar button.active {
+            background: white;
+            color: #0f1419;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .flow-arrow {
+            text-align: center;
+            font-size: 2rem;
+            color: #7c3aed;
+            margin: -10px 0 -5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ===== PASTE TO HTML SECTION ===== -->
+        <div class="card">
+            <h1>📝 Paste to HTML Converter</h1>
+            <div class="sub">
+                Paste styled text (from Word, Google Docs, or any rich text) into the box below.
+                Choose which styles to keep, then click "Convert to HTML".
+            </div>
+
+            <div class="tab-bar">
+                <button id="tab-visual" class="active" onclick="switchTab('visual')">👁️ Visual</button>
+                <button id="tab-source" onclick="switchTab('source')">📄 Source</button>
+            </div>
+
+            <div id="visual-editor">
+                <div id="editor" contenteditable="true" style="border: 2px solid #d0d7de; border-radius: 16px; padding: 16px 18px; min-height: 180px; background: white; overflow: auto; font-size: 0.95rem; line-height: 1.6;"></div>
+            </div>
+            <div id="source-editor" class="hidden">
+                <textarea id="source-input" rows="6" placeholder="Paste raw HTML source here..." style="min-height: 180px;"></textarea>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <div class="label">Keep in Output:</div>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" id="keep-bold" checked> Bold</label>
+                        <label><input type="checkbox" id="keep-italic" checked> Italic</label>
+                        <label><input type="checkbox" id="keep-underline" checked> Underline</label>
+                        <label><input type="checkbox" id="keep-fonts" checked> Fonts</label>
+                        <label><input type="checkbox" id="keep-colors" checked> Colors</label>
+                        <label><input type="checkbox" id="keep-margins" checked> Margins</label>
+                        <label><input type="checkbox" id="keep-links" checked> Links</label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="label">Quick Actions:</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" style="padding: 6px 16px; font-size: 0.8rem;" onclick="selectAll()">Select All</button>
+                        <button class="btn btn-secondary" style="padding: 6px 16px; font-size: 0.8rem;" onclick="deselectAll()">Deselect All</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="convertToHTML()">🔄 Convert to HTML</button>
+                <button class="btn btn-secondary" onclick="clearPaste()">🗑️ Clear</button>
+            </div>
+
+            <div class="output-box">
+                <label>Generated HTML:</label>
+                <textarea id="html-output" rows="6" readonly></textarea>
+            </div>
+            <div class="btn-group" style="margin-top: 8px;">
+                <button class="btn btn-success" onclick="copyHTML()">📋 Copy HTML</button>
+                <button class="btn btn-purple" onclick="sendToExtractor()">➡️ Send to Media Extractor</button>
+            </div>
+        </div>
+
+        <!-- ===== FLOW ARROW ===== -->
+        <div class="flow-arrow">⬇️ ⬇️ ⬇️</div>
+
+        <!-- ===== MEDIA EXTRACTOR SECTION ===== -->
+        <div class="card">
+            <h1>🖼️ Reddit Media Extractor</h1>
+            <div class="sub sub-blue">
+                Paste Reddit HTML snippet → Extract ONLY the media embed code (single image).
+            </div>
+
+            <textarea id="media-input" rows="6" placeholder="Paste Reddit HTML snippet here..."></textarea>
+
+            <div class="btn-group">
+                <button class="btn btn-blue" onclick="extractMedia()">🔍 Extract Media</button>
+                <button class="btn btn-secondary" onclick="clearMedia()">🗑️ Clear</button>
+            </div>
+
+            <div class="output-box">
+                <label>Extracted Media Embed <span class="badge">ONLY this</span></label>
+                <textarea id="extracted" rows="8" readonly></textarea>
+            </div>
+            <div class="btn-group" style="margin-top: 8px;">
+                <button class="btn btn-success" onclick="copyExtracted()">📋 Copy Extracted Media</button>
+            </div>
+        </div>
+
+        <div id="toast" class="toast">✅ Copied!</div>
+    </div>
+
+    <script>
+        // ===== PASTE TO HTML =====
+        let currentTab = 'visual';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-visual').classList.toggle('active', tab === 'visual');
+            document.getElementById('tab-source').classList.toggle('active', tab === 'source');
+            document.getElementById('visual-editor').classList.toggle('hidden', tab !== 'visual');
+            document.getElementById('source-editor').classList.toggle('hidden', tab !== 'source');
+        }
+
+        function convertToHTML() {
+            let html;
+            if (currentTab === 'visual') {
+                html = document.getElementById('editor').innerHTML;
+            } else {
+                html = document.getElementById('source-input').value;
+            }
+
+            const keepBold = document.getElementById('keep-bold').checked;
+            const keepItalic = document.getElementById('keep-italic').checked;
+            const keepUnderline = document.getElementById('keep-underline').checked;
+            const keepFonts = document.getElementById('keep-fonts').checked;
+            const keepColors = document.getElementById('keep-colors').checked;
+            const keepMargins = document.getElementById('keep-margins').checked;
+            const keepLinks = document.getElementById('keep-links').checked;
+
+            let output = html;
+
+            if (!keepBold) {
+                output = output.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '$1');
+                output = output.replace(/<b[^>]*>(.*?)<\/b>/gi, '$1');
+            }
+            if (!keepItalic) {
+                output = output.replace(/<em[^>]*>(.*?)<\/em>/gi, '$1');
+                output = output.replace(/<i[^>]*>(.*?)<\/i>/gi, '$1');
+            }
+            if (!keepUnderline) {
+                output = output.replace(/<u[^>]*>(.*?)<\/u>/gi, '$1');
+                output = output.replace(/style="[^"]*text-decoration:\s*underline[^"]*"/gi, '');
+            }
+            if (!keepFonts) {
+                output = output.replace(/style="[^"]*font-[^:]*:[^;"]*[;"]/gi, '');
+                output = output.replace(/<font[^>]*>(.*?)<\/font>/gi, '$1');
+            }
+            if (!keepColors) {
+                output = output.replace(/style="[^"]*color:[^;"]*[;"]/gi, '');
+                output = output.replace(/style="[^"]*background-color:[^;"]*[;"]/gi, '');
+            }
+            if (!keepMargins) {
+                output = output.replace(/style="[^"]*margin[^:]*:[^;"]*[;"]/gi, '');
+                output = output.replace(/style="[^"]*padding[^:]*:[^;"]*[;"]/gi, '');
+            }
+            if (!keepLinks) {
+                output = output.replace(/<a\b[^>]*>(.*?)<\/a>/gi, '$1');
+            }
+
+            // Clean up empty style attributes
+            output = output.replace(/style=""/g, '');
+            output = output.replace(/<[^>]*style="[^"]*"\s*>/g, function(match) {
+                return match.replace(/style="[^"]*"/, '');
+            });
+
+            document.getElementById('html-output').value = output.trim();
+            showToast('✅ HTML generated!');
+        }
+
+        function copyHTML() {
+            const el = document.getElementById('html-output');
+            if (!el.value.trim()) {
+                showToast('⚠️ Nothing to copy! Convert first.');
+                return;
+            }
+            el.select();
+            document.execCommand('copy');
+            showToast('✅ HTML copied!');
+        }
+
+        function sendToExtractor() {
+            const htmlOutput = document.getElementById('html-output');
+            const mediaInput = document.getElementById('media-input');
+            
+            if (!htmlOutput.value.trim()) {
+                showToast('⚠️ No HTML to send! Convert something first.');
+                return;
+            }
+            
+            mediaInput.value = htmlOutput.value;
+            showToast('✅ HTML sent to Media Extractor!');
+            
+            // Auto-extract
+            setTimeout(extractMedia, 300);
+        }
+
+        function selectAll() {
+            document.querySelectorAll('.controls input[type="checkbox"]').forEach(cb => cb.checked = true);
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('.controls input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        function clearPaste() {
+            document.getElementById('editor').innerHTML = '';
+            document.getElementById('source-input').value = '';
+            document.getElementById('html-output').value = '';
+        }
+
+        // ===== MEDIA EXTRACTOR =====
+        function extractMedia() {
+            const input = document.getElementById('media-input');
+            const extracted = document.getElementById('extracted');
+            
+            let html = input.value;
+            
+            if (!html.trim()) {
+                showToast('⚠️ Please paste some HTML first!');
+                return;
+            }
+            
+            let mediaCode = '';
+            
+            // FIRST: Look for the main image with id="post-image" (this is the one we want)
+            const mainImgMatch = html.match(/<img[^>]*id="post-image"[^>]*>/i);
+            if (mainImgMatch) {
+                mediaCode = mainImgMatch[0];
+            } else {
+                // SECOND: Look for img with class containing "media-lightbox-img" but NOT the background one
+                const imgMatches = html.match(/<img[^>]+class="[^"]*media-lightbox-img[^"]*"[^>]*>/gi);
+                if (imgMatches && imgMatches.length > 0) {
+                    // Filter out the background blur image (has opacity-30 or post-background-image-filter)
+                    const cleanImages = imgMatches.filter(img => 
+                        !img.includes('opacity-30') && 
+                        !img.includes('post-background-image-filter') &&
+                        !img.includes('role="presentation"')
+                    );
+                    if (cleanImages.length > 0) {
+                        mediaCode = cleanImages[0];
+                    } else {
+                        // If all images have those classes, take the last one (usually the main one)
+                        mediaCode = imgMatches[imgMatches.length - 1];
+                    }
+                } else {
+                    // THIRD: Try to find any img with src containing redd.it
+                    const redditImgMatch = html.match(/<img[^>]+src="[^"]*redd\.it[^"]+"[^>]*>/i);
+                    if (redditImgMatch) {
+                        mediaCode = redditImgMatch[0];
+                    } else {
+                        // FOURTH: Try to find the post-media-container and extract from there
+                        const containerMatch = html.match(/<slot name="post-media-container"[^>]*>([\s\S]*?)<\/slot>/i);
+                        if (containerMatch) {
+                            // Look for img with id="post-image" inside container
+                            const containerImg = containerMatch[1].match(/<img[^>]*id="post-image"[^>]*>/i);
+                            if (containerImg) {
+                                mediaCode = containerImg[0];
+                            } else {
+                                // Get any img from container that's not the background
+                                const containerImages = containerMatch[1].match(/<img[^>]+>/gi);
+                                if (containerImages) {
+                                    const clean = containerImages.filter(img => 
+                                        !img.includes('opacity-30') && 
+                                        !img.includes('post-background-image-filter') &&
+                                        !img.includes('role="presentation"')
+                                    );
+                                    mediaCode = clean.length > 0 ? clean[0] : containerImages[containerImages.length - 1];
+                                } else {
+                                    mediaCode = containerMatch[1].trim();
+                                }
+                            }
+                        } else {
+                            mediaCode = 'No media embed found.';
+                        }
+                    }
+                }
+            }
+            
+            // Clean up any trailing commas or weird artifacts
+            mediaCode = mediaCode.trim().replace(/,\s*$/, '');
+            
+            extracted.value = mediaCode;
+            showToast('✅ Media extracted!');
+        }
+
+        function copyExtracted() {
+            const extracted = document.getElementById('extracted');
+            if (!extracted.value.trim() || extracted.value === 'No media embed found.') {
+                showToast('⚠️ Nothing to copy! Extract media first.');
+                return;
+            }
+            extracted.select();
+            document.execCommand('copy');
+            showToast('✅ Media code copied!');
+        }
+
+        function clearMedia() {
+            document.getElementById('media-input').value = '';
+            document.getElementById('extracted').value = '';
+        }
+
+        // ===== TOAST =====
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Auto-extract on paste
+        document.getElementById('media-input').addEventListener('paste', function() {
+            setTimeout(extractMedia, 200);
+        });
+    </script>
+</body>
+</html>

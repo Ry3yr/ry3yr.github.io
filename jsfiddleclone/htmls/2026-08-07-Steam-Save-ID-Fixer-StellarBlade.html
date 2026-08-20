@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam ID Editor · save file fixer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #121212;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background: #1e1e1e;
+            max-width: 680px;
+            width: 100%;
+            border-radius: 32px;
+            padding: 32px 28px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #2c2c2c;
+            color: #e8e8e8;
+            transition: 0.2s;
+        }
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 0.3rem;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #b388ff, #82b1ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sub {
+            color: #9a9a9a;
+            margin-bottom: 2rem;
+            border-left: 3px solid #3d3d3d;
+            padding-left: 14px;
+            font-size: 0.95rem;
+        }
+        .file-area {
+            background: #262626;
+            border-radius: 18px;
+            padding: 24px 20px;
+            border: 1px dashed #4a4a4a;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 24px;
+        }
+        .file-area:hover {
+            border-color: #7c7cff;
+            background: #2b2b2b;
+        }
+        .file-area input[type="file"] {
+            display: none;
+        }
+        .file-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: #c0c0c0;
+        }
+        .file-label span:first-child {
+            font-size: 2.4rem;
+        }
+        .file-label .filename {
+            font-weight: 500;
+            color: #d0d0ff;
+            word-break: break-all;
+            background: #1f1f1f;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            max-width: 100%;
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin: 24px 0 18px;
+        }
+        .input-group {
+            flex: 1 1 200px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #b0b0b0;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+        .input-group input {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 60px;
+            padding: 12px 18px;
+            color: #f0f0f0;
+            font-size: 0.95rem;
+            transition: 0.15s;
+            outline: none;
+        }
+        .input-group input:focus {
+            border-color: #7c7cff;
+            background: #1f1f2f;
+            box-shadow: 0 0 0 3px #2f2f5f;
+        }
+        .input-group input::placeholder {
+            color: #6a6a6a;
+        }
+        .info-hint {
+            font-size: 0.8rem;
+            color: #8a8a8a;
+            background: #242424;
+            padding: 10px 14px;
+            border-radius: 40px;
+            display: inline-block;
+            margin: 8px 0 16px;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+            align-items: center;
+        }
+        .btn {
+            background: #323232;
+            border: none;
+            border-radius: 60px;
+            padding: 12px 28px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #d0d0d0;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1 1 auto;
+            border: 1px solid #404040;
+        }
+        .btn-primary {
+            background: #5b5bff;
+            border-color: #6b6bff;
+            color: white;
+            box-shadow: 0 4px 10px rgba(80, 80, 255, 0.25);
+        }
+        .btn-primary:hover {
+            background: #6f6fff;
+            transform: scale(1.01);
+            box-shadow: 0 6px 14px rgba(80, 80, 255, 0.35);
+        }
+        .btn-primary:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            filter: grayscale(0.5);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #4a4a4a;
+        }
+        .btn-outline:hover {
+            background: #2a2a2a;
+            border-color: #6a6a6a;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 14px 18px;
+            border-radius: 30px;
+            background: #252525;
+            font-size: 0.9rem;
+            border-left: 4px solid #5b5bff;
+            color: #c8c8c8;
+            word-break: break-word;
+            transition: 0.15s;
+        }
+        .status.error {
+            border-left-color: #ff6b6b;
+            background: #2a1c1c;
+            color: #ffbaba;
+        }
+        .status.success {
+            border-left-color: #5bff8a;
+            background: #1c2a1f;
+            color: #b0f0c0;
+        }
+        .footnote {
+            margin-top: 26px;
+            font-size: 0.75rem;
+            color: #5f5f5f;
+            text-align: center;
+            border-top: 1px solid #2c2c2c;
+            padding-top: 18px;
+        }
+        .badge {
+            background: #2f2f3f;
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #b0b0ff;
+        }
+        .flex {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .steam-id-preview {
+            background: #1b1b1b;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+            color: #b8b8ff;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>⚙️ Steam ID fixer</h1>
+    <div class="sub">replace the 17‑digit Steam ID (7656•••) in your save file</div>
+
+    <!-- file upload -->
+    <div class="file-area" id="fileDropArea">
+        <input type="file" id="fileInput" accept=".sav,.dat,.bin,*">
+        <div class="file-label">
+            <span>📂</span>
+            <span>click or drag & drop your save file</span>
+            <span class="filename" id="fileNameDisplay">no file selected</span>
+        </div>
+    </div>
+
+    <!-- steam ID input -->
+    <div class="row">
+        <div class="input-group" style="flex:2">
+            <label for="steamIdInput">🆔 your new Steam ID (17 digits)</label>
+            <input type="text" id="steamIdInput" placeholder="76561198000000000" maxlength="17" inputmode="numeric">
+        </div>
+        <div class="input-group" style="flex:1; display: flex; align-items: flex-end;">
+            <button class="btn btn-outline" id="detectIdBtn" style="width:100%;">🔍 detect from file</button>
+        </div>
+    </div>
+
+    <div class="flex">
+        <span class="info-hint">📌 only replace the first 17‑digit block starting with <span class="badge">7656</span></span>
+        <span class="steam-id-preview" id="currentIdPreview">no ID loaded</span>
+    </div>
+
+    <!-- actions -->
+    <div class="actions">
+        <button class="btn btn-primary" id="downloadBtn" disabled>⬇️ download fixed save</button>
+        <button class="btn btn-outline" id="resetBtn">↺ reset</button>
+    </div>
+
+    <!-- status / log -->
+    <div class="status" id="statusMessage">⏳ upload a save file to begin</div>
+    <div class="footnote">
+        ⚠️ only the first 17‑digit sequence starting with <strong>7656</strong> is replaced.<br>
+        no bytes are added or removed — length preserved.
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- DOM refs -----
+        const fileInput = document.getElementById('fileInput');
+        const fileDropArea = document.getElementById('fileDropArea');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const steamIdInput = document.getElementById('steamIdInput');
+        const detectBtn = document.getElementById('detectIdBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusEl = document.getElementById('statusMessage');
+        const currentIdPreview = document.getElementById('currentIdPreview');
+
+        // ----- state -----
+        let originalFileData = null;        // Uint8Array
+        let originalFileName = '';
+        let detectedOriginalId = null;      // string or null
+        let currentNewId = '';              // string (validated)
+
+        // ----- helpers -----
+        function setStatus(msg, type = 'info') {
+            statusEl.textContent = msg;
+            statusEl.className = 'status';
+            if (type === 'error') statusEl.classList.add('error');
+            else if (type === 'success') statusEl.classList.add('success');
+        }
+
+        function updatePreview(id) {
+            if (id && id.length === 17 && id.startsWith('7656')) {
+                currentIdPreview.textContent = `🆔 ${id}`;
+                currentIdPreview.style.color = '#b8b8ff';
+            } else if (id) {
+                currentIdPreview.textContent = `⚠️ ${id}`;
+                currentIdPreview.style.color = '#ffb07c';
+            } else {
+                currentIdPreview.textContent = 'no ID loaded';
+                currentIdPreview.style.color = '#7a7a7a';
+            }
+        }
+
+        // validate 17-digit steam id (starts with 7656)
+        function isValidSteamId(str) {
+            return /^7656\d{13}$/.test(str);  // 7656 + 13 digits = 17 total
+        }
+
+        // find first 17-digit number starting with 7656 in a Uint8Array (ASCII)
+        function findSteamIdInBuffer(buffer) {
+            const str = new TextDecoder('ascii', { fatal: false }).decode(buffer);
+            // match first sequence of exactly 17 digits starting with 7656
+            const match = str.match(/\b7656\d{13}\b/);
+            if (match) {
+                return match[0];
+            }
+            // fallback: find any 17-digit sequence that starts with 7656 (even if not word boundary)
+            const fallback = str.match(/7656\d{13}/);
+            return fallback ? fallback[0] : null;
+        }
+
+        // replace first occurrence of oldId with newId in buffer (exact 17 bytes)
+        function replaceSteamIdInBuffer(buffer, oldId, newId) {
+            if (!buffer || !oldId || !newId) return null;
+            if (oldId.length !== 17 || newId.length !== 17) return null;
+            if (oldId === newId) return buffer.slice(); // no change
+
+            // search for oldId as ASCII in the buffer
+            const oldBytes = new TextEncoder().encode(oldId);
+            const newBytes = new TextEncoder().encode(newId);
+            const buf = new Uint8Array(buffer);
+            
+            // find first occurrence
+            for (let i = 0; i <= buf.length - 17; i++) {
+                let match = true;
+                for (let j = 0; j < 17; j++) {
+                    if (buf[i + j] !== oldBytes[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    // replace in place
+                    for (let j = 0; j < 17; j++) {
+                        buf[i + j] = newBytes[j];
+                    }
+                    return buf;
+                }
+            }
+            return null; // oldId not found
+        }
+
+        // ----- core logic: process file + id -----
+        function processFileAndId(fileData, fileName, newId) {
+            if (!fileData) {
+                setStatus('❌ no file data', 'error');
+                return false;
+            }
+            if (!isValidSteamId(newId)) {
+                setStatus('❌ invalid Steam ID: must be 17 digits starting with 7656', 'error');
+                return false;
+            }
+
+            // 1. detect original ID
+            const detected = findSteamIdInBuffer(fileData);
+            if (!detected) {
+                setStatus('❌ no Steam ID (7656•••) found in this file', 'error');
+                updatePreview(null);
+                return false;
+            }
+            detectedOriginalId = detected;
+            updatePreview(detected);
+            setStatus(`✅ found ID: ${detected}`, 'success');
+
+            // 2. if same ID, warn but still allow download (no change)
+            if (detected === newId) {
+                setStatus(`⚠️ file already contains this Steam ID (${newId}) — download will be identical`, 'info');
+            } else {
+                setStatus(`🔄 replacing ${detected} → ${newId}`, 'info');
+            }
+
+            // 3. perform replacement (return new buffer or null if not found)
+            const resultBuffer = replaceSteamIdInBuffer(fileData, detected, newId);
+            if (!resultBuffer) {
+                setStatus('❌ replacement failed — ID not found (unexpected)', 'error');
+                return false;
+            }
+
+            // store result in a global for download
+            window.__fixedBuffer = resultBuffer;
+            window.__fixedFileName = fileName ? fileName.replace(/\.[^.]+$/, '') + '_fixed.sav' : 'fixed_save.sav';
+            downloadBtn.disabled = false;
+            return true;
+        }
+
+        // ----- reset state -----
+        function resetAll() {
+            originalFileData = null;
+            originalFileName = '';
+            detectedOriginalId = null;
+            window.__fixedBuffer = null;
+            window.__fixedFileName = null;
+            fileInput.value = '';
+            fileNameDisplay.textContent = 'no file selected';
+            steamIdInput.value = '';
+            downloadBtn.disabled = true;
+            setStatus('⏳ upload a save file to begin', 'info');
+            updatePreview(null);
+            currentNewId = '';
+        }
+
+        // ----- load file from input -----
+        function loadFileFromInput(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const buffer = new Uint8Array(e.target.result);
+                originalFileData = buffer;
+                originalFileName = file.name;
+                fileNameDisplay.textContent = file.name + ` (${buffer.length} bytes)`;
+                
+                // detect and show ID
+                const id = findSteamIdInBuffer(buffer);
+                if (id) {
+                    detectedOriginalId = id;
+                    updatePreview(id);
+                    setStatus(`🔎 detected ID: ${id}`, 'success');
+                    // prefill input with detected ID (optional)
+                    if (!steamIdInput.value) {
+                        steamIdInput.value = id;
+                    }
+                } else {
+                    detectedOriginalId = null;
+                    updatePreview(null);
+                    setStatus('⚠️ no 7656••• ID found in this file', 'error');
+                }
+
+                // if we have a valid new id in input, re-process
+                const newId = steamIdInput.value.trim();
+                if (isValidSteamId(newId) && originalFileData) {
+                    processFileAndId(originalFileData, originalFileName, newId);
+                } else {
+                    downloadBtn.disabled = true;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ----- event listeners -----
+        // file input change
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files.length > 0) {
+                loadFileFromInput(this.files[0]);
+            }
+        });
+
+        // drag & drop
+        fileDropArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#a0a0ff';
+            this.style.background = '#2a2a3a';
+        });
+        fileDropArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#4a4a4a';
+            this.style.background = '#262626';
+        });
+        fileDropArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#4a4a4a';
+            this.style.background = '#262626';
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                fileInput.files = files;
+                loadFileFromInput(files[0]);
+            }
+        });
+        // click on area triggers file input
+        fileDropArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        // detect ID from current file (button)
+        detectBtn.addEventListener('click', function() {
+            if (!originalFileData) {
+                setStatus('⛔ no file loaded', 'error');
+                return;
+            }
+            const id = findSteamIdInBuffer(originalFileData);
+            if (id) {
+                detectedOriginalId = id;
+                updatePreview(id);
+                steamIdInput.value = id;
+                setStatus(`🔍 detected ID: ${id}`, 'success');
+                // re-process with new id (if valid)
+                const newId = id;
+                if (isValidSteamId(newId) && originalFileData) {
+                    processFileAndId(originalFileData, originalFileName, newId);
+                }
+            } else {
+                setStatus('❌ no Steam ID found in file', 'error');
+                updatePreview(null);
+            }
+        });
+
+        // download button
+        downloadBtn.addEventListener('click', function() {
+            if (!window.__fixedBuffer) {
+                setStatus('❌ no fixed data ready', 'error');
+                return;
+            }
+            const blob = new Blob([window.__fixedBuffer], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = window.__fixedFileName || 'fixed_save.sav';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setStatus(`✅ downloaded: ${a.download}`, 'success');
+        });
+
+        // reset button
+        resetBtn.addEventListener('click', resetAll);
+
+        // steam ID input: real-time validation + auto process
+        steamIdInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            currentNewId = val;
+            if (!originalFileData) {
+                setStatus('⏳ upload a file first', 'info');
+                downloadBtn.disabled = true;
+                return;
+            }
+            if (val.length === 0) {
+                setStatus('📝 enter your 17-digit Steam ID', 'info');
+                downloadBtn.disabled = true;
+                return;
+            }
+            if (!isValidSteamId(val)) {
+                setStatus('❌ ID must be 17 digits starting with 7656', 'error');
+                downloadBtn.disabled = true;
+                return;
+            }
+            // valid -> process
+            const success = processFileAndId(originalFileData, originalFileName, val);
+            if (success) {
+                // processFileAndId sets status & enables download
+            } else {
+                downloadBtn.disabled = true;
+            }
+        });
+
+        // extra: if user pastes a valid id, process automatically
+        steamIdInput.addEventListener('change', function() {
+            // trigger input event to process
+            this.dispatchEvent(new Event('input'));
+        });
+
+        // startup: reset
+        resetAll();
+
+        // also handle if file is loaded but id already in input
+        // we already call process in loadFileFromInput if id valid
+        // but we need to re-process if user changes id after file load
+        // that's covered by input event
+
+        // Additional: if file loaded and input has valid id at that moment, process.
+        // already handled inside loadFileFromInput.
+        console.log('Steam ID editor ready');
+    })();
+</script>
+</body>
+</html>
