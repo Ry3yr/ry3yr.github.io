@@ -4090,5 +4090,17 @@
         "mode": "response_code",
         "domainname": "alceawis.de",
         "response_code": 200
+    },
+    {
+        "date": "2026-08-16 05:39:48",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
+    },
+    {
+        "date": "2026-08-17 10:45:49",
+        "mode": "response_code",
+        "domainname": "alceawis.de",
+        "response_code": 200
     }
 ]
