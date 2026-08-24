@@ -2,112 +2,212 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Repo Compare Tool</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      margin: 20px;
+      background: #fafafa;
+      color: #1e1e1e;
+    }
+    h2, h3 { margin: 0.5rem 0; }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    }
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px 24px;
+      margin: 12px 0 16px;
+    }
+    label { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+    input[type="text"] {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 220px;
+      transition: 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #0066cc;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0,102,204,0.15);
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 10px 28px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover { background: #004d99; transform: scale(1.02); }
     table {
       border-collapse: collapse;
       width: 100%;
-      margin-top: 20px;
+      margin-top: 16px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
     th, td {
-      border: 1px solid #ccc;
-      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      padding: 10px 14px;
       text-align: left;
-      vertical-align: top;
+      vertical-align: middle;
     }
     th {
-      background-color: #f9f9f9;
+      background: #f8fafc;
+      font-weight: 600;
+      color: #1e293b;
     }
+    td { background: white; }
     a {
       color: #0066cc;
       text-decoration: none;
+      font-weight: 500;
     }
-    a:hover {
-      text-decoration: underline;
-    }
-    /* Style for forked repos when checkbox is checked */
+    a:hover { text-decoration: underline; }
     .forked a {
-      color: gray !important;
+      color: #8a8a8a !important;
       font-style: italic;
     }
     #log {
-      margin-top: 30px;
-      padding: 10px;
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      max-height: 200px;
+      margin-top: 24px;
+      padding: 14px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      font-size: 13px;
+      max-height: 220px;
       overflow-y: auto;
+      border: 1px solid #d1d9e6;
+      font-family: 'JetBrains Mono', monospace;
     }
     #log .log-entry {
-      margin-bottom: 5px;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 4px 0;
     }
-    input { margin-right: 10px; }
-    form label { margin-right: 15px; display: inline-block; margin-bottom: 8px; }
     #warnings {
-      margin-top: 15px;
+      margin: 16px 0 8px;
     }
     .warning-box {
-      background: #fff4e5;
-      border: 1px solid #f0b429;
-      color: #7a4a00;
-      padding: 10px 14px;
-      border-radius: 4px;
-      margin-bottom: 8px;
+      background: #fff9e6;
+      border-left: 6px solid #f0b429;
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
       font-size: 14px;
     }
-    .warning-box strong { display: block; margin-bottom: 4px; }
+    .warning-box strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+    .warning-box .manual-fallback {
+      margin-top: 10px;
+      background: #f0f4fe;
+      padding: 12px 14px;
+      border-radius: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .warning-box .manual-fallback textarea {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px;
+      border: 1px solid #b8c9e0;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: white;
+      resize: vertical;
+    }
+    .warning-box .manual-fallback button {
+      background: #1e293b;
+      padding: 8px 18px;
+      font-size: 13px;
+      border-radius: 30px;
+      white-space: nowrap;
+    }
+    .warning-box .manual-fallback button:hover { background: #0f172a; }
+    details {
+      margin: 6px 0;
+      cursor: pointer;
+      color: #2c3e50;
+    }
+    details summary { font-weight: 500; }
+    #sharedHeader, #differentHeader { margin-top: 28px; }
+    .inline-help {
+      font-size: 13px;
+      color: #475569;
+      margin-left: 4px;
+    }
+    @media (max-width: 700px) {
+      input[type="text"] { width: 100%; }
+      .flex-row { flex-direction: column; align-items: stretch; }
+    }
   </style>
 </head>
 <body>
-  <h2>Compare Public Repos</h2>
+<div class="container">
+  <h2>📦 Compare Public Repos</h2>
+  <div class="flex-row">
+    <label><input type="checkbox" id="markForked"> Mark forks (grey)</label>
+    <label><input type="checkbox" id="fetchAll"> Fetch all pages</label>
+  </div>
 
-  <label><input type="checkbox" id="markForked"> Mark forked repos (grey)</label>
-  <label><input type="checkbox" id="fetchAll"> All repos</label>
-
-  <form id="repoForm" style="margin-top: 10px;">
-    <label>URL 1: <input type="text" id="user1" value="https://codeberg.org/alceawisteria" required></label>
-    <label>URL 2: <input type="text" id="user2" value="https://github.com/Ry3yr" required></label>
-    <label>URL 3: <input type="text" id="user3" value="https://gitea.moe/Alcea" required></label>
-    <br>
-    <details><summary>-</summary><label>CORS Proxy (used for Gitea instances only): <input type="text" id="corsProxy" value="https://alceawis.de/cors.php" style="width: 320px;"></label></details>
-    <br>
-    <button type="submit">Compare</button>
+  <form id="repoForm">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center;">
+      <label>URL 1: <input type="text" id="user1" value="https://codeberg.org/alceawisteria" required></label>
+      <label>URL 2: <input type="text" id="user2" value="https://github.com/Ry3yr" required></label>
+      <label>URL 3: <input type="text" id="user3" value="https://gitea.moe/Alcea" required></label>
+    </div>
+    <details style="margin: 12px 0 8px;">
+      <summary>⚙️ CORS Proxy (for Gitea instances)</summary>
+      <label style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-weight:400;">Proxy URL:</span>
+        <input type="text" id="corsProxy" value="https://alceawis.de/cors.php" style="width: 340px;">
+      </label>
+    </details>
+    <button type="submit" style="margin: 6px 0 10px;">Compare</button>
   </form>
 
   <div id="warnings"></div>
 
   <h3 id="sharedHeader">Shared Repositories</h3>
-  <table id="sharedReposTable" aria-label="Shared repositories table">
-    <thead>
-      <tr>
-        <th>Repository Name</th> <!-- This will be replaced dynamically -->
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Shared repos go here -->
-    </tbody>
+  <table id="sharedReposTable">
+    <thead><tr><th>User 1</th><th>User 2</th><th>User 3</th></tr></thead>
+    <tbody></tbody>
   </table>
 
   <h3 id="differentHeader">Different Repositories</h3>
-  <table id="differentReposTable" aria-label="Different repositories table">
-    <thead>
-      <tr>
-        <th id="user1Header">User 1 Only</th>
-        <th id="user2Header">User 2 Only</th>
-        <th id="user3Header">User 3 Only</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Different repos go here -->
-    </tbody>
+  <table id="differentReposTable">
+    <thead><tr><th id="user1Header">User 1 Only</th><th id="user2Header">User 2 Only</th><th id="user3Header">User 3 Only</th></tr></thead>
+    <tbody></tbody>
   </table>
 
-  <h3>Debug Log</h3>
+  <h3>📋 Debug Log</h3>
   <div id="log"></div>
+</div>
 
-  <script>
+<script>
+  (function() {
     const logDiv = document.getElementById("log");
     const warningsDiv = document.getElementById("warnings");
 
@@ -119,10 +219,6 @@
       logDiv.scrollTop = logDiv.scrollHeight;
     }
 
-    // Returns { type: 'github' | 'codeberg' | 'gitea', base: 'https://host' }
-    // github.com and codeberg.org get special-cased (well-known, fixed hosts).
-    // Anything else is treated as a generic Gitea instance, using whatever
-    // host is present in the given URL as the API base.
     function detectPlatform(input) {
       input = input.trim();
       let host = "";
@@ -131,21 +227,10 @@
         const url = input.startsWith("http") ? new URL(input) : new URL(`https://${input}`);
         host = url.host;
         origin = url.origin;
-      } catch {
-        // Fall through with empty host/origin; will default to github below
-      }
-
-      if (host.includes("github.com")) {
-        return { type: "github", base: "https://github.com" };
-      }
-      if (host.includes("codeberg.org")) {
-        return { type: "codeberg", base: "https://codeberg.org" };
-      }
-      if (host) {
-        // Generic Gitea instance (e.g. gitea.moe, self-hosted Gitea, etc.)
-        return { type: "gitea", base: origin };
-      }
-      // No host could be parsed (plain username was given) - default to github
+      } catch { /* fall through */ }
+      if (host.includes("github.com")) return { type: "github", base: "https://github.com" };
+      if (host.includes("codeberg.org")) return { type: "codeberg", base: "https://codeberg.org" };
+      if (host) return { type: "gitea", base: origin };
       return { type: "github", base: "https://github.com" };
     }
 
@@ -154,120 +239,130 @@
       try {
         if (input.startsWith("http")) {
           const url = new URL(input);
-          const pathParts = url.pathname.split("/").filter(Boolean);
-          return pathParts[0] || null;
-        } else {
-          return input;
+          const parts = url.pathname.split("/").filter(Boolean);
+          return parts[0] || null;
         }
-      } catch {
         return input;
-      }
+      } catch { return input; }
     }
 
-    // Fetch all pages if fetchAll is true, otherwise just one page.
-    // Returns { repos, failed, errorMsg } - `failed` is explicit so that a
-    // legitimate "this user has 0 repos" is never confused with "the
-    // request didn't actually work".
+    // Helper: try to parse manual paste as array of repos { name, fork }
+    function parseManualPaste(text) {
+      try {
+        const data = JSON.parse(text);
+        if (Array.isArray(data)) {
+          return data.map(item => ({
+            name: item.name || item.full_name || item.repository?.name || '',
+            fork: !!item.fork,
+          })).filter(r => r.name);
+        }
+        if (data && typeof data === 'object' && Array.isArray(data.repos)) {
+          return data.repos.map(item => ({
+            name: item.name || item.full_name || '',
+            fork: !!item.fork,
+          })).filter(r => r.name);
+        }
+      } catch { /* not JSON */ }
+      return null;
+    }
+
+    // fetchRepos returns { repos, failed, errorMsg, manualFallback }
     async function fetchRepos(platformInfo, username, fetchAll = false, corsProxy = "") {
       const { type, base } = platformInfo;
       let repos = [];
       let page = 1;
-      const per_page = 100; // max per page for GitHub, Codeberg, and Gitea
+      const per_page = 100;
       let failed = false;
       let errorMsg = "";
+      let manualFallback = false; // flag to indicate we should show manual paste UI
 
       async function fetchPage(page) {
         let url;
         if (type === "github") {
           url = `https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`;
         } else if (type === "codeberg" || type === "gitea") {
-          // Codeberg is itself a Gitea instance, so both use the same API shape
           url = `${base}/api/v1/users/${username}/repos?limit=${per_page}&page=${page}`;
         } else {
-          log(`Unknown platform for user ${username}`);
           failed = true;
           errorMsg = "Unknown platform";
           return [];
         }
 
-        // Only Gitea (arbitrary self-hosted instances) needs the proxy;
-        // GitHub and Codeberg already send permissive CORS headers.
         const useProxy = type === "gitea" && corsProxy;
         const fetchUrl = useProxy ? `${corsProxy}?query=${encodeURIComponent(url)}` : url;
 
         if (type === "gitea" && !corsProxy) {
-          log(`No CORS proxy configured - attempting direct request to ${url} (will likely fail CORS)`);
+          log(`No CORS proxy - direct request to ${url} (likely CORS error)`);
         }
+        log(`Fetching ${type} (${base})${useProxy ? ' via proxy' : ''}: ${url}`);
 
-        log(`Fetching from ${type} (${base})${useProxy ? " via CORS proxy" : ""}: ${url}`);
         try {
           const res = await fetch(fetchUrl);
           if (!res.ok) {
-            log(`Failed to fetch from ${type}: ${res.status} ${res.statusText}`);
+            // if status is 404 or 403, we still want to show manual fallback
+            const statusText = res.statusText || `HTTP ${res.status}`;
+            log(`HTTP error ${res.status} ${statusText}`);
             failed = true;
-            errorMsg = `HTTP ${res.status} ${res.statusText}`;
+            errorMsg = `HTTP ${res.status} ${statusText}`;
+            // if it's a Gitea instance (or any), suggest manual paste if we got something
+            if (type === "gitea") manualFallback = true;
             return [];
           }
           const data = await res.json();
-
-          // The PHP proxy returns 200 even when the upstream request failed,
-          // reporting failures as { error: "..." } instead.
           if (data && typeof data === "object" && !Array.isArray(data) && data.error) {
-            log(`Proxy error fetching from ${type} for ${username}: ${data.error}`);
+            log(`Proxy error: ${data.error}`);
             failed = true;
             errorMsg = `Proxy error: ${data.error}`;
+            manualFallback = true;
             return [];
           }
           if (!Array.isArray(data)) {
-            log(`Unexpected response from ${type} for ${username}: ${JSON.stringify(data).slice(0, 200)}`);
+            log(`Unexpected response (non-array): ${JSON.stringify(data).slice(0, 120)}`);
             failed = true;
-            errorMsg = "Unexpected (non-array) response";
+            errorMsg = "Unexpected response (not array)";
+            manualFallback = true;
             return [];
           }
-
-          log(`Fetched ${data.length} repos from ${type} for ${username}, page ${page}`);
-          return data.map(repo => ({ name: repo.name, fork: repo.fork }));
+          log(`Fetched ${data.length} repos from ${type}, page ${page}`);
+          return data.map(r => ({ name: r.name, fork: !!r.fork }));
         } catch (err) {
-          // This is what a browser-level CORS block looks like: a generic
-          // "Failed to fetch" TypeError, indistinguishable from other
-          // network failures from JS alone.
-          log(`Error fetching from ${type}: ${err.message}`);
+          log(`Network/CORS error: ${err.message}`);
           failed = true;
-          errorMsg = useProxy
-            ? `Network error via proxy: ${err.message}`
-            : `Network/CORS error: ${err.message}`;
+          errorMsg = useProxy ? `Network error via proxy: ${err.message}` : `Network/CORS error: ${err.message}`;
+          // In case of CORS or network, we want to show manual fallback for Gitea
+          if (type === "gitea") manualFallback = true;
           return [];
         }
       }
 
       if (!fetchAll) {
-        // Just fetch the first page only
-        repos = await fetchPage(1);
+        const pageData = await fetchPage(1);
+        if (!failed) repos = pageData;
       } else {
-        // Fetch all pages until empty result
         while (true) {
-          const pageRepos = await fetchPage(page);
+          const pageData = await fetchPage(page);
           if (failed) break;
-          if (pageRepos.length === 0) break;
-          repos = repos.concat(pageRepos);
-          if (pageRepos.length < per_page) break; // Last page reached
+          if (pageData.length === 0) break;
+          repos = repos.concat(pageData);
+          if (pageData.length < per_page) break;
           page++;
         }
       }
 
-      return { repos, failed, errorMsg };
+      return { repos, failed, errorMsg, manualFallback };
     }
 
     function makeRepoLink(platformInfo, username, repo, markForked) {
       const base = platformInfo.base;
       const cssClass = markForked && repo.fork ? 'forked' : '';
-      return `<span class="${cssClass}"><a href="${base}/${username}/${repo.name}" target="_blank" rel="noopener noreferrer">${repo.name}</a></span>`;
+      return `<span class="${cssClass}"><a href="${base}/${username}/${repo.name}" target="_blank" rel="noopener">${repo.name}</a></span>`;
     }
 
+    // --- main submit handler ---
     document.getElementById("repoForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      logDiv.innerHTML = ''; // Clear log
-      warningsDiv.innerHTML = ''; // Clear old warnings
+      logDiv.innerHTML = '';
+      warningsDiv.innerHTML = '';
 
       const input1 = document.getElementById("user1").value;
       const input2 = document.getElementById("user2").value;
@@ -279,7 +374,6 @@
       const platform1 = detectPlatform(input1);
       const platform2 = detectPlatform(input2);
       const platform3 = detectPlatform(input3);
-
       const username1 = extractUsername(input1);
       const username2 = extractUsername(input2);
       const username3 = extractUsername(input3);
@@ -290,20 +384,18 @@
         { username: username3, platform: platform3 },
       ];
 
-      log(`Starting comparison between "${username1}" (${platform1.type}), "${username2}" (${platform2.type}) and "${username3}" (${platform3.type})`);
-      if (fetchAll) log("Fetching ALL repos for each user");
+      log(`Comparing: ${username1} (${platform1.type}), ${username2} (${platform2.type}), ${username3} (${platform3.type})`);
+      if (fetchAll) log("Fetching all pages");
 
-      // Update table headers with usernames
+      // Update headers
       document.getElementById("sharedHeader").textContent = `Shared Repositories (${username1}, ${username2}, ${username3})`;
-      document.getElementById("user1Header").textContent = `Repos only on ${username1}`;
-      document.getElementById("user2Header").textContent = `Repos only on ${username2}`;
-      document.getElementById("user3Header").textContent = `Repos only on ${username3}`;
+      document.getElementById("user1Header").textContent = `Only on ${username1}`;
+      document.getElementById("user2Header").textContent = `Only on ${username2}`;
+      document.getElementById("user3Header").textContent = `Only on ${username3}`;
+      document.querySelector("#sharedReposTable thead tr").innerHTML = 
+        `<th>${username1}</th><th>${username2}</th><th>${username3}</th>`;
 
-      // Update shared repos table header to three columns for all users
-      document.querySelector("#sharedReposTable thead tr").innerHTML = `
-        <th>${username1}</th><th>${username2}</th><th>${username3}</th>
-      `;
-
+      // Fetch all three
       const [result1, result2, result3] = await Promise.all([
         fetchRepos(platform1, username1, fetchAll, corsProxy),
         fetchRepos(platform2, username2, fetchAll, corsProxy),
@@ -311,71 +403,127 @@
       ]);
       const results = [result1, result2, result3];
 
-      // Surface any failures as a visible banner, not just a log line -
-      // otherwise a fetch failure looks identical to "this user has 0 repos".
-      const failedUsers = users
-        .map((u, i) => ({ ...u, errorMsg: results[i].errorMsg, failed: results[i].failed }))
-        .filter(u => u.failed);
+      // Build warnings & manual fallback UI if needed
+      let warningsHtml = '';
+      const manualFallbackData = [];
 
-      if (failedUsers.length > 0) {
-        warningsDiv.innerHTML = failedUsers.map(u => `
-          <div class="warning-box">
-            <strong>Could not fetch repos for ${u.username} (${u.platform.type})</strong>
-            ${u.errorMsg}${u.platform.type === "gitea" && !corsProxy
-              ? ' — this looks like a Gitea instance without CORS enabled. Set a CORS proxy URL above and re-run.'
-              : (u.platform.type === "gitea" ? ' — double check the CORS proxy URL above is correct and reachable, then re-run.' : '')}
-            Results below may be incomplete for this user.
-          </div>
-        `).join('');
+      results.forEach((res, idx) => {
+        if (res.failed) {
+          const user = users[idx];
+          const isGitea = user.platform.type === 'gitea';
+          let msg = `Could not fetch repos for ${user.username} (${user.platform.type})`;
+          let detail = res.errorMsg || 'Unknown error';
+          if (isGitea && !corsProxy) detail += ' — try setting a CORS proxy.';
+          else if (isGitea) detail += ' — you can paste the API response manually below.';
+
+          // Build manual fallback box only for Gitea failures (or any that set manualFallback)
+          if (res.manualFallback || isGitea) {
+            manualFallbackData.push({
+              username: user.username,
+              platform: user.platform,
+              idx,
+              error: detail,
+            });
+          }
+
+          warningsHtml += `<div class="warning-box">
+            <strong>⚠️ ${msg}</strong>
+            <div>${detail}</div>
+          </div>`;
+        }
+      });
+
+      // Add manual fallback textareas for each failed Gitea user
+      if (manualFallbackData.length > 0) {
+        warningsHtml += `<div class="warning-box" style="border-left-color:#2563eb; background:#eff6ff;">
+          <strong>📝 Manual API paste</strong>
+          <div style="margin-bottom: 6px;">If you have the API response (JSON array of repos), paste it below and click "Use pasted data".</div>`;
+        manualFallbackData.forEach(({ username, platform, idx, error }) => {
+          const containerId = `manual-fallback-${idx}`;
+          warningsHtml += `
+            <div class="manual-fallback" id="${containerId}">
+              <span style="font-weight:500; min-width:80px;">${username}</span>
+              <textarea rows="3" placeholder='Paste JSON array, e.g. [{"name":"repo1","fork":false}]' style="flex:1; min-width:180px;"></textarea>
+              <button data-useridx="${idx}" class="manual-use-btn">Use pasted data</button>
+              <span style="font-size:12px; color:#475569;">(overrides fetched data)</span>
+            </div>
+          `;
+        });
+        warningsHtml += `</div>`;
       }
 
-      // Convert to maps for easy lookup by name
-      const maps = [
-        new Map(results[0].repos.map(r => [r.name, r])),
-        new Map(results[1].repos.map(r => [r.name, r])),
-        new Map(results[2].repos.map(r => [r.name, r])),
-      ];
+      if (warningsHtml) warningsDiv.innerHTML = warningsHtml;
 
-      // Union of all repo names across the three users
+      // Attach manual paste button handlers after DOM update
+      document.querySelectorAll('.manual-use-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          const idx = parseInt(this.dataset.useridx, 10);
+          const container = this.closest('.manual-fallback');
+          const textarea = container.querySelector('textarea');
+          const raw = textarea.value.trim();
+          if (!raw) { alert('Please paste JSON array first.'); return; }
+          const parsed = parseManualPaste(raw);
+          if (!parsed) {
+            alert('Could not parse JSON. Please paste a valid array of objects with "name" and "fork".');
+            return;
+          }
+          // Replace the result for that user
+          results[idx].repos = parsed;
+          results[idx].failed = false; // clear failure
+          // Remove the warning box for this user? We'll just re-run the rendering.
+          // Instead, we re-render the whole table with updated results.
+          renderTables(results, users, markForked);
+          log(`Manual data applied for ${users[idx].username} (${parsed.length} repos)`);
+          // Optionally hide the warning box for that user
+          const warningBox = container.closest('.warning-box');
+          if (warningBox) warningBox.style.display = 'none';
+        });
+      });
+
+      // Initial render
+      renderTables(results, users, markForked);
+      log(`Comparison done. Shared: ?, unique: ... (see tables)`);
+    });
+
+    // Shared rendering function
+    function renderTables(results, users, markForked) {
+      const maps = results.map(res => new Map(res.repos.map(r => [r.name, r])));
+
       const allNames = new Set();
       maps.forEach(m => m.forEach((_, name) => allNames.add(name)));
 
-      const sharedNames = [];   // present in 2 or more users
-      const onlyNames = [[], [], []]; // present in exactly 1 user, bucketed per user index
+      const sharedNames = [];
+      const onlyNames = [[], [], []];
 
       allNames.forEach(name => {
-        const presentIn = maps.reduce((count, m) => count + (m.has(name) ? 1 : 0), 0);
-        if (presentIn >= 2) {
-          sharedNames.push(name);
-        } else {
+        const count = maps.reduce((acc, m) => acc + (m.has(name) ? 1 : 0), 0);
+        if (count >= 2) sharedNames.push(name);
+        else {
           const idx = maps.findIndex(m => m.has(name));
-          onlyNames[idx].push(name);
+          if (idx !== -1) onlyNames[idx].push(name);
         }
       });
       sharedNames.sort();
       onlyNames.forEach(arr => arr.sort());
 
-      // Populate shared repos table (three columns)
+      // Shared table
       const sharedTbody = document.querySelector("#sharedReposTable tbody");
       if (sharedNames.length === 0) {
         sharedTbody.innerHTML = `<tr><td colspan="3"><em>No shared repositories.</em></td></tr>`;
       } else {
-        sharedTbody.innerHTML = sharedNames
-          .map(name => {
-            const cells = users.map((u, i) => {
-              const repo = maps[i].get(name);
-              return repo ? `<td>${makeRepoLink(u.platform, u.username, repo, markForked)}</td>` : `<td></td>`;
-            }).join('');
-            return `<tr>${cells}</tr>`;
-          })
-          .join('');
+        sharedTbody.innerHTML = sharedNames.map(name => {
+          const cells = users.map((u, i) => {
+            const repo = maps[i].get(name);
+            return repo ? `<td>${makeRepoLink(u.platform, u.username, repo, markForked)}</td>` : `<td></td>`;
+          }).join('');
+          return `<tr>${cells}</tr>`;
+        }).join('');
       }
 
-      // Populate different repos table with aligned rows (three columns)
+      // Different table
       const differentTbody = document.querySelector("#differentReposTable tbody");
       const maxRows = Math.max(onlyNames[0].length, onlyNames[1].length, onlyNames[2].length);
       let rowsHTML = '';
-
       for (let i = 0; i < maxRows; i++) {
         const cells = users.map((u, idx) => {
           const name = onlyNames[idx][i];
@@ -383,15 +531,12 @@
         }).join('');
         rowsHTML += `<tr>${cells}</tr>`;
       }
-
       if (maxRows === 0) {
-        rowsHTML = `<tr><td><em>No unique repositories on any user.</em></td><td></td><td></td></tr>`;
+        rowsHTML = `<tr><td><em>No unique repos.</em></td><td></td><td></td></tr>`;
       }
-
       differentTbody.innerHTML = rowsHTML;
-
-      log(`Comparison complete. Shared: ${sharedNames.length}, ${username1} only: ${onlyNames[0].length}, ${username2} only: ${onlyNames[1].length}, ${username3} only: ${onlyNames[2].length}`);
-    });
-  </script>
+    }
+  })();
+</script>
 </body>
 </html>
