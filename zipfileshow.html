@@ -56,6 +56,163 @@ button {
 #fileDisplay {
     margin-top: 20px;
 }
+
+/* ---------- PROGRESS BAR (initial zip fetch only) ---------- */
+#progressWrap {
+    display: none;
+    margin-top: 12px;
+    font-family: Arial, sans-serif;
+}
+
+#progressLabel {
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #444;
+}
+
+#progressTrack {
+    width: 80%;
+    background: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 16px;
+    overflow: hidden;
+}
+
+#progressFill {
+    height: 100%;
+    width: 0%;
+    background: #4a90d9;
+    transition: width 0.15s ease;
+}
+
+/* ---------- FILE LIST ROW / DOWNLOAD BUTTON ---------- */
+.item.file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item.file .fileName {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.downloadBtn {
+    flex-shrink: 0;
+    margin-left: 10px;
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.downloadBtn:hover {
+    background: #e2e2e2;
+}
+
+/* ---------- MODAL ---------- */
+#modalOverlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+#modalBox {
+    background: #fff;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid #ddd;
+    font-family: Arial, sans-serif;
+}
+
+#modalTitle {
+    font-weight: bold;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+
+#modalHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+#modalDownloadBtn {
+    padding: 4px 10px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+#modalCloseBtn {
+    padding: 4px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+#modalCloseBtn:hover {
+    background: #e2e2e2;
+}
+
+#modalBody {
+    padding: 14px;
+    overflow: auto;
+    flex: 1;
+}
+
+#modalBody pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    font-family: monospace;
+}
+
+#modalBody img {
+    max-width: 100%;
+    max-height: 75vh;
+    display: block;
+    margin: 0 auto;
+}
+
+#modalBody video {
+    max-width: 100%;
+}
+
+#modalBody iframe {
+    width: 100%;
+    height: 65vh;
+    border: none;
+}
 </style>
 </head>
 
@@ -67,6 +224,13 @@ button {
     <label>ZIP URL:</label><br>
     <input id="zipUrl" placeholder="https://example.com/files.zip">
     <button onclick="loadZip()">Browse ZIP</button>
+
+    <div id="progressWrap">
+        <div id="progressLabel">Downloading ZIP…</div>
+        <div id="progressTrack">
+            <div id="progressFill"></div>
+        </div>
+    </div>
 
     <br><br>
 
@@ -82,6 +246,19 @@ button {
 
 <div id="fileDisplay"></div>
 
+<div id="modalOverlay">
+    <div id="modalBox">
+        <div id="modalHeader">
+            <div id="modalTitle"></div>
+            <div id="modalHeaderActions">
+                <button id="modalDownloadBtn" onclick="downloadCurrentModalFile()">Download</button>
+                <button id="modalCloseBtn" onclick="closeModal()">Close ✕</button>
+            </div>
+        </div>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
 <script>
 const header = document.getElementById("header");
 const zipUrlInput = document.getElementById("zipUrl");
@@ -90,9 +267,19 @@ const explorer = document.getElementById("explorer");
 const list = document.getElementById("list");
 const pathBar = document.getElementById("pathBar");
 const fileDisplay = document.getElementById("fileDisplay");
+const progressWrap = document.getElementById("progressWrap");
+const progressLabel = document.getElementById("progressLabel");
+const progressFill = document.getElementById("progressFill");
 
 let zipData = null;
 let currentPath = "";
+
+/* ---------- MODAL REFS ---------- */
+const modalOverlay = document.getElementById("modalOverlay");
+const modalBox = document.getElementById("modalBox");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+let currentModalFilePath = null;
 
 /* ---------- QUERY STRING ---------- */
 function getQueryParams() {
@@ -103,20 +290,95 @@ function getQueryParams() {
     };
 }
 
+/* ---------- PROGRESS HELPERS (used only by loadZip) ---------- */
+function showProgress() {
+    progressWrap.style.display = "block";
+    setProgress(0, true);
+}
+
+function hideProgress() {
+    progressWrap.style.display = "none";
+}
+
+function setProgress(fraction, indeterminate) {
+    if (indeterminate) {
+        progressLabel.textContent = "Downloading ZIP…";
+        progressFill.style.width = "100%";
+        progressFill.style.opacity = "0.4";
+        return;
+    }
+    progressFill.style.opacity = "1";
+    const pct = Math.max(0, Math.min(100, Math.round(fraction * 100)));
+    progressFill.style.width = pct + "%";
+    progressLabel.textContent = "Downloading ZIP… " + pct + "%";
+}
+
+/* Streams the response body and reports progress via onProgress(fraction|null).
+   Falls back to indeterminate (null) if content-length is unavailable.
+   Used only by loadZip() for the "Browse ZIP" button. */
+function fetchZipWithProgress(url, onProgress) {
+    return fetch(url).then(response => {
+        if (!response.ok) throw new Error("Fetch failed");
+
+        const contentLengthHeader = response.headers.get("Content-Length");
+        const total = contentLengthHeader ? parseInt(contentLengthHeader, 10) : 0;
+
+        if (!response.body || !total) {
+            if (onProgress) onProgress(null);
+            return response.arrayBuffer();
+        }
+
+        const reader = response.body.getReader();
+        let received = 0;
+        const chunks = [];
+
+        function pump() {
+            return reader.read().then(({ done, value }) => {
+                if (done) {
+                    const buffer = new Uint8Array(received);
+                    let offset = 0;
+                    for (const chunk of chunks) {
+                        buffer.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+                    return buffer.buffer;
+                }
+                chunks.push(value);
+                received += value.length;
+                if (onProgress) onProgress(received / total);
+                return pump();
+            });
+        }
+
+        return pump();
+    });
+}
+
 /* ---------- LOAD ZIP ---------- */
 function loadZip() {
     if (!zipUrlInput.value) return alert("Enter ZIP URL");
 
-    fetch(zipUrlInput.value)
-        .then(r => r.arrayBuffer())
+    showProgress();
+
+    fetchZipWithProgress(zipUrlInput.value, frac => {
+        if (frac === null) {
+            setProgress(0, true);
+        } else {
+            setProgress(frac, false);
+        }
+    })
         .then(b => JSZip.loadAsync(b))
         .then(zip => {
+            hideProgress();
             zipData = zip;
             currentPath = "";
             explorer.style.display = "block";
             renderFolder();
         })
-        .catch(() => alert("Failed to load ZIP"));
+        .catch(() => {
+            hideProgress();
+            alert("Failed to load ZIP");
+        });
 }
 
 /* ---------- RENDER FOLDER VIEW ---------- */
@@ -170,13 +432,29 @@ function renderFolder() {
 
     /* FILES */
     files.sort().forEach(f => {
+        const fullPath = currentPath + f;
+
         const div = document.createElement("div");
         div.className = "item file";
-        div.textContent = f;
-        div.onclick = () => {
-            filePathInput.value = currentPath + f;
-            openInNewTab();
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "fileName";
+        nameSpan.textContent = f;
+        nameSpan.onclick = () => {
+            filePathInput.value = fullPath;
+            openFileModal(fullPath);
         };
+
+        const dlBtn = document.createElement("button");
+        dlBtn.className = "downloadBtn";
+        dlBtn.textContent = "Download";
+        dlBtn.onclick = (e) => {
+            e.stopPropagation();
+            downloadZipEntry(fullPath);
+        };
+
+        div.appendChild(nameSpan);
+        div.appendChild(dlBtn);
         list.appendChild(div);
     });
 }
@@ -195,18 +473,27 @@ function openInNewTab() {
     window.open(url, "_blank");
 }
 
-/* ---------- DISPLAY FILE ---------- */
-function fetchAndDisplayFile(zipUrl, filePath) {
-    fetch(zipUrl)
-        .then(r => r.arrayBuffer())
-        .then(b => JSZip.loadAsync(b))
-        .then(zip => zip.file(filePath).async("blob"))
+/* ---------- DISPLAY FILE (from already-loaded zipData, no re-fetch) ---------- */
+function displayFileFromCachedZip(filePath) {
+    const entry = zipData.file(filePath);
+    if (!entry) {
+        fileDisplay.textContent = "Unable to load file";
+        return;
+    }
+    entry.async("blob")
         .then(blob => displayFile(blob, filePath))
         .catch(() => fileDisplay.textContent = "Unable to load file");
 }
 
 function displayFile(blob, filePath) {
-    fileDisplay.innerHTML = "";
+    renderFileContent(fileDisplay, blob, filePath);
+}
+
+/* Renders a file's content into the given container element.
+   Images/audio/video/html get dedicated players; everything else
+   (unknown/undefined types) always falls back to plain text preview. */
+function renderFileContent(container, blob, filePath) {
+    container.innerHTML = "";
 
     const ext = filePath.split(".").pop().toLowerCase();
     const url = URL.createObjectURL(blob);
@@ -218,7 +505,7 @@ function displayFile(blob, filePath) {
         img.style.maxHeight = "80vh";
         img.style.display = "block";
         img.style.margin = "0 auto";
-        fileDisplay.appendChild(img);
+        container.appendChild(img);
         return;
     }
 
@@ -226,7 +513,7 @@ function displayFile(blob, filePath) {
         const a = document.createElement("audio");
         a.controls = true;
         a.src = url;
-        fileDisplay.appendChild(a);
+        container.appendChild(a);
         return;
     }
 
@@ -235,7 +522,7 @@ function displayFile(blob, filePath) {
         v.controls = true;
         v.src = url;
         v.style.maxWidth = "100%";
-        fileDisplay.appendChild(v);
+        container.appendChild(v);
         return;
     }
 
@@ -244,25 +531,101 @@ function displayFile(blob, filePath) {
         i.src = url;
         i.style.width = "100%";
         i.style.height = "500px";
-        fileDisplay.appendChild(i);
+        container.appendChild(i);
         return;
     }
 
+    // Everything else (including unknown/undefined extensions) previews as text
     const r = new FileReader();
     r.onload = () => {
         const pre = document.createElement("pre");
         pre.textContent = r.result;
-        fileDisplay.appendChild(pre);
+        container.appendChild(pre);
     };
     r.readAsText(blob);
 }
 
+/* ---------- MODAL PREVIEW (clicking a file in the folder browser) ---------- */
+function openFileModal(filePath) {
+    if (!zipData) return;
+    const entry = zipData.file(filePath);
+    if (!entry) {
+        alert("File not found in ZIP");
+        return;
+    }
+
+    currentModalFilePath = filePath;
+    modalTitle.textContent = filePath;
+    modalBody.innerHTML = "<em>Loading…</em>";
+    modalOverlay.style.display = "flex";
+
+    entry.async("blob")
+        .then(blob => renderFileContent(modalBody, blob, filePath))
+        .catch(() => {
+            modalBody.innerHTML = "";
+            const p = document.createElement("p");
+            p.textContent = "Unable to load file";
+            modalBody.appendChild(p);
+        });
+}
+
+function closeModal() {
+    modalOverlay.style.display = "none";
+    modalBody.innerHTML = "";
+    currentModalFilePath = null;
+}
+
+/* Close modal on overlay click (but not when clicking inside the box) */
+modalOverlay.addEventListener("click", (e) => {
+    if (e.target === modalOverlay) closeModal();
+});
+
+/* Close modal on Escape key */
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modalOverlay.style.display === "flex") closeModal();
+});
+
+function downloadCurrentModalFile() {
+    if (currentModalFilePath) downloadZipEntry(currentModalFilePath);
+}
+
+/* ---------- DOWNLOAD A FILE FROM THE ZIP (via download button) ---------- */
+function downloadZipEntry(filePath) {
+    if (!zipData) return;
+    const entry = zipData.file(filePath);
+    if (!entry) {
+        alert("File not found in ZIP");
+        return;
+    }
+
+    entry.async("blob").then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filePath.split("/").pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }).catch(() => {
+        alert("Unable to download file");
+    });
+}
+
 /* ---------- PROCESS ZIP URL AND PATH ---------- */
 function processZipUrl(zipUrl, filePath) {
-    fetch(zipUrl)
-        .then(r => r.arrayBuffer())
+    showProgress();
+
+    fetchZipWithProgress(zipUrl, frac => {
+        if (frac === null) {
+            setProgress(0, true);
+        } else {
+            setProgress(frac, false);
+        }
+    })
         .then(b => JSZip.loadAsync(b))
         .then(zip => {
+            hideProgress();
             zipData = zip;
             
             // Check if the path is a folder (ends with / or doesn't exist as a file but exists as a folder)
@@ -290,12 +653,16 @@ function processZipUrl(zipUrl, filePath) {
                 renderFolder();
                 header.style.display = "none"; // Hide header for direct folder links
             } else {
-                // It's a file - display it
-                fetchAndDisplayFile(zipUrl, filePath);
+                // It's a file - display it using the zip already loaded in memory
+                // (no need to fetch the zip a second time, it's already cached in zipData)
+                displayFileFromCachedZip(filePath);
                 header.style.display = "none"; // Hide header for direct file links
             }
         })
-        .catch(() => alert("Failed to load ZIP"));
+        .catch(() => {
+            hideProgress();
+            alert("Failed to load ZIP");
+        });
 }
 
 /* ---------- AUTO LOAD ---------- */
