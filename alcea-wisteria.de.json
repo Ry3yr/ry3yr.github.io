@@ -4102,5 +4102,29 @@
         "mode": "response_code",
         "domainname": "alcea-wisteria.de",
         "response_code": 200
+    },
+    {
+        "date": "2026-09-17 09:54:38",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2026-09-17 11:54:51",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2026-09-17 22:02:56",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
+    },
+    {
+        "date": "2026-09-19 08:00:57",
+        "mode": "response_code",
+        "domainname": "alcea-wisteria.de",
+        "response_code": 200
     }
 ]
