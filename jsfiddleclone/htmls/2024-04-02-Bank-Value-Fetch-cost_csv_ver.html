@@ -1,0 +1,524 @@
+<a href="https://alcea-wisteria.de/PHP/0demo/2023-08-15-JSFiddle-Clone/htmls/2024-04-02-Bank-Value-Fetch-cost.html">Copy-n-Paste-VER-ver</a> <br><br>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank CSV Parser · Transactions & Pie</title>
+  <!-- Chart.js for pie chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-top: 0;
+      text-align: center;
+    }
+    .description {
+      color: #7f8c8d;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .info-box {
+      background-color: #e8f4fd;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 0 5px 5px 0;
+    }
+    .file-area {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+    .file-label {
+      background-color: #ecf0f1;
+      border: 2px dashed #bdc3c7;
+      border-radius: 8px;
+      padding: 25px 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .file-label:hover {
+      background-color: #e0e7e9;
+      border-color: #3498db;
+    }
+    .file-label input {
+      display: none;
+    }
+    .file-label span {
+      font-size: 16px;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+    .file-label small {
+      display: block;
+      margin-top: 8px;
+      color: #7f8c8d;
+      font-size: 13px;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      transition: background-color 0.3s;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    button:disabled {
+      background-color: #b0c4de;
+      cursor: not-allowed;
+    }
+    .results {
+      margin-top: 30px;
+      display: none;
+    }
+    .transaction {
+      background-color: #f8f9fa;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-radius: 0 5px 5px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .transaction-description {
+      font-weight: 600;
+      color: #2c3e50;
+      flex: 2 1 300px;
+    }
+    .transaction-meta {
+      color: #7f8c8d;
+      font-size: 13px;
+      margin-top: 4px;
+      flex: 1 1 100%;
+    }
+    .transaction-amount {
+      font-weight: 700;
+      color: #e74c3c;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+    .total {
+      background-color: #2c3e50;
+      color: white;
+      padding: 16px;
+      border-radius: 5px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    canvas {
+      display: block;
+      margin: 30px auto;
+      max-width: 500px;
+      max-height: 400px;
+    }
+    .chart-container {
+      margin-top: 30px;
+    }
+    .badge {
+      background: #e8f4fd;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+    .error-msg {
+      background: #fdecea;
+      color: #c0392b;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 15px;
+      border-left: 4px solid #e74c3c;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🏦 Bank CSV Parser</h1>
+  <p class="description">
+    Upload a CSV export (semicolon‑separated) with columns:
+    <em>Buchungstag, Name Zahlungsbeteiligter, Verwendungszweck, Betrag, Waehrung</em>.
+    The parser extracts negative Euro amounts, shows details, total, and a categorized pie chart.
+  </p>
+
+  <div class="info-box">
+    <strong>📋 How to use:</strong> Choose a CSV file (semicolon delimited, UTF‑8) and click <strong>“Parse CSV”</strong>.
+    The parser reads the header, identifies the relevant columns, and only processes transactions with negative amounts
+    (e.g. <code>-5,21</code>). The description is built from <strong>Name Zahlungsbeteiligter</strong> and
+    <strong>Verwendungszweck</strong> for better context.
+  </div>
+
+  <div class="file-area">
+    <label class="file-label" for="csvFile">
+      <span>📂 Choose a CSV file</span>
+      <small>Click here — only .csv files (semicolon separated)</small>
+      <input type="file" id="csvFile" accept=".csv,text/csv">
+    </label>
+    <div id="fileNameDisplay" style="font-size:14px; color:#2c3e50; padding-left:5px;"></div>
+    <button id="parseButton" disabled>Parse CSV</button>
+  </div>
+
+  <div id="errorContainer"></div>
+
+  <div class="results" id="results">
+    <h2 style="margin-bottom:16px; color:#2c3e50;">📄 Extracted Transactions</h2>
+    <div id="transactionList"></div>
+    <div class="total" id="totalAmount">Total: -€0.00</div>
+
+    <div class="chart-container">
+      <canvas id="pieChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- DOM elements -----
+    const fileInput = document.getElementById('csvFile');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const parseButton = document.getElementById('parseButton');
+    const resultsDiv = document.getElementById('results');
+    const transactionList = document.getElementById('transactionList');
+    const totalEl = document.getElementById('totalAmount');
+    const errorContainer = document.getElementById('errorContainer');
+    const canvas = document.getElementById('pieChart');
+
+    let currentChart = null;          // store Chart instance
+    let parsedTransactions = [];      // { description, amount, date, purpose, name }
+
+    // ----- file selection handler -----
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        fileNameDisplay.textContent = '';
+        parseButton.disabled = true;
+        return;
+      }
+      fileNameDisplay.textContent = `📎 ${file.name}`;
+      parseButton.disabled = false;
+      // clear previous errors and results when new file chosen
+      errorContainer.innerHTML = '';
+      resultsDiv.style.display = 'none';
+    });
+
+    // ----- parse CSV button -----
+    parseButton.addEventListener('click', function() {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      errorContainer.innerHTML = '';
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        const content = evt.target.result;
+        try {
+          const transactions = parseCSV(content);
+          if (transactions.length === 0) {
+            errorContainer.innerHTML = '<div class="error-msg">⚠️ No negative transactions found. Check CSV format and amount column (Betrag).</div>';
+            resultsDiv.style.display = 'none';
+            return;
+          }
+          parsedTransactions = transactions;
+          displayResults(transactions);
+          displayPieChart(transactions);
+        } catch (err) {
+          errorContainer.innerHTML = `<div class="error-msg">❌ Error parsing CSV: ${err.message}</div>`;
+          resultsDiv.style.display = 'none';
+        }
+      };
+
+      reader.onerror = function() {
+        errorContainer.innerHTML = '<div class="error-msg">❌ Failed to read file.</div>';
+      };
+
+      reader.readAsText(file, 'UTF-8');
+    });
+
+    // ----- CSV parser (semicolon separated) -----
+    function parseCSV(csvText) {
+      // Normalize line endings, split into rows
+      const rows = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(row => row.trim() !== '');
+      if (rows.length < 2) throw new Error('CSV must contain a header and at least one data row.');
+
+      // Parse header
+      const header = rows[0].split(';').map(h => h.trim());
+      
+      // Find column indices (case-insensitive, but exact matching is fine)
+      const findCol = (name) => {
+        const idx = header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+        if (idx === -1) throw new Error(`Column "${name}" not found. Found: ${header.join(', ')}`);
+        return idx;
+      };
+
+      const idxBuchungstag = findCol('Buchungstag');
+      const idxName = findCol('Name Zahlungsbeteiligter');
+      const idxVerwendungszweck = findCol('Verwendungszweck');
+      const idxBetrag = findCol('Betrag');
+      const idxWaehrung = findCol('Waehrung');
+
+      const transactions = [];
+
+      // Process data rows (skip header)
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        // Split by semicolon – but we must handle possible semicolons inside quotes.
+        // Simple CSV parser that respects quoted fields (with "" escaping) 
+        const fields = parseCSVLine(row);
+        
+        // If field count is less than header, pad with empty strings
+        while (fields.length < header.length) fields.push('');
+
+        // Extract raw values
+        const rawBetrag = fields[idxBetrag]?.trim() || '';
+        const waehrung = fields[idxWaehrung]?.trim() || '';
+
+        // Only process EUR negative amounts (e.g. -5,21)
+        if (waehrung !== 'EUR') continue;
+        
+        // Amount format: optional minus, digits, comma, two decimals
+        // Must start with minus (we only want negative transactions)
+        const amountMatch = rawBetrag.match(/^-(\d+),(\d{2})$/);
+        if (!amountMatch) continue;
+
+        // Convert to positive number (absolute value) – we'll display as negative later
+        const whole = parseInt(amountMatch[1], 10);
+        const cents = parseInt(amountMatch[2], 10);
+        const amount = whole + cents / 100;   // positive value (e.g. 5.21)
+        
+        // Build description: prefer "Name Zahlungsbeteiligter" + "Verwendungszweck"
+        const name = fields[idxName]?.trim() || '';
+        const purpose = fields[idxVerwendungszweck]?.trim() || '';
+        
+        let description = '';
+        if (name && purpose) {
+          description = `${name} – ${purpose}`;
+        } else if (name) {
+          description = name;
+        } else if (purpose) {
+          description = purpose;
+        } else {
+          description = 'Unbekannter Empfänger';
+        }
+        
+        // Truncate description for display sanity (keep up to 120 chars)
+        if (description.length > 120) description = description.substring(0, 117) + '…';
+
+        const buchungstag = fields[idxBuchungstag]?.trim() || '';
+
+        transactions.push({
+          description: description,
+          amount: amount,           // positive number, we treat as expense
+          date: buchungstag,
+          name: name,
+          purpose: purpose,
+          rawBetrag: rawBetrag
+        });
+      }
+
+      return transactions;
+    }
+
+    // ----- helper: parse a single CSV line respecting quotes (semicolon delimiter) -----
+    function parseCSVLine(line) {
+      const fields = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (i + 1 < line.length && line[i + 1] === '"') {
+              // escaped quote
+              current += '"';
+              i++; // skip next quote
+            } else {
+              inQuotes = false;
+            }
+          } else {
+            current += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ';') {
+            fields.push(current);
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+      }
+      fields.push(current); // last field
+      return fields;
+    }
+
+    // ----- display results (transactions list + total) -----
+    function displayResults(transactions) {
+      transactionList.innerHTML = '';
+      let total = 0;
+
+      transactions.forEach(t => {
+        total += t.amount;
+
+        const div = document.createElement('div');
+        div.className = 'transaction';
+
+        // description + meta
+        const leftDiv = document.createElement('div');
+        leftDiv.style.flex = '2 1 300px';
+        leftDiv.innerHTML = `
+          <div class="transaction-description">${escapeHtml(t.description)}</div>
+          <div class="transaction-meta">📅 ${escapeHtml(t.date)} · Betrag: ${escapeHtml(t.rawBetrag)} EUR</div>
+        `;
+
+        const amountDiv = document.createElement('div');
+        amountDiv.className = 'transaction-amount';
+        amountDiv.textContent = `-€${t.amount.toFixed(2)}`;
+
+        div.appendChild(leftDiv);
+        div.appendChild(amountDiv);
+        transactionList.appendChild(div);
+      });
+
+      totalEl.textContent = `Total: -€${total.toFixed(2)}`;
+      resultsDiv.style.display = 'block';
+    }
+
+    // ----- simple HTML escape for security -----
+    function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ----- pie chart (categorized) -----
+    function displayPieChart(transactions) {
+      const ctx = canvas.getContext('2d');
+
+      // Categories: same as before (eBay, EDEKA/LIDL/Netto, Klarna, Ferdinand, DB, Rest)
+      let ebay = 0, edekaLidlNetto = 0, klarna = 0, ferdinand = 0, db = 0, rest = 0;
+
+      transactions.forEach(t => {
+        const desc = t.description.toLowerCase();
+        if (desc.includes('ebay')) ebay += t.amount;
+        else if (desc.includes('edeka') || desc.includes('lidl') || desc.includes('netto')) edekaLidlNetto += t.amount;
+        else if (desc.includes('klarna')) klarna += t.amount;
+        else if (desc.includes('ferdinand')) ferdinand += t.amount;
+        else if (desc.includes('db')) db += t.amount;
+        else rest += t.amount;
+      });
+
+      const totals = [ebay, edekaLidlNetto, klarna, ferdinand, db, rest];
+      const labels = ['eBay', 'EDEKA/LIDL/Netto', 'Klarna', 'Ferdinand', 'DB', 'Rest'];
+      const totalSum = totals.reduce((a, b) => a + b, 0);
+
+      // If totalSum is 0, show empty message on chart? Better to not break.
+      if (totalSum === 0) {
+        // destroy previous chart and show empty canvas
+        if (currentChart) currentChart.destroy();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      const chartData = {
+        labels: labels.map((l, i) => {
+          const val = totals[i];
+          const pct = (val / totalSum * 100).toFixed(1);
+          return `${l} (€${val.toFixed(2)} / ${pct}%)`;
+        }),
+        datasets: [{
+          data: totals,
+          backgroundColor: [
+            '#3498db',  // eBay
+            '#2ecc71',  // EDEKA/LIDL/Netto  (changed from duplicate blue to green for clarity)
+            '#ff69b4',  // Klarna
+            '#f1c40f',  // Ferdinand
+            '#ff9999',  // DB
+            '#95a5a6'   // Rest (grey)
+          ],
+          borderWidth: 1
+        }]
+      };
+
+      if (currentChart) currentChart.destroy();
+
+      currentChart = new Chart(ctx, {
+        type: 'pie',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 15, font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const val = context.parsed;
+                  const pct = (val / totalSum * 100).toFixed(1);
+                  return `${context.label}: €${val.toFixed(2)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ----- reset if user picks a new file after parsing -----
+    fileInput.addEventListener('change', function() {
+      if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+      }
+      resultsDiv.style.display = 'none';
+      transactionList.innerHTML = '';
+      totalEl.textContent = 'Total: -€0.00';
+    });
+
+  })();
+</script>
+</body>
+</html>
