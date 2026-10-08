@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PNG Shrinker — Full Pipeline</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    background: #f5f5f7;
+    color: #222;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.3rem; }
+  .sub { color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+  .panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  label { display: block; font-weight: 600; margin-bottom: 0.4rem; margin-top: 0.8rem; }
+  label:first-child { margin-top: 0; }
+  input[type="file"] { margin-bottom: 0.8rem; }
+  .row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  input[type="range"] { flex: 1; min-width: 200px; }
+  .value {
+    font-variant-numeric: tabular-nums;
+    min-width: 4rem;
+    text-align: right;
+    font-weight: 600;
+  }
+  button {
+    background: #0066ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  button:disabled { background: #aaa; cursor: not-allowed; }
+  button.secondary { background: #444; }
+  .check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fafafa;
+  }
+  .check input[type="checkbox"] { margin-top: 0.25rem; }
+  .check-body { flex: 1; }
+  .check-title { font-weight: 600; }
+  .check-desc { font-size: 0.82rem; color: #666; margin-top: 2px; }
+  .check-options {
+    margin-top: 0.5rem;
+    display: none;
+    gap: 0.8rem;
+    align-items: center;
+  }
+  .check-options.show { display: flex; }
+  .check-options input[type="range"] { min-width: 120px; }
+
+  .preview-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    background:
+      linear-gradient(45deg, #eee 25%, transparent 25%),
+      linear-gradient(-45deg, #eee 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eee 75%),
+      linear-gradient(-45deg, transparent 75%, #eee 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    user-select: none;
+  }
+  .preview-wrap img { max-width: 100%; height: auto; display: block; }
+  .preview-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    border: none;
+    font-size: 1.2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .preview-nav:disabled { background: rgba(0,0,0,0.15); cursor: not-allowed; }
+  .preview-nav.prev { left: 10px; }
+  .preview-nav.next { right: 10px; }
+  .preview-counter {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 0.78rem;
+    font-family: ui-monospace, monospace;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .preview-info {
+    font-size: 0.85rem;
+    color: #444;
+    margin-top: 0.6rem;
+    font-family: ui-monospace, monospace;
+  }
+  .status { font-size: 0.9rem; color: #555; margin-top: 0.5rem; }
+  .log { font-size: 0.85rem; color: #444; max-height: 260px; overflow-y: auto; margin-top: 0.5rem; }
+  .log div { padding: 2px 0; font-family: ui-monospace, monospace; }
+  .log .ok { color: #0a7a2f; }
+  .log .skip { color: #b06000; }
+  .log .err { color: #c02020; }
+  .log .info { color: #444; }
+  .hint { font-size: 0.8rem; color: #777; margin-top: 0.3rem; }
+
+  .tally {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    margin-top: 0.6rem;
+  }
+  .stat {
+    background: #f7f7fa;
+    border: 1px solid #e5e5e8;
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+  }
+  .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+  .stat-value.green { color: #0a7a2f; }
+  .stat-value.orange { color: #b06000; }
+  .tally-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.8rem;
+    font-size: 0.83rem;
+    font-family: ui-monospace, monospace;
+  }
+  .tally-table th, .tally-table td {
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .tally-table th { color: #666; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+  .tally-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tally-table tr.skipped td { color: #b06000; }
+  .tally-table tr.saved td.pct { color: #0a7a2f; font-weight: 700; }
+  .empty-tally { color: #888; font-size: 0.85rem; padding: 0.5rem 0; }
+
+  @media (max-width: 640px) {
+    .tally { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<h1>PNG Shrinker — Full Pipeline</h1>
+<div class="sub">Median-cut palette, YCoCg, per-channel &amp; block-adaptive bit depth, deflate re-compress. Only exports files that actually get smaller.</div>
+
+<div class="panel">
+  <label for="files">Select images (multiple)</label>
+  <input type="file" id="files" accept="image/*" multiple>
+  <div class="status" id="status">No images selected.</div>
+</div>
+
+<div class="panel">
+  <label>Pipeline</label>
+
+  <div class="check">
+    <input type="checkbox" id="optPalette" checked>
+    <div class="check-body">
+      <div class="check-title">Median-cut palette → indexed PNG</div>
+      <div class="check-desc">Real indexed PNG (color type 3). Usually the biggest win for flat/illustrated art, less so for photos.</div>
+      <div class="check-options show" id="paletteOpts">
+        <label style="margin:0;display:flex;gap:0.5rem;align-items:center;font-weight:500;">
+          <input type="checkbox" id="paletteAuto" checked> auto
+        </label>
+        <span style="font-size:0.85rem;">Colors:</span>
+        <input type="range" id="paletteColors" min="2" max="256" value="128" step="1">
+        <span class="value" id="paletteColorsVal">128</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optDepth" checked>
+    <div class="check-body">
+      <div class="check-title">Reduce bit depth</div>
+      <div class="check-desc">Posterize channels. Disabled when palette is on.</div>
+      <div class="check-options show" id="depthOpts">
+        <span style="font-size:0.85rem;">Bits per channel:</span>
+        <input type="range" id="depthBits" min="1" max="8" value="3" step="1">
+        <span class="value" id="depthBitsVal">3</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optPerChannel" checked>
+    <div class="check-body">
+      <div class="check-title">Per-channel bit depth (R/B coarser than G)</div>
+      <div class="check-desc">Human eyes are more sensitive to green. Ignored when YCoCg or block-adaptive is on.</div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optYCoCg" checked>
+    <div class="check-body">
+      <div class="check-title">YCoCg luma/chroma split</div>
+      <div class="check-desc">Quantizes luma finer than chroma. Takes priority over per-channel. Ignored when block-adaptive is on.</div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optBlockAdaptive" checked>
+    <div class="check-body">
+      <div class="check-title">Block-adaptive bit depth</div>
+      <div class="check-desc">Per 16×16 block: finer in busy areas, coarser in flat areas. Takes priority over the other depth modes.</div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optDownscale">
+    <div class="check-body">
+      <div class="check-title">Downscale then upscale back</div>
+      <div class="check-desc">Softens detail (and often compresses better) while keeping the original dimensions.</div>
+      <div class="check-options" id="downscaleOpts">
+        <span style="font-size:0.85rem;">Scale:</span>
+        <input type="range" id="downscale" min="10" max="100" value="75" step="5">
+        <span class="value" id="downscaleVal">75%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optGrayscale">
+    <div class="check-body">
+      <div class="check-title">Grayscale</div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optDeflate" checked>
+    <div class="check-body">
+      <div class="check-title">Deflate re-compression</div>
+      <div class="check-desc">Re-encode IDAT via CompressionStream instead of stored blocks.</div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optStripChunks" checked>
+    <div class="check-body">
+      <div class="check-title">Strip non-critical PNG chunks</div>
+    </div>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" id="optMultiPath" checked>
+    <div class="check-body">
+      <div class="check-title">Multi-path encode, pick smallest</div>
+      <div class="check-desc">Encodes both a true-color and an indexed candidate (when palette is on) and keeps whichever is smaller.</div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:1rem;">
+    <button id="processBtn" disabled>Process &amp; Download ZIP</button>
+    <button id="clearBtn" class="secondary">Clear all</button>
+  </div>
+  <div class="hint">Only images that actually come out smaller than the original are included in the ZIP — anything that doesn't shrink is skipped and reported below.</div>
+
+  <div style="margin-top:1.2rem;">
+    <label>Tally</label>
+    <div class="tally">
+      <div class="stat">
+        <div class="stat-label">Input</div>
+        <div class="stat-value" id="statIn">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Output</div>
+        <div class="stat-value" id="statOut">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Saved</div>
+        <div class="stat-value green" id="statSaved">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Files (exported / skipped)</div>
+        <div class="stat-value" id="statFiles">—</div>
+      </div>
+    </div>
+
+    <div id="tallyTableWrap">
+      <div class="empty-tally" id="emptyTally">No batch processed yet.</div>
+      <table class="tally-table" id="tallyTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th class="num">Input</th>
+            <th class="num">Output</th>
+            <th class="num">Palette</th>
+            <th class="num">PSNR</th>
+            <th class="num">Saved %</th>
+          </tr>
+        </thead>
+        <tbody id="tallyBody"></tbody>
+        <tfoot>
+          <tr>
+            <th>TOTAL (exported only)</th>
+            <th class="num" id="tfootIn">—</th>
+            <th class="num" id="tfootOut">—</th>
+            <th></th>
+            <th></th>
+            <th class="num pct" id="tfootPct">—</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<div class="panel">
+  <label>Preview</label>
+  <div class="preview-wrap" id="previewWrap">
+    <img id="previewImg" alt="preview">
+    <button class="preview-nav prev" id="prevBtn" title="Previous image">‹</button>
+    <button class="preview-nav next" id="nextBtn" title="Next image">›</button>
+    <div class="preview-counter" id="previewCounter" style="display:none;">1 / 1</div>
+  </div>
+  <div class="preview-info" id="previewInfo">No image loaded.</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+// ============================================================
+// Startup guard
+// ============================================================
+if (typeof JSZip === 'undefined') {
+  document.body.innerHTML =
+    '<div style="padding:2rem;font-family:system-ui;color:#c00;max-width:600px;margin:2rem auto;">' +
+    '<h2>Failed to load JSZip.</h2><p>Check your connection, then reload.</p></div>';
+  throw new Error('JSZip not loaded');
+}
+
+// ============================================================
+// DOM
+// ============================================================
+const filesInput = document.getElementById('files');
+const statusEl = document.getElementById('status');
+const processBtn = document.getElementById('processBtn');
+const clearBtn = document.getElementById('clearBtn');
+const previewImg = document.getElementById('previewImg');
+const previewInfo = document.getElementById('previewInfo');
+const previewWrap = document.getElementById('previewWrap');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const previewCounter = document.getElementById('previewCounter');
+const logEl = document.getElementById('log');
+
+const optPalette = document.getElementById('optPalette');
+const paletteOpts = document.getElementById('paletteOpts');
+const paletteAuto = document.getElementById('paletteAuto');
+const paletteColors = document.getElementById('paletteColors');
+const paletteColorsVal = document.getElementById('paletteColorsVal');
+
+const optDepth = document.getElementById('optDepth');
+const depthOpts = document.getElementById('depthOpts');
+const depthBits = document.getElementById('depthBits');
+const depthBitsVal = document.getElementById('depthBitsVal');
+
+const optPerChannel = document.getElementById('optPerChannel');
+const optYCoCg = document.getElementById('optYCoCg');
+const optBlockAdaptive = document.getElementById('optBlockAdaptive');
+
+const optDownscale = document.getElementById('optDownscale');
+const downscaleOpts = document.getElementById('downscaleOpts');
+const downscale = document.getElementById('downscale');
+const downscaleVal = document.getElementById('downscaleVal');
+
+const optGrayscale = document.getElementById('optGrayscale');
+const optDeflate = document.getElementById('optDeflate');
+const optStripChunks = document.getElementById('optStripChunks');
+const optMultiPath = document.getElementById('optMultiPath');
+
+const statIn = document.getElementById('statIn');
+const statOut = document.getElementById('statOut');
+const statSaved = document.getElementById('statSaved');
+const statFiles = document.getElementById('statFiles');
+const emptyTally = document.getElementById('emptyTally');
+const tallyTable = document.getElementById('tallyTable');
+const tallyBody = document.getElementById('tallyBody');
+const tfootIn = document.getElementById('tfootIn');
+const tfootOut = document.getElementById('tfootOut');
+const tfootPct = document.getElementById('tfootPct');
+
+let selectedFiles = [];
+let previewIndex = 0;
+let previewBitmap = null;
+let totalInExported = 0;
+
+// ============================================================
+// Utilities
+// ============================================================
+function fmtBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+}
+
+function resetTally() {
+  statIn.textContent = '—';
+  statOut.textContent = '—';
+  statSaved.textContent = '—';
+  statSaved.className = 'stat-value green';
+  statFiles.textContent = '—';
+  tallyBody.innerHTML = '';
+  tfootIn.textContent = '—';
+  tfootOut.textContent = '—';
+  tfootPct.textContent = '—';
+  tallyTable.style.display = 'none';
+  emptyTally.style.display = 'block';
+}
+
+function addTallyRow(name, inputSize, outputSize, skipped, paletteSize, psnr) {
+  emptyTally.style.display = 'none';
+  tallyTable.style.display = 'table';
+  const tr = document.createElement('tr');
+  if (skipped) tr.className = 'skipped';
+
+  const mk = (text, cls) => {
+    const td = document.createElement('td');
+    td.textContent = text;
+    if (cls) td.className = cls;
+    return td;
+  };
+
+  tr.appendChild(mk(name));
+  tr.appendChild(mk(fmtBytes(inputSize), 'num'));
+  tr.appendChild(mk(skipped ? '—' : fmtBytes(outputSize), 'num'));
+  tr.appendChild(mk(skipped ? '—' : (paletteSize ?? '—'), 'num'));
+  tr.appendChild(mk(skipped ? '—' : (psnr != null ? psnr.toFixed(1) : '—'), 'num'));
+
+  const tdPct = document.createElement('td');
+  tdPct.className = 'num pct';
+  if (skipped) {
+    tdPct.textContent = 'skipped';
+  } else {
+    const savedPct = (1 - outputSize / inputSize) * 100;
+    tdPct.textContent = (savedPct >= 0 ? '' : '+') + savedPct.toFixed(1) + '%';
+    if (savedPct > 0) tr.className = 'saved';
+  }
+  tr.appendChild(tdPct);
+
+  tallyBody.appendChild(tr);
+}
+
+function updateTallyTotals(totalIn, totalOut, exported, skipped) {
+  statIn.textContent = fmtBytes(totalIn);
+  statOut.textContent = exported > 0 ? fmtBytes(totalOut) : '—';
+  if (exported > 0 && totalOut < totalInExported) {
+    const saved = totalInExported - totalOut;
+    const pct = (saved / totalInExported * 100).toFixed(1);
+    statSaved.textContent = `${fmtBytes(saved)} (${pct}%)`;
+    statSaved.className = 'stat-value green';
+  } else if (exported > 0) {
+    statSaved.textContent = '0';
+    statSaved.className = 'stat-value orange';
+  } else {
+    statSaved.textContent = '—';
+    statSaved.className = 'stat-value green';
+  }
+  statFiles.textContent = `${exported} / ${skipped}`;
+
+  tfootIn.textContent = fmtBytes(totalInExported);
+  tfootOut.textContent = fmtBytes(totalOut);
+  if (totalInExported > 0) {
+    const pct = ((1 - totalOut / totalInExported) * 100).toFixed(1);
+    tfootPct.textContent = pct + '%';
+  }
+}
+
+// ============================================================
+// Wire pipeline UI
+// ============================================================
+optPalette.addEventListener('change', () => {
+  paletteOpts.classList.toggle('show', optPalette.checked);
+  optDepth.disabled = optPalette.checked;
+  optPerChannel.disabled = optPalette.checked;
+  optYCoCg.disabled = optPalette.checked;
+  optBlockAdaptive.disabled = optPalette.checked;
+  schedulePreview();
+});
+paletteAuto.addEventListener('change', () => {
+  paletteColors.disabled = paletteAuto.checked;
+  schedulePreview();
+});
+paletteColors.addEventListener('input', () => {
+  paletteColorsVal.textContent = paletteColors.value;
+  schedulePreview();
+});
+
+optDepth.addEventListener('change', () => {
+  depthOpts.classList.toggle('show', optDepth.checked);
+  schedulePreview();
+});
+depthBits.addEventListener('input', () => {
+  depthBitsVal.textContent = depthBits.value;
+  schedulePreview();
+});
+
+optPerChannel.addEventListener('change', schedulePreview);
+optYCoCg.addEventListener('change', schedulePreview);
+optBlockAdaptive.addEventListener('change', schedulePreview);
+
+optDownscale.addEventListener('change', () => {
+  downscaleOpts.classList.toggle('show', optDownscale.checked);
+  schedulePreview();
+});
+downscale.addEventListener('input', () => {
+  downscaleVal.textContent = downscale.value + '%';
+  schedulePreview();
+});
+
+optGrayscale.addEventListener('change', schedulePreview);
+optDeflate.addEventListener('change', schedulePreview);
+optStripChunks.addEventListener('change', schedulePreview);
+optMultiPath.addEventListener('change', schedulePreview);
+
+// ============================================================
+// Preview navigation (prev/next across all selected images)
+// ============================================================
+function updateNavUI() {
+  const n = selectedFiles.length;
+  prevBtn.disabled = n <= 1 || previewIndex <= 0;
+  nextBtn.disabled = n <= 1 || previewIndex >= n - 1;
+  if (n > 1) {
+    previewCounter.style.display = 'block';
+    previewCounter.textContent = `${previewIndex + 1} / ${n}`;
+  } else {
+    previewCounter.style.display = 'none';
+  }
+}
+
+async function loadPreviewAt(index) {
+  if (index < 0 || index >= selectedFiles.length) return;
+  previewIndex = index;
+  updateNavUI();
+  if (previewBitmap) { previewBitmap.close(); previewBitmap = null; }
+  previewBitmap = await createImageBitmap(selectedFiles[previewIndex]);
+  schedulePreview();
+}
+
+prevBtn.addEventListener('click', () => loadPreviewAt(previewIndex - 1));
+nextBtn.addEventListener('click', () => loadPreviewAt(previewIndex + 1));
+
+// ============================================================
+// File input
+// ============================================================
+filesInput.addEventListener('change', async () => {
+  if (previewBitmap) { previewBitmap.close(); previewBitmap = null; }
+
+  selectedFiles = Array.from(filesInput.files).filter(f => f.type.startsWith('image/'));
+
+  if (selectedFiles.length === 0) {
+    statusEl.textContent = 'No valid image files selected.';
+    previewImg.removeAttribute('src');
+    previewInfo.textContent = 'No image loaded.';
+    processBtn.disabled = true;
+    previewCounter.style.display = 'none';
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+
+  statusEl.textContent = `${selectedFiles.length} image(s) selected.`;
+  processBtn.disabled = false;
+  resetTally();
+  totalInExported = 0;
+
+  await loadPreviewAt(0);
+});
+
+clearBtn.addEventListener('click', () => {
+  filesInput.value = '';
+  selectedFiles = [];
+  previewIndex = 0;
+  if (previewBitmap) { previewBitmap.close(); previewBitmap = null; }
+  previewImg.removeAttribute('src');
+  previewInfo.textContent = 'No image loaded.';
+  statusEl.textContent = 'No images selected.';
+  processBtn.disabled = true;
+  previewCounter.style.display = 'none';
+  prevBtn.disabled = true;
+  nextBtn.disabled = true;
+  logEl.innerHTML = '';
+  resetTally();
+  totalInExported = 0;
+});
+
+// ============================================================
+// PSNR (whole image)
+// ============================================================
+function psnr(a, b) {
+  let sum = 0, count = 0;
+  for (let i = 0; i < a.length; i += 4) {
+    const dr = a[i] - b[i];
+    const dg = a[i+1] - b[i+1];
+    const db = a[i+2] - b[i+2];
+    sum += dr*dr + dg*dg + db*db;
+    count += 3;
+  }
+  if (count === 0) return 99;
+  const mse = sum / count;
+  if (mse === 0) return 99;
+  return 10 * Math.log10((255 * 255) / mse);
+}
+
+// ============================================================
+// YCoCg
+// ============================================================
+function rgbToYCoCg(r, g, b) {
+  const y  = (r + 2*g + b) / 4;
+  const co = (r - b) / 2;
+  const cg = (-r + 2*g - b) / 4;
+  return [y, co, cg];
+}
+function yCoCgToRgb(y, co, cg) {
+  const t = y - cg;
+  return [t + co, y + cg, t - co];
+}
+function quantize(v, bits) {
+  const levels = (1 << bits) - 1;
+  const step = 255 / levels;
+  return Math.round(v / step) * step;
+}
+
+// ============================================================
+// Block variance map
+// ============================================================
+function computeVarianceMap(data, w, h, blockSize) {
+  const bx = Math.ceil(w / blockSize);
+  const by = Math.ceil(h / blockSize);
+  const map = new Float32Array(bx * by);
+  for (let byi = 0; byi < by; byi++) {
+    for (let bxi = 0; bxi < bx; bxi++) {
+      let sum = 0, sumSq = 0, n = 0;
+      const x0 = bxi * blockSize, x1 = Math.min(w, x0 + blockSize);
+      const y0 = byi * blockSize, y1 = Math.min(h, y0 + blockSize);
+      for (let y = y0; y < y1; y++) {
+        const row = y * w;
+        for (let x = x0; x < x1; x++) {
+          const p = (row + x) * 4;
+          const lum = 0.299*data[p] + 0.587*data[p+1] + 0.114*data[p+2];
+          sum += lum; sumSq += lum*lum; n++;
+        }
+      }
+      const mean = sum / n;
+      map[byi * bx + bxi] = Math.sqrt(Math.max(0, sumSq/n - mean*mean));
+    }
+  }
+  return { map, bx, by };
+}
+
+// ============================================================
+// Median-cut
+// ============================================================
+function medianCut(pixels, w, h, maxColors) {
+  const samples = [];
+  const step = Math.max(1, Math.floor((w * h) / 20000));
+  for (let i = 0; i < pixels.length; i += 4 * step) {
+    if (pixels[i + 3] < 8) continue;
+    samples.push([pixels[i], pixels[i + 1], pixels[i + 2]]);
+  }
+  if (samples.length === 0) return [[0, 0, 0]];
+
+  let boxes = [samples];
+
+  while (boxes.length < maxColors) {
+    let bestIdx = -1, bestRange = -1, bestAxis = 0;
+    for (let i = 0; i < boxes.length; i++) {
+      const box = boxes[i];
+      if (box.length < 2) continue;
+      let rmin=255,rmax=0,gmin=255,gmax=0,bmin=255,bmax=0;
+      for (const c of box) {
+        if (c[0]<rmin)rmin=c[0]; if (c[0]>rmax)rmax=c[0];
+        if (c[1]<gmin)gmin=c[1]; if (c[1]>gmax)gmax=c[1];
+        if (c[2]<bmin)bmin=c[2]; if (c[2]>bmax)bmax=c[2];
+      }
+      const rr=rmax-rmin, gr=gmax-gmin, br=bmax-bmin;
+      const range = Math.max(rr,gr,br);
+      if (range > bestRange) {
+        bestRange = range;
+        bestIdx = i;
+        bestAxis = rr>=gr && rr>=br ? 0 : (gr>=br ? 1 : 2);
+      }
+    }
+    if (bestIdx === -1 || bestRange <= 0) break;
+    const box = boxes[bestIdx];
+    box.sort((a, b) => a[bestAxis] - b[bestAxis]);
+    const mid = box.length >> 1;
+    boxes.splice(bestIdx, 1, box.slice(0, mid), box.slice(mid));
+  }
+
+  const palette = [];
+  for (const box of boxes) {
+    if (box.length === 0) continue;
+    let r=0,g=0,b=0;
+    for (const c of box) { r+=c[0]; g+=c[1]; b+=c[2]; }
+    palette.push([Math.round(r/box.length), Math.round(g/box.length), Math.round(b/box.length)]);
+  }
+  return palette;
+}
+
+// Nearest palette index
+function nearestIndex(r, g, b, palette) {
+  let best = 0, bestD = Infinity;
+  for (let i = 0; i < palette.length; i++) {
+    const p = palette[i];
+    const dr = r - p[0], dg = g - p[1], db = b - p[2];
+    const d = dr*dr + dg*dg + db*db;
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+function buildIndices(processed, w, h, palette) {
+  const indices = new Uint8Array(w * h);
+  const cache = new Map();
+  for (let p = 0, i = 0; p < w * h; p++, i += 4) {
+    const r = processed[i], g = processed[i+1], b = processed[i+2];
+    const key = (r >> 1) << 16 | (g >> 1) << 8 | (b >> 1);
+    let idx = cache.get(key);
+    if (idx === undefined) {
+      idx = nearestIndex(r, g, b, palette);
+      cache.set(key, idx);
+    }
+    indices[p] = idx;
+  }
+  return indices;
+}
+
+// ============================================================
+// PNG encoder internals
+// ============================================================
+function crc32(buf) {
+  const table = crc32.table || (crc32.table = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })());
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) crc = table[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function adler32(buf) {
+  let a = 1, b = 0;
+  const MOD = 65521;
+  for (let i = 0; i < buf.length; i++) { a = (a + buf[i]) % MOD; b = (b + a) % MOD; }
+  return ((b << 16) | a) >>> 0;
+}
+function makeChunk(type, data) {
+  const len = data.length;
+  const out = new Uint8Array(12 + len);
+  const dv = new DataView(out.buffer);
+  dv.setUint32(0, len);
+  out[4] = type.charCodeAt(0); out[5] = type.charCodeAt(1);
+  out[6] = type.charCodeAt(2); out[7] = type.charCodeAt(3);
+  out.set(data, 8);
+  dv.setUint32(8 + len, crc32(out.subarray(4, 8 + len)));
+  return out;
+}
+
+function filterRow(rowBytes, prevRowBytes, bpp, filterType) {
+  const n = rowBytes.length;
+  const out = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = i >= bpp ? rowBytes[i - bpp] : 0;
+    const b = prevRowBytes ? prevRowBytes[i] : 0;
+    const c = (i >= bpp && prevRowBytes) ? prevRowBytes[i - bpp] : 0;
+    let pred = 0;
+    switch (filterType) {
+      case 0: pred = 0; break;
+      case 1: pred = a; break;
+      case 2: pred = b; break;
+      case 3: pred = (a + b) >> 1; break;
+      case 4: {
+        const p = a + b - c;
+        const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+        pred = pa <= pb && pa <= pc ? a : (pb <= pc ? b : c);
+        break;
+      }
+    }
+    out[i] = (rowBytes[i] - pred) & 0xFF;
+  }
+  return out;
+}
+
+function chooseFilter(rowBytes, prevRowBytes, bpp) {
+  let bestType = 0, bestScore = Infinity, bestOut = null;
+  for (let t = 0; t <= 4; t++) {
+    const out = filterRow(rowBytes, prevRowBytes, bpp, t);
+    let s = 0;
+    for (let i = 0; i < out.length; i++) s += out[i] < 128 ? out[i] : 256 - out[i];
+    if (s < bestScore) { bestScore = s; bestType = t; bestOut = out; }
+  }
+  return { type: bestType, data: bestOut };
+}
+
+function buildFilteredScanlines(indices, w, h, bpp) {
+  const rowLen = w * bpp;
+  const out = new Uint8Array(h * (rowLen + 1));
+  let prev = null, pos = 0;
+  for (let y = 0; y < h; y++) {
+    const rowStart = y * w * bpp;
+    const row = indices.subarray(rowStart, rowStart + rowLen);
+    const { type, data } = chooseFilter(row, prev, bpp);
+    out[pos++] = type;
+    out.set(data, pos);
+    pos += rowLen;
+    prev = row;
+  }
+  return out;
+}
+
+function deflateStored(data) {
+  const maxBlock = 65535;
+  const out = [];
+  out.push(0x78, 0x01);
+  let offset = 0;
+  while (offset < data.length) {
+    const remaining = data.length - offset;
+    const len = Math.min(maxBlock, remaining);
+    const isLast = offset + len >= data.length ? 1 : 0;
+    out.push(isLast);
+    out.push(len & 0xFF, (len >> 8) & 0xFF);
+    out.push((~len) & 0xFF, ((~len) >> 8) & 0xFF);
+    for (let i = 0; i < len; i++) out.push(data[offset + i]);
+    offset += len;
+  }
+  const buf = new Uint8Array(out);
+  const adler = adler32(data);
+  const final = new Uint8Array(buf.length + 4);
+  final.set(buf, 0);
+  new DataView(final.buffer).setUint32(final.length - 4, adler);
+  return final;
+}
+
+async function deflateCompress(data, useCompressionStream) {
+  if (!useCompressionStream || typeof CompressionStream === 'undefined') {
+    return deflateStored(data);
+  }
+  const cs = new CompressionStream('deflate');
+  const stream = new Blob([data]).stream().pipeThrough(cs);
+  const buf = await new Response(stream).arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+async function encodeIndexedPng(indices, w, h, palette, opts) {
+  const bpp = 1;
+  const scanlines = buildFilteredScanlines(indices, w, h, bpp);
+  const idatData = opts.deflate
+    ? await deflateCompress(scanlines, true)
+    : deflateStored(scanlines);
+
+  const sig = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+
+  const ihdr = new Uint8Array(13);
+  const ihdrDV = new DataView(ihdr.buffer);
+  ihdrDV.setUint32(0, w);
+  ihdrDV.setUint32(4, h);
+  ihdr[8] = 8;
+  ihdr[9] = 3; // indexed
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
+
+  const plte = new Uint8Array(palette.length * 3);
+  for (let i = 0; i < palette.length; i++) {
+    plte[i*3]     = palette[i][0];
+    plte[i*3 + 1] = palette[i][1];
+    plte[i*3 + 2] = palette[i][2];
+  }
+
+  const chunks = [
+    sig,
+    makeChunk('IHDR', ihdr),
+    makeChunk('PLTE', plte),
+    makeChunk('IDAT', idatData),
+    makeChunk('IEND', new Uint8Array(0)),
+  ];
+
+  let total = 0;
+  for (const c of chunks) total += c.length;
+  const out = new Uint8Array(total);
+  let pos = 0;
+  for (const c of chunks) { out.set(c, pos); pos += c.length; }
+  return new Blob([out], { type: 'image/png' });
+}
+
+// ============================================================
+// Strip non-critical chunks
+// ============================================================
+function stripPngChunks(uint8) {
+  if (uint8.length < 8) return uint8;
+  const sig = [137,80,78,71,13,10,26,10];
+  for (let i = 0; i < 8; i++) if (uint8[i] !== sig[i]) return uint8;
+
+  const keep = new Set(['IHDR','PLTE','IDAT','IEND','tRNS']);
+  const out = new Uint8Array(uint8.length);
+  out.set(uint8.subarray(0, 8), 0);
+  let inPos = 8, outPos = 8;
+  const dv = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+
+  while (inPos + 8 <= uint8.length) {
+    const len = dv.getUint32(inPos);
+    const t0 = inPos + 4;
+    const type = String.fromCharCode(uint8[t0], uint8[t0+1], uint8[t0+2], uint8[t0+3]);
+    const chunkEnd = inPos + 12 + len;
+    if (chunkEnd > uint8.length) break;
+    if (keep.has(type)) {
+      out.set(uint8.subarray(inPos, chunkEnd), outPos);
+      outPos += (chunkEnd - inPos);
+    }
+    inPos = chunkEnd;
+    if (type === 'IEND') break;
+  }
+  return out.subarray(0, outPos);
+}
+
+// ============================================================
+// Pixel-level processing
+// ============================================================
+function processRGBA(data, w, h, opts) {
+  const out = new Uint8ClampedArray(data);
+
+  if (opts.downscale) {
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = w;
+    tmpCanvas.height = h;
+    tmpCanvas.getContext('2d').putImageData(
+      new ImageData(new Uint8ClampedArray(out), w, h), 0, 0
+    );
+
+    const sw = Math.max(1, Math.round(w * opts.downscaleScale));
+    const sh = Math.max(1, Math.round(h * opts.downscaleScale));
+
+    const small = document.createElement('canvas');
+    small.width = sw;
+    small.height = sh;
+    const sctx = small.getContext('2d');
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = 'high';
+    sctx.drawImage(tmpCanvas, 0, 0, w, h, 0, 0, sw, sh);
+
+    const big = document.createElement('canvas');
+    big.width = w;
+    big.height = h;
+    const bctx = big.getContext('2d');
+    bctx.imageSmoothingEnabled = true;
+    bctx.imageSmoothingQuality = 'high';
+    bctx.drawImage(small, 0, 0, sw, sh, 0, 0, w, h);
+
+    const downData = bctx.getImageData(0, 0, w, h).data;
+    for (let i = 0; i < out.length; i++) out[i] = downData[i];
+  }
+
+  if (opts.grayscale) {
+    for (let i = 0; i < out.length; i += 4) {
+      const y = 0.299*out[i] + 0.587*out[i+1] + 0.114*out[i+2];
+      out[i] = out[i+1] = out[i+2] = y;
+    }
+  }
+
+  if (opts.useDepthPipeline) {
+    if (opts.blockAdaptive) {
+      const blockSize = 16;
+      const { map, bx } = computeVarianceMap(out, w, h, blockSize);
+      let vmax = 1;
+      for (let i = 0; i < map.length; i++) if (map[i] > vmax) vmax = map[i];
+      for (let y = 0; y < h; y++) {
+        const byi = Math.floor(y / blockSize);
+        for (let x = 0; x < w; x++) {
+          const bxi = Math.floor(x / blockSize);
+          const v = map[byi * bx + bxi] / vmax;
+          const bits = Math.round(opts.blockMinBits + (opts.blockMaxBits - opts.blockMinBits) * v);
+          const levels = (1 << bits) - 1;
+          const step = 255 / levels;
+          const i = (y * w + x) * 4;
+          out[i]     = Math.round(out[i]     / step) * step;
+          out[i + 1] = Math.round(out[i + 1] / step) * step;
+          out[i + 2] = Math.round(out[i + 2] / step) * step;
+        }
+      }
+    } else if (opts.ycocg) {
+      const yBits = opts.bits;
+      const cBits = Math.max(1, opts.bits - 2);
+      for (let i = 0; i < out.length; i += 4) {
+        const [y, co, cg] = rgbToYCoCg(out[i], out[i+1], out[i+2]);
+        const [r, g, b] = yCoCgToRgb(quantize(y, yBits), quantize(co, cBits), quantize(cg, cBits));
+        out[i]     = Math.max(0, Math.min(255, r));
+        out[i + 1] = Math.max(0, Math.min(255, g));
+        out[i + 2] = Math.max(0, Math.min(255, b));
+      }
+    } else if (opts.perChannel) {
+      const gBits = opts.bits;
+      const rBits = Math.max(1, opts.bits - 1);
+      const bBits = Math.max(1, opts.bits - 1);
+      const gStep = 255 / ((1 << gBits) - 1);
+      const rStep = 255 / ((1 << rBits) - 1);
+      const bStep = 255 / ((1 << bBits) - 1);
+      for (let i = 0; i < out.length; i += 4) {
+        out[i]     = Math.round(out[i]     / rStep) * rStep;
+        out[i + 1] = Math.round(out[i + 1] / gStep) * gStep;
+        out[i + 2] = Math.round(out[i + 2] / bStep) * bStep;
+      }
+    } else if (opts.bits < 8) {
+      const levels = (1 << opts.bits) - 1;
+      const step = 255 / levels;
+      for (let i = 0; i < out.length; i += 4) {
+        out[i]     = Math.round(out[i]     / step) * step;
+        out[i + 1] = Math.round(out[i + 1] / step) * step;
+        out[i + 2] = Math.round(out[i + 2] / step) * step;
+      }
+    }
+  }
+
+  return out;
+}
+
+// ============================================================
+// Main per-image encoder
+// ============================================================
+async function shrinkImage(bitmap, opts) {
+  const w = bitmap.width;
+  const h = bitmap.height;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(bitmap, 0, 0);
+
+  const originalData = ctx.getImageData(0, 0, w, h).data;
+  const processed = processRGBA(originalData, w, h, opts);
+
+  const candidates = [];
+
+  // True-color candidate
+  {
+    const tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = h;
+    tmp.getContext('2d').putImageData(
+      new ImageData(new Uint8ClampedArray(processed), w, h), 0, 0
+    );
+    const blob = await new Promise(r => tmp.toBlob(r, 'image/png'));
+    let finalBlob = blob;
+    if (opts.stripChunks) {
+      const buf = new Uint8Array(await blob.arrayBuffer());
+      const stripped = stripPngChunks(buf);
+      if (stripped.length < buf.length) finalBlob = new Blob([stripped], { type: 'image/png' });
+    }
+    candidates.push({
+      blob: finalBlob,
+      method: 'rgb',
+      paletteSize: null,
+      psnr: psnr(originalData, processed),
+    });
+  }
+
+  // Indexed palette candidate
+  if (opts.usePalette) {
+    if (opts.paletteAuto) {
+      const tries = [256, 192, 128, 96, 64, 48, 32, 24, 16, 12, 8];
+      let meeting = null, best = null;
+      for (const n of tries) {
+        const pal = medianCut(processed, w, h, n);
+        const idx = buildIndices(processed, w, h, pal);
+        const blob = await encodeIndexedPng(idx, w, h, pal, opts);
+
+        const rebuilt = new Uint8ClampedArray(processed);
+        for (let p = 0, i = 0; p < w * h; p++, i += 4) {
+          const c = pal[idx[p]];
+          rebuilt[i]     = c[0];
+          rebuilt[i + 1] = c[1];
+          rebuilt[i + 2] = c[2];
+        }
+        const p2 = psnr(originalData, rebuilt);
+
+        if (p2 >= opts.palettePsnrFloor) {
+          if (!meeting || blob.size < meeting.blob.size) {
+            meeting = { blob, palette: pal, psnr: p2, colors: pal.length };
+          }
+        }
+        if (!best || blob.size < best.blob.size) {
+          best = { blob, palette: pal, psnr: p2, colors: pal.length };
+        }
+      }
+      const chosen = meeting || best;
+      candidates.push({
+        blob: chosen.blob,
+        method: 'indexed',
+        paletteSize: chosen.colors,
+        psnr: chosen.psnr,
+      });
+    } else {
+      const n = opts.paletteColors;
+      const pal = medianCut(processed, w, h, n);
+      const idx = buildIndices(processed, w, h, pal);
+      const blob = await encodeIndexedPng(idx, w, h, pal, opts);
+
+      const rebuilt = new Uint8ClampedArray(processed);
+      for (let p = 0, i = 0; p < w * h; p++, i += 4) {
+        const c = pal[idx[p]];
+        rebuilt[i]     = c[0];
+        rebuilt[i + 1] = c[1];
+        rebuilt[i + 2] = c[2];
+      }
+      candidates.push({
+        blob,
+        method: 'indexed',
+        paletteSize: pal.length,
+        psnr: psnr(originalData, rebuilt),
+      });
+    }
+  }
+
+  let best = candidates[0];
+  if (opts.multiPath) {
+    for (const c of candidates) if (c.blob.size < best.blob.size) best = c;
+  } else if (opts.usePalette) {
+    const idxCand = candidates.find(c => c.method === 'indexed');
+    if (idxCand) best = idxCand;
+  }
+  return best;
+}
+
+// ============================================================
+// Options collection
+// ============================================================
+function collectOpts() {
+  const usePalette = optPalette.checked;
+  const useDepthPipeline = !usePalette && (optDepth.checked || optPerChannel.checked || optYCoCg.checked || optBlockAdaptive.checked);
+  return {
+    usePalette,
+    paletteAuto: paletteAuto.checked,
+    paletteColors: parseInt(paletteColors.value, 10),
+    palettePsnrFloor: 32,
+    useDepthPipeline,
+    bits: parseInt(depthBits.value, 10),
+    perChannel: optPerChannel.checked,
+    ycocg: optYCoCg.checked,
+    blockAdaptive: optBlockAdaptive.checked,
+    blockMinBits: 3,
+    blockMaxBits: 7,
+    downscale: optDownscale.checked,
+    downscaleScale: parseInt(downscale.value, 10) / 100,
+    grayscale: optGrayscale.checked,
+    deflate: optDeflate.checked,
+    stripChunks: optStripChunks.checked,
+    multiPath: optMultiPath.checked,
+  };
+}
+
+// ============================================================
+// Preview
+// ============================================================
+let previewToken = 0;
+let previewTimer = null;
+function schedulePreview() {
+  if (!previewBitmap) return;
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(renderPreview, 200);
+}
+
+async function renderPreview() {
+  if (!previewBitmap) return;
+  const token = ++previewToken;
+
+  try {
+    const opts = collectOpts();
+    const result = await shrinkImage(previewBitmap, opts);
+    if (token !== previewToken) return;
+
+    const url = URL.createObjectURL(result.blob);
+    previewImg.onload = () => {
+      URL.revokeObjectURL(url);
+      const src = selectedFiles[previewIndex];
+      const ratio = (result.blob.size / src.size * 100).toFixed(1);
+      const sign = result.blob.size < src.size ? '↓' : '↑';
+      const psnrStr = result.psnr != null ? result.psnr.toFixed(1) + ' dB' : 'n/a';
+      const palStr = result.paletteSize != null ? `, palette ${result.paletteSize}` : '';
+      previewInfo.textContent =
+        `${src.name}  |  Original: ${(src.size/1024).toFixed(1)} KB  |  ` +
+        `Preview: ${(result.blob.size/1024).toFixed(1)} KB  ${sign} ${ratio}%  |  ` +
+        `method: ${result.method}${palStr}  |  PSNR: ${psnrStr}`;
+    };
+    previewImg.src = url;
+  } catch (e) {
+    previewInfo.textContent = 'Preview error: ' + e.message;
+  }
+}
+
+// ============================================================
+// Process all
+// ============================================================
+processBtn.addEventListener('click', async () => {
+  if (selectedFiles.length === 0) return;
+
+  processBtn.disabled = true;
+  logEl.innerHTML = '';
+  resetTally();
+  totalInExported = 0;
+
+  const opts = collectOpts();
+
+  const zip = new JSZip();
+  const reportLines = [];
+  reportLines.push('PNG Shrinker report');
+  reportLines.push('==================');
+  reportLines.push(`Palette: ${opts.usePalette ? (opts.paletteAuto ? 'auto' : opts.paletteColors + ' colors') : 'off'}`);
+  reportLines.push(`Depth pipeline: ${opts.useDepthPipeline ? opts.bits + ' bits' : 'off'}`);
+  reportLines.push(`Deflate: ${opts.deflate ? 'on' : 'off'}`);
+  reportLines.push(`Strip chunks: ${opts.stripChunks ? 'on' : 'off'}`);
+  reportLines.push('');
+
+  let totalIn = 0, totalOut = 0;
+  let exported = 0, skipped = 0;
+
+  let i = 0;
+  for (const file of selectedFiles) {
+    i++;
+    log(`[${i}/${selectedFiles.length}] ${file.name}`);
+    try {
+      const bitmap = await createImageBitmap(file);
+      const result = await shrinkImage(bitmap, opts);
+      bitmap.close();
+
+      const inputSize = file.size;
+      const outputSize = result.blob.size;
+
+      // Only ever export files that actually got smaller.
+      if (outputSize >= inputSize) {
+        skipped++;
+        totalIn += inputSize;
+        const ratio = (outputSize / inputSize * 100).toFixed(1);
+        logEl.appendChild(colored(
+          `    not smaller (${(outputSize/1024).toFixed(1)} KB vs ${(inputSize/1024).toFixed(1)} KB, ${ratio}%) — skipped`,
+          'skip'
+        ));
+        addTallyRow(file.name, inputSize, outputSize, true, null, null);
+        reportLines.push(`SKIP  ${file.name}  in=${inputSize}  out=${outputSize}`);
+      } else {
+        exported++;
+        totalIn += inputSize;
+        totalOut += outputSize;
+        totalInExported += inputSize;
+
+        zip.file(file.name, result.blob);
+
+        const savedPct = (1 - outputSize / inputSize) * 100;
+        const ratio = (outputSize / inputSize * 100).toFixed(1);
+        logEl.appendChild(colored(
+          `    ${(inputSize/1024).toFixed(1)} KB → ${(outputSize/1024).toFixed(1)} KB (${ratio}%)  ` +
+          `method=${result.method}  pal=${result.paletteSize ?? '-'}  PSNR=${result.psnr != null ? result.psnr.toFixed(1) : 'n/a'} dB`,
+          'ok'
+        ));
+        addTallyRow(file.name, inputSize, outputSize, false, result.paletteSize, result.psnr);
+        reportLines.push(`OK    ${file.name}  in=${inputSize}  out=${outputSize}  method=${result.method}  palette=${result.paletteSize ?? '-'}  saved=${savedPct.toFixed(1)}%`);
+      }
+      logEl.scrollTop = logEl.scrollHeight;
+      updateTallyTotals(totalIn, totalOut, exported, skipped);
+    } catch (err) {
+      logEl.appendChild(colored(`    ERROR: ${err.message}`, 'err'));
+      reportLines.push(`ERR   ${file.name}  ${err.message}`);
+    }
+  }
+
+  log('──────────────────────────────');
+  log(`Exported: ${exported}  |  Skipped (not smaller): ${skipped}`);
+  if (exported > 0) {
+    const totalMbIn = (totalInExported / 1024 / 1024).toFixed(2);
+    const totalMbOut = (totalOut / 1024 / 1024).toFixed(2);
+    const pct = ((1 - totalOut / totalInExported) * 100).toFixed(1);
+    log(`Total (exported only): ${totalMbOut} MB from ${totalMbIn} MB  (saved ${pct}%)`);
+    reportLines.push('');
+    reportLines.push(`TOTAL: ${totalInExported} bytes → ${totalOut} bytes  (saved ${pct}%)`);
+    reportLines.push(`Exported: ${exported}  Skipped: ${skipped}`);
+  }
+
+  if (exported === 0) {
+    log('Nothing to export — no image got smaller with these settings.');
+    processBtn.disabled = false;
+    return;
+  }
+
+  zip.file('report.txt', reportLines.join('\n'));
+
+  log('Generating ZIP…');
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `smaller_pngs_${Date.now()}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  log('Done.');
+  processBtn.disabled = false;
+});
+
+function colored(text, cls) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  if (cls) d.className = cls;
+  return d;
+}
+function log(msg) {
+  const d = document.createElement('div');
+  d.textContent = msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ============================================================
+// Init defaults
+// ============================================================
+(function initDefaults() {
+  depthBits.value = '3';
+  depthBitsVal.textContent = '3';
+  paletteColors.value = '128';
+  paletteColorsVal.textContent = '128';
+
+  paletteOpts.classList.toggle('show', optPalette.checked);
+  depthOpts.classList.toggle('show', optDepth.checked);
+  downscaleOpts.classList.toggle('show', optDownscale.checked);
+  paletteColors.disabled = paletteAuto.checked;
+
+  optDepth.disabled = optPalette.checked;
+  optPerChannel.disabled = optPalette.checked;
+  optYCoCg.disabled = optPalette.checked;
+  optBlockAdaptive.disabled = optPalette.checked;
+
+  prevBtn.disabled = true;
+  nextBtn.disabled = true;
+})();
+</script>
+</body>
+</html>
