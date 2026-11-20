@@ -47,6 +47,7 @@
     img.onerror = function() {
       showFallbackLink();
     };
+    // Use favicon.ico as a lightweight, real image resource
     img.src = "https://alceawis.de/other/images/icon/code.png?" + Date.now();
   }
 
@@ -76,10 +77,90 @@
   };
 </script>
 <style>
-  /* ... unchanged ... */
+  #right-button:hover, .button {
+    transition: background-color .3s ease-in-out;
+  }
+  body {
+    margin: 0; padding: 0;
+    font-family: Arial, sans-serif;
+  }
+  .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 50%;
+    background-color: #ff0000;
+    color: #fff;
+    font-size: 3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .button:hover {
+    background-color: #0056b3;
+  }
+  .button img {
+    max-height: 50%;
+    max-width: 70%;
+  }
+  #left-button {
+    float: left;
+  }
+  #right-button {
+    float: right;
+    background-color: blue;
+  }
+  #right-button:hover {
+    background-color: #333;
+  }
+  #right-button:hover img {
+    animation: 1s bounce;
+  }
+  @keyframes bounce {
+    0%, 50%, 100% {transform: translateY(0);}
+    25% {transform: translateY(-20px);}
+    75% {transform: translateY(-10px);}
+  }
+  #timer-container {
+    text-align: center;
+    font-size: 1.5rem;
+    padding: 1rem;
+    background: #222;
+    color: #fff;
+  }
+  #fallback-container {
+    text-align: center;
+    margin: 2rem;
+  }
+  #fallback-container h1 a {
+    color: #c00;
+    text-decoration: none;
+  }
+  #fallback-container h1 a:hover {
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
-  <!-- ... unchanged ... -->
+  <div id="timer-container">
+    <strong>Redirecting in <span id="time">03 seconds</span></strong>
+  </div>
+
+  <div id="fallback-container"></div>
+
+  <a href="https://ry3yr.github.io/OSTR/Diarykeepers_Homepage/index.html">
+    <div class="button" id="left-button">
+      ~
+      <img src="https://raw.githubusercontent.com/Ry3yr/ry3yr.github.io/main/android-chrome-384x384.png" alt="Center Image" />
+      <br><br>~
+    </div>
+  </a>
+  <a href="https://alceawis.de/">
+    <div class="button" id="right-button">
+      Alceawis
+      <img src="https://files.mastodon.social/cache/accounts/avatars/109/864/007/248/224/654/original/ff09fe24bfece34f.png" alt="Logo" />
+    </div>
+  </a>
 </body>
 </html>
