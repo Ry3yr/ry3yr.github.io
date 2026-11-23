@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1e1e1e">
+<title>Pixel Rectangle Tool</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #1e1e1e;
+    color: #eee;
+    overscroll-behavior: none;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh; /* handles mobile URL bar */
+  }
+  header {
+    padding: 8px 10px;
+    padding-top: calc(8px + env(safe-area-inset-top));
+    background: #2a2a2a;
+    border-bottom: 1px solid #444;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  header label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+  }
+  header input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #ff3b30;
+  }
+  header button {
+    background: #3a3a3a;
+    color: #eee;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    min-height: 40px;
+  }
+  header button:active { background: #4a4a4a; }
+
+  #info {
+    width: 100%;
+    font-family: ui-monospace, monospace;
+    color: #7cf;
+    font-size: 13px;
+    padding: 4px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #stage {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background:
+      repeating-conic-gradient(#2a2a2a 0% 25%, #232323 0% 50%) 50% / 20px 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  #wrap {
+    position: relative;
+    display: inline-block;
+    margin: 10px;
+    /* Critical: block native gestures so drag = draw, not scroll */
+    touch-action: none;
+    cursor: crosshair;
+  }
+  #img {
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    max-width: none;
+  }
+  canvas#overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <label><input type="checkbox" id="squareLock"> Square</label>
+  <label><input type="checkbox" id="clearOnClick" checked> Clear on drag</label>
+  <button id="clearBtn">Clear</button>
+  <button id="loadBtn">Load image…</button>
+  <input type="file" id="fileInput" accept="image/*" hidden>
+  <span id="info">drag with one finger to draw a rectangle</span>
+</header>
+
+<div id="stage">
+  <div id="wrap">
+    <img id="img" alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23333'/><text x='50%' y='50%' fill='%23888' font-family='sans-serif' font-size='24' text-anchor='middle'>Tap “Load image…” to start</text></svg>">
+    <canvas id="overlay"></canvas>
+  </div>
+</div>
+
+<script>
+(() => {
+  const img     = document.getElementById('img');
+  const overlay = document.getElementById('overlay');
+  const wrap    = document.getElementById('wrap');
+  const info    = document.getElementById('info');
+  const fileInput    = document.getElementById('fileInput');
+  const clearOnClick = document.getElementById('clearOnClick');
+  const squareLock   = document.getElementById('squareLock');
+  const ctx = overlay.getContext('2d');
+
+  let start = null;
+  let end   = null;
+  let drawing = false;
+
+  function resize() {
+    const r = img.getBoundingClientRect();
+    overlay.width  = Math.round(r.width);
+    overlay.height = Math.round(r.height);
+    overlay.style.width  = r.width + 'px';
+    overlay.style.height = r.height + 'px';
+    redraw();
+  }
+  img.addEventListener('load', resize);
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 100));
+  new ResizeObserver(resize).observe(img);
+
+  function toImageCoords(evt) {
+    const r = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth  / r.width;
+    const scaleY = img.naturalHeight / r.height;
+    return {
+      x: (evt.clientX - r.left) * scaleX,
+      y: (evt.clientY - r.top)  * scaleY,
+      dx: evt.clientX - r.left,
+      dy: evt.clientY - r.top,
+      scaleX, scaleY
+    };
+  }
+
+  wrap.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    wrap.setPointerCapture(e.pointerId);
+    if (clearOnClick.checked) end = null;
+    start = toImageCoords(e);
+    end = null;
+    drawing = true;
+    redraw();
+  });
+
+  wrap.addEventListener('pointermove', e => {
+    if (!drawing || !start) return;
+    e.preventDefault();
+    let p = toImageCoords(e);
+
+    if (squareLock.checked) {
+      const dxDisp = p.dx - start.dx;
+      const dyDisp = p.dy - start.dy;
+      const size = Math.max(Math.abs(dxDisp), Math.abs(dyDisp));
+      p.dx = start.dx + Math.sign(dxDisp || 1) * size;
+      p.dy = start.dy + Math.sign(dyDisp || 1) * size;
+      p.x  = p.dx * p.scaleX;
+      p.y  = p.dy * p.scaleY;
+    }
+
+    end = p;
+    redraw();
+  });
+
+  function finish() {
+    if (!drawing) return;
+    drawing = false;
+    if (end && start) {
+      const w = Math.abs(end.x - start.x);
+      const h = Math.abs(end.y - start.y);
+      const x = Math.min(start.x, end.x);
+      const y = Math.min(start.y, end.y);
+      info.textContent =
+        `x ${x.toFixed(0)}  y ${y.toFixed(0)}  ` +
+        `w ${w.toFixed(0)}px  h ${h.toFixed(0)}px  ` +
+        `area ${(w*h).toFixed(0)}px²`;
+    } else {
+      info.textContent = 'drag with one finger to draw a rectangle';
+    }
+  }
+  wrap.addEventListener('pointerup', finish);
+  wrap.addEventListener('pointercancel', finish);
+
+  function redraw() {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    if (!start || !end) return;
+
+    const x1 = Math.min(start.dx, end.dx);
+    const y1 = Math.min(start.dy, end.dy);
+    const x2 = Math.max(start.dx, end.dx);
+    const y2 = Math.max(start.dy, end.dy);
+    const w = x2 - x1;
+    const h = y2 - y1;
+
+    ctx.fillStyle   = 'rgba(255, 59, 48, 0.15)';
+    ctx.fillRect(x1, y1, w, h);
+    ctx.strokeStyle = '#ff3b30';
+    ctx.lineWidth   = 2;
+    ctx.strokeRect(x1 + 1, y1 + 1, w - 2, h - 2);
+
+    // Corner markers (bigger for touch visibility)
+    ctx.fillStyle = '#ff3b30';
+    for (const [cx, cy] of [[x1,y1],[x2,y1],[x1,y2],[x2,y2]]) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Label
+    const label = `${Math.round(w)} × ${Math.round(h)} px`;
+    ctx.font = 'bold 16px ui-monospace, monospace';
+    const tw = ctx.measureText(label).width;
+    const pad = 6;
+    const lh = 24;
+    let lx = x1;
+    let ly = y1 - lh - 4;
+    if (ly < 0) ly = y1 + 4;
+    if (lx + tw + pad * 2 > overlay.width) lx = overlay.width - tw - pad * 2;
+    if (lx < 0) lx = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(lx, ly, tw + pad * 2, lh);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(label, lx + pad, ly + 17);
+  }
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    start = end = null;
+    drawing = false;
+    info.textContent = 'drag with one finger to draw a rectangle';
+    redraw();
+  });
+
+  document.getElementById('loadBtn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    img.src = URL.createObjectURL(f);
+    start = end = null;
+    info.textContent = 'drag with one finger to draw a rectangle';
+  });
+
+  if (img.complete) resize();
+})();
+</script>
+</body>
+</html>

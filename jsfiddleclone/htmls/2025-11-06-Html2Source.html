@@ -23,6 +23,10 @@
                     <h4>Keep in Output:</h4>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
+                            <input type="checkbox" id="keep-as-is">
+                            <label for="keep-as-is"><strong>Keep as is</strong></label>
+                        </div>
+                        <div class="checkbox-item">
                             <input type="checkbox" id="keep-bold" checked>
                             <label for="keep-bold">Bold Text</label>
                         </div>
@@ -65,7 +69,7 @@
                 </div>
             </div>
             <div class="warning">
-                <strong>Note:</strong> When "Keep Only Selected Elements" is checked, only the elements you've selected will be kept in the output. All other text and elements will be removed.
+                <strong>Note:</strong> When "Keep Only Selected Elements" is checked, only the elements you've selected will be kept in the output. All other text and elements will be removed. "Keep as is" unticks everything else and outputs your pasted content with its original formatting untouched.
             </div>
             <button id="convert-btn">Convert to HTML</button>
         </div>
@@ -87,6 +91,7 @@
             const clearBtn = document.getElementById('clear-btn');
             const selectAllBtn = document.getElementById('select-all');
             const deselectAllBtn = document.getElementById('deselect-all');
+            const keepAsIs = document.getElementById('keep-as-is');
             const keepBold = document.getElementById('keep-bold');
             const keepItalic = document.getElementById('keep-italic');
             const keepUnderline = document.getElementById('keep-underline');
@@ -95,8 +100,32 @@
             const keepMargins = document.getElementById('keep-margins');
             const keepLinks = document.getElementById('keep-links');
             const keepOnlySelected = document.getElementById('keep-only-selected');
+
+            const otherCheckboxes = [keepBold, keepItalic, keepUnderline, keepFonts, keepColors, keepMargins, keepLinks, keepOnlySelected];
+
+            // "Keep as is" unticks all other checkboxes
+            keepAsIs.addEventListener('change', function() {
+                if (keepAsIs.checked) {
+                    otherCheckboxes.forEach(function(cb) { cb.checked = false; });
+                }
+            });
+            // Ticking any other checkbox turns "Keep as is" off
+            otherCheckboxes.forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    if (cb.checked) {
+                        keepAsIs.checked = false;
+                    }
+                });
+            });
+
             convertBtn.addEventListener('click', function() {
                 let editorContent = editor.innerHTML;
+
+                // Keep as is: output the pasted HTML untouched
+                if (keepAsIs.checked) {
+                    output.value = editorContent;
+                    return;
+                }
                 
                 // If nothing is checked and "Keep Only Selected Elements" is not checked, keep everything intact
                 const nothingChecked = !keepBold.checked && !keepItalic.checked && !keepUnderline.checked && 
@@ -186,6 +215,7 @@
                 output.value = '';
             });
             selectAllBtn.addEventListener('click', function() {
+                keepAsIs.checked = false;
                 keepBold.checked = true;
                 keepItalic.checked = true;
                 keepUnderline.checked = true;
@@ -196,6 +226,7 @@
                 keepOnlySelected.checked = false;
             });
             deselectAllBtn.addEventListener('click', function() {
+                keepAsIs.checked = false;
                 keepBold.checked = false;
                 keepItalic.checked = false;
                 keepUnderline.checked = false;
